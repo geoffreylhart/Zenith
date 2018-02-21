@@ -1,14 +1,10 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Zenith.PrimitiveBuilder
 {
-    internal class CubeBuilder
+    public class CubeBuilder
     {
         // according to Blender front=-y, back=y, left=-x, right=x, up=z, down=-z
         internal static VertexIndiceBuffer MakeBasicCube(GraphicsDevice graphicsDevice)

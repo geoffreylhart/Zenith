@@ -1,0 +1,42 @@
+﻿Multiresolution mesh
+--------------------------------------------
+Goal: get land multiresolution painting up and running as quickly as possible
+Current state: Ability to ray cast from camera onto sphere
+Steps:
+ - *Raycast points on a circle of radius 5px from screen space onto the sphere
+    - *Start with looping through the individual triangle sections and directly drawing each triangle in the Draw loop
+    - *Test that the circle renders properly even when moving the sphere or when drawing off the edge of the sphere
+        - *Just don't draw the circle if any point is off of the sphere
+    - *Change the circle to not have a middle vertex if you haven't already
+ - *On mouse click, add a projected circle to a list of vertices/indexes - initialize a completely new vertex/index buffer from the list each time. Draw using the buffer
+ - *Give (basic) camera zoom controls and test that everything still works, make sure to do the clipping planes!
+ - *Generate a unit sphere to render instead of the cube we currently have - give it the correct normals and everything
+    - *Then, map a boring texture to it
+    - *Do a basic drawing to our boring texture to make sure we can do this, use vertex colors to make a gradient for nice debugging
+ - *On each frame, convert the 3d coordinates into lat/long and draw to our sphere's boring texture
+    - Then, make it so you only convert the 3rd coordinates once a mouse click
+xxx    - Make sure that wrapping occurs correctly? (nah, not necessary, the wrapping will occur on the opposite side of the sphere always)
+ - *Test zoom still works
+ - *Figure out how we want to go from drawing on a low resolution texture on the entire sphere to drawing on a higher resolution texture on a small, visible portion of the sphere
+    - *Probably copy old code for generating a portion of a sphere given lat/long corners
+    - *Make some bad guess for proper lat/long coordinates based on camera zoom (again, you can use the old code for this)
+    - *We want to draw our original boring texture with the test gradient draw and everything else hidden
+    - *Finally, map our 2d mesh coordinates to the new geometry without updating the vertexbuffer each time (just change the camera)
+    - *Test, this is some good progress!
+xxx - Have a toggleable mesh drawing mode - draw lines to the texture using the sprite thingy if we can - copy code from older stuff where I draw lines (wait scratch this?)
+ - *Allow ourselves to press a button to download a google map and put it in memory and draw to the screen using our new geometry generation
+    - Move our other code into a function and disable it first
+    - *Accumulate these and use vertex buffers!
+    - *Make sure to keep track of the zoom level for each vertex buffer, we want to clear the depth buffer each time and draw the higher resolution ones
+ - Draw our old painting under google earth - then draw google earth with 50% opacity somehow
+    - Then make the opacity set with some hotkey
+ - Test that we everything draws at small and big resolutions properly, though I don't think I care about fixing these issues just yet
+ - Now, finally, work on making the mesh properly intersect itself, using the mesh viewer to test
+    - To make things "easy" let's do this via clever texture shading instead of clever triangulation
+    - Use a similar algorithm to what you use for area calculation (try a shader that simply "inverts", I think that actually works. If not, get more complex)
+ - Make it so we can draw continuously
+ - Make it so we can subtract from the drawing with a right-click
+ - Make it so you can add a landmark via clicking (add it for my house)
+ - Save drawing as a mesh, always load from that mesh on startup, and always save to that mesh on exit
+ - On intersected portions, make the mesh resolution update if generated vertices are too close - just naiively walk for now
+ - Probably don't need more planning if you make it this far, just fix all the inevitable bugs and work on efficiency as it becomes an issue as you trace Pensacola
