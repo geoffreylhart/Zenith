@@ -18,10 +18,10 @@ namespace Zenith
         protected override void Initialize()
         {
             IsMouseVisible = true;
-            var camera = new EditorCamera();
+            var camera = new EditorCamera(this);
             Components.Add(camera);
-            Components.Add(new GoogleMaps(camera, GraphicsDevice));
-            Components.Add(new MultiResMesh(camera, GraphicsDevice));
+            Components.Add(new GoogleMaps(this, camera));
+            Components.Add(new MultiResMesh(this, camera));
             Components.Add(debug = new DebugConsole(this));
             // TODO: just change the ordering to fix this? apparantly setting a render target clears the backbuffer due to Xbox stuff
             GraphicsDevice.PresentationParameters.RenderTargetUsage = RenderTargetUsage.PreserveContents;
