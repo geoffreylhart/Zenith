@@ -22,6 +22,7 @@ namespace Zenith
             Components.Add(camera);
             Components.Add(new GoogleMaps(this, camera));
             Components.Add(new MultiResMesh(this, camera));
+            Components.Add(new CityMarker(this, camera, "Pensacola", 30.4668536, -87.3294527));
             Components.Add(debug = new DebugConsole(this));
             // TODO: just change the ordering to fix this? apparantly setting a render target clears the backbuffer due to Xbox stuff
             GraphicsDevice.PresentationParameters.RenderTargetUsage = RenderTargetUsage.PreserveContents;

@@ -42,6 +42,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="EditorGameComponents\CityMarker.cs" />
     <Compile Include="EditorGameComponents\DebugConsole.cs" />
     <Compile Include="EditorGameComponents\EditorCamera.cs" />
     <Compile Include="EditorGameComponents\GoogleMaps.cs" />
@@ -51,7 +52,9 @@
     <Compile Include="Helpers\KeyboardStateHelper.cs" />
     <Compile Include="MapGenerator.cs" />
     <Compile Include="MathHelpers\Line3.cs" />
+    <Compile Include="MathHelpers\Mathf.cs" />
     <Compile Include="MathHelpers\RayHelper.cs" />
+    <Compile Include="MathHelpers\Vector3Helper.cs" />
     <Compile Include="PrimitiveBuilder\CubeBuilder.cs" />
     <Compile Include="PrimitiveBuilder\SphereBuilder.cs" />
     <Compile Include="PrimitiveBuilder\VertexIndiceBuffer.cs" />

@@ -135,14 +135,7 @@ namespace Zenith.EditorGameComponents
             basicEffect3.DirectionalLight0.Direction = new Vector3(1, -1, 0);
             basicEffect3.DirectionalLight0.DiffuseColor = new Vector3(1, 1, 1);
             basicEffect3.AmbientLightColor = new Vector3(0.2f, 0.2f, 0.2f);
-            //basicEffect3.World = Matrix.CreateRotationX((float)cameraRotY) * Matrix.CreateRotationZ((float)cameraRotX);
-            basicEffect3.World = Matrix.CreateRotationZ((float)camera.cameraRotX) * Matrix.CreateRotationX((float)camera.cameraRotY);
-            float distance = (float)(Math.Pow(0.5, camera.cameraZoom) * 19);
-            // TODO: cheated here and just turned the camera upside down
-            basicEffect3.View = Matrix.CreateLookAt(new Vector3(0, -20, 0), new Vector3(0, 0, 0), -Vector3.UnitZ); // we'll match Blender for "up" of camera and camera starting position
-            // TODO: I just have no clue why the camera isn't working like it used to where I just move the camera closer and closer
-            basicEffect3.Projection = Matrix.CreatePerspectiveFieldOfView((float)((Math.PI / 4) * Math.Pow(0.5, camera.cameraZoom)), 800f / 480f, 0.1f, 100); // was 0.1f and 100f
-            //Debug(-distance - 1f);
+            camera.ApplyMatrices(basicEffect3);
             return basicEffect3;
         }
 
