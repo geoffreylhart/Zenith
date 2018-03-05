@@ -5,13 +5,13 @@ namespace Zenith.MathHelpers
 {
     public static class Vector3Helper
     {
-        internal static Vector3 UnitSphere(double latitude, double longitude)
+        internal static Vector3 UnitSphere(double longitude, double latitude)
         {
-            double dxy = Math.Cos(latitude);
-            double x = Math.Cos(longitude) * dxy;
-            double y = Math.Sin(longitude) * dxy;
-            double z = -Math.Sin(latitude);
-            return new Vector3((float)x, (float)y, (float)z);
+            double dz = Math.Sin(latitude);
+            double dxy = Math.Cos(latitude); // the radius of the horizontal ring section, always positive
+            double dx = Math.Sin(longitude) * dxy;
+            double dy = -Math.Cos(longitude) * dxy;
+            return new Vector3((float)dx, (float)dy, (float)dz);
         }
     }
 }

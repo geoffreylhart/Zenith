@@ -1,0 +1,18 @@
+﻿From now on, let's make everything make sense!!! No hacks!!
+x, y -> longitude, latitude
+Latitude forms horizontal rings (x=0 means the equator)
+Monogames default screen space coordinates has 0,0 as the top-left and 800,480 as the bottom-right (you can discover this bias by simply printing the mouse coordinates)
+Since lat/long don't naturally have a positive or negative direction, we'll take inspiration from Google's API:
+	- Because of this, travelling right should increase your longitude, while travelling up should increase your latitude
+
+We'll imagine that our default Blender scene is pointing at 0,0 on the Earth on startup
+The default Blender scene has a camera at (0,-5,0), pointing at (0,0,0)
+	- Up is Z+ (towards the north pole)
+	- Right is X+ (towards east)
+	- Forwards (towards the Earth) is Y+
+
+In Blender (using XYZ Euler rotation), moving right is equivalent to orbiting positively around the Z axis
+	- And moving up is orbiting .... wait isn't it ambiguous??
+
+Try to make sure in function parameters, longitude should come before latitude to make it more obvious it's X, Y (I still have it reversed in a lot of places)
+Amazingly it looks like Monogame has the same handedness as Blender?? Based on our rendering of the BlenderAxis matching

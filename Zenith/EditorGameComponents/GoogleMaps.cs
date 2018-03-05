@@ -21,7 +21,6 @@ namespace Zenith.EditorGameComponents
         public override void Draw(GameTime gameTime)
         {
             var basicEffect3 = MakeThatBasicEffect3();
-            //sphere = SphereBuilder.MakeSphereSeg(GraphicsDevice, 2, 1, 0, 0);
             basicEffect3.TextureEnabled = true;
             foreach (var buffer in googleMaps)
             {
@@ -33,11 +32,7 @@ namespace Zenith.EditorGameComponents
                     GraphicsDevice.SetVertexBuffer(buffer.vertices);
                     GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, buffer.indices.IndexCount / 3);
                 }
-                GraphicsDevice.Clear(
-                    ClearOptions.DepthBuffer,
-                    Microsoft.Xna.Framework.Color.Transparent,
-                    GraphicsDevice.Viewport.MaxDepth,
-                    0);
+                GraphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, GraphicsDevice.Viewport.MaxDepth, 0);
             }
         }
 
@@ -49,9 +44,8 @@ namespace Zenith.EditorGameComponents
         private void AddGoogleMap()
         {
             int googleZoom = (int)camera.cameraZoom; // I guess Google only accepts integer zoom?
-            // TODO: why are all of the images upside down and why did I have to flip the latitude?
-            VertexIndiceBuffer buffer = SphereBuilder.MakeSphereSegLatLong(GraphicsDevice, 2, Math.Pow(0.5, googleZoom), camera.cameraRotY, -camera.cameraRotX + Math.PI / 2);
-            buffer.texture = MapGenerator.GetMap(GraphicsDevice, camera.cameraRotY * 180 / Math.PI, (-camera.cameraRotX + Math.PI / 2) * 180 / Math.PI, googleZoom);
+            VertexIndiceBuffer buffer = SphereBuilder.MakeSphereSegLatLong(GraphicsDevice, 2, Math.Pow(0.5, googleZoom), camera.cameraRotY, camera.cameraRotX);
+            buffer.texture = MapGenerator.GetMap(GraphicsDevice, camera.cameraRotY * 180 / Math.PI, camera.cameraRotX * 180 / Math.PI, googleZoom);
             googleMaps.Add(buffer);
         }
 
@@ -59,7 +53,7 @@ namespace Zenith.EditorGameComponents
         {
             var basicEffect3 = new BasicEffect(GraphicsDevice);
             basicEffect3.LightingEnabled = true;
-            basicEffect3.DirectionalLight0.Direction = new Vector3(1, -1, 0);
+            basicEffect3.DirectionalLight0.Direction = new Vector3(-1, 1, 0);
             basicEffect3.DirectionalLight0.DiffuseColor = new Vector3(1, 1, 1);
             basicEffect3.AmbientLightColor = new Vector3(0.2f, 0.2f, 0.2f);
             camera.ApplyMatrices(basicEffect3);

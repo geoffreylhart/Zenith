@@ -42,18 +42,23 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="EditorGameComponents\BlenderAxis.cs" />
     <Compile Include="EditorGameComponents\CityMarker.cs" />
     <Compile Include="EditorGameComponents\DebugConsole.cs" />
     <Compile Include="EditorGameComponents\EditorCamera.cs" />
     <Compile Include="EditorGameComponents\GoogleMaps.cs" />
     <Compile Include="EditorGameComponents\MultiResMesh.cs" />
     <Compile Include="Game1.cs" />
+    <Compile Include="Helpers\GameComponentHelper.cs" />
     <Compile Include="Helpers\GraphicsDeviceHelper.cs" />
     <Compile Include="Helpers\KeyboardStateHelper.cs" />
     <Compile Include="MapGenerator.cs" />
     <Compile Include="MathHelpers\Line3.cs" />
     <Compile Include="MathHelpers\Mathf.cs" />
+    <Compile Include="MathHelpers\Matrixd.cs" />
+    <Compile Include="MathHelpers\Rayd.cs" />
     <Compile Include="MathHelpers\RayHelper.cs" />
+    <Compile Include="MathHelpers\Vector3d.cs" />
     <Compile Include="MathHelpers\Vector3Helper.cs" />
     <Compile Include="PrimitiveBuilder\CubeBuilder.cs" />
     <Compile Include="PrimitiveBuilder\SphereBuilder.cs" />
@@ -121,6 +126,7 @@
     <None Include="app.manifest" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Documentation\CoordinateSystemCheatSheet.txt" />
     <Content Include="multiRezMapPlan.txt" />
   </ItemGroup>
   <ItemGroup>

@@ -35,7 +35,7 @@ namespace Zenith.EditorGameComponents
             var basicEffect3 = new BasicEffect(GraphicsDevice);
             basicEffect3.Projection = Matrix.CreateOrthographicOffCenter(0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, 0, 1, 1000);
             List<VertexPosition> markerVertices = new List<VertexPosition>();
-            Vector3 v = Vector3Helper.UnitSphere(latitude * Mathf.PI / 180, longitude * Mathf.PI / 180);
+            Vector3 v = Vector3Helper.UnitSphere(longitude * Mathf.PI / 180, latitude * Mathf.PI / 180);
             v = camera.Project(v);
             if (v.Z < 1)
             {
@@ -52,7 +52,9 @@ namespace Zenith.EditorGameComponents
             }
             // city text
             Vector2 measured = font.MeasureString(name);
-            spriteBatch.Begin();
+            // apparently was setting the depthstencialstate to null and it would never get reset
+            // this caused me so much confusion!
+            spriteBatch.Begin(SpriteSortMode.Deferred, null, null, DepthStencilState.Default, null, null, null);
             spriteBatch.DrawString(font, name, new Vector2(v.X + HALF_SIZE * 1.5f, v.Y - measured.Y / 2), Color.White);
             spriteBatch.End();
         }

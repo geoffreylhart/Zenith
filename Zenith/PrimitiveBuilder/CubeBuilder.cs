@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -9,14 +10,22 @@ namespace Zenith.PrimitiveBuilder
         // according to Blender front=-y, back=y, left=-x, right=x, up=z, down=-z
         internal static VertexIndiceBuffer MakeBasicCube(GraphicsDevice graphicsDevice)
         {
+            return MakeBasicCube(graphicsDevice, new Vector3(-1, 1, -1), Vector3.UnitX * 2, -Vector3.UnitY * 2, Vector3.UnitZ * 2); // why does this bug out if we use * 1??
+        }
+
+        internal static VertexIndiceBuffer MakeBasicCube(GraphicsDevice graphicsDevice, Vector3 corner, Vector3 offx, Vector3 offy, Vector3 offz)
+        {
             VertexIndiceBuffer buffer = new VertexIndiceBuffer();
 
             List<VertexPositionNormalTexture> vertices = new List<VertexPositionNormalTexture>();
             List<int> indices = new List<int>();
             for (int i = 0; i < 8; i++)
             {
-                Vector3 position = new Vector3(i < 4 ? -1 : 1, i % 4 < 2 ? -1 : 1, i % 2 < 1 ? -1 : 1);
-                Vector3 normal = new Vector3(true?-1:1, true ? -1 : 1, true ? -1 : 1);
+                Vector3 position = corner;
+                if (i < 4) position += offx;
+                if (i % 4 < 2) position += offy;
+                if (i % 2 < 1) position += offz;
+                Vector3 normal = new Vector3(true ? -1 : 1, true ? -1 : 1, true ? -1 : 1);
                 Vector2 tex = new Vector2(0, 0); // don't care
                 //vertices.Add(new VertexPositionColor(position, Color.Green));
                 vertices.Add(new VertexPositionNormalTexture(position, position, tex));
@@ -70,6 +79,20 @@ namespace Zenith.PrimitiveBuilder
             buffer.indices = new IndexBuffer(graphicsDevice, IndexElementSize.ThirtyTwoBits, indices.Count, BufferUsage.None);
             buffer.indices.SetData(indices.ToArray());
             return buffer;
+        }
+
+        internal static VertexIndiceBuffer MakeBasicBuildingCube(GraphicsDevice graphicsDevice, double lat, double lon)
+        {
+            double radius = 1;
+            double dy = Math.Sin(lat);
+            double dxz = Math.Cos(lat);
+            double dx = Math.Cos(lon) * dxz;
+            double dz = Math.Sin(lon) * dxz;
+
+            // stole this equation
+            Vector3 normal = new Vector3((float)dx, (float)dz, (float)dy); // forgot to switch dy and dz here too
+            Vector3 corner = new Vector3((float)(dx * radius), (float)(dz * radius), (float)(dy * radius));
+            return MakeBasicCube(graphicsDevice, corner, Vector3.UnitX, -Vector3.UnitY, Vector3.UnitZ);
         }
     }
 }

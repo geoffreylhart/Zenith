@@ -11,6 +11,9 @@ namespace Zenith.EditorGameComponents
 {
     public class MultiResMesh : DrawableGameComponent
     {
+        // temporary, not copied from pensacola, but traced
+        Vector3d marker = new Vector3d(-1.52420012889899, -0.531647256354102, 0);
+        //Vector3d marker = new Vector3d(0, 0, 0);
         private EditorCamera camera;
         List<VertexPositionColor> circleLatLong = new List<VertexPositionColor>();
         RenderTarget2D renderTarget;
@@ -23,13 +26,13 @@ namespace Zenith.EditorGameComponents
 
         public override void Initialize()
         {
-           renderTarget = new RenderTarget2D(
-                GraphicsDevice,
-                512,
-                512,
-                false,
-                GraphicsDevice.PresentationParameters.BackBufferFormat,
-                DepthFormat.Depth24);
+            renderTarget = new RenderTarget2D(
+                 GraphicsDevice,
+                 512,
+                 512,
+                 false,
+                 GraphicsDevice.PresentationParameters.BackBufferFormat,
+                 DepthFormat.Depth24);
         }
 
         VertexIndiceBuffer sphere;
@@ -38,7 +41,7 @@ namespace Zenith.EditorGameComponents
             var basicEffect3 = MakeThatBasicEffect3();
             basicEffect3.TextureEnabled = true;
             Texture2D renderToTexture = GetTexture();
-            sphere = SphereBuilder.MakeSphereSeg(GraphicsDevice, 2, GetZoomPortion(), -camera.cameraRotY, -camera.cameraRotX + Math.PI / 2);
+            sphere = SphereBuilder.MakeSphereSeg(GraphicsDevice, 2, GetZoomPortion(), camera.cameraRotY, camera.cameraRotX);
             basicEffect3.Texture = renderToTexture;
             basicEffect3.Alpha = (float)traceAlpha;
             foreach (EffectPass pass in basicEffect3.CurrentTechnique.Passes)
@@ -47,6 +50,17 @@ namespace Zenith.EditorGameComponents
                 GraphicsDevice.Indices = sphere.indices;
                 GraphicsDevice.SetVertexBuffer(sphere.vertices);
                 GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, sphere.indices.IndexCount / 3);
+            }
+            var basicEffect2 = MakeThatBasicEffect3();
+            foreach (var building in buildings)
+            {
+                foreach (EffectPass pass in basicEffect2.CurrentTechnique.Passes)
+                {
+                    pass.Apply();
+                    GraphicsDevice.Indices = building.indices;
+                    GraphicsDevice.SetVertexBuffer(building.vertices);
+                    GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, building.indices.IndexCount / 3);
+                }
             }
         }
 
@@ -59,32 +73,42 @@ namespace Zenith.EditorGameComponents
         public override void Update(GameTime gameTime)
         {
             if (Mouse.GetState().LeftButton == ButtonState.Pressed) MakeThatCircle(8, 10, MakeThatBasicEffect3());
+            if (Mouse.GetState().WasRightPressed()) MakeABuilding();
             Keyboard.GetState().AffectNumber(ref traceAlpha, Keys.OemMinus, Keys.OemPlus, 0.01, 0, 1);
+        }
+
+        List<VertexIndiceBuffer> buildings = new List<VertexIndiceBuffer>();
+        private void MakeABuilding()
+        {
+            Vector3d buildingCenter = camera.GetLatLongOfCoord2(Mouse.GetState().X, Mouse.GetState().Y);
+            //if (buildingCenter != null) buildings.Add(CubeBuilder.MakeBasicBuildingCube(GraphicsDevice, buildingCenter.X, buildingCenter.Y));
+            buildings.Add(CubeBuilder.MakeBasicCube(GraphicsDevice));
         }
 
         private void MakeThatCircle(int circRez, double circR, BasicEffect basicEffect3)
         {
+            circR = Math.Pow(0.5, camera.cameraZoom) / 4;
             Vector2 mouseVector = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
-            Ray mouseRay = RayHelper.CastFromCamera(GraphicsDevice, mouseVector + new Vector2((float)circR, 0), basicEffect3.Projection, basicEffect3.View, basicEffect3.World);
-            Vector3? circleStart = mouseRay.IntersectionSphere(new BoundingSphere(new Vector3(0, 0, 0), 1)); // angle 0
-            if (!circleStart.HasValue) return;
+            //Vector3d circleStart = camera.GetLatLongOfCoord(mouseVector + new Vector2((float)circR, 0));
+            Vector3d circleStart = camera.GetLatLongOfCoord(new Vector2(Mouse.GetState().X, Mouse.GetState().Y));
+            // ((Game1)this.Game).debug.DebugSet(ToLatLong(circleStart));
+            if (circleStart == null) return;
             List<VertexPositionColor> tempLatLong = new List<VertexPositionColor>();
             // 3d code, temporary
             // 2d code
-            for (int i = 0; i < circRez; i++)
+            for (int i = 1; i < circRez; i++)
             {
                 double angle1 = Math.PI * 2 / circRez * i;
                 double angle2 = Math.PI * 2 / circRez * (i + 1);
-                Vector2 off1 = mouseVector + new Vector2((float)(Math.Cos(angle1) * circR), (float)(Math.Sin(angle1) * circR));
-                Vector2 off2 = mouseVector + new Vector2((float)(Math.Cos(angle2) * circR), (float)(Math.Sin(angle2) * circR));
-                Ray angle1Ray1 = RayHelper.CastFromCamera(GraphicsDevice, off1, basicEffect3.Projection, basicEffect3.View, basicEffect3.World);
-                Ray angle1Ray2 = RayHelper.CastFromCamera(GraphicsDevice, off2, basicEffect3.Projection, basicEffect3.View, basicEffect3.World);
-                Vector3? onSphere1 = angle1Ray1.IntersectionSphere(new BoundingSphere(new Vector3(0, 0, 0), 1));
-                Vector3? onSphere2 = angle1Ray2.IntersectionSphere(new BoundingSphere(new Vector3(0, 0, 0), 1));
-                if (!onSphere1.HasValue || !onSphere2.HasValue) return;
-                tempLatLong.Add(new VertexPositionColor(ToLatLong(circleStart.Value), Color.Green));
-                tempLatLong.Add(new VertexPositionColor(ToLatLong(onSphere1.Value), Color.Green));
-                tempLatLong.Add(new VertexPositionColor(ToLatLong(onSphere2.Value), Color.Green));
+                //Vector3d off1 = camera.GetLatLongOfCoord(mouseVector + new Vector2((float)(Math.Cos(angle1) * circR), (float)(Math.Sin(angle1) * circR)));
+                //Vector3d off2 = camera.GetLatLongOfCoord(mouseVector + new Vector2((float)(Math.Cos(angle2) * circR), (float)(Math.Sin(angle2) * circR)));
+                //if (off1 == null || off2 == null) return;
+                //tempLatLong.Add(new VertexPositionColor(circleStart.ToVector3(), Color.Green));
+                //tempLatLong.Add(new VertexPositionColor(off1.ToVector3(), Color.Green));
+                //tempLatLong.Add(new VertexPositionColor(off2.ToVector3(), Color.Green));
+                tempLatLong.Add(new VertexPositionColor((circleStart + new Vector3d(circR, 0, 0)).ToVector3(), Color.Green));
+                tempLatLong.Add(new VertexPositionColor((circleStart + new Vector3d(Math.Cos(angle1) * circR, Math.Sin(angle1) * circR, 0)).ToVector3(), Color.Green));
+                tempLatLong.Add(new VertexPositionColor((circleStart + new Vector3d(Math.Cos(angle2) * circR, Math.Sin(angle2) * circR, 0)).ToVector3(), Color.Green));
             }
             circleLatLong.AddRange(tempLatLong);
         }
@@ -100,10 +124,11 @@ namespace Zenith.EditorGameComponents
             GraphicsDevice.Clear(Color.CornflowerBlue);
             BasicEffect bf = new BasicEffect(GraphicsDevice);
             bf.World = Matrix.Identity;
+            //bf.World *= Matrix.CreateTranslation((float)marker.X, (float)marker.Y, (float)marker.Z);
             bf.View = Matrix.CreateLookAt(new Vector3(0.0f, 0.0f, 1.0f), Vector3.Zero, Vector3.Up);
 
-            double lat = -camera.cameraRotY; // same as for when generating the sphere
-            double longi = -camera.cameraRotX + Math.PI / 2; // same as for when generating the sohere etc
+            double lat = camera.cameraRotY; // same as for when generating the sphere
+            double longi = camera.cameraRotX; // same as for when generating the sohere etc
             double portion = GetZoomPortion(); // same as for when generating the sphere
             // literally copy-pasted
             double minLat = Math.Max(lat - portion * Math.PI, -Math.PI / 2);
@@ -132,7 +157,7 @@ namespace Zenith.EditorGameComponents
         {
             var basicEffect3 = new BasicEffect(GraphicsDevice);
             basicEffect3.LightingEnabled = true;
-            basicEffect3.DirectionalLight0.Direction = new Vector3(1, -1, 0);
+            basicEffect3.DirectionalLight0.Direction = new Vector3(-1, 1, 0);
             basicEffect3.DirectionalLight0.DiffuseColor = new Vector3(1, 1, 1);
             basicEffect3.AmbientLightColor = new Vector3(0.2f, 0.2f, 0.2f);
             camera.ApplyMatrices(basicEffect3);
@@ -149,11 +174,10 @@ namespace Zenith.EditorGameComponents
         {
             return Math.Log(Math.Tan(lat / 2 + Math.PI / 4)) / (Math.PI * 2) + 0.5;
         }
-
-        // latitude should be y, just makes sense, right?
-        private Vector3 ToLatLong(Vector3 v)
+        
+        private Vector3d ToLatLong(Vector3d v)
         {
-            return new Vector3((float)Math.Atan2(v.Y, v.X), (float)Math.Asin(v.Z), 0);
+            return new Vector3d(Math.Atan2(v.X, -v.Y), Math.Asin(v.Z), 0);
         }
     }
 }

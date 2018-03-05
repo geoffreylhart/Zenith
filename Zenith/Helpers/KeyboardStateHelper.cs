@@ -4,13 +4,30 @@ using Microsoft.Xna.Framework.Input;
 
 namespace Zenith.Helpers
 {
-    public static class KeyboardStateHelper
+    public static class KeyboardStateHelper // also mouse, apparently
     {
         private static Dictionary<Keys, bool> oldStates = new Dictionary<Keys, bool>();
+        private static bool oldLeft = false;
+        private static bool oldRight = false;
+
         internal static bool WasKeyPressed(this KeyboardState state, Keys key)
         {
             bool answer = state.IsKeyDown(key) && oldStates[key];
             oldStates[key] = state.IsKeyDown(key);
+            return answer;
+        }
+
+        internal static bool WasLeftPressed(this MouseState state)
+        {
+            bool answer = state.LeftButton == ButtonState.Pressed && !oldLeft;
+            oldLeft = state.LeftButton == ButtonState.Pressed;
+            return answer;
+        }
+
+        internal static bool WasRightPressed(this MouseState state)
+        {
+            bool answer = state.RightButton == ButtonState.Pressed && !oldRight;
+            oldRight = state.RightButton == ButtonState.Pressed;
             return answer;
         }
 
