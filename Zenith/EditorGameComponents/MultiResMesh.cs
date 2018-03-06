@@ -34,14 +34,13 @@ namespace Zenith.EditorGameComponents
                  GraphicsDevice.PresentationParameters.BackBufferFormat,
                  DepthFormat.Depth24);
         }
-
-        VertexIndiceBuffer sphere;
+        
         public override void Draw(GameTime gameTime)
         {
             var basicEffect3 = MakeThatBasicEffect3();
             basicEffect3.TextureEnabled = true;
-            Texture2D renderToTexture = GetTexture();
-            sphere = SphereBuilder.MakeSphereSeg(GraphicsDevice, 2, GetZoomPortion(), camera.cameraRotY, camera.cameraRotX);
+            VertexIndiceBuffer sphere = SphereBuilder.MakeSphereSeg(GraphicsDevice, 2, GetZoomPortion(), camera.cameraRotY, camera.cameraRotX);
+            Texture2D renderToTexture = GetTexture(sphere);
             basicEffect3.Texture = renderToTexture;
             basicEffect3.Alpha = (float)traceAlpha;
             foreach (EffectPass pass in basicEffect3.CurrentTechnique.Passes)
@@ -51,6 +50,8 @@ namespace Zenith.EditorGameComponents
                 GraphicsDevice.SetVertexBuffer(sphere.vertices);
                 GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, sphere.indices.IndexCount / 3);
             }
+            sphere.vertices.Dispose();
+            sphere.indices.Dispose();
             var basicEffect2 = MakeThatBasicEffect3();
             foreach (var building in buildings)
             {
@@ -114,7 +115,7 @@ namespace Zenith.EditorGameComponents
             circleLatLong.AddRange(tempLatLong);
         }
 
-        private Texture2D GetTexture()
+        private Texture2D GetTexture(VertexIndiceBuffer sphere)
         {
             // Set the render target
             GraphicsDevice.SetRenderTarget(renderTarget);
