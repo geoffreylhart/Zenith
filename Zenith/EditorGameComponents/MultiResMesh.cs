@@ -80,9 +80,10 @@ namespace Zenith.EditorGameComponents
         List<VertexIndiceBuffer> buildings = new List<VertexIndiceBuffer>();
         private void MakeABuilding()
         {
-            Vector3d buildingCenter = camera.GetLatLongOfCoord2(Mouse.GetState().X, Mouse.GetState().Y);
-            //if (buildingCenter != null) buildings.Add(CubeBuilder.MakeBasicBuildingCube(GraphicsDevice, buildingCenter.X, buildingCenter.Y));
-            buildings.Add(CubeBuilder.MakeBasicCube(GraphicsDevice));
+            Rayd ray = camera.CastFromCamera(new Vector2(Mouse.GetState().X, Mouse.GetState().Y));
+            Vector3d intersection = ray.IntersectionSphere(new Vector3d(0, 0, 0), 1); // angle 0
+            if (intersection != null) buildings.Add(CubeBuilder.MakeBasicBuildingCube(GraphicsDevice, intersection.ToVector3()));
+            //buildings.Add(CubeBuilder.MakeBasicCube(GraphicsDevice));
         }
 
         private void MakeThatCircle(int circRez, double circR, BasicEffect basicEffect3)

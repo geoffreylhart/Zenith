@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Zenith.MathHelpers;
 
 namespace Zenith.PrimitiveBuilder
 {
@@ -10,69 +11,22 @@ namespace Zenith.PrimitiveBuilder
         // according to Blender front=-y, back=y, left=-x, right=x, up=z, down=-z
         internal static VertexIndiceBuffer MakeBasicCube(GraphicsDevice graphicsDevice)
         {
-            return MakeBasicCube(graphicsDevice, new Vector3(-1, 1, -1), Vector3.UnitX * 2, -Vector3.UnitY * 2, Vector3.UnitZ * 2); // why does this bug out if we use * 1??
+            return MakeBasicCube(graphicsDevice, new Vector3(-1, -1, -1), Vector3.UnitX * 2, Vector3.UnitY * 2, Vector3.UnitZ * 2); // why does this bug out if we use * 1??
         }
 
         internal static VertexIndiceBuffer MakeBasicCube(GraphicsDevice graphicsDevice, Vector3 corner, Vector3 offx, Vector3 offy, Vector3 offz)
         {
             VertexIndiceBuffer buffer = new VertexIndiceBuffer();
-
             List<VertexPositionNormalTexture> vertices = new List<VertexPositionNormalTexture>();
             List<int> indices = new List<int>();
-            for (int i = 0; i < 8; i++)
-            {
-                Vector3 position = corner;
-                if (i < 4) position += offx;
-                if (i % 4 < 2) position += offy;
-                if (i % 2 < 1) position += offz;
-                Vector3 normal = new Vector3(true ? -1 : 1, true ? -1 : 1, true ? -1 : 1);
-                Vector2 tex = new Vector2(0, 0); // don't care
-                //vertices.Add(new VertexPositionColor(position, Color.Green));
-                vertices.Add(new VertexPositionNormalTexture(position, position, tex));
-            }
-            // front face, triangles diagonal goes from bottom left to top right, triangles are formed by going clockwise to make them visible
-            // all the other squares triangles share rotational symmetry (sort of) with this first one (basically copy-paste the first square and then rotate it around the origin purely with the x-axis or z-axis)
-            indices.Add(0);
-            indices.Add(1);
-            indices.Add(5);
-            indices.Add(0);
-            indices.Add(5);
-            indices.Add(4);
-            // back face
-            indices.Add(3);
-            indices.Add(2);
-            indices.Add(6);
-            indices.Add(3);
-            indices.Add(6);
-            indices.Add(7);
-            // right face
-            indices.Add(4);
-            indices.Add(5);
-            indices.Add(7);
-            indices.Add(4);
-            indices.Add(7);
-            indices.Add(6);
-            // left face
-            indices.Add(2);
-            indices.Add(3);
-            indices.Add(1);
-            indices.Add(2);
-            indices.Add(1);
-            indices.Add(0);
-            // top face
-            indices.Add(1);
-            indices.Add(3);
-            indices.Add(7);
-            indices.Add(1);
-            indices.Add(7);
-            indices.Add(5);
-            // bottom face
-            indices.Add(2);
-            indices.Add(0);
-            indices.Add(4);
-            indices.Add(2);
-            indices.Add(4);
-            indices.Add(6);
+            Vector3 corner2 = corner + offx + offy + offz;
+            AddQuad(vertices, indices, corner, offz, offx); // front
+            AddQuad(vertices, indices, corner, offy, offz); // left
+            AddQuad(vertices, indices, corner, offx, offy); // bottom
+            // clearly reverse the direction and rotationness to do the opposite corner
+            AddQuad(vertices, indices, corner2, -offx, -offz); // back
+            AddQuad(vertices, indices, corner2, -offz, -offy); // right
+            AddQuad(vertices, indices, corner2, -offy, -offx); // top
             // TODO: change back to BufferUsage.WriteOnly if applicable
             buffer.vertices = new VertexBuffer(graphicsDevice, VertexPositionNormalTexture.VertexDeclaration, vertices.Count, BufferUsage.None);
             buffer.vertices.SetData(vertices.ToArray());
@@ -81,18 +35,35 @@ namespace Zenith.PrimitiveBuilder
             return buffer;
         }
 
-        internal static VertexIndiceBuffer MakeBasicBuildingCube(GraphicsDevice graphicsDevice, double lat, double lon)
+        // unit1 must go clockwise to reach unit2 to make the quad visible
+        private static void AddQuad(List<VertexPositionNormalTexture> vertices, List<int> indices, Vector3 corner, Vector3 unit1, Vector3 unit2)
         {
-            double radius = 1;
-            double dy = Math.Sin(lat);
-            double dxz = Math.Cos(lat);
-            double dx = Math.Cos(lon) * dxz;
-            double dz = Math.Sin(lon) * dxz;
+            Vector2 tex = new Vector2(0, 0); // don't care
+            Vector3 normal = Vector3.Cross(unit2, unit1);
+            normal.Normalize();
+            indices.Add(vertices.Count);
+            indices.Add(vertices.Count + 1);
+            indices.Add(vertices.Count + 3);
+            indices.Add(vertices.Count);
+            indices.Add(vertices.Count + 3);
+            indices.Add(vertices.Count + 2);
+            vertices.Add(new VertexPositionNormalTexture(corner, normal, tex));
+            vertices.Add(new VertexPositionNormalTexture(corner + unit1, normal, tex));
+            vertices.Add(new VertexPositionNormalTexture(corner + unit2, normal, tex));
+            vertices.Add(new VertexPositionNormalTexture(corner + unit1 + unit2, normal, tex));
+        }
 
-            // stole this equation
-            Vector3 normal = new Vector3((float)dx, (float)dz, (float)dy); // forgot to switch dy and dz here too
-            Vector3 corner = new Vector3((float)(dx * radius), (float)(dz * radius), (float)(dy * radius));
-            return MakeBasicCube(graphicsDevice, corner, Vector3.UnitX, -Vector3.UnitY, Vector3.UnitZ);
+        internal static VertexIndiceBuffer MakeBasicBuildingCube(GraphicsDevice graphicsDevice, Vector3 corner)
+        {
+            Vector3 up = corner;
+            up.Normalize(); // this heavily assumes the corner is on the surface of the globe
+            Vector3 right = Vector3.Cross(Vector3.UnitZ, up); // cross product points towards you if a->b is counter-clockwise
+            right.Normalize();
+            Vector3 back = Vector3.Cross(up, right);
+            back.Normalize();
+            corner -= right / 20f;
+            corner -= back / 20f;
+            return MakeBasicCube(graphicsDevice, corner, right / 10f, back / 10f, up / 10f);
         }
     }
 }

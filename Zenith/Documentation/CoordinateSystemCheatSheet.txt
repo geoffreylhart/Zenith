@@ -16,3 +16,5 @@ In Blender (using XYZ Euler rotation), moving right is equivalent to orbiting po
 
 Try to make sure in function parameters, longitude should come before latitude to make it more obvious it's X, Y (I still have it reversed in a lot of places)
 Amazingly it looks like Monogame has the same handedness as Blender?? Based on our rendering of the BlenderAxis matching
+
+ACCORDING TO MY OWN COMMENTS, you have to draw triangles clockwise to make them visible (counter-clockwise triangles are culled (it's a default setting somewhere))

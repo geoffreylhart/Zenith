@@ -56,6 +56,12 @@ namespace Zenith.EditorGameComponents
             if (intersection == null) return null;
             return ToLatLong(intersection);
         }
+
+        internal Rayd CastFromCamera(Vector2 mouseVector)
+        {
+            return Rayd.CastFromCamera(Game.GraphicsDevice, mouseVector, projection, view, world);
+        }
+
         // TODO: probably keep all of the double precision classes, but discard stuff I've written myself
 
         // more accurate version

@@ -24,7 +24,7 @@ namespace Zenith
             Components.Add(new MultiResMesh(this, camera));
             Components.Add(new CityMarker(this, camera, "Pensacola", 30.4668536, -87.3294527));
             Components.Add(new CityMarker(this, camera, "0, 0", 0, 0));
-            //Components.Add(new BlenderAxis(this, camera));
+            // Components.Add(new BlenderAxis(this, camera));
             Components.Add(debug = new DebugConsole(this));
             // TODO: just change the ordering to fix this? apparantly setting a render target clears the backbuffer due to Xbox stuff
             GraphicsDevice.PresentationParameters.RenderTargetUsage = RenderTargetUsage.PreserveContents;
@@ -43,7 +43,6 @@ namespace Zenith
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.Black);
-            // default monogame screen space, top-left corner is 0,0 and bottom right is width/height (in pixels)
             base.Draw(gameTime);
         }
     }
