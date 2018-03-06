@@ -92,7 +92,7 @@ namespace Zenith.EditorGameComponents
             circR = Math.Pow(0.5, camera.cameraZoom) / 4;
             Vector2 mouseVector = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
             //Vector3d circleStart = camera.GetLatLongOfCoord(mouseVector + new Vector2((float)circR, 0));
-            Vector3d circleStart = camera.GetLatLongOfCoord(new Vector2(Mouse.GetState().X, Mouse.GetState().Y));
+            Vector3d circleStart = camera.GetLatLongOfCoord2(Mouse.GetState().X, Mouse.GetState().Y);
             // ((Game1)this.Game).debug.DebugSet(ToLatLong(circleStart));
             if (circleStart == null) return;
             List<VertexPositionColor> tempLatLong = new List<VertexPositionColor>();

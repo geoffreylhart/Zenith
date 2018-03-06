@@ -55,15 +55,17 @@ namespace Zenith.PrimitiveBuilder
 
         internal static VertexIndiceBuffer MakeBasicBuildingCube(GraphicsDevice graphicsDevice, Vector3 corner)
         {
+            float size = 0.00000478388328855618575244743469043f; // 100f if the radius of earth is 1
+            //size = 0.001f;
             Vector3 up = corner;
             up.Normalize(); // this heavily assumes the corner is on the surface of the globe
             Vector3 right = Vector3.Cross(Vector3.UnitZ, up); // cross product points towards you if a->b is counter-clockwise
             right.Normalize();
             Vector3 back = Vector3.Cross(up, right);
             back.Normalize();
-            corner -= right / 20f;
-            corner -= back / 20f;
-            return MakeBasicCube(graphicsDevice, corner, right / 10f, back / 10f, up / 10f);
+            corner -= right * size / 2;
+            corner -= back * size / 2;
+            return MakeBasicCube(graphicsDevice, corner, right * size, back * size, up * size);
         }
     }
 }

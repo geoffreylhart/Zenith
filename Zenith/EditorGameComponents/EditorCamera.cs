@@ -22,14 +22,15 @@ namespace Zenith.EditorGameComponents
 
         public override void Update(GameTime gameTime)
         {
-            this.GetDebugConsole().DebugSet(cameraRotX + ":" + cameraRotY);
+            this.GetDebugConsole().DebugSet(cameraRotX + ":" + cameraRotY + ":" + cameraZoom);
             double cameraMoveAmount = 0.05 * Math.Pow(0.5, cameraZoom);
             Keyboard.GetState().AffectNumber(ref cameraRotX, Keys.Left, Keys.Right, Keys.A, Keys.D, cameraMoveAmount);
             Keyboard.GetState().AffectNumber(ref cameraRotY, Keys.Down, Keys.Up, Keys.S, Keys.W, cameraMoveAmount);
             Keyboard.GetState().AffectNumber(ref cameraZoom, Keys.Space, Keys.LeftShift, 0.01);
             world = Matrix.CreateRotationZ(-(float)cameraRotX) * Matrix.CreateRotationX((float)cameraRotY); // eh.... think hard on this later
-            view = Matrix.CreateLookAt(new Vector3(0, -20, 0), new Vector3(0, 0, 0), Vector3.UnitZ);
-            projection = Matrix.CreatePerspectiveFieldOfView((float)getFOV(), 800f / 480f, 0.1f, 100);
+            float distance = (float)(9 * Math.Pow(0.5, cameraZoom));
+            view = Matrix.CreateLookAt(new Vector3(0, -1 - distance, 0), new Vector3(0, 0, 0), Vector3.UnitZ);
+            projection = Matrix.CreatePerspectiveFieldOfView(Mathf.PI / 2, 800f / 480f, distance * 0.1f, distance * 100);
         }
 
         internal void ApplyMatrices(BasicEffect basicEffect)
@@ -59,7 +60,11 @@ namespace Zenith.EditorGameComponents
 
         internal Rayd CastFromCamera(Vector2 mouseVector)
         {
-            return Rayd.CastFromCamera(Game.GraphicsDevice, mouseVector, projection, view, world);
+            Matrixd worldd = Matrixd.CreateRotationZ(-cameraRotX) * Matrixd.CreateRotationX(cameraRotY);
+            float distance = (float)(9 * Math.Pow(0.5, cameraZoom));
+            Matrixd viewd = Matrixd.CreateLookAt(new Vector3d(0, -1 - distance, 0), new Vector3d(0, 0, 0), new Vector3d(0, 0, 1));
+            Matrixd projectiond = Matrixd.CreatePerspectiveFieldOfView(Mathf.PI / 2, 800f / 480f, distance * 0.1f, distance * 100);
+            return Rayd.CastFromCamera2(Game.GraphicsDevice, mouseVector.X, mouseVector.Y, projectiond, viewd, worldd);
         }
 
         // TODO: probably keep all of the double precision classes, but discard stuff I've written myself
@@ -68,8 +73,9 @@ namespace Zenith.EditorGameComponents
         internal Vector3d GetLatLongOfCoord2(double x, double y)
         {
             Matrixd worldd = Matrixd.CreateRotationZ(-cameraRotX) * Matrixd.CreateRotationX(cameraRotY);
-            Matrixd viewd = Matrixd.CreateLookAt(new Vector3d(0, -20, 0), new Vector3d(0, 0, 0), new Vector3d(0,0,1));
-            Matrixd projectiond = Matrixd.CreatePerspectiveFieldOfView(getFOV(), 800f / 480f, 0.1f, 100);
+            float distance = (float)(9 * Math.Pow(0.5, cameraZoom));
+            Matrixd viewd = Matrixd.CreateLookAt(new Vector3d(0, -1 - distance, 0), new Vector3d(0, 0, 0), new Vector3d(0, 0, 1));
+            Matrixd projectiond = Matrixd.CreatePerspectiveFieldOfView(Mathf.PI / 2, 800f / 480f, distance * 0.1f, distance * 100);
             Rayd ray = Rayd.CastFromCamera2(Game.GraphicsDevice, x, y, projectiond, viewd, worldd);
             Vector3d intersection = ray.IntersectionSphere(new Vector3d(0, 0, 0), 1);
             if (intersection == null) return null;
@@ -80,13 +86,13 @@ namespace Zenith.EditorGameComponents
         internal Vector3d GetLatLongOfCoord3(double x, double y)
         {
             Matrixd worldd = Matrixd.Identity();
-            Matrixd viewd = new Matrixd(-1,0,0,0,0,0,-2,0,0,-1,0,0,0,0,-20,1);
+            Matrixd viewd = new Matrixd(-1, 0, 0, 0, 0, 0, -2, 0, 0, -1, 0, 0, 0, 0, -20, 1);
             double num = 1f / Math.Tan(getFOV() * 0.5);
-            double num9 = num * 480/800;
+            double num9 = num * 480 / 800;
             Matrixd projectiond = new Matrixd(num9, 0, 0, 0, 0, num, 0, 0, 0, 0, -100 / 99.9, -1, 0, 0, -10 / 99.9, 0);
             //Vector3d unprojected = Matrixd.Unproject(Game.GraphicsDevice.Viewport, new Vector3d(x, y, 0), projectiond, viewd, worldd);
             Matrixd matrix = Matrixd.Invert(Matrixd.Multiply(Matrixd.Multiply(worldd, viewd), projectiond));
-            Vector3d source2 = new Vector3d(x/400-1, 1-y/480, 0);
+            Vector3d source2 = new Vector3d(x / 400 - 1, 1 - y / 480, 0);
             double a = (((source2.X * matrix.M14) + (source2.Y * matrix.M24)) + (source2.Z * matrix.M34)) + matrix.M44;
             Vector3d unprojected = Vector3d.Transform(source2, matrix) / a;
             Vector3d unprojected2 = Matrixd.Unproject(Game.GraphicsDevice.Viewport, new Vector3d(x, y, 1), projectiond, viewd, worldd);
@@ -94,7 +100,7 @@ namespace Zenith.EditorGameComponents
             //Rayd ray = Rayd.CastFromCamera2(Game.GraphicsDevice, x, y, projectiond, viewd, worldd);
             Vector3d intersection = ray.IntersectionSphere(new Vector3d(0, 0, 0), 1); // angle 0
             if (intersection == null) return null;
-            return ToLatLong(intersection)+new Vector3d(-cameraRotX, -cameraRotY,0);
+            return ToLatLong(intersection) + new Vector3d(-cameraRotX, -cameraRotY, 0);
         }
 
         private static bool WithinEpsilon(double a, double b)
@@ -146,7 +152,7 @@ namespace Zenith.EditorGameComponents
         //    double y = Math.Sin(angle) * x2;
         //    return Math.Asin(y); // bleh, why times 1.85?
         //}
-        
+
         private Vector3d ToLatLong(Vector3d v)
         {
             return new Vector3d(Math.Atan2(v.X, -v.Y), Math.Asin(v.Z), 0);

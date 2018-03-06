@@ -20,8 +20,8 @@ namespace Zenith.PrimitiveBuilder
             double maxLat = ToLat(ToY(lat) + portion / 2);
             double minLong = longi - Math.PI * portion;
             double maxLong = longi + Math.PI * portion;
-            int verticalSegments = Math.Max((int)((maxLat - minLat) * 5), 1);
-            int horizontalSegments = Math.Max((int)((maxLong - minLong) * 5), 1);
+            int verticalSegments = Math.Max((int)((maxLat - minLat) * 10), 1);
+            int horizontalSegments = Math.Max((int)((maxLong - minLong) * 10), 1);
             for (int i = 0; i <= verticalSegments; i++)
             {
                 double latitude = (minLat + (maxLat - minLat) * i / (double)verticalSegments);
