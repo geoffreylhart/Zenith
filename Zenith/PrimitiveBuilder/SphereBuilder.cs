@@ -12,6 +12,7 @@ namespace Zenith.PrimitiveBuilder
         // remember, this is designed to work with google map projections - it's not what we want to use for our map in the end
         internal static VertexIndiceBuffer MakeSphereSegLatLong(GraphicsDevice graphicsDevice, double diameter, double portion, double lat, double longi) // at 0,0, we expect the coordinates (0,-1,0)
         {
+            LongLatHelper.NormalizeLongLatRadians(ref longi, ref lat);
             VertexIndiceBuffer buffer = new VertexIndiceBuffer();
             List<VertexPositionNormalTexture> vertices = new List<VertexPositionNormalTexture>();
 
@@ -80,6 +81,7 @@ namespace Zenith.PrimitiveBuilder
         // now let's make the sphere make sense for working with - don't call ToY or ToLat ever, and rings will be evenly spaced (they already were)
         internal static VertexIndiceBuffer MakeSphereSeg(GraphicsDevice graphicsDevice, double diameter, double portion, double lat, double longi)
         {
+            LongLatHelper.NormalizeLongLatRadians(ref longi, ref lat);
             VertexIndiceBuffer buffer = new VertexIndiceBuffer();
             List<VertexPositionNormalTexture> vertices = new List<VertexPositionNormalTexture>();
 

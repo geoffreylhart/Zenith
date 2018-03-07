@@ -45,7 +45,7 @@ namespace Zenith.EditorGameComponents
         {
             int googleZoom = (int)camera.cameraZoom; // I guess Google only accepts integer zoom?
             VertexIndiceBuffer buffer = SphereBuilder.MakeSphereSegLatLong(GraphicsDevice, 2, Math.Pow(0.5, googleZoom), camera.cameraRotY, camera.cameraRotX);
-            buffer.texture = MapGenerator.GetMap(GraphicsDevice, camera.cameraRotY * 180 / Math.PI, camera.cameraRotX * 180 / Math.PI, googleZoom);
+            buffer.texture = MapGenerator.GetMap(GraphicsDevice, camera.cameraRotX * 180 / Math.PI, camera.cameraRotY * 180 / Math.PI, googleZoom);
             googleMaps.Add(buffer);
         }
 

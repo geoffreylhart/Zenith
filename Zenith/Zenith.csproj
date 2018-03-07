@@ -54,6 +54,7 @@
     <Compile Include="Helpers\KeyboardStateHelper.cs" />
     <Compile Include="MapGenerator.cs" />
     <Compile Include="MathHelpers\Line3.cs" />
+    <Compile Include="MathHelpers\LongLatHelper.cs" />
     <Compile Include="MathHelpers\Mathf.cs" />
     <Compile Include="MathHelpers\Matrixd.cs" />
     <Compile Include="MathHelpers\Rayd.cs" />
@@ -127,7 +128,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Documentation\CoordinateSystemCheatSheet.txt" />
-    <Content Include="multiRezMapPlan.txt" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="GameComponents\" />
