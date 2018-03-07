@@ -50,6 +50,7 @@ namespace Zenith.EditorGameComponents
             return Game.GraphicsDevice.Viewport.Unproject(v, projection, view, world);
         }
 
+        // yup, it returns lat/long only in the range you'd expect
         internal Vector3d GetLatLongOfCoord(Vector2 mouseVector)
         {
             Rayd ray = Rayd.CastFromCamera(Game.GraphicsDevice, mouseVector, projection, view, world);
