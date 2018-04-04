@@ -42,6 +42,8 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="EditableMesh.cs" />
+    <Compile Include="EditableMesh2.cs" />
     <Compile Include="EditorGameComponents\BlenderAxis.cs" />
     <Compile Include="EditorGameComponents\CityMarker.cs" />
     <Compile Include="EditorGameComponents\DebugConsole.cs" />
@@ -52,6 +54,7 @@
     <Compile Include="Helpers\GameComponentHelper.cs" />
     <Compile Include="Helpers\GraphicsDeviceHelper.cs" />
     <Compile Include="Helpers\KeyboardStateHelper.cs" />
+    <Compile Include="LibraryWrappers\Clipper.cs" />
     <Compile Include="MapGenerator.cs" />
     <Compile Include="MathHelpers\Line3.cs" />
     <Compile Include="MathHelpers\LongLatHelper.cs" />
@@ -128,6 +131,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Documentation\CoordinateSystemCheatSheet.txt" />
+    <Content Include="Documentation\intersection.png" />
+    <Content Include="Documentation\intersectionalgorithm.txt" />
+    <Content Include="Documentation\LibraryInfo.txt" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="GameComponents\" />

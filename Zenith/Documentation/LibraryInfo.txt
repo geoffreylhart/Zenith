@@ -1,0 +1,3 @@
+﻿Clipper using Vatti Algorithm:
+	- https://en.wikipedia.org/wiki/Vatti_clipping_algorithm
+	- https://sourceforge.net/projects/polyclipping/files/
