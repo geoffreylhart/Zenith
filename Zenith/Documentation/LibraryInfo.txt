@@ -4,3 +4,4 @@
 
 Triangulation implemented myself for some fudging reason based on a random pdf:
 	- http://www.cs.uu.nl/docs/vakken/ga/slides3.pdf
+	- Nevermind, let's steal https://github.com/speps/LibTessDotNet

@@ -55,6 +55,14 @@
     <Compile Include="Helpers\GraphicsDeviceHelper.cs" />
     <Compile Include="Helpers\KeyboardStateHelper.cs" />
     <Compile Include="LibraryWrappers\Clipper.cs" />
+    <Compile Include="LibraryWrappers\Tesselate\Dict.cs" />
+    <Compile Include="LibraryWrappers\Tesselate\Geom.cs" />
+    <Compile Include="LibraryWrappers\Tesselate\Mesh.cs" />
+    <Compile Include="LibraryWrappers\Tesselate\MeshUtils.cs" />
+    <Compile Include="LibraryWrappers\Tesselate\PriorityHeap.cs" />
+    <Compile Include="LibraryWrappers\Tesselate\PriorityQueue.cs" />
+    <Compile Include="LibraryWrappers\Tesselate\Sweep.cs" />
+    <Compile Include="LibraryWrappers\Tesselate\Tess.cs" />
     <Compile Include="MapGenerator.cs" />
     <Compile Include="MathHelpers\Line3.cs" />
     <Compile Include="MathHelpers\LongLatHelper.cs" />
