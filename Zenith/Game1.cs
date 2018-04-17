@@ -12,6 +12,11 @@ namespace Zenith
         public Game1()
         {
             GraphicsDeviceManager graphics = new GraphicsDeviceManager(this);
+            graphics.IsFullScreen = true;
+            graphics.PreferredBackBufferWidth = 2560;
+            graphics.PreferredBackBufferHeight = 1440;
+            graphics.ApplyChanges();
+
             Content.RootDirectory = "Content";
         }
 

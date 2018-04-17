@@ -30,7 +30,12 @@ namespace Zenith.EditorGameComponents
             world = Matrix.CreateRotationZ(-(float)cameraRotX) * Matrix.CreateRotationX((float)cameraRotY); // eh.... think hard on this later
             float distance = (float)(9 * Math.Pow(0.5, cameraZoom));
             view = Matrix.CreateLookAt(new Vector3(0, -1 - distance, 0), new Vector3(0, 0, 0), Vector3.UnitZ);
-            projection = Matrix.CreatePerspectiveFieldOfView(Mathf.PI / 2, 800f / 480f, distance * 0.1f, distance * 100);
+            projection = Matrix.CreatePerspectiveFieldOfView(Mathf.PI / 2, GetAspectRatio(), distance * 0.1f, distance * 100);
+        }
+
+        private float GetAspectRatio()
+        {
+            return this.Game.GraphicsDevice.Viewport.AspectRatio;
         }
 
         internal void ApplyMatrices(BasicEffect basicEffect)
@@ -64,7 +69,7 @@ namespace Zenith.EditorGameComponents
             Matrixd worldd = Matrixd.CreateRotationZ(-cameraRotX) * Matrixd.CreateRotationX(cameraRotY);
             float distance = (float)(9 * Math.Pow(0.5, cameraZoom));
             Matrixd viewd = Matrixd.CreateLookAt(new Vector3d(0, -1 - distance, 0), new Vector3d(0, 0, 0), new Vector3d(0, 0, 1));
-            Matrixd projectiond = Matrixd.CreatePerspectiveFieldOfView(Mathf.PI / 2, 800f / 480f, distance * 0.1f, distance * 100);
+            Matrixd projectiond = Matrixd.CreatePerspectiveFieldOfView(Mathf.PI / 2, GetAspectRatio(), distance * 0.1f, distance * 100);
             return Rayd.CastFromCamera2(Game.GraphicsDevice, mouseVector.X, mouseVector.Y, projectiond, viewd, worldd);
         }
 
@@ -76,7 +81,7 @@ namespace Zenith.EditorGameComponents
             Matrixd worldd = Matrixd.CreateRotationZ(-cameraRotX) * Matrixd.CreateRotationX(cameraRotY);
             float distance = (float)(9 * Math.Pow(0.5, cameraZoom));
             Matrixd viewd = Matrixd.CreateLookAt(new Vector3d(0, -1 - distance, 0), new Vector3d(0, 0, 0), new Vector3d(0, 0, 1));
-            Matrixd projectiond = Matrixd.CreatePerspectiveFieldOfView(Mathf.PI / 2, 800f / 480f, distance * 0.1f, distance * 100);
+            Matrixd projectiond = Matrixd.CreatePerspectiveFieldOfView(Mathf.PI / 2, GetAspectRatio(), distance * 0.1f, distance * 100);
             Rayd ray = Rayd.CastFromCamera2(Game.GraphicsDevice, x, y, projectiond, viewd, worldd);
             Vector3d intersection = ray.IntersectionSphere(new Vector3d(0, 0, 0), 1);
             if (intersection == null) return null;
@@ -89,7 +94,7 @@ namespace Zenith.EditorGameComponents
             Matrixd worldd = Matrixd.Identity();
             Matrixd viewd = new Matrixd(-1, 0, 0, 0, 0, 0, -2, 0, 0, -1, 0, 0, 0, 0, -20, 1);
             double num = 1f / Math.Tan(getFOV() * 0.5);
-            double num9 = num * 480 / 800;
+            double num9 = num / GetAspectRatio();
             Matrixd projectiond = new Matrixd(num9, 0, 0, 0, 0, num, 0, 0, 0, 0, -100 / 99.9, -1, 0, 0, -10 / 99.9, 0);
             //Vector3d unprojected = Matrixd.Unproject(Game.GraphicsDevice.Viewport, new Vector3d(x, y, 0), projectiond, viewd, worldd);
             Matrixd matrix = Matrixd.Invert(Matrixd.Multiply(Matrixd.Multiply(worldd, viewd), projectiond));
