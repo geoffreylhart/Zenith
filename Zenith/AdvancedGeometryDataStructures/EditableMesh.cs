@@ -9,7 +9,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Zenith
 {
-    class EditableMesh2
+    class EditableMesh
     {
 
         public static int LL_SEGMENTS = 3; // we'll split it up into the mininum number of longitude slices to keep things smoothly cycling
@@ -20,7 +20,7 @@ namespace Zenith
         private static float REZ = 100000f;
         //private Clipper clipper;
 
-        public EditableMesh2()
+        public EditableMesh()
         {
             //clipper = new Clipper();
             RecalculateTriangles();

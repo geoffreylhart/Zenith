@@ -42,8 +42,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="EditableMesh.cs" />
-    <Compile Include="EditableMesh2.cs" />
+    <Compile Include="AdvancedGeometryDataStructures\EditableMesh.cs" />
     <Compile Include="EditorGameComponents\BlenderAxis.cs" />
     <Compile Include="EditorGameComponents\CityMarker.cs" />
     <Compile Include="EditorGameComponents\DebugConsole.cs" />
@@ -63,7 +62,7 @@
     <Compile Include="LibraryWrappers\Tesselate\PriorityQueue.cs" />
     <Compile Include="LibraryWrappers\Tesselate\Sweep.cs" />
     <Compile Include="LibraryWrappers\Tesselate\Tess.cs" />
-    <Compile Include="MapGenerator.cs" />
+    <Compile Include="LibraryWrappers\GoogleMapGenerator.cs" />
     <Compile Include="MathHelpers\Line3.cs" />
     <Compile Include="MathHelpers\LongLatHelper.cs" />
     <Compile Include="MathHelpers\Mathf.cs" />
@@ -140,8 +139,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Documentation\CoordinateSystemCheatSheet.txt" />
-    <Content Include="Documentation\intersection.png" />
-    <Content Include="Documentation\intersectionalgorithm.txt" />
     <Content Include="Documentation\LibraryInfo.txt" />
   </ItemGroup>
   <ItemGroup>

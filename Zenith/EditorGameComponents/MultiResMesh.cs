@@ -11,7 +11,7 @@ namespace Zenith.EditorGameComponents
 {
     public class MultiResMesh : DrawableGameComponent
     {
-        private EditableMesh2 editableMesh = new EditableMesh2();
+        private EditableMesh editableMesh = new EditableMesh();
         private EditorCamera camera;
         RenderTarget2D renderTarget;
         private double traceAlpha = 0.5;
@@ -133,10 +133,10 @@ namespace Zenith.EditorGameComponents
 
             GraphicsDevice.Indices = sphere.indices;
             GraphicsDevice.SetVertexBuffer(sphere.vertices);
-            for (int i = 0; i < EditableMesh2.LL_SEGMENTS; i++)
+            for (int i = 0; i < EditableMesh.LL_SEGMENTS; i++)
             {
-                double segmin = i * 2 * Math.PI / EditableMesh2.LL_SEGMENTS - Math.PI;
-                double segmax = (i + 1) * 2 * Math.PI / EditableMesh2.LL_SEGMENTS - Math.PI;
+                double segmin = i * 2 * Math.PI / EditableMesh.LL_SEGMENTS - Math.PI;
+                double segmax = (i + 1) * 2 * Math.PI / EditableMesh.LL_SEGMENTS - Math.PI;
                 double offset = 0;
                 // try to get the two ranges to overlap (doesnt always happen)
                 while (minLong + offset > segmax)
