@@ -17,6 +17,8 @@ namespace Zenith.Helpers
             return answer;
         }
 
+        // TODO: I don't really think this code style works out since multiple components may end up calling this
+        // unless we make it a per game component thing?
         internal static bool WasLeftPressed(this MouseState state)
         {
             bool answer = state.LeftButton == ButtonState.Pressed && !oldLeft;

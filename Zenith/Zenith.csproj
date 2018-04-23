@@ -49,6 +49,7 @@
     <Compile Include="EditorGameComponents\EditorCamera.cs" />
     <Compile Include="EditorGameComponents\GoogleMaps.cs" />
     <Compile Include="EditorGameComponents\MultiResMesh.cs" />
+    <Compile Include="EditorGameComponents\SphericalGeometryEditor.cs" />
     <Compile Include="Game1.cs" />
     <Compile Include="Helpers\GameComponentHelper.cs" />
     <Compile Include="Helpers\GraphicsDeviceHelper.cs" />
@@ -63,6 +64,7 @@
     <Compile Include="LibraryWrappers\Tesselate\Sweep.cs" />
     <Compile Include="LibraryWrappers\Tesselate\Tess.cs" />
     <Compile Include="LibraryWrappers\GoogleMapGenerator.cs" />
+    <Compile Include="MathHelpers\AllMath.cs" />
     <Compile Include="MathHelpers\Line3.cs" />
     <Compile Include="MathHelpers\LongLatHelper.cs" />
     <Compile Include="MathHelpers\Mathf.cs" />

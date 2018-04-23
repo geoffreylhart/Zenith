@@ -12,7 +12,7 @@ namespace Zenith
         public Game1()
         {
             GraphicsDeviceManager graphics = new GraphicsDeviceManager(this);
-            graphics.IsFullScreen = true;
+            //graphics.IsFullScreen = true;
             graphics.PreferredBackBufferWidth = 2560;
             graphics.PreferredBackBufferHeight = 1440;
             graphics.ApplyChanges();
@@ -26,7 +26,8 @@ namespace Zenith
             var camera = new EditorCamera(this);
             Components.Add(camera);
             Components.Add(new GoogleMaps(this, camera));
-            Components.Add(new MultiResMesh(this, camera));
+            // Components.Add(new MultiResMesh(this, camera));
+            Components.Add(new SphericalGeometryEditor(this, camera));
             Components.Add(new CityMarker(this, camera, "Pensacola", 30.4668536, -87.3294527));
             Components.Add(new CityMarker(this, camera, "0, 0", 0, 0));
             // Components.Add(new BlenderAxis(this, camera));
