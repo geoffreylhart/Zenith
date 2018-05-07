@@ -2,6 +2,10 @@
 x, y -> longitude, latitude
 Latitude forms horizontal rings (x=0 means the equator)
 Monogames default screen space coordinates has 0,0 as the top-left and 800,480 as the bottom-right (you can discover this bias by simply printing the mouse coordinates)
+	- For drawing 2d items use Matrix.CreateOrthographicOffCenter(0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, 0, 1, 1000) to match mouse coordinates
+		- FOR SOME REASON, this causes vertices from z=-1 to z=-1000 to draw, which is weird
+		- This camera still causes triangles to draw clockwise, properly, so I guess it's fine...
+		- In a triangle strip, any 3 consecutive points make a triangle. The culling flips back and forth for you (makes sense)
 Since lat/long don't naturally have a positive or negative direction, we'll take inspiration from Google's API:
 	- Because of this, travelling right should increase your longitude, while travelling up should increase your latitude
 
