@@ -48,6 +48,50 @@ namespace Zenith.PrimitiveBuilder
             return buffer;
         }
 
+        // copied from above, obviously
+        internal static VertexBuffer MakeSphereSegOutlineLatLong(GraphicsDevice graphicsDevice, double diameter, double portion, double lat, double longi)
+        {
+            LongLatHelper.NormalizeLongLatRadians(ref longi, ref lat);
+            List<VertexPositionColor> vertices = new List<VertexPositionColor>();
+
+            double radius = diameter / 2;
+            double minLat = ToLat(ToY(lat) - portion / 2);
+            double maxLat = ToLat(ToY(lat) + portion / 2);
+            double minLong = longi - Math.PI * portion;
+            double maxLong = longi + Math.PI * portion;
+            int verticalSegments = Math.Max((int)((maxLat - minLat) * 50), 1);
+            int horizontalSegments = Math.Max((int)((maxLong - minLong) * 50), 1);
+            // construct square by going clockwise
+            for (int i = 0; i < verticalSegments; i++) // left-side
+            {
+                double latitude = (minLat + (maxLat - minLat) * i / (double)verticalSegments);
+                Vector3 position = Vector3Helper.UnitSphere(minLong, latitude) * (float)radius;
+                vertices.Add(new VertexPositionColor(position, Color.Red));
+            }
+            for (int i = 0; i < horizontalSegments; i++) // top-side
+            {
+                double longitude = (minLong + (maxLong - minLong) * i / (double)horizontalSegments);
+                Vector3 position = Vector3Helper.UnitSphere(longitude, maxLat) * (float)radius;
+                vertices.Add(new VertexPositionColor(position, Color.Red));
+            }
+            for (int i = verticalSegments; i > 0; i--) // right-side
+            {
+                double latitude = (minLat + (maxLat - minLat) * i / (double)verticalSegments);
+                Vector3 position = Vector3Helper.UnitSphere(maxLong, latitude) * (float)radius;
+                vertices.Add(new VertexPositionColor(position, Color.Red));
+            }
+            for (int i = horizontalSegments; i > 0; i--) // bottom-side
+            {
+                double longitude = (minLong + (maxLong - minLong) * i / (double)horizontalSegments);
+                Vector3 position = Vector3Helper.UnitSphere(longitude, minLat) * (float)radius;
+                vertices.Add(new VertexPositionColor(position, Color.Red));
+            }
+            vertices.Add(vertices[0]);
+            VertexBuffer vertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, vertices.Count, BufferUsage.WriteOnly);
+            vertexBuffer.SetData(vertices.ToArray());
+            return vertexBuffer;
+        }
+
         // NOTE: dont forget I swapped the triangle positions... try to make this make seem on purpose
         private static List<int> MakeIndices(int horizontalSegments, int verticalSegments)
         {
@@ -87,8 +131,8 @@ namespace Zenith.PrimitiveBuilder
 
             double radius = diameter / 2;
 
-            double minLat = Math.Max(lat-portion*Math.PI,-Math.PI/2);
-            double maxLat = Math.Min(lat+portion * Math.PI, Math.PI/2);
+            double minLat = Math.Max(lat - portion * Math.PI, -Math.PI / 2);
+            double maxLat = Math.Min(lat + portion * Math.PI, Math.PI / 2);
             double minLong = longi - Math.PI * portion;
             double maxLong = longi + Math.PI * portion;
             int verticalSegments = Math.Max((int)((maxLat - minLat) * 10), 1);
@@ -104,7 +148,7 @@ namespace Zenith.PrimitiveBuilder
                     double ty = i / (double)verticalSegments;
                     // stole this equation
                     Vector3 normal = Vector3Helper.UnitSphere(longitude, latitude);
-                    Vector3 position = normal * (float) radius; // switched dy and dz here to align the poles from how we had them
+                    Vector3 position = normal * (float)radius; // switched dy and dz here to align the poles from how we had them
                     Vector2 texturepos = new Vector2((float)tx, (float)ty);
                     vertices.Add(new VertexPositionNormalTexture(position, normal, texturepos));
                 }

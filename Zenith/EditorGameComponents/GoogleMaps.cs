@@ -12,6 +12,7 @@ namespace Zenith.EditorGameComponents
     {
         private EditorCamera camera;
         List<VertexIndiceBuffer> googleMaps = new List<VertexIndiceBuffer>();
+        VertexBuffer previewSquare = null;
 
         public GoogleMaps(Game game, EditorCamera camera) : base(game)
         {
@@ -34,11 +35,26 @@ namespace Zenith.EditorGameComponents
                 }
                 GraphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, GraphicsDevice.Viewport.MaxDepth, 0);
             }
+            if (previewSquare != null)
+            {
+                basicEffect3.TextureEnabled = false;
+                basicEffect3.VertexColorEnabled = true;
+                basicEffect3.LightingEnabled = false;
+                foreach (EffectPass pass in basicEffect3.CurrentTechnique.Passes)
+                {
+                    pass.Apply();
+                    GraphicsDevice.SetVertexBuffer(previewSquare);
+                    GraphicsDevice.DrawPrimitives(PrimitiveType.LineStrip, 0, previewSquare.VertexCount - 1);
+                }
+            }
         }
 
         public override void Update(GameTime gameTime)
         {
             if (Keyboard.GetState().WasKeyPressed(Keys.G)) AddGoogleMap();
+            int googleZoom = (int)camera.cameraZoom;
+            if (previewSquare != null) previewSquare.Dispose();
+            previewSquare = SphereBuilder.MakeSphereSegOutlineLatLong(GraphicsDevice, 2, Math.Pow(0.5, googleZoom), camera.cameraRotY, camera.cameraRotX);
         }
 
         private void AddGoogleMap()
