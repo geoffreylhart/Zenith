@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Zenith.Helpers;
+using Zenith.MathHelpers;
 using Zenith.PrimitiveBuilder;
 
 namespace Zenith.EditorGameComponents
@@ -35,7 +36,7 @@ namespace Zenith.EditorGameComponents
                 }
                 GraphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, GraphicsDevice.Viewport.MaxDepth, 0);
             }
-            if (previewSquare != null)
+            if (previewSquare != null && Enabled)
             {
                 basicEffect3.TextureEnabled = false;
                 basicEffect3.VertexColorEnabled = true;
@@ -51,17 +52,40 @@ namespace Zenith.EditorGameComponents
 
         public override void Update(GameTime gameTime)
         {
-            if (Keyboard.GetState().WasKeyPressed(Keys.G)) AddGoogleMap();
-            int googleZoom = (int)camera.cameraZoom;
+            if (Mouse.GetState().WasLeftPressed()) AddGoogleMap();
             if (previewSquare != null) previewSquare.Dispose();
-            previewSquare = SphereBuilder.MakeSphereSegOutlineLatLong(GraphicsDevice, 2, Math.Pow(0.5, googleZoom), camera.cameraRotY, camera.cameraRotX);
+            previewSquare = null;
+            Vector3d squareCenter = GetSnappedCoordinate();
+            if (squareCenter != null)
+            {
+                int googleZoom = (int)camera.cameraZoom;
+                double zoomPortion = Math.Pow(0.5, googleZoom);
+                previewSquare = SphereBuilder.MakeSphereSegOutlineLatLong(GraphicsDevice, 2, zoomPortion, squareCenter.Y, squareCenter.X);
+            }
+        }
+
+        private Vector3d GetSnappedCoordinate()
+        {
+            int googleZoom = (int)camera.cameraZoom;
+            double zoomPortion = Math.Pow(0.5, googleZoom);
+            Vector2 mouseVector = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
+            Vector3d squareCenter = camera.GetLatLongOfCoord2(Mouse.GetState().X, Mouse.GetState().Y);
+            if (squareCenter == null) return null;
+            int intX = (int)((squareCenter.X + Math.PI) / (zoomPortion * 2 * Math.PI));
+            int intY = (int)((squareCenter.Y + Math.PI / 2) / (zoomPortion * 2 * Math.PI));
+            squareCenter.X = (intX + 0.5) * (zoomPortion * 2 * Math.PI) - Math.PI;
+            squareCenter.Y = (intY + 0.5) * (zoomPortion * 2 * Math.PI) - Math.PI / 2;
+            return squareCenter;
         }
 
         private void AddGoogleMap()
         {
+            Vector2 mouseVector = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
+            Vector3d squareCenter = GetSnappedCoordinate();
+            if (squareCenter == null) return;
             int googleZoom = (int)camera.cameraZoom; // I guess Google only accepts integer zoom?
-            VertexIndiceBuffer buffer = SphereBuilder.MakeSphereSegLatLong(GraphicsDevice, 2, Math.Pow(0.5, googleZoom), camera.cameraRotY, camera.cameraRotX);
-            buffer.texture = MapGenerator.GetMap(GraphicsDevice, camera.cameraRotX * 180 / Math.PI, camera.cameraRotY * 180 / Math.PI, googleZoom);
+            VertexIndiceBuffer buffer = SphereBuilder.MakeSphereSegLatLong(GraphicsDevice, 2, Math.Pow(0.5, googleZoom), squareCenter.Y, squareCenter.X);
+            buffer.texture = MapGenerator.GetMap(GraphicsDevice, squareCenter.X * 180 / Math.PI, squareCenter.Y * 180 / Math.PI, googleZoom);
             googleMaps.Add(buffer);
         }
 
