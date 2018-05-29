@@ -10,6 +10,7 @@ using static System.Net.Mime.MediaTypeNames;
 
 namespace Zenith
 {
+    // limited to 25,000 requests a day for free
     public class MapGenerator
     {
         // latitude and longitude given in degrees
@@ -25,7 +26,7 @@ namespace Zenith
         {
             using (WebClient wc = new WebClient())
             {
-                // byte[] data = wc.DownloadData(String.Format($"https://maps.googleapis.com/maps/api/staticmap?maptype=satellite&center={latitude},{longitude}&zoom={zoom}&size=256x256&scale=2&key=AIzaSyDePV-JaAnPp5S-2XV1TQgKiWIaMTgtXIo"));
+                // byte[] data = wc.DownloadData(String.Format($"https://maps.googleapis.com/maps/api/staticmap?maptype=satellite&center={latitude},{longitude}&zoom={zoom}&size=256x256&scale=2&key={GetAPIKey()}"));
                 String style = "style=feature:landscape%7Celement:geometry.fill%7Ccolor:0x006000";
                 style += "&style=feature:water%7Celement:geometry.fill%7Ccolor:0x000080";
                 style += "&style=feature:all%7Celement:labels%7Cvisibility:off";
@@ -34,7 +35,7 @@ namespace Zenith
                 style += "&style=feature:transit%7Cvisibility:off";
                 style += "&style=feature:poi%7Cvisibility:off";
                 style += "&style=feature:road%7Cvisibility:off";
-                return new MemoryStream(wc.DownloadData(String.Format($"https://maps.googleapis.com/maps/api/staticmap?center={latitude},{longitude}&{style}&zoom={zoom}&size=256x256&scale=2&key=AIzaSyDePV-JaAnPp5S-2XV1TQgKiWIaMTgtXIo")));
+                return new MemoryStream(wc.DownloadData(String.Format($"https://maps.googleapis.com/maps/api/staticmap?center={latitude},{longitude}&{style}&zoom={zoom}&size=256x256&scale=2&key={GetAPIKey()}")));
             }
         }
 
@@ -86,6 +87,15 @@ namespace Zenith
         private static double ToY(double lat)
         {
             return Math.Log(Math.Tan(lat / 2 + Math.PI / 4)) / (Math.PI * 2) + 0.5;
+        }
+
+        // saved locally instead of being on GitHub
+        private static String API_KEY;
+        private static String GetAPIKey()
+        {
+            if (API_KEY != null) return API_KEY;
+            API_KEY = File.ReadAllText(@"..\..\..\..\LocalCache\apikey.txt");
+            return API_KEY;
         }
     }
 }
