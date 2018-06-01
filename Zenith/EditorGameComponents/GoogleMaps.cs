@@ -64,6 +64,7 @@ namespace Zenith.EditorGameComponents
             }
         }
 
+        // TODO: for some reason the farthest zoom level works, but the 2nd farthest doesnt (all others work too)
         private Vector3d GetSnappedCoordinate()
         {
             int googleZoom = (int)camera.cameraZoom;
@@ -72,9 +73,10 @@ namespace Zenith.EditorGameComponents
             Vector3d squareCenter = camera.GetLatLongOfCoord2(Mouse.GetState().X, Mouse.GetState().Y);
             if (squareCenter == null) return null;
             int intX = (int)((squareCenter.X + Math.PI) / (zoomPortion * 2 * Math.PI));
-            int intY = (int)((squareCenter.Y + Math.PI / 2) / (zoomPortion * 2 * Math.PI));
+            int intY = (int)((ToY(squareCenter.Y)) / (zoomPortion));
+            this.GetDebugConsole().Debug(intX + ":" + intY);
             squareCenter.X = (intX + 0.5) * (zoomPortion * 2 * Math.PI) - Math.PI;
-            squareCenter.Y = (intY + 0.5) * (zoomPortion * 2 * Math.PI) - Math.PI / 2;
+            squareCenter.Y = ToLat((intY + 0.5) * (zoomPortion));
             return squareCenter;
         }
 
@@ -98,6 +100,18 @@ namespace Zenith.EditorGameComponents
             basicEffect3.AmbientLightColor = new Vector3(0.2f, 0.2f, 0.2f);
             camera.ApplyMatrices(basicEffect3);
             return basicEffect3;
+        }
+
+
+        private static double ToLat(double y)
+        {
+            return 2 * Math.Atan(Math.Pow(Math.E, (y - 0.5) * 2 * Math.PI)) - Math.PI / 2;
+        }
+
+        // takes -pi/2 to pi/2, I assume, goes from -infinity to infinity??
+        private static double ToY(double lat)
+        {
+            return Math.Log(Math.Tan(lat / 2 + Math.PI / 4)) / (Math.PI * 2) + 0.5;
         }
     }
 }
