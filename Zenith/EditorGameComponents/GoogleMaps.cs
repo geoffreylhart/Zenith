@@ -64,7 +64,6 @@ namespace Zenith.EditorGameComponents
             }
         }
 
-        // TODO: for some reason the farthest zoom level works, but the 2nd farthest doesnt (all others work too)
         private Vector3d GetSnappedCoordinate()
         {
             int googleZoom = (int)camera.cameraZoom;
@@ -74,9 +73,11 @@ namespace Zenith.EditorGameComponents
             if (squareCenter == null) return null;
             int intX = (int)((squareCenter.X + Math.PI) / (zoomPortion * 2 * Math.PI));
             int intY = (int)((ToY(squareCenter.Y)) / (zoomPortion));
-            this.GetDebugConsole().Debug(intX + ":" + intY);
+            intY = Math.Min(Math.Max(intY, 0), (1 << googleZoom) - 1);
+            this.GetDebugConsole().Debug(intX + ":" + intY + ":" + googleZoom);
             squareCenter.X = (intX + 0.5) * (zoomPortion * 2 * Math.PI) - Math.PI;
             squareCenter.Y = ToLat((intY + 0.5) * (zoomPortion));
+            this.GetDebugConsole().Debug(squareCenter.X + ":" + squareCenter.Y);
             return squareCenter;
         }
 

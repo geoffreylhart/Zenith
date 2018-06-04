@@ -26,7 +26,11 @@ namespace Zenith
         {
             using (WebClient wc = new WebClient())
             {
-                // byte[] data = wc.DownloadData(String.Format($"https://maps.googleapis.com/maps/api/staticmap?maptype=satellite&center={latitude},{longitude}&zoom={zoom}&size=256x256&scale=2&key={GetAPIKey()}"));
+                String latStr = latitude.ToString();
+                String longStr = longitude.ToString();
+                if (latStr.Contains("E-")) latStr = "0";
+                if (longStr.Contains("E-")) longStr = "0";
+                // byte[] data = wc.DownloadData(String.Format($"https://maps.googleapis.com/maps/api/staticmap?maptype=satellite&center={latStr},{longStr}&zoom={zoom}&size=256x256&scale=2&key={GetAPIKey()}"));
                 String style = "style=feature:landscape%7Celement:geometry.fill%7Ccolor:0x006000";
                 style += "&style=feature:water%7Celement:geometry.fill%7Ccolor:0x000080";
                 style += "&style=feature:all%7Celement:labels%7Cvisibility:off";
@@ -35,7 +39,8 @@ namespace Zenith
                 style += "&style=feature:transit%7Cvisibility:off";
                 style += "&style=feature:poi%7Cvisibility:off";
                 style += "&style=feature:road%7Cvisibility:off";
-                return new MemoryStream(wc.DownloadData(String.Format($"https://maps.googleapis.com/maps/api/staticmap?center={latitude},{longitude}&{style}&zoom={zoom}&size=256x256&scale=2&key={GetAPIKey()}")));
+                String fullUrl = $"https://maps.googleapis.com/maps/api/staticmap?center={latStr},{longStr}&{style}&zoom={zoom}&size=256x256&scale=2&key={GetAPIKey()}";
+                return new MemoryStream(wc.DownloadData(String.Format(fullUrl)));
             }
         }
 

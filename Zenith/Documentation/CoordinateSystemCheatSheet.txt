@@ -22,3 +22,5 @@ Try to make sure in function parameters, longitude should come before latitude t
 Amazingly it looks like Monogame has the same handedness as Blender?? Based on our rendering of the BlenderAxis matching
 
 ACCORDING TO MY OWN COMMENTS, you have to draw triangles clockwise to make them visible (counter-clockwise triangles are culled (it's a default setting somewhere))
+
+For our cache of images, indices will span 0,1,2,3... from the min -lat to the max
