@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -55,50 +56,57 @@ namespace Zenith.EditorGameComponents
             if (Mouse.GetState().WasLeftPressed()) AddGoogleMap();
             if (previewSquare != null) previewSquare.Dispose();
             previewSquare = null;
-            Vector3d squareCenter = GetSnappedCoordinate();
+            Sector squareCenter = GetSector();
             if (squareCenter != null)
             {
-                int googleZoom = (int)camera.cameraZoom;
+                int googleZoom = GetRoundedZoom();
                 double zoomPortion = Math.Pow(0.5, googleZoom);
-                previewSquare = SphereBuilder.MakeSphereSegOutlineLatLong(GraphicsDevice, 2, zoomPortion, squareCenter.Y, squareCenter.X);
+                previewSquare = SphereBuilder.MakeSphereSegOutlineLatLong(GraphicsDevice, 2, zoomPortion, squareCenter.Latitude, squareCenter.Longitude);
             }
         }
 
-        private Vector3d GetSnappedCoordinate()
+        private int GetRoundedZoom()
         {
-            int googleZoom = (int)camera.cameraZoom;
-            double zoomPortion = Math.Pow(0.5, googleZoom);
-            Vector2 mouseVector = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
-            Vector3d squareCenter = camera.GetLatLongOfCoord2(Mouse.GetState().X, Mouse.GetState().Y);
-            if (squareCenter == null) return null;
-            int intX = (int)((squareCenter.X + Math.PI) / (zoomPortion * 2 * Math.PI));
-            int intY = (int)((ToY(squareCenter.Y)) / (zoomPortion));
-            intY = Math.Min(Math.Max(intY, 0), (1 << googleZoom) - 1);
-            this.GetDebugConsole().Debug(intX + ":" + intY + ":" + googleZoom);
-            squareCenter.X = (intX + 0.5) * (zoomPortion * 2 * Math.PI) - Math.PI;
-            squareCenter.Y = ToLat((intY + 0.5) * (zoomPortion));
-            this.GetDebugConsole().Debug(squareCenter.X + ":" + squareCenter.Y);
-            return squareCenter;
+            return Math.Min((int)camera.cameraZoom, 19); // google only accepts integer zoom
         }
 
         private void AddGoogleMap()
         {
-            Vector2 mouseVector = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
-            Vector3d squareCenter = GetSnappedCoordinate();
+            Sector squareCenter = GetSector();
             if (squareCenter == null) return;
-            int googleZoom = (int)camera.cameraZoom; // I guess Google only accepts integer zoom?
-            VertexIndiceBuffer buffer = SphereBuilder.MakeSphereSegLatLong(GraphicsDevice, 2, Math.Pow(0.5, googleZoom), squareCenter.Y, squareCenter.X);
-            buffer.texture = MapGenerator.GetMap(GraphicsDevice, squareCenter.X * 180 / Math.PI, squareCenter.Y * 180 / Math.PI, googleZoom);
-            googleMaps.Add(buffer);
+            googleMaps.Add(GetCachedMap(squareCenter));
+        }
+
+        private VertexIndiceBuffer GetCachedMap(Sector sector)
+        {
+            VertexIndiceBuffer buffer = SphereBuilder.MakeSphereSegLatLong(GraphicsDevice, 2, Math.Pow(0.5, sector.zoom), sector.Latitude, sector.Longitude);
+            String fileName = sector.ToString() + ".PNG";
+            String filePath = @"..\..\..\..\LocalCache\" + fileName;
+            if (File.Exists(filePath))
+            {
+                using (var reader = File.OpenRead(filePath))
+                {
+                    buffer.texture = Texture2D.FromStream(GraphicsDevice, reader);
+                }
+            }
+            else
+            {
+                buffer.texture = MapGenerator.GetMap(GraphicsDevice, sector.Longitude * 180 / Math.PI, sector.Latitude * 180 / Math.PI, sector.zoom);
+                using (var writer = File.OpenWrite(filePath))
+                {
+                    buffer.texture.SaveAsPng(writer, buffer.texture.Width, buffer.texture.Height);
+                }
+            }
+            return buffer;
         }
 
         private BasicEffect MakeThatBasicEffect3()
         {
             var basicEffect3 = new BasicEffect(GraphicsDevice);
-            basicEffect3.LightingEnabled = true;
-            basicEffect3.DirectionalLight0.Direction = new Vector3(-1, 1, 0);
-            basicEffect3.DirectionalLight0.DiffuseColor = new Vector3(1, 1, 1);
-            basicEffect3.AmbientLightColor = new Vector3(0.2f, 0.2f, 0.2f);
+            // basicEffect3.LightingEnabled = true;
+            // basicEffect3.DirectionalLight0.Direction = new Vector3(-1, 1, 0);
+            // basicEffect3.DirectionalLight0.DiffuseColor = new Vector3(1, 1, 1);
+            // basicEffect3.AmbientLightColor = new Vector3(0.2f, 0.2f, 0.2f);
             camera.ApplyMatrices(basicEffect3);
             return basicEffect3;
         }
@@ -113,6 +121,47 @@ namespace Zenith.EditorGameComponents
         private static double ToY(double lat)
         {
             return Math.Log(Math.Tan(lat / 2 + Math.PI / 4)) / (Math.PI * 2) + 0.5;
+        }
+
+        /// <summary>
+        /// Returns the sector the mouse is currently hovering over
+        /// </summary>
+        /// <returns>The sector the mouse is currently hovering over</returns>
+        private Sector GetSector()
+        {
+            int zoom = GetRoundedZoom();
+            double zoomPortion = Math.Pow(0.5, zoom);
+            Vector2 mouseVector = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
+            Vector3d squareCenter = camera.GetLatLongOfCoord2(Mouse.GetState().X, Mouse.GetState().Y);
+            if (squareCenter == null) return null;
+            int x = (int)((squareCenter.X + Math.PI) / (zoomPortion * 2 * Math.PI));
+            int y = (int)((ToY(squareCenter.Y)) / (zoomPortion));
+            y = Math.Max(y, 0);
+            y = Math.Min(y, (1 << zoom) - 1);
+            return new Sector(x, y, zoom);
+        }
+
+        private class Sector
+        {
+            public int x;
+            public int y;
+            public int zoom;
+
+            public Sector(int x, int y, int zoom)
+            {
+                this.x = x;
+                this.y = y;
+                this.zoom = zoom;
+            }
+
+            public double ZoomPortion { get { return Math.Pow(0.5, zoom); } }
+            public double Longitude { get { return (x + 0.5) * (ZoomPortion * 2 * Math.PI) - Math.PI; } }
+            public double Latitude { get { return ToLat((y + 0.5) * (ZoomPortion)); } }
+
+            public override string ToString()
+            {
+                return $"X={x},Y={y},Zoom={zoom}";
+            }
         }
     }
 }
