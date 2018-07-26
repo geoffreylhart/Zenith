@@ -15,6 +15,7 @@ namespace Zenith
             //graphics.IsFullScreen = true;
             //graphics.PreferredBackBufferWidth = 2560;
             //graphics.PreferredBackBufferHeight = 1440;
+            Window.AllowUserResizing = true;
             graphics.ApplyChanges();
 
             Content.RootDirectory = "Content";

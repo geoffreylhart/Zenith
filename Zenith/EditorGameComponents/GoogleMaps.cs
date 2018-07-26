@@ -145,14 +145,15 @@ namespace Zenith.EditorGameComponents
             int y = (int)((ToY(squareCenter.Y)) / (zoomPortion));
             y = Math.Max(y, 0);
             y = Math.Min(y, (1 << zoom) - 1);
+            this.GetDebugConsole().Debug(new Sector(x, y, zoom));
             return new Sector(x, y, zoom);
         }
 
         private class Sector
         {
-            public int x;
-            public int y;
-            public int zoom;
+            public int x; // measured 0,1,2,3 from -pi to pi (opposite left to opposite right of prime meridian)
+            public int y; // measured 0,1,2,3 from -pi/2 (south pole) to pi/2 (north pole)
+            public int zoom; // the globe is partitioned into 2^zoom vertical and horizontal sections
 
             public Sector(int x, int y, int zoom)
             {
