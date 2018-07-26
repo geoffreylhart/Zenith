@@ -49,7 +49,7 @@ namespace Zenith.PrimitiveBuilder
         }
 
         // copied from above, obviously
-        internal static VertexBuffer MakeSphereSegOutlineLatLong(GraphicsDevice graphicsDevice, double diameter, double portion, double lat, double longi)
+        internal static VertexBuffer MakeSphereSegOutlineLatLong(GraphicsDevice graphicsDevice, double diameter, double portion, double lat, double longi, Color color)
         {
             LongLatHelper.NormalizeLongLatRadians(ref longi, ref lat);
             List<VertexPositionColor> vertices = new List<VertexPositionColor>();
@@ -66,25 +66,25 @@ namespace Zenith.PrimitiveBuilder
             {
                 double latitude = (minLat + (maxLat - minLat) * i / (double)verticalSegments);
                 Vector3 position = Vector3Helper.UnitSphere(minLong, latitude) * (float)radius;
-                vertices.Add(new VertexPositionColor(position, Color.Red));
+                vertices.Add(new VertexPositionColor(position, color));
             }
             for (int i = 0; i < horizontalSegments; i++) // top-side
             {
                 double longitude = (minLong + (maxLong - minLong) * i / (double)horizontalSegments);
                 Vector3 position = Vector3Helper.UnitSphere(longitude, maxLat) * (float)radius;
-                vertices.Add(new VertexPositionColor(position, Color.Red));
+                vertices.Add(new VertexPositionColor(position, color));
             }
             for (int i = verticalSegments; i > 0; i--) // right-side
             {
                 double latitude = (minLat + (maxLat - minLat) * i / (double)verticalSegments);
                 Vector3 position = Vector3Helper.UnitSphere(maxLong, latitude) * (float)radius;
-                vertices.Add(new VertexPositionColor(position, Color.Red));
+                vertices.Add(new VertexPositionColor(position, color));
             }
             for (int i = horizontalSegments; i > 0; i--) // bottom-side
             {
                 double longitude = (minLong + (maxLong - minLong) * i / (double)horizontalSegments);
                 Vector3 position = Vector3Helper.UnitSphere(longitude, minLat) * (float)radius;
-                vertices.Add(new VertexPositionColor(position, Color.Red));
+                vertices.Add(new VertexPositionColor(position, color));
             }
             vertices.Add(vertices[0]);
             VertexBuffer vertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, vertices.Count, BufferUsage.WriteOnly);

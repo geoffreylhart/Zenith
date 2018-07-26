@@ -61,8 +61,15 @@ namespace Zenith.EditorGameComponents
             {
                 int googleZoom = GetRoundedZoom();
                 double zoomPortion = Math.Pow(0.5, googleZoom);
-                previewSquare = SphereBuilder.MakeSphereSegOutlineLatLong(GraphicsDevice, 2, zoomPortion, squareCenter.Latitude, squareCenter.Longitude);
+                previewSquare = SphereBuilder.MakeSphereSegOutlineLatLong(GraphicsDevice, 2, zoomPortion, squareCenter.Latitude, squareCenter.Longitude, CacheExists(squareCenter) ? Color.Green : Color.Red);
             }
+        }
+
+        private bool CacheExists(Sector sector)
+        {
+            String fileName = sector.ToString() + ".PNG";
+            String filePath = @"..\..\..\..\LocalCache\" + fileName;
+            return File.Exists(filePath);
         }
 
         private int GetRoundedZoom()
