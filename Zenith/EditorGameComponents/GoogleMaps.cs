@@ -25,6 +25,7 @@ namespace Zenith.EditorGameComponents
         {
             var basicEffect3 = MakeThatBasicEffect3();
             basicEffect3.TextureEnabled = true;
+            GraphicsDevice.SetRenderTarget(((Game1)Game).renderTarget);
             foreach (var buffer in googleMaps)
             {
                 basicEffect3.Texture = buffer.texture;
@@ -49,6 +50,7 @@ namespace Zenith.EditorGameComponents
                     GraphicsDevice.DrawPrimitives(PrimitiveType.LineStrip, 0, previewSquare.VertexCount - 1);
                 }
             }
+            GraphicsDevice.SetRenderTarget(null);
         }
 
         public override void Update(GameTime gameTime)

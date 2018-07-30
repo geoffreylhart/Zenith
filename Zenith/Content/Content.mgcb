@@ -20,3 +20,9 @@
 /processorParam:TextureFormat=Compressed
 /build:Arial.spritefont
 
+#begin BlurShader.hlsl
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:BlurShader.hlsl
+
