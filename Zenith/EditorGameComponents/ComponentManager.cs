@@ -32,7 +32,7 @@ namespace Zenith.EditorGameComponents
                 c.Enabled = false;
             }
             components[0].Enabled = true;
-            font = game.Content.Load<SpriteFont>("Arial");
+            font = game.Content.Load<SpriteFont>("ArialBold");
             spriteBatch = new SpriteBatch(game.GraphicsDevice);
             using (var fileStream = new FileStream(@"C:\Users\Geoffrey Hart\Documents\Visual Studio 2017\Projects\Factorio\FactoryPlanner\FactoryPlanner\Images\Icons\blank.png", FileMode.Open))
             {
@@ -65,13 +65,13 @@ namespace Zenith.EditorGameComponents
             int padding = 5;
             //DrawRect(20 - padding, GraphicsDevice.Viewport.Height - 150 - padding, 500 + padding * 2, 200 + padding, Color.Red);
             //DrawBlur(20, GraphicsDevice.Viewport.Height - 150, 500, 200, Color.Red);
-            DrawTabs(20, GraphicsDevice.Viewport.Height - 150, 500, 150, "Properties", "Debug", "Other Stuff");
+            //DrawTabs(20, GraphicsDevice.Viewport.Height - 150, 500, 200, Color.Blue, "Properties", "Debug", "Other Stuff");
+            UITemp.DrawThoseTabs(20, GraphicsDevice.Viewport.Height - 150, 500, 200, GraphicsDevice);
         }
 
-        private void DrawTabs(int x, int y, int w, int h, params String[] tabNames)
+        private void DrawTabs(int x, int y, int w, int h, Color tabColor, params String[] tabNames)
         {
-            Color tabColor = Color.White;
-            Color textColor = Color.Black;
+            Color textColor = Color.White;
             //DrawBlur(x, y, w, h, Color.Red);
             int cornerRadius = 15;
             int cornerRes = 15;
@@ -145,14 +145,17 @@ namespace Zenith.EditorGameComponents
             }
             DrawBlur(x + cornerRadius / 2, y + cornerRadius / 2, w - cornerRadius / 2 * 2, h - cornerRadius / 2 * 2, Color.White);
             GraphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, GraphicsDevice.Viewport.MaxDepth, 0);
-            DrawRect(x + cornerRadius / 2, y + cornerRadius / 2, w - cornerRadius / 2 * 2, h - cornerRadius / 2 * 2, new Color(Color.White, 0.5f));
+            DrawRect(x + cornerRadius / 2, y + cornerRadius / 2, w - cornerRadius / 2 * 2, h - cornerRadius / 2 * 2, new Color(tabColor, 0.5f));
         }
 
         private float TabCurve(float x)
         {
             //return x;
             // integral of 1-(2x-1)^2, then scaled up
-            return -6 * (x * x * x / 3 - x * x / 2);
+            //return -6 * (x * x * x / 3 - x * x / 2);
+            // just couple 2 parabolas
+            if (x < 0.5) return 2 * x * x;
+            return 1 - 2 * (x - 1) * (x - 1);
         }
 
         private void DrawRect(int x, int y, int w, int h, Color color)
@@ -254,3 +257,11 @@ namespace Zenith.EditorGameComponents
         }
     }
 }
+
+
+// UI plan
+// I think we still want to keep the original general shape
+// the tab offset and roundedness will be configurable (it will be composed of beziers in the future)
+// Probably not going to use any blur for this, just vertex colors
+
+// maybe just go for a minimilistic glowing white line to start with

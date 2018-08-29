@@ -51,6 +51,7 @@
     <Compile Include="EditorGameComponents\GoogleMaps.cs" />
     <Compile Include="EditorGameComponents\MultiResMesh.cs" />
     <Compile Include="EditorGameComponents\SphericalGeometryEditor.cs" />
+    <Compile Include="EditorGameComponents\UITemp.cs" />
     <Compile Include="Game1.cs" />
     <Compile Include="Helpers\GameComponentHelper.cs" />
     <Compile Include="Helpers\GraphicsDeviceHelper.cs" />
@@ -143,10 +144,14 @@
   <ItemGroup>
     <Content Include="Documentation\CoordinateSystemCheatSheet.txt" />
     <Content Include="Documentation\LibraryInfo.txt" />
+    <Content Include="GraphicsSource\Html\bg.png" />
+    <Content Include="GraphicsSource\Html\bgblur.png" />
+    <Content Include="GraphicsSource\Html\UI.css" />
+    <Content Include="GraphicsSource\Html\UI.html" />
+    <Content Include="GraphicsSource\InkScape\UI.svg" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="GameComponents\" />
-    <Folder Include="GraphicsSource\Gimp\" />
     <Folder Include="LocalCache\" />
     <Folder Include="Shaders\" />
   </ItemGroup>

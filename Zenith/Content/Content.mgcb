@@ -26,3 +26,10 @@
 /processorParam:DebugMode=Auto
 /build:BlurShader.hlsl
 
+#begin ArialBold.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:ArialBold.spritefont
+
