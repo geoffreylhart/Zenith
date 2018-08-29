@@ -148,6 +148,7 @@
     <Content Include="GraphicsSource\Html\bgblur.png" />
     <Content Include="GraphicsSource\Html\UI.css" />
     <Content Include="GraphicsSource\Html\UI.html" />
+    <Content Include="GraphicsSource\InkScape\UI.png" />
     <Content Include="GraphicsSource\InkScape\UI.svg" />
     <Content Include="GraphicsSource\InkScape\UI2.svg" />
     <Content Include="GraphicsSource\InkScape\UI3.svg" />
