@@ -15,7 +15,6 @@ namespace Zenith.EditorGameComponents
         private String name;
         private double latitude;
         private double longitude;
-        private SpriteFont font;
         private SpriteBatch spriteBatch;
 
         public CityMarker(Game game, EditorCamera camera, String name, double latitude, double longitude) : base(game)
@@ -24,7 +23,6 @@ namespace Zenith.EditorGameComponents
             this.name = name;
             this.latitude = latitude;
             this.longitude = longitude;
-            font = game.Content.Load<SpriteFont>("Arial");
             spriteBatch = new SpriteBatch(game.GraphicsDevice);
         }
 
@@ -51,11 +49,11 @@ namespace Zenith.EditorGameComponents
                 }
             }
             // city text
-            Vector2 measured = font.MeasureString(name);
+            Vector2 measured = GlobalContent.Arial.MeasureString(name);
             // apparently was setting the depthstencialstate to null and it would never get reset
             // this caused me so much confusion!
             spriteBatch.Begin(SpriteSortMode.Deferred, null, null, DepthStencilState.Default, null, null, null);
-            spriteBatch.DrawString(font, name, new Vector2(v.X + HALF_SIZE * 1.5f, v.Y - measured.Y / 2), Color.White);
+            spriteBatch.DrawString(GlobalContent.Arial, name, new Vector2(v.X + HALF_SIZE * 1.5f, v.Y - measured.Y / 2), Color.White);
             spriteBatch.End();
         }
     }

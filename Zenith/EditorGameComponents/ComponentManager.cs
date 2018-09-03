@@ -20,7 +20,6 @@ namespace Zenith.EditorGameComponents
         private int activeIndex = 0;
         private int hoverIndex = -1;
         private bool isPressed = false;
-        private SpriteFont font;
         private SpriteBatch spriteBatch;
         private Texture2D blankTexture;
 
@@ -32,12 +31,11 @@ namespace Zenith.EditorGameComponents
                 c.Enabled = false;
             }
             components[0].Enabled = true;
-            font = game.Content.Load<SpriteFont>("ArialBold");
             spriteBatch = new SpriteBatch(game.GraphicsDevice);
-            using (var fileStream = new FileStream(@"C:\Users\Geoffrey Hart\Documents\Visual Studio 2017\Projects\Factorio\FactoryPlanner\FactoryPlanner\Images\Icons\blank.png", FileMode.Open))
-            {
-                blankTexture = Texture2D.FromStream(game.GraphicsDevice, fileStream);
-            }
+            //using (var fileStream = new FileStream(@"C:\Users\Geoffrey Hart\Documents\Visual Studio 2017\Projects\Factorio\FactoryPlanner\FactoryPlanner\Images\Icons\blank.png", FileMode.Open))
+            //{
+            //    blankTexture = Texture2D.FromStream(game.GraphicsDevice, fileStream);
+            //}
         }
         public override void Draw(GameTime gameTime)
         {
@@ -66,7 +64,7 @@ namespace Zenith.EditorGameComponents
             //DrawRect(20 - padding, GraphicsDevice.Viewport.Height - 150 - padding, 500 + padding * 2, 200 + padding, Color.Red);
             //DrawBlur(20, GraphicsDevice.Viewport.Height - 150, 500, 200, Color.Red);
             //DrawTabs(20, GraphicsDevice.Viewport.Height - 150, 500, 200, Color.Blue, "Properties", "Debug", "Other Stuff");
-            UITemp.DrawThoseTabs(20, GraphicsDevice.Viewport.Height - 150, 500, 200, GraphicsDevice);
+            UITemp.DrawThoseTabs(20, GraphicsDevice.Viewport.Height - 150, 500, 200, GraphicsDevice, ((Game1)Game).renderTarget);
         }
 
         private void DrawTabs(int x, int y, int w, int h, Color tabColor, params String[] tabNames)
@@ -78,14 +76,14 @@ namespace Zenith.EditorGameComponents
             int tabRes = 15;
             float lineThickness = 2;
             float tabSideWidth = 20;
-            float tabHeight = font.MeasureString(" ").Y;
+            float tabHeight = GlobalContent.Arial.MeasureString(" ").Y;
             float[] namePos = new float[tabNames.Length];
             float tabPadding = 5;
             float nameTempPos = x + tabSideWidth + tabPadding + cornerRadius;
             for (int i = 0; i < tabNames.Length; i++)
             {
                 namePos[i] = nameTempPos;
-                nameTempPos += font.MeasureString(tabNames[i]).X + 2 * tabSideWidth + 2 * tabPadding;
+                nameTempPos += GlobalContent.Arial.MeasureString(tabNames[i]).X + 2 * tabSideWidth + 2 * tabPadding;
             }
             var basicEffect = new BasicEffect(GraphicsDevice);
             basicEffect.VertexColorEnabled = true;
@@ -103,7 +101,7 @@ namespace Zenith.EditorGameComponents
                     }
                     else
                     {
-                        pos = namePos[i] + font.MeasureString(tabNames[i]).X + tabPadding + (j - tabRes) * tabSideWidth / (tabRes - 1f);
+                        pos = namePos[i] + GlobalContent.Arial.MeasureString(tabNames[i]).X + tabPadding + (j - tabRes) * tabSideWidth / (tabRes - 1f);
                     }
                     tab.Add(new VertexPositionColor(new Vector3(pos, y, -10f), tabColor));
                     tab.Add(new VertexPositionColor(new Vector3(pos, y - height, -10f), tabColor));
@@ -117,7 +115,7 @@ namespace Zenith.EditorGameComponents
             spriteBatch.Begin();
             for (int i = 0; i < tabNames.Length; i++)
             {
-                spriteBatch.DrawString(font, tabNames[i], new Vector2(namePos[i], y - tabHeight - tabPadding), textColor);
+                spriteBatch.DrawString(GlobalContent.Arial, tabNames[i], new Vector2(namePos[i], y - tabHeight - tabPadding), textColor);
             }
             spriteBatch.End();
             // do the rounded box
@@ -143,7 +141,7 @@ namespace Zenith.EditorGameComponents
                 pass.Apply();
                 GraphicsDevice.DrawUserPrimitives<VertexPositionColor>(PrimitiveType.TriangleStrip, box.ToArray());
             }
-            DrawBlur(x + cornerRadius / 2, y + cornerRadius / 2, w - cornerRadius / 2 * 2, h - cornerRadius / 2 * 2, Color.White);
+            //DrawBlur(x + cornerRadius / 2, y + cornerRadius / 2, w - cornerRadius / 2 * 2, h - cornerRadius / 2 * 2, Color.White);
             GraphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, GraphicsDevice.Viewport.MaxDepth, 0);
             DrawRect(x + cornerRadius / 2, y + cornerRadius / 2, w - cornerRadius / 2 * 2, h - cornerRadius / 2 * 2, new Color(tabColor, 0.5f));
         }
@@ -177,37 +175,37 @@ namespace Zenith.EditorGameComponents
             }
         }
 
-        private void DrawBlur(int x, int y, int w, int h, Color color)
-        {
-            float z = -10f;
-            List<VertexPositionColor> rect = new List<VertexPositionColor>();
-            rect.Add(new VertexPositionColor(new Vector3(x, y + h, z), color)); // bottom-left
-            rect.Add(new VertexPositionColor(new Vector3(x, y, z), color)); // top-left
-            rect.Add(new VertexPositionColor(new Vector3(x + w, y + h, z), color)); // bottom-right
-            rect.Add(new VertexPositionColor(new Vector3(x + w, y, z), color)); // top-right
-            var basicEffect = new BasicEffect(GraphicsDevice);
-            basicEffect.VertexColorEnabled = true;
-            basicEffect.Projection = Matrix.CreateOrthographicOffCenter(0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, 0, 1, 1000);
-            var actualEffect = ((Game1)Game).blurHoriz;
-            GraphicsDevice.SetRenderTarget(((Game1)Game).renderTarget2);
-            //spriteBatch.Begin(SpriteSortMode.Deferred, null, null, null, null, actualEffect, null);
-            spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend,
-    SamplerState.LinearClamp, DepthStencilState.Default,
-    RasterizerState.CullNone, actualEffect);
-            var actualRect = new Rectangle(x, y, w, h);
-            //foreach (EffectPass pass in actualEffect.CurrentTechnique.Passes)
-            {
-                //GraphicsDevice.DrawUserPrimitives<VertexPositionColor>(PrimitiveType.TriangleStrip, rect.ToArray());
-                spriteBatch.Draw(((Game1)Game).renderTarget, actualRect, actualRect, color);
-            }
-            spriteBatch.End();
-            GraphicsDevice.SetRenderTarget(null);
-            spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend,
-     SamplerState.LinearClamp, DepthStencilState.Default,
-     RasterizerState.CullNone, ((Game1)Game).blurVert);
-            spriteBatch.Draw(((Game1)Game).renderTarget2, actualRect, actualRect, color);
-            spriteBatch.End();
-        }
+        //    private void DrawBlur(int x, int y, int w, int h, Color color)
+        //    {
+        //        float z = -10f;
+        //        List<VertexPositionColor> rect = new List<VertexPositionColor>();
+        //        rect.Add(new VertexPositionColor(new Vector3(x, y + h, z), color)); // bottom-left
+        //        rect.Add(new VertexPositionColor(new Vector3(x, y, z), color)); // top-left
+        //        rect.Add(new VertexPositionColor(new Vector3(x + w, y + h, z), color)); // bottom-right
+        //        rect.Add(new VertexPositionColor(new Vector3(x + w, y, z), color)); // top-right
+        //        var basicEffect = new BasicEffect(GraphicsDevice);
+        //        basicEffect.VertexColorEnabled = true;
+        //        basicEffect.Projection = Matrix.CreateOrthographicOffCenter(0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, 0, 1, 1000);
+        //        var actualEffect = ((Game1)Game).blurHoriz;
+        //        GraphicsDevice.SetRenderTarget(((Game1)Game).renderTarget2);
+        //        //spriteBatch.Begin(SpriteSortMode.Deferred, null, null, null, null, actualEffect, null);
+        //        spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend,
+        //SamplerState.LinearClamp, DepthStencilState.Default,
+        //RasterizerState.CullNone, actualEffect);
+        //        var actualRect = new Rectangle(x, y, w, h);
+        //        //foreach (EffectPass pass in actualEffect.CurrentTechnique.Passes)
+        //        {
+        //            //GraphicsDevice.DrawUserPrimitives<VertexPositionColor>(PrimitiveType.TriangleStrip, rect.ToArray());
+        //            spriteBatch.Draw(((Game1)Game).renderTarget, actualRect, actualRect, color);
+        //        }
+        //        spriteBatch.End();
+        //        GraphicsDevice.SetRenderTarget(null);
+        //        spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend,
+        // SamplerState.LinearClamp, DepthStencilState.Default,
+        // RasterizerState.CullNone, ((Game1)Game).blurVert);
+        //        spriteBatch.Draw(((Game1)Game).renderTarget2, actualRect, actualRect, color);
+        //        spriteBatch.End();
+        //    }
 
         private void DrawButton(String text, Color color, float x, float y, float w, float h)
         {
@@ -225,9 +223,9 @@ namespace Zenith.EditorGameComponents
                 pass.Apply();
                 GraphicsDevice.DrawUserPrimitives<VertexPositionColor>(PrimitiveType.TriangleStrip, rect.ToArray());
             }
-            Vector2 measured = font.MeasureString(text);
+            Vector2 measured = GlobalContent.Arial.MeasureString(text);
             spriteBatch.Begin(SpriteSortMode.Deferred, null, null, DepthStencilState.Default, null, null, null);
-            spriteBatch.DrawString(font, text, new Vector2(x + (w - measured.X) / 2, y + (h - measured.Y) / 2), Color.White);
+            spriteBatch.DrawString(GlobalContent.Arial, text, new Vector2(x + (w - measured.X) / 2, y + (h - measured.Y) / 2), Color.White);
             spriteBatch.End();
         }
 
