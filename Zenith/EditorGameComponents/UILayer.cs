@@ -100,13 +100,13 @@ namespace Zenith.EditorGameComponents
                 if (hoveredOver) hoverIndex = i;
                 if (hoveredOver && Mouse.GetState().LeftButton == ButtonState.Released && oldLeft)
                 {
-                    components[activeIndex].Enabled = false;
+                    //components[activeIndex].Enabled = false;
                     activeIndex = i;
                 }
             }
             // let's not try to figure out these off-by-one issues regarding disabling components -right- before they register
             if (!components[activeIndex].Enabled && hoverIndex == -1) components[activeIndex].Enabled = true;
-            if (hoverIndex != -1) components[activeIndex].Enabled = false;
+            //if (hoverIndex != -1) components[activeIndex].Enabled = false;
             oldLeft = Mouse.GetState().LeftButton == ButtonState.Pressed;
         }
     }

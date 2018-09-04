@@ -194,7 +194,7 @@ namespace Zenith.EditorGameComponents
 
         internal override List<string> GetDebugInfo()
         {
-            return new List<string>();
+            return new List<string>() { "Controls: Plus, minus, left/right click" };
         }
     }
 }

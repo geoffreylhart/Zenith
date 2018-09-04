@@ -106,7 +106,7 @@ namespace Zenith.EditorGameComponents
 
         internal override List<string> GetDebugInfo()
         {
-            return new List<String> { $"{cameraRotX}:{cameraRotY}:{cameraZoom}" };
+            return new List<String> { "Controls: WASD, arrow keys, shift, space", $"{cameraRotX}:{cameraRotY}:{cameraZoom}" };
         }
     }
 }

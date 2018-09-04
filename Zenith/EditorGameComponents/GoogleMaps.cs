@@ -153,7 +153,7 @@ namespace Zenith.EditorGameComponents
         internal override List<string> GetDebugInfo()
         {
             Sector sector = GetSector();
-            return new List<string> { sector == null ? "null" : sector.ToString() };
+            return new List<string> { "Controls: Left click", sector == null ? "null" : sector.ToString() };
         }
 
         private class Sector
