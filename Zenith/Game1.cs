@@ -56,7 +56,7 @@ namespace Zenith
             var geom = new SphericalGeometryEditor(this, camera);
             Components.Add(googleMaps);
             Components.Add(geom);
-            Components.Add(new ComponentManager(this, googleMaps, geom));
+            Components.Add(new UILayer(this, googleMaps, geom));
             Components.Add(new CityMarker(this, camera, "Pensacola", 30.4668536, -87.3294527));
             Components.Add(new CityMarker(this, camera, "0, 0", 0, 0));
             // Components.Add(new BlenderAxis(this, camera));

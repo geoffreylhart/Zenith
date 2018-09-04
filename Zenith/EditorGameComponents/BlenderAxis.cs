@@ -10,12 +10,12 @@ using Zenith.PrimitiveBuilder;
 namespace Zenith.EditorGameComponents
 {
     // a debug class which renders 3 cubes corresponding to the Blender axis - for help setting up the blender-ish camera
-    public class BlenderAxis : DrawableGameComponent
+    internal class BlenderAxis : DrawableGameComponent
     {
         private EditorCamera camera;
 
         Dictionary<VertexIndiceBuffer, Color> cubes = new Dictionary<VertexIndiceBuffer, Color>();
-        public BlenderAxis(Game game, EditorCamera camera) : base(game)
+        internal BlenderAxis(Game game, EditorCamera camera) : base(game)
         {
             this.camera = camera;
             float size = 0.3f;

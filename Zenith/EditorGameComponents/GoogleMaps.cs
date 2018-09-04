@@ -10,13 +10,13 @@ using Zenith.PrimitiveBuilder;
 
 namespace Zenith.EditorGameComponents
 {
-    public class GoogleMaps : DrawableGameComponent
+    internal class GoogleMaps : EditorGameComponent
     {
         private EditorCamera camera;
         List<VertexIndiceBuffer> googleMaps = new List<VertexIndiceBuffer>();
         VertexBuffer previewSquare = null;
 
-        public GoogleMaps(Game game, EditorCamera camera) : base(game)
+        internal GoogleMaps(Game game, EditorCamera camera) : base(game)
         {
             this.camera = camera;
         }
@@ -147,8 +147,13 @@ namespace Zenith.EditorGameComponents
             int y = (int)((ToY(squareCenter.Y)) / (zoomPortion));
             y = Math.Max(y, 0);
             y = Math.Min(y, (1 << zoom) - 1);
-            this.GetDebugConsole().Debug(new Sector(x, y, zoom));
             return new Sector(x, y, zoom);
+        }
+
+        internal override List<string> GetDebugInfo()
+        {
+            Sector sector = GetSector();
+            return new List<string> { sector == null ? "null" : sector.ToString() };
         }
 
         private class Sector

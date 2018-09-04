@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -7,7 +8,7 @@ using Zenith.MathHelpers;
 
 namespace Zenith.EditorGameComponents
 {
-    public class EditorCamera : GameComponent, IUpdateable
+    internal class EditorCamera : EditorGameComponent
     {
         public double cameraRotX = 0; // longitude coordinate of our character
         public double cameraRotY = 0; // latitude coordinate of our character
@@ -22,7 +23,6 @@ namespace Zenith.EditorGameComponents
 
         public override void Update(GameTime gameTime)
         {
-            this.GetDebugConsole().DebugSet(cameraRotX + ":" + cameraRotY + ":" + cameraZoom);
             double cameraMoveAmount = 0.05 * Math.Pow(0.5, cameraZoom);
             Keyboard.GetState().AffectNumber(ref cameraRotX, Keys.Left, Keys.Right, Keys.A, Keys.D, cameraMoveAmount);
             Keyboard.GetState().AffectNumber(ref cameraRotY, Keys.Down, Keys.Up, Keys.S, Keys.W, cameraMoveAmount);
@@ -102,6 +102,11 @@ namespace Zenith.EditorGameComponents
         private Vector3d ToLatLong(Vector3d v)
         {
             return new Vector3d(Math.Atan2(v.X, -v.Y), Math.Asin(v.Z), 0);
+        }
+
+        internal override List<string> GetDebugInfo()
+        {
+            return new List<String> { $"{cameraRotX}:{cameraRotY}:{cameraZoom}" };
         }
     }
 }

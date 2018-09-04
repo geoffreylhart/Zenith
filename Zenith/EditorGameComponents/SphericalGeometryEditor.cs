@@ -15,7 +15,7 @@ namespace Zenith.EditorGameComponents
     // - Right click a point to remove it
     // - Left click a point to drag it
     // - Left click on a line to add a point
-    public class SphericalGeometryEditor : DrawableGameComponent
+    internal class SphericalGeometryEditor : EditorGameComponent
     {
         private EditorCamera camera;
         private List<VectorHandle> shape;
@@ -53,7 +53,7 @@ namespace Zenith.EditorGameComponents
             BASE, INCOMING, OUTGOING
         }
 
-        public SphericalGeometryEditor(Game game, EditorCamera camera) : base(game)
+        internal SphericalGeometryEditor(Game game, EditorCamera camera) : base(game)
         {
             this.camera = camera;
             shape = new List<VectorHandle>() { new VectorHandle(0, 0), new VectorHandle(0, 0.1f), new VectorHandle(0.1f, 0.1f), new VectorHandle(0.1f, 0) };
@@ -251,6 +251,11 @@ namespace Zenith.EditorGameComponents
                     GraphicsDevice.DrawUserPrimitives<VertexPositionColor>(PrimitiveType.TriangleStrip, markerVertices.ToArray());
                 }
             }
+        }
+
+        internal override List<string> GetDebugInfo()
+        {
+            return new List<string>();
         }
     }
 }

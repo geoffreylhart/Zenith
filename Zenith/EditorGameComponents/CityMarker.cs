@@ -8,7 +8,7 @@ using Zenith.MathHelpers;
 namespace Zenith.EditorGameComponents
 {
     // assuming an Earth radius of 1
-    public class CityMarker : DrawableGameComponent
+    internal class CityMarker : DrawableGameComponent
     {
         private static int HALF_SIZE = 10;
         private EditorCamera camera;
@@ -17,7 +17,7 @@ namespace Zenith.EditorGameComponents
         private double longitude;
         private SpriteBatch spriteBatch;
 
-        public CityMarker(Game game, EditorCamera camera, String name, double latitude, double longitude) : base(game)
+        internal CityMarker(Game game, EditorCamera camera, String name, double latitude, double longitude) : base(game)
         {
             this.camera = camera;
             this.name = name;

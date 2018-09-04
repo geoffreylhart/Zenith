@@ -9,14 +9,14 @@ using Zenith.PrimitiveBuilder;
 
 namespace Zenith.EditorGameComponents
 {
-    public class MultiResMesh : DrawableGameComponent
+    internal class MultiResMesh : EditorGameComponent
     {
         private EditableMesh editableMesh = new EditableMesh();
         private EditorCamera camera;
         RenderTarget2D renderTarget;
         private double traceAlpha = 0.5;
 
-        public MultiResMesh(Game game, EditorCamera camera) : base(game)
+        internal MultiResMesh(Game game, EditorCamera camera) : base(game)
         {
             this.camera = camera;
         }
@@ -171,7 +171,6 @@ namespace Zenith.EditorGameComponents
             List<VertexPositionColor> preview = new List<VertexPositionColor>();
             Vector2 mouseVector = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
             //Vector3d circleStart = new Vector3d(0,0.5,0);
-            this.GetDebugConsole().DebugSet(Mouse.GetState().X + ":" + Mouse.GetState().Y);
             if (circleStart == null) return;
             bf.VertexColorEnabled = true;
             Vector3 circleStart2D = new Vector3((float)circleStart.X, (float)circleStart.Y, 0);
@@ -191,6 +190,11 @@ namespace Zenith.EditorGameComponents
                 GraphicsDevice.DrawUserPrimitives(PrimitiveType.TriangleList, preview.ToArray(), 0, preview.Count / 3);
             }
             bf.VertexColorEnabled = false;
+        }
+
+        internal override List<string> GetDebugInfo()
+        {
+            return new List<string>();
         }
     }
 }
