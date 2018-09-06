@@ -23,7 +23,7 @@ namespace Zenith.EditorGameComponents
         static float CORNER_RADIUS = 5;
         static float TAB_HEIGHT = 30;
         static int ARC_REZ = 5;
-        internal static void DrawThoseTabs(int x, int y, int w, int h, GraphicsDevice graphicsDevice, RenderTarget2D renderSource, List<String> debugInfo)
+        internal static void DrawThoseTabs(int x, int y, int w, int h, GraphicsDevice graphicsDevice, RenderTarget2D renderSource)
         {
             InitBlurEffect();
             InitLayers(graphicsDevice);
@@ -49,16 +49,6 @@ namespace Zenith.EditorGameComponents
             CopySection((int)minx - pad, (int)miny - pad, (int)maxx + pad, (int)maxy + pad, graphicsDevice, layer5, null);
             DrawShapeWithCenter(mainShape, x + 100, y + h / 2, Color.Gray, graphicsDevice, layer2, null);
             DrawLinesWithGradient(mainShape, 2, Color.White, graphicsDevice);
-            WriteText(x+50, y-20, "Debug", graphicsDevice, GlobalContent.ArialBold);
-            WriteText(x+10, y+10, String.Join("\n", debugInfo), graphicsDevice, GlobalContent.Arial);
-        }
-
-        private static void WriteText(int x, int y, string str, GraphicsDevice graphicsDevice, SpriteFont font)
-        {
-            SpriteBatch spriteBatch = new SpriteBatch(graphicsDevice);
-            spriteBatch.Begin(SpriteSortMode.Deferred, null, null, DepthStencilState.Default, null, null, null);
-            spriteBatch.DrawString(font, str, new Vector2(x, y), Color.White);
-            spriteBatch.End();
         }
 
         private static List<Vector2> OffsetShape(List<Vector2> v, float o)

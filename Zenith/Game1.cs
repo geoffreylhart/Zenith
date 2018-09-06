@@ -10,7 +10,7 @@ namespace Zenith
     {
         public DebugConsole debug;
         public GraphicsDeviceManager graphics;
-        public RenderTarget2D renderTarget;
+        public static RenderTarget2D renderTarget;
 
         public Game1()
         {
@@ -56,7 +56,7 @@ namespace Zenith
             var geom = new SphericalGeometryEditor(this, camera);
             Components.Add(googleMaps);
             Components.Add(geom);
-            Components.Add(new UILayer(this, camera, googleMaps, geom));
+            Components.Add(new UILayer(this, new ComponentManager(camera, googleMaps, geom)));
             Components.Add(new CityMarker(this, camera, "Pensacola", 30.4668536, -87.3294527));
             Components.Add(new CityMarker(this, camera, "0, 0", 0, 0));
             // Components.Add(new BlenderAxis(this, camera));

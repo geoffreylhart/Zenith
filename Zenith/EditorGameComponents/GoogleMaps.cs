@@ -25,7 +25,7 @@ namespace Zenith.EditorGameComponents
         {
             var basicEffect3 = MakeThatBasicEffect3();
             basicEffect3.TextureEnabled = true;
-            GraphicsDevice.SetRenderTarget(((Game1)Game).renderTarget);
+            GraphicsDevice.SetRenderTarget(Game1.renderTarget);
             foreach (var buffer in googleMaps)
             {
                 basicEffect3.Texture = buffer.texture;
