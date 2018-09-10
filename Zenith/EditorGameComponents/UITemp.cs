@@ -50,6 +50,30 @@ namespace Zenith.EditorGameComponents
             DrawShapeWithCenter(mainShape, x + 100, y + h / 2, Color.Gray, graphicsDevice, layer2, null);
             DrawLinesWithGradient(mainShape, 2, Color.White, graphicsDevice);
         }
+        
+        internal static void DrawThatListBox(int x, int y, int w, int ih, int cnt, GraphicsDevice graphicsDevice, RenderTarget2D renderSource)
+        {
+            int h = ih * cnt;
+            InitBlurEffect();
+            InitLayers(graphicsDevice);
+            List<List<Vector2>> shapes = new List<List<Vector2>>();
+            var mainShape = new List<Vector2>();
+            AddArc(mainShape, x + CORNER_RADIUS, y + CORNER_RADIUS, CORNER_RADIUS, 180, 90);
+            AddArc(mainShape, x + w - CORNER_RADIUS, y + CORNER_RADIUS, CORNER_RADIUS, 90, 0);
+            AddArc(mainShape, x + w - CORNER_RADIUS, y + h - CORNER_RADIUS, CORNER_RADIUS, 0, -90);
+            AddArc(mainShape, x + CORNER_RADIUS, y + h - CORNER_RADIUS, CORNER_RADIUS, -90, -180);
+            float minx = mainShape.Min(v => v.X);
+            float maxx = mainShape.Max(v => v.X);
+            float miny = mainShape.Min(v => v.Y);
+            float maxy = mainShape.Max(v => v.Y);
+            BlurSection((int)minx, (int)miny, (int)maxx, (int)maxy, graphicsDevice, renderSource, layer1, layer2);
+            DrawShapeWithCenter(OffsetShape(mainShape, 5), x + 100, y + h / 2, new Color(0, 180, 255, 255), graphicsDevice, null, layer3);
+            int pad = 20;
+            BlurSection((int)minx - pad, (int)miny - pad, (int)maxx + pad, (int)maxy + pad, graphicsDevice, layer3, layer4, layer5);
+            CopySection((int)minx - pad, (int)miny - pad, (int)maxx + pad, (int)maxy + pad, graphicsDevice, layer5, null);
+            DrawShapeWithCenter(mainShape, x + 100, y + h / 2, Color.Gray, graphicsDevice, layer2, null);
+            DrawLinesWithGradient(mainShape, 2, Color.White, graphicsDevice);
+        }
 
         private static List<Vector2> OffsetShape(List<Vector2> v, float o)
         {
