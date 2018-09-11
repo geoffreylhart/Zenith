@@ -23,10 +23,10 @@ namespace Zenith.EditorGameComponents
 
         internal void Init(UILayer uiLayer)
         {
-            Tabs tabs = new Tabs(1, 20, 300, 500, 200);
+            Tabs tabs = new Tabs(1, 20, 350, 500, 200);
             tabs.titles[0] = "Debug";
             tabs.panels[0].Add(new DebugLabel(this));
-            list = new ComponentList(430, 10, 300, components);
+            list = new ComponentList(490, 10, 300, components);
             uiLayer.Add(tabs);
             uiLayer.Add(list);
         }

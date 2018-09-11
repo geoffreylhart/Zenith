@@ -50,10 +50,9 @@ namespace Zenith.EditorGameComponents
             DrawShapeWithCenter(mainShape, x + 100, y + h / 2, Color.Gray, graphicsDevice, layer2, null);
             DrawLinesWithGradient(mainShape, 2, Color.White, graphicsDevice);
         }
-        
-        internal static void DrawThatListBox(int x, int y, int w, int ih, int cnt, GraphicsDevice graphicsDevice, RenderTarget2D renderSource)
+
+        internal static void DrawStyledBoxBack(int x, int y, int w, int h, GraphicsDevice graphicsDevice, RenderTarget2D renderSource)
         {
-            int h = ih * cnt;
             InitBlurEffect();
             InitLayers(graphicsDevice);
             List<List<Vector2>> shapes = new List<List<Vector2>>();
@@ -72,6 +71,17 @@ namespace Zenith.EditorGameComponents
             BlurSection((int)minx - pad, (int)miny - pad, (int)maxx + pad, (int)maxy + pad, graphicsDevice, layer3, layer4, layer5);
             CopySection((int)minx - pad, (int)miny - pad, (int)maxx + pad, (int)maxy + pad, graphicsDevice, layer5, null);
             DrawShapeWithCenter(mainShape, x + 100, y + h / 2, Color.Gray, graphicsDevice, layer2, null);
+            DrawLinesWithGradient(mainShape, 2, Color.White, graphicsDevice);
+        }
+
+        internal static void DrawStyledBoxFront(int x, int y, int w, int h, GraphicsDevice graphicsDevice, RenderTarget2D renderSource)
+        {
+            List<List<Vector2>> shapes = new List<List<Vector2>>();
+            var mainShape = new List<Vector2>();
+            AddArc(mainShape, x + CORNER_RADIUS, y + CORNER_RADIUS, CORNER_RADIUS, 180, 90);
+            AddArc(mainShape, x + w - CORNER_RADIUS, y + CORNER_RADIUS, CORNER_RADIUS, 90, 0);
+            AddArc(mainShape, x + w - CORNER_RADIUS, y + h - CORNER_RADIUS, CORNER_RADIUS, 0, -90);
+            AddArc(mainShape, x + CORNER_RADIUS, y + h - CORNER_RADIUS, CORNER_RADIUS, -90, -180);
             DrawLinesWithGradient(mainShape, 2, Color.White, graphicsDevice);
         }
 

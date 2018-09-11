@@ -33,8 +33,7 @@ namespace Zenith.EditorGameComponents.UIComponents
 
         public void Draw(GraphicsDevice graphicsDevice)
         {
-            UITemp.DrawThatListBox(X, Y, W, LIST_ITEM_HEIGHT + PADDING * 2, items.Count, graphicsDevice, Game1.renderTarget);
-            SpriteBatch spriteBatch = new SpriteBatch(graphicsDevice);
+            UITemp.DrawStyledBoxBack(X, Y, W, (LIST_ITEM_HEIGHT + PADDING * 2) * items.Count, graphicsDevice, Game1.renderTarget);
             if (hoverIndex >= 0)
             {
                 DrawBasicListItemBox(graphicsDevice, hoverIndex, new Color(0, 90, 128));
@@ -43,6 +42,8 @@ namespace Zenith.EditorGameComponents.UIComponents
             {
                 DrawBasicListItemBox(graphicsDevice, activeIndex, new Color(0, 180, 255));
             }
+            UITemp.DrawStyledBoxFront(X, Y, W, (LIST_ITEM_HEIGHT + PADDING * 2) * items.Count, graphicsDevice, Game1.renderTarget);
+            SpriteBatch spriteBatch = new SpriteBatch(graphicsDevice);
             spriteBatch.Begin();
             for (int i = 0; i < items.Count; i++)
             {
