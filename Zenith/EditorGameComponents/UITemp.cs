@@ -40,17 +40,7 @@ namespace Zenith.EditorGameComponents
             float maxx = mainShape.Max(v => v.X);
             float miny = mainShape.Min(v => v.Y);
             float maxy = mainShape.Max(v => v.Y);
-            //ClearLayer(layer3, Color.White, graphicsDevice);
-            graphicsDevice.SetRenderTarget(layer3);
-            graphicsDevice.Clear(Color.Transparent);
-            DrawShapeWithCenter(OffsetShape(mainShape, 5), x + tabOffset + tabWidth / 2, y + h / 2, new Color(0, 180, 255, 255), graphicsDevice, null);
-            graphicsDevice.SetRenderTarget(null);
-            int pad = 20;
-            BlurSection((int)minx - pad, (int)miny - pad, (int)maxx + pad, (int)maxy + pad, graphicsDevice, layer3, layer4, layer5);
-            graphicsDevice.SetRenderTarget(null);
-            graphicsDevice.SetRenderTarget(null);
-            CopySection((int)minx - pad, (int)miny - pad, (int)maxx + pad, (int)maxy + pad, graphicsDevice, layer5);
-            graphicsDevice.SetRenderTarget(null);
+            DrawBlurredShape(OffsetShape(mainShape, 5), x + tabOffset + tabWidth / 2, y + h / 2, new Color(0, 180, 255, 255), graphicsDevice, null);
             BlurSection((int)minx, (int)miny, (int)maxx, (int)maxy, graphicsDevice, renderSource, layer1, layer2);
             graphicsDevice.SetRenderTarget(null);
             graphicsDevice.SetRenderTarget(null);
@@ -59,16 +49,41 @@ namespace Zenith.EditorGameComponents
             DrawLinesWithGradient(mainShape, 2, Color.White, graphicsDevice);
         }
 
+        private static void DrawBlurredShape(List<Vector2> shape, int cx, int cy, Color color, GraphicsDevice graphicsDevice, RenderTarget2D target)
+        {
+            float minx = shape.Min(v => v.X);
+            float maxx = shape.Max(v => v.X);
+            float miny = shape.Min(v => v.Y);
+            float maxy = shape.Max(v => v.Y);
+            int pad = 20;
+            graphicsDevice.SetRenderTarget(layer3);
+            graphicsDevice.Clear(Color.Transparent); // TODO: figure out why alpha is acting so weirdly
+            DrawShapeWithCenter(shape, cx, cy, color, graphicsDevice, null);
+            graphicsDevice.SetRenderTarget(null);
+            BlurSection((int)minx - pad, (int)miny - pad, (int)maxx + pad, (int)maxy + pad, graphicsDevice, layer3, layer4, layer5);
+            graphicsDevice.SetRenderTarget(null);
+            CopySection((int)minx - pad, (int)miny - pad, (int)maxx + pad, (int)maxy + pad, graphicsDevice, layer5);
+        }
+
         internal static void DrawBackTab(int x, int y, int w, int h, Color color, GraphicsDevice graphicsDevice)
         {
+            InitBlurEffect();
+            InitLayers(graphicsDevice);
             var mainShape = new List<Vector2>();
             AddArc(mainShape, x - CORNER_RADIUS, y - CORNER_RADIUS, CORNER_RADIUS, -90, 0);
             AddArc(mainShape, x + CORNER_RADIUS, y - h + CORNER_RADIUS, CORNER_RADIUS, 180, 90);
             AddArc(mainShape, x + w - CORNER_RADIUS, y - h + CORNER_RADIUS, CORNER_RADIUS, 90, 0);
             AddArc(mainShape, x + w + CORNER_RADIUS, y - CORNER_RADIUS, CORNER_RADIUS, -180, -90);
+            var blurShape = new List<Vector2>(); // specially crafted to not overlap with the other blur shape at all
+            AddArc(blurShape, x - CORNER_RADIUS, y - CORNER_RADIUS, CORNER_RADIUS - 5, -90, 0);
+            AddArc(blurShape, x + CORNER_RADIUS, y - h + CORNER_RADIUS, CORNER_RADIUS + 5, 180, 90);
+            AddArc(blurShape, x + w - CORNER_RADIUS, y - h + CORNER_RADIUS, CORNER_RADIUS + 5, 90, 0);
+            AddArc(blurShape, x + w + CORNER_RADIUS, y - CORNER_RADIUS, CORNER_RADIUS - 5, -180, -90);
+            DrawBlurredShape(blurShape, x + w / 2, y + h / 2, new Color(0, 180, 255, 255), graphicsDevice, null);
             graphicsDevice.SetRenderTarget(null);
             DrawShapeWithCenter(mainShape, x + w / 2, y + h / 2, color, graphicsDevice, null);
             graphicsDevice.SetRenderTarget(null);
+            DrawLinesWithGradient(mainShape, 2, Color.White, graphicsDevice);
         }
 
         internal static void DrawStyledBoxBack(int x, int y, int w, int h, GraphicsDevice graphicsDevice, RenderTarget2D renderSource)
@@ -85,16 +100,7 @@ namespace Zenith.EditorGameComponents
             float maxx = mainShape.Max(v => v.X);
             float miny = mainShape.Min(v => v.Y);
             float maxy = mainShape.Max(v => v.Y);
-            graphicsDevice.SetRenderTarget(layer3);
-            graphicsDevice.Clear(Color.Transparent);
-            DrawShapeWithCenter(OffsetShape(mainShape, 5), x + 100, y + h / 2, new Color(0, 180, 255, 255), graphicsDevice, null);
-            graphicsDevice.SetRenderTarget(null);
-            int pad = 20;
-            BlurSection((int)minx - pad, (int)miny - pad, (int)maxx + pad, (int)maxy + pad, graphicsDevice, layer3, layer4, layer5);
-            graphicsDevice.SetRenderTarget(null);
-            graphicsDevice.SetRenderTarget(null);
-            CopySection((int)minx - pad, (int)miny - pad, (int)maxx + pad, (int)maxy + pad, graphicsDevice, layer5);
-            graphicsDevice.SetRenderTarget(null);
+            DrawBlurredShape(OffsetShape(mainShape, 5), x + 100, y + h / 2, new Color(0, 180, 255, 255), graphicsDevice, null);
             BlurSection((int)minx, (int)miny, (int)maxx, (int)maxy, graphicsDevice, renderSource, layer1, layer2);
             graphicsDevice.SetRenderTarget(null);
             graphicsDevice.SetRenderTarget(null);
@@ -140,19 +146,6 @@ namespace Zenith.EditorGameComponents
         {
             Rectangle rect = new Rectangle(minx, miny, maxx - minx, maxy - miny);
             SpriteBatch spriteBatch = new SpriteBatch(graphicsDevice);
-            //spriteBatch.Begin();
-            BlendState blendState = new BlendState();
-            blendState.AlphaBlendFunction = BlendState.Additive.AlphaBlendFunction;
-            blendState.AlphaDestinationBlend = BlendState.Additive.AlphaDestinationBlend;
-            blendState.AlphaSourceBlend = BlendState.Additive.AlphaSourceBlend;
-            blendState.BlendFactor = BlendState.Additive.BlendFactor;
-            blendState.ColorBlendFunction = BlendState.Additive.ColorBlendFunction;
-            blendState.ColorDestinationBlend = BlendState.Additive.ColorDestinationBlend;
-            blendState.ColorSourceBlend = BlendState.Additive.ColorSourceBlend;
-            blendState.ColorWriteChannels = BlendState.Additive.ColorWriteChannels;
-            blendState.ColorWriteChannels1 = BlendState.Additive.ColorWriteChannels1;
-            blendState.ColorWriteChannels2 = BlendState.Additive.ColorWriteChannels2;
-            blendState.ColorWriteChannels3 = BlendState.Additive.ColorWriteChannels3;
             spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, null, null, null, null);
             spriteBatch.Draw(src, rect, rect, Color.White);
             spriteBatch.End();
