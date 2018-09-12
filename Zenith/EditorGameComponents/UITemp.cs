@@ -40,12 +40,22 @@ namespace Zenith.EditorGameComponents
             float maxx = mainShape.Max(v => v.X);
             float miny = mainShape.Min(v => v.Y);
             float maxy = mainShape.Max(v => v.Y);
-            BlurSection((int)minx, (int)miny, (int)maxx, (int)maxy, graphicsDevice, renderSource, layer1, layer2);
-            DrawShapeWithCenter(OffsetShape(mainShape, 5), x + tabOffset + tabWidth / 2, y + h / 2, new Color(0, 180, 255, 255), graphicsDevice, null, layer3);
+            //ClearLayer(layer3, Color.White, graphicsDevice);
+            graphicsDevice.SetRenderTarget(layer3);
+            graphicsDevice.Clear(Color.Transparent);
+            DrawShapeWithCenter(OffsetShape(mainShape, 5), x + tabOffset + tabWidth / 2, y + h / 2, new Color(0, 180, 255, 255), graphicsDevice, null);
+            graphicsDevice.SetRenderTarget(null);
             int pad = 20;
             BlurSection((int)minx - pad, (int)miny - pad, (int)maxx + pad, (int)maxy + pad, graphicsDevice, layer3, layer4, layer5);
-            CopySection((int)minx - pad, (int)miny - pad, (int)maxx + pad, (int)maxy + pad, graphicsDevice, layer5, null);
-            DrawShapeWithCenter(mainShape, x + tabOffset + tabWidth / 2, y + h / 2, Color.Gray, graphicsDevice, layer2, null);
+            graphicsDevice.SetRenderTarget(null);
+            graphicsDevice.SetRenderTarget(null);
+            CopySection((int)minx - pad, (int)miny - pad, (int)maxx + pad, (int)maxy + pad, graphicsDevice, layer5);
+            graphicsDevice.SetRenderTarget(null);
+            BlurSection((int)minx, (int)miny, (int)maxx, (int)maxy, graphicsDevice, renderSource, layer1, layer2);
+            graphicsDevice.SetRenderTarget(null);
+            graphicsDevice.SetRenderTarget(null);
+            DrawShapeWithCenter(mainShape, x + tabOffset + tabWidth / 2, y + h / 2, Color.Gray, graphicsDevice, layer2);
+            graphicsDevice.SetRenderTarget(null);
             DrawLinesWithGradient(mainShape, 2, Color.White, graphicsDevice);
         }
 
@@ -56,7 +66,9 @@ namespace Zenith.EditorGameComponents
             AddArc(mainShape, x + CORNER_RADIUS, y - h + CORNER_RADIUS, CORNER_RADIUS, 180, 90);
             AddArc(mainShape, x + w - CORNER_RADIUS, y - h + CORNER_RADIUS, CORNER_RADIUS, 90, 0);
             AddArc(mainShape, x + w + CORNER_RADIUS, y - CORNER_RADIUS, CORNER_RADIUS, -180, -90);
-            DrawShapeWithCenter(mainShape, x + w / 2, y + h / 2, color, graphicsDevice, null, null);
+            graphicsDevice.SetRenderTarget(null);
+            DrawShapeWithCenter(mainShape, x + w / 2, y + h / 2, color, graphicsDevice, null);
+            graphicsDevice.SetRenderTarget(null);
         }
 
         internal static void DrawStyledBoxBack(int x, int y, int w, int h, GraphicsDevice graphicsDevice, RenderTarget2D renderSource)
@@ -73,12 +85,21 @@ namespace Zenith.EditorGameComponents
             float maxx = mainShape.Max(v => v.X);
             float miny = mainShape.Min(v => v.Y);
             float maxy = mainShape.Max(v => v.Y);
-            BlurSection((int)minx, (int)miny, (int)maxx, (int)maxy, graphicsDevice, renderSource, layer1, layer2);
-            DrawShapeWithCenter(OffsetShape(mainShape, 5), x + 100, y + h / 2, new Color(0, 180, 255, 255), graphicsDevice, null, layer3);
+            graphicsDevice.SetRenderTarget(layer3);
+            graphicsDevice.Clear(Color.Transparent);
+            DrawShapeWithCenter(OffsetShape(mainShape, 5), x + 100, y + h / 2, new Color(0, 180, 255, 255), graphicsDevice, null);
+            graphicsDevice.SetRenderTarget(null);
             int pad = 20;
             BlurSection((int)minx - pad, (int)miny - pad, (int)maxx + pad, (int)maxy + pad, graphicsDevice, layer3, layer4, layer5);
-            CopySection((int)minx - pad, (int)miny - pad, (int)maxx + pad, (int)maxy + pad, graphicsDevice, layer5, null);
-            DrawShapeWithCenter(mainShape, x + 100, y + h / 2, Color.Gray, graphicsDevice, layer2, null);
+            graphicsDevice.SetRenderTarget(null);
+            graphicsDevice.SetRenderTarget(null);
+            CopySection((int)minx - pad, (int)miny - pad, (int)maxx + pad, (int)maxy + pad, graphicsDevice, layer5);
+            graphicsDevice.SetRenderTarget(null);
+            BlurSection((int)minx, (int)miny, (int)maxx, (int)maxy, graphicsDevice, renderSource, layer1, layer2);
+            graphicsDevice.SetRenderTarget(null);
+            graphicsDevice.SetRenderTarget(null);
+            DrawShapeWithCenter(mainShape, x + 100, y + h / 2, Color.Gray, graphicsDevice, layer2);
+            graphicsDevice.SetRenderTarget(null);
             DrawLinesWithGradient(mainShape, 2, Color.White, graphicsDevice);
         }
 
@@ -115,10 +136,9 @@ namespace Zenith.EditorGameComponents
             return newv;
         }
 
-        private static void CopySection(int minx, int miny, int maxx, int maxy, GraphicsDevice graphicsDevice, RenderTarget2D src, RenderTarget2D dest)
+        private static void CopySection(int minx, int miny, int maxx, int maxy, GraphicsDevice graphicsDevice, RenderTarget2D src)
         {
             Rectangle rect = new Rectangle(minx, miny, maxx - minx, maxy - miny);
-            graphicsDevice.SetRenderTarget(dest);
             SpriteBatch spriteBatch = new SpriteBatch(graphicsDevice);
             //spriteBatch.Begin();
             BlendState blendState = new BlendState();
@@ -133,15 +153,12 @@ namespace Zenith.EditorGameComponents
             blendState.ColorWriteChannels1 = BlendState.Additive.ColorWriteChannels1;
             blendState.ColorWriteChannels2 = BlendState.Additive.ColorWriteChannels2;
             blendState.ColorWriteChannels3 = BlendState.Additive.ColorWriteChannels3;
-            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.Additive, null, null, null, null);
+            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, null, null, null, null);
             spriteBatch.Draw(src, rect, rect, Color.White);
             spriteBatch.End();
-            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, null, null, null, null);
-            spriteBatch.End();
-            graphicsDevice.SetRenderTarget(null);
         }
 
-        private static void DrawShapeWithCenter(List<Vector2> shape, int cx, int cy, Color color, GraphicsDevice graphicsDevice, RenderTarget2D src, RenderTarget2D dest)
+        private static void DrawShapeWithCenter(List<Vector2> shape, int cx, int cy, Color color, GraphicsDevice graphicsDevice, RenderTarget2D src)
         {
             List<VertexPositionColorTexture> vertices = new List<VertexPositionColorTexture>();
             for (int i = 0; i < shape.Count; i++)
@@ -150,10 +167,10 @@ namespace Zenith.EditorGameComponents
                 vertices.Add(new VertexPositionColorTexture(new Vector3(shape[(i + 1) % shape.Count].X, shape[(i + 1) % shape.Count].Y, -10f), color, new Vector2((shape[(i + 1) % shape.Count].X) / (float)graphicsDevice.Viewport.Width, (shape[(i + 1) % shape.Count].Y) / (float)graphicsDevice.Viewport.Height)));
                 vertices.Add(new VertexPositionColorTexture(new Vector3(cx, cy, -10f), color, new Vector2(cx / (float)graphicsDevice.Viewport.Width, cy / (float)graphicsDevice.Viewport.Height)));
             }
-            DrawVertices(vertices, graphicsDevice, src, dest);
+            DrawVertices(vertices, graphicsDevice, src);
         }
 
-        private static void DrawVertices(List<VertexPositionColorTexture> vertices, GraphicsDevice graphicsDevice, RenderTarget2D src, RenderTarget2D dest)
+        private static void DrawVertices(List<VertexPositionColorTexture> vertices, GraphicsDevice graphicsDevice, RenderTarget2D src)
         {
             var basicEffect = new BasicEffect(graphicsDevice);
             if (src != null)
@@ -161,7 +178,6 @@ namespace Zenith.EditorGameComponents
                 basicEffect.TextureEnabled = true;
                 basicEffect.Texture = src;
             }
-            graphicsDevice.SetRenderTarget(dest);
             basicEffect.VertexColorEnabled = true;
             basicEffect.Projection = Matrix.CreateOrthographicOffCenter(0, graphicsDevice.Viewport.Width, graphicsDevice.Viewport.Height, 0, 1, 1000);
             foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
@@ -169,7 +185,6 @@ namespace Zenith.EditorGameComponents
                 pass.Apply();
                 graphicsDevice.DrawUserPrimitives<VertexPositionColorTexture>(PrimitiveType.TriangleList, vertices.ToArray());
             }
-            graphicsDevice.SetRenderTarget(null);
         }
 
         static private float[] kernel;
@@ -311,6 +326,7 @@ namespace Zenith.EditorGameComponents
             basicEffect.Projection = Matrix.CreateOrthographicOffCenter(0, graphicsDevice.Viewport.Width, graphicsDevice.Viewport.Height, 0, 1, 1000);
             var actualEffect = blurHoriz;
             graphicsDevice.SetRenderTarget(intermediate);
+            graphicsDevice.Clear(Color.Transparent);
             spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend,
     SamplerState.LinearClamp, DepthStencilState.Default,
     RasterizerState.CullNone, actualEffect);
@@ -318,12 +334,12 @@ namespace Zenith.EditorGameComponents
             spriteBatch.Draw(src, actualRect, actualRect, Color.White);
             spriteBatch.End();
             graphicsDevice.SetRenderTarget(dest);
+            graphicsDevice.Clear(Color.Transparent);
             spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend,
      SamplerState.LinearClamp, DepthStencilState.Default,
      RasterizerState.CullNone, blurVert);
             spriteBatch.Draw(intermediate, actualRect, actualRect, Color.White);
             spriteBatch.End();
-            graphicsDevice.SetRenderTarget(null);
         }
 
         // TODO: can't do it this way, I'll have to use the spritebatch or something, I'm betting
@@ -365,36 +381,6 @@ namespace Zenith.EditorGameComponents
                 vertices[i] = new VertexPositionColor(vertices[i].Position, cc2);
             }
             DrawVertices(vertices, graphicsDevice);
-        }
-
-        private static void DrawVerticesWithGradientUgh(List<VertexPositionColor> vertices, GraphicsDevice graphicsDevice)
-        {
-            float minx = vertices.Min(x => x.Position.X);
-            float maxx = vertices.Max(x => x.Position.X);
-            float miny = vertices.Min(x => x.Position.Y);
-            float maxy = vertices.Max(x => x.Position.Y);
-            var tempRenderTarget = new RenderTarget2D(
-                 graphicsDevice,
-                 (int)(maxx - minx),
-                 (int)(maxy - miny),
-                 false,
-                 graphicsDevice.PresentationParameters.BackBufferFormat,
-                 DepthFormat.None);
-            graphicsDevice.SetRenderTarget(tempRenderTarget);
-            var basicEffect = new BasicEffect(graphicsDevice);
-            basicEffect.VertexColorEnabled = true;
-            basicEffect.Projection = Matrix.CreateOrthographicOffCenter(minx, maxx, maxy, miny, 1, 1000);
-            foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-                graphicsDevice.DrawUserPrimitives<VertexPositionColor>(PrimitiveType.TriangleList, vertices.ToArray());
-            }
-            SpriteBatch spriteBatch = new SpriteBatch(graphicsDevice);
-            graphicsDevice.SetRenderTarget(null);
-            spriteBatch.Begin();
-            spriteBatch.Draw(tempRenderTarget, new Rectangle((int)minx, (int)miny, (int)(maxx - minx), (int)(maxy - miny)), Color.White);
-            spriteBatch.End();
-            tempRenderTarget.Dispose();
         }
 
         // clockwise points outwards
