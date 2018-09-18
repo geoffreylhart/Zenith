@@ -55,7 +55,7 @@ namespace Zenith.EditorGameComponents
 
         public override void Update(GameTime gameTime)
         {
-            if (Mouse.GetState().WasLeftPressed()) AddGoogleMap();
+            if (UILayer.LeftPressed) AddGoogleMap();
             if (previewSquare != null) previewSquare.Dispose();
             previewSquare = null;
             Sector squareCenter = GetSector();

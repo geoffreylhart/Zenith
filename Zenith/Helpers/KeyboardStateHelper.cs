@@ -17,22 +17,6 @@ namespace Zenith.Helpers
             return answer;
         }
 
-        // TODO: I don't really think this code style works out since multiple components may end up calling this
-        // unless we make it a per game component thing?
-        internal static bool WasLeftPressed(this MouseState state)
-        {
-            bool answer = state.LeftButton == ButtonState.Pressed && !oldLeft;
-            oldLeft = state.LeftButton == ButtonState.Pressed;
-            return answer;
-        }
-
-        internal static bool WasRightPressed(this MouseState state)
-        {
-            bool answer = state.RightButton == ButtonState.Pressed && !oldRight;
-            oldRight = state.RightButton == ButtonState.Pressed;
-            return answer;
-        }
-
         internal static void AffectNumber(this KeyboardState state, ref double number, Keys decreaseKey, Keys increaseKey, Keys decreaseKey2, Keys increaseKey2, double amount)
         {
             if (state.IsKeyDown(decreaseKey) || state.IsKeyDown(decreaseKey2))

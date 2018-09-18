@@ -26,6 +26,24 @@ namespace Zenith.EditorGameComponents
     {
         private List<IUIComponent> components = new List<IUIComponent>();
         private ComponentManager cm;
+        private static bool oldLeft = false;
+        private static bool oldRight = false;
+        internal static bool LeftDown { get; private set; }
+        internal static bool RightDown { get; private set; }
+        internal static bool LeftPressed { get; private set; }
+        internal static bool RightPressed { get; private set; }
+
+        internal static void ConsumeLeft()
+        {
+            LeftDown = false;
+            LeftPressed = false;
+        }
+
+        internal static void ConsumeRight()
+        {
+            RightDown = false;
+            RightPressed = false;
+        }
 
         internal UILayer(Game game, ComponentManager cm) : base(game)
         {
@@ -47,6 +65,17 @@ namespace Zenith.EditorGameComponents
 
         public override void Update(GameTime gameTime)
         {
+            // TODO: prevent other components (like Google Maps) from registering clicks when the mouse clicks in certain areas (directly on buttons or even just near them)
+            // what's the best way to handle this?
+            // for instance, should be handle the new component click actions within that component's update step? or in our UIs?
+            // if we update in the component's step, we get to pretend we're doing good by piggy-backing off monogame's update order stuff (instead of having our own)
+            MouseState state = Mouse.GetState();
+            LeftDown = state.LeftButton == ButtonState.Pressed;
+            RightDown = state.LeftButton == ButtonState.Pressed;
+            LeftPressed = state.LeftButton == ButtonState.Pressed && !oldLeft;
+            oldLeft = state.LeftButton == ButtonState.Pressed;
+            RightPressed = state.RightButton == ButtonState.Pressed && !oldRight;
+            oldRight = state.RightButton == ButtonState.Pressed;
             foreach (var component in components)
             {
                 component.Update();

@@ -82,14 +82,12 @@ namespace Zenith.EditorGameComponents.UIComponents
             spriteBatch.End();
         }
 
-        bool lastLeftPress = false;
         public void Update()
         {
             int textHeight = (int)TITLE_FONT.MeasureString(titles[0]).Y;
             hoverIndex = -1;
             int mouseX = Mouse.GetState().X;
             int mouseY = Mouse.GetState().Y;
-            bool leftPress = Mouse.GetState().LeftButton == ButtonState.Pressed;
             if (mouseY >= Y - textHeight - TITLE_PADDING - TITLE_PADDING_BOTTOM && mouseY <= Y)
             {
                 int tabXPos = X + TAB_OFFSET;
@@ -99,12 +97,13 @@ namespace Zenith.EditorGameComponents.UIComponents
                     if (mouseX >= tabXPos && mouseX <= tabXPos + tabW)
                     {
                         hoverIndex = i;
-                        if (lastLeftPress && !leftPress) activeIndex = i;
+                        if (UILayer.LeftPressed) activeIndex = i;
                     }
                     tabXPos += tabW + TAB_DIST;
                 }
+                if (mouseX >= X + TAB_OFFSET && mouseX <= tabXPos - TAB_DIST) UILayer.ConsumeLeft();
             }
-            lastLeftPress = leftPress;
+            if (mouseX >= X && mouseX <= X + W && mouseY >= Y && mouseY <= Y + H) UILayer.ConsumeLeft();
         }
     }
 }

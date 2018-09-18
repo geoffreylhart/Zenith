@@ -73,8 +73,8 @@ namespace Zenith.EditorGameComponents
         public override void Update(GameTime gameTime)
         {
             //if (Mouse.GetState().LeftButton == ButtonState.Pressed) MakeThatCircle(8, 10);
-            if (Mouse.GetState().WasLeftPressed()) MakeThatCircle(20, 1);
-            if (Mouse.GetState().WasRightPressed()) MakeABuilding();
+            if (UILayer.LeftPressed) MakeThatCircle(20, 1);
+            if (UILayer.RightPressed) MakeABuilding();
             Keyboard.GetState().AffectNumber(ref traceAlpha, Keys.OemMinus, Keys.OemPlus, 0.01, 0, 1);
         }
 

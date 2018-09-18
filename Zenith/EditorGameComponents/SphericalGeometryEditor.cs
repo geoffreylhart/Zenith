@@ -23,8 +23,6 @@ namespace Zenith.EditorGameComponents
         private static int HALF_SIZE = 4;
         private int draggingPointIndex = -1;
         private IndexType draggingPointIndexType = IndexType.BASE;
-        private bool oldLeft = false;
-        private bool oldRight = false;
         private VertexBuffer vertexBuffer = null;
 
         private class VectorHandle
@@ -66,8 +64,8 @@ namespace Zenith.EditorGameComponents
             if (mouseLongLat != null)
             {
                 Vector2 mouseAsVec2 = new Vector2((float)mouseLongLat.X, (float)mouseLongLat.Y);
-                bool leftJustPressed = Mouse.GetState().LeftButton == ButtonState.Pressed && !oldLeft;
-                bool rightJustPressed = Mouse.GetState().RightButton == ButtonState.Pressed && !oldRight;
+                bool leftJustPressed = UILayer.LeftPressed;
+                bool rightJustPressed = UILayer.RightPressed;
                 int bestIndex = -1;
                 IndexType bestIndexType = IndexType.BASE;
                 float bestDist = float.MaxValue;
@@ -146,13 +144,13 @@ namespace Zenith.EditorGameComponents
                         draggingPointIndexType = IndexType.OUTGOING;
                     }
                 }
-                if (Mouse.GetState().LeftButton == ButtonState.Pressed)
+                if (UILayer.LeftDown)
                 {
                     if (draggingPointIndexType == IndexType.BASE) shape[draggingPointIndex].p = mouseAsVec2;
                     if (draggingPointIndexType == IndexType.INCOMING) shape[draggingPointIndex].incoming = mouseAsVec2 - shape[draggingPointIndex].p;
                     if (draggingPointIndexType == IndexType.OUTGOING) shape[draggingPointIndex].outgoing = mouseAsVec2 - shape[draggingPointIndex].p;
                 }
-                if (bestIndexType == IndexType.BASE && Mouse.GetState().WasRightPressed() && Mouse.GetState().LeftButton != ButtonState.Pressed)
+                if (bestIndexType == IndexType.BASE && UILayer.RightPressed && !UILayer.LeftDown)
                 {
                     float t = AllMath.ProjectionTOnLine(mouseAsVec2, shape[bestIndex].p, shape[(bestIndex + 1) % shape.Count].p);
                     if (t < 0.1)
@@ -165,9 +163,8 @@ namespace Zenith.EditorGameComponents
                     }
                 }
             }
-            oldLeft = Mouse.GetState().LeftButton == ButtonState.Pressed;
-            oldRight = Mouse.GetState().RightButton == ButtonState.Pressed;
-            if (oldLeft || oldRight || vertexBuffer == null) UpdateVertexBuffer();
+            // TODO: going to have to double check all this logic if I ever use this class again
+            if (UILayer.LeftDown || UILayer.RightDown || vertexBuffer == null) UpdateVertexBuffer();
         }
 
         private void UpdateVertexBuffer()

@@ -70,23 +70,24 @@ namespace Zenith.EditorGameComponents.UIComponents
             }
         }
 
-        bool lastLeftPress = false;
         public void Update()
         {
             hoverIndex = -1;
             int mouseX = Mouse.GetState().X;
             int mouseY = Mouse.GetState().Y;
-            bool leftPress = Mouse.GetState().LeftButton == ButtonState.Pressed;
             if (mouseX >= X && mouseX <= X + W)
             {
                 int temp = (mouseY - Y) / (LIST_ITEM_HEIGHT + PADDING * 2);
                 if (temp >= 0 && temp < items.Count)
                 {
                     hoverIndex = temp;
-                    if (lastLeftPress && !leftPress) activeIndex = temp;
+                    if (UILayer.LeftPressed) activeIndex = temp;
                 }
             }
-            lastLeftPress = leftPress;
+            if (mouseX >= X && mouseX <= X + W && mouseY >= Y && mouseY <= Y + (LIST_ITEM_HEIGHT + PADDING * 2) * items.Count)
+            {
+                UILayer.ConsumeLeft();
+            }
         }
 
         internal virtual string GetItemAsString(T item)
