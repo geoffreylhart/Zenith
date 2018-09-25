@@ -84,6 +84,7 @@ namespace Zenith.EditorGameComponents.UIComponents
 
         public void Update()
         {
+            panels[activeIndex].Update();
             int textHeight = (int)TITLE_FONT.MeasureString(titles[0]).Y;
             hoverIndex = -1;
             int mouseX = Mouse.GetState().X;

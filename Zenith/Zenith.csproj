@@ -43,10 +43,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AdvancedGeometryDataStructures\EditableMesh.cs" />
+    <Compile Include="Configuration.cs" />
     <Compile Include="EditorGameComponents\BlenderAxis.cs" />
     <Compile Include="EditorGameComponents\CityMarker.cs" />
     <Compile Include="EditorGameComponents\ComponentManager.cs" />
     <Compile Include="EditorGameComponents\UIComponents\Button.cs" />
+    <Compile Include="EditorGameComponents\UIComponents\Checkbox.cs" />
     <Compile Include="EditorGameComponents\UIComponents\IUIComponent.cs" />
     <Compile Include="EditorGameComponents\UIComponents\Label.cs" />
     <Compile Include="EditorGameComponents\UIComponents\ListBox.cs" />
@@ -62,6 +64,7 @@
     <Compile Include="EditorGameComponents\UITemp.cs" />
     <Compile Include="Game1.cs" />
     <Compile Include="GlobalContent.cs" />
+    <Compile Include="ZGraphics\GraphicsBasic.cs" />
     <Compile Include="Helpers\GraphicsDeviceHelper.cs" />
     <Compile Include="Helpers\KeyboardStateHelper.cs" />
     <Compile Include="LibraryWrappers\Clipper.cs" />

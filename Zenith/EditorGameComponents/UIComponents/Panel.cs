@@ -15,31 +15,39 @@ namespace Zenith.EditorGameComponents.UIComponents
         public int Y { get; set; }
         public int W { get; set; }
         public int H { get; set; }
+        public virtual List<IUIComponent> Components { get; set; }
 
-        private List<IUIComponent> components = new List<IUIComponent>();
+        public Panel()
+        {
+            Components = new List<IUIComponent>();
+        }
 
         public void Draw(GraphicsDevice graphicsDevice)
         {
-            foreach (var component in components) component.Draw(graphicsDevice);
+            foreach (var component in Components) component.Draw(graphicsDevice);
+        }
+
+        private void ResetPositions()
+        {
+            for (int i = 0; i < Components.Count; i++)
+            {
+                if (i == 0)
+                {
+                    Components[i].X = X + PADDING;
+                    Components[i].Y = Y + PADDING;
+                }
+                else
+                {
+                    Components[i].X = X + PADDING;
+                    Components[i].Y = Components[Components.Count - 1].Y + PADDING;
+                }
+            }
         }
 
         public void Update()
         {
-        }
-
-        internal void Add(IUIComponent component)
-        {
-            if (components.Count == 0)
-            {
-                component.X = X + PADDING;
-                component.Y = Y + PADDING;
-            }
-            else
-            {
-                component.X = X + PADDING;
-                component.Y = components[components.Count - 1].Y + PADDING;
-            }
-            components.Add(component);
+            ResetPositions();
+            foreach(var component in Components) component.Update();
         }
     }
 }

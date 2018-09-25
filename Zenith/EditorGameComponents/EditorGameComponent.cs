@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Zenith.EditorGameComponents.UIComponents;
 
 namespace Zenith.EditorGameComponents
 {
@@ -14,7 +15,9 @@ namespace Zenith.EditorGameComponents
         {
         }
 
-        internal abstract List<String> GetDebugInfo();
+        internal virtual List<String> GetDebugInfo() { return new List<String>(); }
+
+        internal virtual List<IUIComponent> GetSettings() { return new List<IUIComponent>(); }
 
         protected BasicEffect GetDefaultEffect()
         {

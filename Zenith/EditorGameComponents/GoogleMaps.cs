@@ -4,6 +4,7 @@ using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Zenith.EditorGameComponents.UIComponents;
 using Zenith.Helpers;
 using Zenith.MathHelpers;
 using Zenith.PrimitiveBuilder;
@@ -154,6 +155,22 @@ namespace Zenith.EditorGameComponents
         {
             Sector sector = GetSector();
             return new List<string> { "Controls: Left click", sector == null ? "null" : sector.ToString() };
+        }
+
+        internal override List<IUIComponent> GetSettings()
+        {
+            List<IUIComponent> components = new List<IUIComponent>();
+            components.Add(new AutoLoadCheckbox("Auto-Load"));
+            return components;
+        }
+
+        private class AutoLoadCheckbox : Checkbox
+        {
+            public override bool Enabled { get { return Configuration.AUTO_LOAD; } set { Configuration.AUTO_LOAD = value; } }
+
+            public AutoLoadCheckbox(string text) : base(text)
+            {
+            }
         }
 
         private class Sector
