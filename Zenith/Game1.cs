@@ -14,6 +14,7 @@ namespace Zenith
 
         public Game1()
         {
+            Configuration.Load();
             graphics = new GraphicsDeviceManager(this);
             //graphics.IsFullScreen = true;
             //graphics.PreferredBackBufferWidth = 2560;
@@ -75,6 +76,12 @@ namespace Zenith
                 Exit();
             }
             base.Update(gameTime);
+        }
+
+        protected override void OnExiting(object sender, EventArgs args)
+        {
+            Configuration.Save();
+            base.OnExiting(sender, args);
         }
 
         protected override void Draw(GameTime gameTime)
