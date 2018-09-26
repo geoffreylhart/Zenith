@@ -17,8 +17,6 @@ namespace Zenith.EditorGameComponents.UIComponents
         private static int TAB_OFFSET = 25;
         private static int TAB_DIST = 5; // distance between tabs
 
-        public int X { get; set; }
-        public int Y { get; set; }
         public int W { get; set; }
         public int H { get; set; }
 
@@ -28,7 +26,7 @@ namespace Zenith.EditorGameComponents.UIComponents
         private int activeIndex = 0;
         internal int hoverIndex = -1;
 
-        public Tabs(int tabCount, int x, int y, int w, int h)
+        public Tabs(int tabCount, int w, int h)
         {
             this.tabCount = tabCount;
             panels = new List<Panel>();
@@ -36,13 +34,9 @@ namespace Zenith.EditorGameComponents.UIComponents
             for (int i = 0; i <= tabCount; i++)
             {
                 Panel newPanel = new Panel();
-                newPanel.X = x;
-                newPanel.Y = y;
                 panels.Add(newPanel);
                 titles.Add("");
             }
-            this.X = x;
-            this.Y = y;
             this.W = w;
             this.H = h;
         }
@@ -51,11 +45,11 @@ namespace Zenith.EditorGameComponents.UIComponents
         // I want to somehow avoid weird double-glow overlap, if that's even an issue (I think it might not be, provided you blur using exactly w/e the "extra" tab shape is)
         // this means you have to be careful about offsetting the shape, I think
 
-        public void Draw(GraphicsDevice graphicsDevice)
+        public void Draw(GraphicsDevice graphicsDevice, int x, int y)
         {
             int textHeight = (int)TITLE_FONT.MeasureString(titles[0]).Y;
             int[] tabXPos = new int[tabCount];
-            tabXPos[0] = X + TAB_OFFSET;
+            tabXPos[0] = x + TAB_OFFSET;
             for (int i = 1; i < tabCount; i++)
             {
                 tabXPos[i] = tabXPos[i - 1] + 2 * TITLE_PADDING + (int)TITLE_FONT.MeasureString(titles[i - 1]).X + TAB_DIST;
@@ -65,33 +59,33 @@ namespace Zenith.EditorGameComponents.UIComponents
                 if (i != activeIndex)
                 {
                     int strW = (int)TITLE_FONT.MeasureString(titles[i]).X;
-                    UITemp.DrawBackTab(tabXPos[i], Y, strW + 2 * TITLE_PADDING, textHeight + TITLE_PADDING + TITLE_PADDING_BOTTOM, i == hoverIndex ? new Color(0, 180, 255) : new Color(0, 90, 128), graphicsDevice); // unlike most, we'll have y be the bottom of the tab
+                    UITemp.DrawBackTab(tabXPos[i], y, strW + 2 * TITLE_PADDING, textHeight + TITLE_PADDING + TITLE_PADDING_BOTTOM, i == hoverIndex ? new Color(0, 180, 255) : new Color(0, 90, 128), graphicsDevice); // unlike most, we'll have y be the bottom of the tab
                 }
             }
             int activeStrW = (int)TITLE_FONT.MeasureString(titles[activeIndex]).X;
-            UITemp.DrawFrontTab(X, Y, W, H, tabXPos[activeIndex] - X, activeStrW + 2 * TITLE_PADDING, textHeight + TITLE_PADDING + TITLE_PADDING_BOTTOM, graphicsDevice, Game1.renderTarget);
-            panels[activeIndex].Draw(graphicsDevice);
+            UITemp.DrawFrontTab(x, y, W, H, tabXPos[activeIndex] - x, activeStrW + 2 * TITLE_PADDING, textHeight + TITLE_PADDING + TITLE_PADDING_BOTTOM, graphicsDevice, Game1.renderTarget);
+            panels[activeIndex].Draw(graphicsDevice, x, y);
             SpriteBatch spriteBatch = new SpriteBatch(graphicsDevice);
             spriteBatch.Begin();
             int textOffset = 0;
             for (int i = 0; i < tabCount; i++)
             {
-                spriteBatch.DrawString(TITLE_FONT, titles[i], new Vector2(tabXPos[i] + TITLE_PADDING, Y - textHeight - TITLE_PADDING_BOTTOM), Color.White);
+                spriteBatch.DrawString(TITLE_FONT, titles[i], new Vector2(tabXPos[i] + TITLE_PADDING, y - textHeight - TITLE_PADDING_BOTTOM), Color.White);
                 textOffset += 2 * TITLE_PADDING + (int)TITLE_FONT.MeasureString(titles[i]).X;
             }
             spriteBatch.End();
         }
 
-        public void Update()
+        public void Update(int x, int y)
         {
-            panels[activeIndex].Update();
+            panels[activeIndex].Update(x, y);
             int textHeight = (int)TITLE_FONT.MeasureString(titles[0]).Y;
             hoverIndex = -1;
             int mouseX = Mouse.GetState().X;
             int mouseY = Mouse.GetState().Y;
-            if (mouseY >= Y - textHeight - TITLE_PADDING - TITLE_PADDING_BOTTOM && mouseY <= Y)
+            if (mouseY >= y - textHeight - TITLE_PADDING - TITLE_PADDING_BOTTOM && mouseY <= y)
             {
-                int tabXPos = X + TAB_OFFSET;
+                int tabXPos = x + TAB_OFFSET;
                 for (int i = 0; i < tabCount; i++)
                 {
                     int tabW = (int)TITLE_FONT.MeasureString(titles[i]).X + 2 * TITLE_PADDING;
@@ -102,9 +96,9 @@ namespace Zenith.EditorGameComponents.UIComponents
                     }
                     tabXPos += tabW + TAB_DIST;
                 }
-                if (mouseX >= X + TAB_OFFSET && mouseX <= tabXPos - TAB_DIST) UILayer.ConsumeLeft();
+                if (mouseX >= x + TAB_OFFSET && mouseX <= tabXPos - TAB_DIST) UILayer.ConsumeLeft();
             }
-            if (mouseX >= X && mouseX <= X + W && mouseY >= Y && mouseY <= Y + H) UILayer.ConsumeLeft();
+            if (mouseX >= x && mouseX <= x + W && mouseY >= y && mouseY <= y + H) UILayer.ConsumeLeft();
         }
     }
 }

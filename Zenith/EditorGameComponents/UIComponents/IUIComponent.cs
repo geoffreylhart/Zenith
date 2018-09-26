@@ -9,11 +9,9 @@ namespace Zenith.EditorGameComponents.UIComponents
 {
     interface IUIComponent
     {
-        int X { get; set; }
-        int Y { get; set; }
         int W { get; set; }
         int H { get; set; }
-        void Draw(GraphicsDevice graphicsDevice);
-        void Update();
+        void Draw(GraphicsDevice graphicsDevice, int x, int y);
+        void Update(int x, int y);
     }
 }

@@ -24,7 +24,7 @@ namespace Zenith.EditorGameComponents
     // Only toggles visibility and such
     internal class UILayer : DrawableGameComponent
     {
-        private List<IUIComponent> components = new List<IUIComponent>();
+        private List<ComponentCoord> components = new List<ComponentCoord>();
         private ComponentManager cm;
         private static bool oldLeft = false;
         private static bool oldRight = false;
@@ -82,9 +82,33 @@ namespace Zenith.EditorGameComponents
             }
         }
 
-        internal void Add(IUIComponent component)
+        internal void Add(IUIComponent component, int x, int y)
         {
-            components.Add(component);
+            components.Add(new ComponentCoord(component, x, y));
+        }
+    }
+
+    internal class ComponentCoord
+    {
+        private IUIComponent component;
+        private int x;
+        private int y;
+
+        public ComponentCoord(IUIComponent component, int x, int y)
+        {
+            this.component = component;
+            this.x = x;
+            this.y = y;
+        }
+
+        internal void Draw(GraphicsDevice graphicsDevice)
+        {
+            component.Draw(graphicsDevice, x, y);
+        }
+
+        internal void Update()
+        {
+            component.Update(x, y);
         }
     }
 }

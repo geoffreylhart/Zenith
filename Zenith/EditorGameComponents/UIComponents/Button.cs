@@ -9,17 +9,15 @@ namespace Zenith.EditorGameComponents.UIComponents
 {
     class Button : IUIComponent
     {
-        public int X { get; set; }
-        public int Y { get; set; }
         public int W { get; set; }
         public int H { get; set; }
 
-        public void Draw(GraphicsDevice graphicsDevice)
+        public void Draw(GraphicsDevice graphicsDevice, int x, int y)
         {
             throw new NotImplementedException();
         }
 
-        public void Update()
+        public void Update(int x, int y)
         {
             throw new NotImplementedException();
         }

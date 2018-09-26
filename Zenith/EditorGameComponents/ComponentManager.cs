@@ -24,24 +24,22 @@ namespace Zenith.EditorGameComponents
 
         internal void Init(UILayer uiLayer)
         {
-            Tabs tabs = new Tabs(3, 20, 350, 500, 200);
+            Tabs tabs = new Tabs(3, 500, 200);
             tabs.titles[0] = "Debug";
             tabs.titles[1] = "Actions";
             tabs.titles[2] = "Settings";
             tabs.panels[0].Components.Add(new DebugLabel(this));
             tabs.panels[2] = new ComponentSettingsPanel(this);
-            tabs.panels[2].X = tabs.X;
-            tabs.panels[2].Y = tabs.Y;
-            list = new ComponentList(490, 10, 300, components);
-            uiLayer.Add(tabs);
-            uiLayer.Add(list);
+            list = new ComponentList(300, components);
+            uiLayer.Add(tabs, 20, 350);
+            uiLayer.Add(list, 490, 10);
         }
 
         private class DebugLabel : Label
         {
             private ComponentManager cm;
 
-            public DebugLabel(ComponentManager cm) : base(0, 0)
+            public DebugLabel(ComponentManager cm) : base()
             {
                 this.cm = cm;
             }
@@ -54,7 +52,7 @@ namespace Zenith.EditorGameComponents
 
         private class ComponentList : ListBox<EditorGameComponent>
         {
-            public ComponentList(int x, int y, int w, List<EditorGameComponent> components) : base(x, y, w, components)
+            public ComponentList(int w, List<EditorGameComponent> components) : base(w, components)
             {
             }
 
