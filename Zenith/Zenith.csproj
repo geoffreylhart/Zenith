@@ -53,6 +53,7 @@
     <Compile Include="EditorGameComponents\UIComponents\Label.cs" />
     <Compile Include="EditorGameComponents\UIComponents\ListBox.cs" />
     <Compile Include="EditorGameComponents\UIComponents\Panel.cs" />
+    <Compile Include="EditorGameComponents\UIComponents\RefFunc.cs" />
     <Compile Include="EditorGameComponents\UIComponents\Tabs.cs" />
     <Compile Include="EditorGameComponents\UILayer.cs" />
     <Compile Include="EditorGameComponents\DebugConsole.cs" />

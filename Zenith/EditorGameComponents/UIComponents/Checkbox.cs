@@ -17,8 +17,8 @@ namespace Zenith.EditorGameComponents.UIComponents
 
         public int W { get; set; }
         public int H { get; set; }
-        public virtual bool Enabled { get; set; }
         private string text;
+        internal RefFunc<bool> Enabled;
 
         public Checkbox(string text)
         {
@@ -33,7 +33,7 @@ namespace Zenith.EditorGameComponents.UIComponents
             SpriteBatch spriteBatch = new SpriteBatch(graphicsDevice);
             spriteBatch.Begin();
             spriteBatch.DrawString(FONT, text, new Vector2(x + boxSize + PADDING, y), Color.White);
-            if (Enabled)
+            if (Enabled())
             {
                 float offset = (boxSize - FONT.MeasureString("X").X) / 2;
                 spriteBatch.DrawString(FONT, "X", new Vector2(x + offset, y), Color.Black);
@@ -50,7 +50,7 @@ namespace Zenith.EditorGameComponents.UIComponents
             {
                 if (UILayer.LeftPressed)
                 {
-                    Enabled = !Enabled;
+                    Enabled() = !Enabled();
                 }
                 UILayer.ConsumeLeft();
             }
