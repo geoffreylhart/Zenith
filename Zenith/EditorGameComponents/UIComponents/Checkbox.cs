@@ -18,7 +18,8 @@ namespace Zenith.EditorGameComponents.UIComponents
         public int W { get { return (int)FONT.MeasureString(text).X + (int)FONT.MeasureString(text).Y + PADDING; } set { } }
         public int H { get { return (int)FONT.MeasureString(text).Y; } set { } }
         private string text;
-        internal RefFunc<bool> Enabled;
+        public Func<bool> GetEnabled;
+        public Action<bool> SetEnabled;
 
         public Checkbox(string text)
         {
@@ -33,7 +34,7 @@ namespace Zenith.EditorGameComponents.UIComponents
             SpriteBatch spriteBatch = new SpriteBatch(graphicsDevice);
             spriteBatch.Begin();
             spriteBatch.DrawString(FONT, text, new Vector2(x + boxSize + PADDING, y), Color.White);
-            if (Enabled())
+            if (GetEnabled())
             {
                 float offset = (boxSize - FONT.MeasureString("X").X) / 2;
                 spriteBatch.DrawString(FONT, "X", new Vector2(x + offset, y), Color.Black);
@@ -50,7 +51,7 @@ namespace Zenith.EditorGameComponents.UIComponents
             {
                 if (UILayer.LeftPressed)
                 {
-                    Enabled() = !Enabled();
+                    SetEnabled(!GetEnabled());
                 }
                 UILayer.ConsumeLeft();
             }

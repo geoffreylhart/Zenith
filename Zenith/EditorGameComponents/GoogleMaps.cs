@@ -160,7 +160,8 @@ namespace Zenith.EditorGameComponents
         internal override List<IUIComponent> GetSettings()
         {
             List<IUIComponent> components = new List<IUIComponent>();
-            components.Add(new Checkbox("Auto-Load") { Enabled = () => ref Configuration.AUTO_LOAD });
+            components.Add(new Checkbox("Auto-Load") { GetEnabled = () => Configuration.AUTO_LOAD, SetEnabled = x => Configuration.AUTO_LOAD = x });
+            components.Add(new Checkbox("Enabled") { GetEnabled = () => this.Enabled, SetEnabled = x => this.Enabled = x });
             components.Add(new Button("Load All") { OnClick = LoadAll });
             return components;
         }
