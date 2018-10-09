@@ -161,7 +161,25 @@ namespace Zenith.EditorGameComponents
         {
             List<IUIComponent> components = new List<IUIComponent>();
             components.Add(new Checkbox("Auto-Load") { Enabled = () => ref Configuration.AUTO_LOAD });
+            components.Add(new Button("Load All") { OnClick = LoadAll });
             return components;
+        }
+
+        private void LoadAll()
+        {
+            foreach (var file in Directory.EnumerateFiles(@"..\..\..\..\LocalCache"))
+            {
+                String filename = Path.GetFileName(file);
+                if (filename.StartsWith("X"))
+                {
+                    String[] split = filename.Split(',');
+                    int x = int.Parse(split[0].Split('=')[1]);
+                    int y = int.Parse(split[1].Split('=')[1]);
+                    int zoom = int.Parse(split[2].Split('=', '.')[1]);
+                    Sector newSec = new Sector(x, y, zoom);
+                    googleMaps.Add(GetCachedMap(newSec));
+                }
+            }
         }
 
         private class Sector

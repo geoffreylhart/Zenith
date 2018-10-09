@@ -15,8 +15,8 @@ namespace Zenith.EditorGameComponents.UIComponents
         private SpriteFont FONT { get { return GlobalContent.Arial; } }
         private static int PADDING = 5;
 
-        public int W { get; set; }
-        public int H { get; set; }
+        public int W { get { return (int)FONT.MeasureString(text).X + (int)FONT.MeasureString(text).Y + PADDING; } set { } }
+        public int H { get { return (int)FONT.MeasureString(text).Y; } set { } }
         private string text;
         internal RefFunc<bool> Enabled;
 

@@ -65,13 +65,19 @@ namespace Zenith.EditorGameComponents
         private class ComponentSettingsPanel : Panel
         {
             private ComponentManager cm;
+            private List<IUIComponent>[] componentSettings;
 
             public ComponentSettingsPanel(ComponentManager cm) : base()
             {
                 this.cm = cm;
+                this.componentSettings = new List<IUIComponent>[cm.components.Count];
+                for(int i = 0; i < this.componentSettings.Length; i++)
+                {
+                    this.componentSettings[i] = cm.components[i].GetSettings();
+                }
             }
 
-            public override List<IUIComponent> Components { get { return cm.components[cm.list.activeIndex].GetSettings(); } }
+            public override List<IUIComponent> Components { get { return componentSettings[cm.list.activeIndex]; } }
         }
     }
 }
