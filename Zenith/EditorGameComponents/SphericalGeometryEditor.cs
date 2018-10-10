@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Zenith.Helpers;
 using Zenith.MathHelpers;
+using Zenith.ZGraphics;
 
 namespace Zenith.EditorGameComponents
 {
@@ -237,16 +238,7 @@ namespace Zenith.EditorGameComponents
             v = camera.Project(v);
             if (v.Z < 1)
             {
-                float z = -10;
-                markerVertices.Add(new VertexPositionColor(new Vector3(v.X - HALF_SIZE, v.Y + HALF_SIZE, z), color));
-                markerVertices.Add(new VertexPositionColor(new Vector3(v.X - HALF_SIZE, v.Y - HALF_SIZE, z), color));
-                markerVertices.Add(new VertexPositionColor(new Vector3(v.X + HALF_SIZE, v.Y + HALF_SIZE, z), color));
-                markerVertices.Add(new VertexPositionColor(new Vector3(v.X + HALF_SIZE, v.Y - HALF_SIZE, z), color));
-                foreach (EffectPass pass in basicEffect3.CurrentTechnique.Passes)
-                {
-                    pass.Apply();
-                    GraphicsDevice.DrawUserPrimitives<VertexPositionColor>(PrimitiveType.TriangleStrip, markerVertices.ToArray());
-                }
+                GraphicsBasic.DrawRect(GraphicsDevice, v.X - HALF_SIZE, v.Y - HALF_SIZE, HALF_SIZE * 2, HALF_SIZE * 2, color);
             }
         }
 

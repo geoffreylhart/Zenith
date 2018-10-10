@@ -13,13 +13,15 @@ namespace Zenith.EditorGameComponents
 {
     internal class GoogleMaps : EditorGameComponent
     {
+        private static int MAX_ZOOM = 19;
         private EditorCamera camera;
-        List<VertexIndiceBuffer> googleMaps = new List<VertexIndiceBuffer>();
+        List<VertexIndiceBuffer>[] googleMapLayers = new List<VertexIndiceBuffer>[MAX_ZOOM + 1];
         VertexBuffer previewSquare = null;
 
         internal GoogleMaps(Game game, EditorCamera camera) : base(game)
         {
             this.camera = camera;
+            for (int i = 0; i <= MAX_ZOOM; i++) googleMapLayers[i] = new List<VertexIndiceBuffer>();
         }
 
         public override void Draw(GameTime gameTime)
@@ -27,17 +29,20 @@ namespace Zenith.EditorGameComponents
             var basicEffect3 = MakeThatBasicEffect3();
             basicEffect3.TextureEnabled = true;
             GraphicsDevice.SetRenderTarget(Game1.renderTarget);
-            foreach (var buffer in googleMaps)
+            foreach (var layer in googleMapLayers)
             {
-                basicEffect3.Texture = buffer.texture;
-                foreach (EffectPass pass in basicEffect3.CurrentTechnique.Passes)
+                foreach (var buffer in layer)
                 {
-                    pass.Apply();
-                    GraphicsDevice.Indices = buffer.indices;
-                    GraphicsDevice.SetVertexBuffer(buffer.vertices);
-                    GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, buffer.indices.IndexCount / 3);
+                    basicEffect3.Texture = buffer.texture;
+                    foreach (EffectPass pass in basicEffect3.CurrentTechnique.Passes)
+                    {
+                        pass.Apply();
+                        GraphicsDevice.Indices = buffer.indices;
+                        GraphicsDevice.SetVertexBuffer(buffer.vertices);
+                        GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, buffer.indices.IndexCount / 3);
+                    }
+                    GraphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, GraphicsDevice.Viewport.MaxDepth, 0);
                 }
-                GraphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, GraphicsDevice.Viewport.MaxDepth, 0);
             }
             if (previewSquare != null && Enabled)
             {
@@ -84,7 +89,7 @@ namespace Zenith.EditorGameComponents
         {
             Sector squareCenter = GetSector();
             if (squareCenter == null) return;
-            googleMaps.Add(GetCachedMap(squareCenter));
+            googleMapLayers[squareCenter.zoom].Add(GetCachedMap(squareCenter));
         }
 
         private VertexIndiceBuffer GetCachedMap(Sector sector)
@@ -113,10 +118,6 @@ namespace Zenith.EditorGameComponents
         private BasicEffect MakeThatBasicEffect3()
         {
             var basicEffect3 = new BasicEffect(GraphicsDevice);
-            // basicEffect3.LightingEnabled = true;
-            // basicEffect3.DirectionalLight0.Direction = new Vector3(-1, 1, 0);
-            // basicEffect3.DirectionalLight0.DiffuseColor = new Vector3(1, 1, 1);
-            // basicEffect3.AmbientLightColor = new Vector3(0.2f, 0.2f, 0.2f);
             camera.ApplyMatrices(basicEffect3);
             return basicEffect3;
         }
@@ -163,6 +164,7 @@ namespace Zenith.EditorGameComponents
             components.Add(new Checkbox("Auto-Load") { GetEnabled = () => Configuration.AUTO_LOAD, SetEnabled = x => Configuration.AUTO_LOAD = x });
             components.Add(new Checkbox("Enabled") { GetEnabled = () => this.Enabled, SetEnabled = x => this.Enabled = x });
             components.Add(new Button("Load All") { OnClick = LoadAll });
+            components.Add(new Button("Download Top 4 Layers") { OnClick = () => DownloadTop(4) });
             return components;
         }
 
@@ -178,7 +180,22 @@ namespace Zenith.EditorGameComponents
                     int y = int.Parse(split[1].Split('=')[1]);
                     int zoom = int.Parse(split[2].Split('=', '.')[1]);
                     Sector newSec = new Sector(x, y, zoom);
-                    googleMaps.Add(GetCachedMap(newSec));
+                    googleMapLayers[zoom].Add(GetCachedMap(newSec));
+                }
+            }
+        }
+
+        private void DownloadTop(int layers)
+        {
+            for (int i = 0; i < layers; i++)
+            {
+                int powTwo = 1 << i;
+                for (int x = 0; x < powTwo; x++)
+                {
+                    for (int y = 0; y < powTwo; y++)
+                    {
+                        googleMapLayers[i].Add(GetCachedMap(new Sector(x, y, i)));
+                    }
                 }
             }
         }
