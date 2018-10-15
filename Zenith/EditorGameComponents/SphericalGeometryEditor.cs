@@ -238,7 +238,7 @@ namespace Zenith.EditorGameComponents
             v = camera.Project(v);
             if (v.Z < 1)
             {
-                GraphicsBasic.DrawRect(GraphicsDevice, v.X - HALF_SIZE, v.Y - HALF_SIZE, HALF_SIZE * 2, HALF_SIZE * 2, color);
+                GraphicsBasic.DrawScreenRect(GraphicsDevice, v.X - HALF_SIZE, v.Y - HALF_SIZE, HALF_SIZE * 2, HALF_SIZE * 2, color);
             }
         }
 

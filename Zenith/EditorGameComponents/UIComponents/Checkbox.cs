@@ -29,8 +29,8 @@ namespace Zenith.EditorGameComponents.UIComponents
         public void Draw(GraphicsDevice graphicsDevice, int x, int y)
         {
             float boxSize = FONT.MeasureString(text).Y;
-            GraphicsBasic.DrawRect(graphicsDevice, x, y, boxSize, boxSize, Color.Black);
-            GraphicsBasic.DrawRect(graphicsDevice, x + 2, y + 2, boxSize - 4, boxSize - 4, Color.White);
+            GraphicsBasic.DrawScreenRect(graphicsDevice, x, y, boxSize, boxSize, Color.Black);
+            GraphicsBasic.DrawScreenRect(graphicsDevice, x + 2, y + 2, boxSize - 4, boxSize - 4, Color.White);
             SpriteBatch spriteBatch = new SpriteBatch(graphicsDevice);
             spriteBatch.Begin();
             spriteBatch.DrawString(FONT, text, new Vector2(x + boxSize + PADDING, y), Color.White);

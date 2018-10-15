@@ -11,7 +11,7 @@ namespace Zenith.ZGraphics
 {
     class GraphicsBasic
     {
-        internal static void DrawRect(GraphicsDevice graphicsDevice, float x, float y, float w, float h, Color color)
+        internal static void DrawScreenRect(GraphicsDevice graphicsDevice, float x, float y, float w, float h, Color color)
         {
             var basicEffect = new BasicEffect(graphicsDevice);
             basicEffect.VertexColorEnabled = true;

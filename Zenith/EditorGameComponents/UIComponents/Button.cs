@@ -29,7 +29,7 @@ namespace Zenith.EditorGameComponents.UIComponents
         public void Draw(GraphicsDevice graphicsDevice, int x, int y)
         {
             Vector2 boxSize = FONT.MeasureString(name) + new Vector2(PADDING * 2, PADDING * 2);
-            GraphicsBasic.DrawRect(graphicsDevice, x, y, boxSize.X, boxSize.Y, hovering ? Color.Cyan : Color.White);
+            GraphicsBasic.DrawScreenRect(graphicsDevice, x, y, boxSize.X, boxSize.Y, hovering ? Color.Cyan : Color.White);
             SpriteBatch spriteBatch = new SpriteBatch(graphicsDevice);
             spriteBatch.Begin();
             spriteBatch.DrawString(FONT, name, new Vector2(x + PADDING, y + PADDING), Color.Black);

@@ -44,9 +44,12 @@
   <ItemGroup>
     <Compile Include="AdvancedGeometryDataStructures\EditableMesh.cs" />
     <Compile Include="Configuration.cs" />
+    <Compile Include="EditorGameComponents\FlatComponents\GoogleMaps.cs" />
+    <Compile Include="EditorGameComponents\FlatComponents\I2DComponent.cs" />
     <Compile Include="EditorGameComponents\BlenderAxis.cs" />
     <Compile Include="EditorGameComponents\CityMarker.cs" />
     <Compile Include="EditorGameComponents\ComponentManager.cs" />
+    <Compile Include="EditorGameComponents\PlanetComponent.cs" />
     <Compile Include="EditorGameComponents\UIComponents\Button.cs" />
     <Compile Include="EditorGameComponents\UIComponents\Checkbox.cs" />
     <Compile Include="EditorGameComponents\UIComponents\IUIComponent.cs" />
@@ -57,7 +60,7 @@
     <Compile Include="EditorGameComponents\UILayer.cs" />
     <Compile Include="EditorGameComponents\DebugConsole.cs" />
     <Compile Include="EditorGameComponents\EditorCamera.cs" />
-    <Compile Include="EditorGameComponents\GoogleMaps.cs" />
+    <Compile Include="EditorGameComponents\GoogleMapsSphere.cs" />
     <Compile Include="EditorGameComponents\EditorGameComponent.cs" />
     <Compile Include="EditorGameComponents\MultiResMesh.cs" />
     <Compile Include="EditorGameComponents\SphericalGeometryEditor.cs" />

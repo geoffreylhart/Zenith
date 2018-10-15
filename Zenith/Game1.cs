@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Zenith.EditorGameComponents;
+using Zenith.EditorGameComponents.FlatComponents;
 
 namespace Zenith
 {
@@ -53,13 +54,15 @@ namespace Zenith
             var camera = new EditorCamera(this);
             Components.Add(camera);
             // Components.Add(new MultiResMesh(this, camera));
-            var googleMaps = new GoogleMaps(this, camera);
-            var geom = new SphericalGeometryEditor(this, camera);
-            Components.Add(googleMaps);
-            var uiLayer = new UILayer(this, new ComponentManager(camera, googleMaps, geom));
+            //var googleMaps = new GoogleMapsSphere(this, camera);
+            //var geom = new SphericalGeometryEditor(this, camera);
+            var earth = new PlanetComponent(this, camera);
+            earth.Add(new GoogleMaps());
+            Components.Add(earth);
+            var uiLayer = new UILayer(this, new ComponentManager(camera, earth));
             Components.Add(uiLayer);
             uiLayer.UpdateOrder = camera.UpdateOrder - 1;
-            Components.Add(geom);
+            //Components.Add(geom);
             Components.Add(new CityMarker(this, camera, "Pensacola", 30.4668536, -87.3294527));
             Components.Add(new CityMarker(this, camera, "0, 0", 0, 0));
             // Components.Add(new BlenderAxis(this, camera));

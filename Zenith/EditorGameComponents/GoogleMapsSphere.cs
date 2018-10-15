@@ -11,14 +11,14 @@ using Zenith.PrimitiveBuilder;
 
 namespace Zenith.EditorGameComponents
 {
-    internal class GoogleMaps : EditorGameComponent
+    internal class GoogleMapsSphere : EditorGameComponent
     {
         private static int MAX_ZOOM = 19;
         private EditorCamera camera;
         List<VertexIndiceBuffer>[] googleMapLayers = new List<VertexIndiceBuffer>[MAX_ZOOM + 1];
         VertexBuffer previewSquare = null;
 
-        internal GoogleMaps(Game game, EditorCamera camera) : base(game)
+        internal GoogleMapsSphere(Game game, EditorCamera camera) : base(game)
         {
             this.camera = camera;
             for (int i = 0; i <= MAX_ZOOM; i++) googleMapLayers[i] = new List<VertexIndiceBuffer>();

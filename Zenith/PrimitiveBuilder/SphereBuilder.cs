@@ -48,6 +48,47 @@ namespace Zenith.PrimitiveBuilder
             return buffer;
         }
 
+        internal static VertexIndiceBuffer MapMercatorToCylindrical(GraphicsDevice graphicsDevice, double diameter, double portion, double lat, double longi)
+        {
+            LongLatHelper.NormalizeLongLatRadians(ref longi, ref lat);
+            VertexIndiceBuffer buffer = new VertexIndiceBuffer();
+            List<VertexPositionNormalTexture> vertices = new List<VertexPositionNormalTexture>();
+
+            double radius = diameter / 2;
+            double minLat = ToLat(ToY(lat) - portion / 2);
+            double maxLat = ToLat(ToY(lat) + portion / 2);
+            double minLong = longi - Math.PI * portion;
+            double maxLong = longi + Math.PI * portion;
+            int verticalSegments = Math.Max((int)((maxLat - minLat) * 50), 1);
+            int horizontalSegments = 1;
+            float z = -10;
+            for (int i = 0; i <= verticalSegments; i++)
+            {
+                double latitude = (minLat + (maxLat - minLat) * i / (double)verticalSegments);
+                for (int j = 0; j <= horizontalSegments; j++)
+                {
+                    //double longitude = (minLong + (maxLong - minLong) * j / (double)horizontalSegments);
+
+                    double longitude = (maxLong + (minLong - maxLong) * j / (double)horizontalSegments);
+
+                    //double tx = j / (double)horizontalSegments;
+                    double tx = 1 - j / (double)horizontalSegments;
+                    double ty = (ToY(maxLat) - ToY(latitude)) / (ToY(maxLat) - ToY(minLat)); // TODO: this works for flipping the y, now figure out if it makes sense?
+                    Vector3 normal = new Vector3(0, 0, 1);
+                    Vector3 position = new Vector3((float)longitude, (float)latitude, z);
+                    Vector2 texturepos = new Vector2((float)tx, (float)ty);
+                    vertices.Add(new VertexPositionNormalTexture(position, normal, texturepos));
+                }
+            }
+
+            List<int> indices = MakeIndices(horizontalSegments, verticalSegments);
+            buffer.vertices = new VertexBuffer(graphicsDevice, VertexPositionNormalTexture.VertexDeclaration, vertices.Count, BufferUsage.WriteOnly);
+            buffer.vertices.SetData(vertices.ToArray());
+            buffer.indices = new IndexBuffer(graphicsDevice, IndexElementSize.ThirtyTwoBits, indices.Count, BufferUsage.WriteOnly);
+            buffer.indices.SetData(indices.ToArray());
+            return buffer;
+        }
+
         // copied from above, obviously
         internal static VertexBuffer MakeSphereSegOutlineLatLong(GraphicsDevice graphicsDevice, double diameter, double portion, double lat, double longi, Color color)
         {
