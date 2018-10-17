@@ -38,6 +38,7 @@ namespace Zenith.EditorGameComponents
             VertexIndiceBuffer sphere = SphereBuilder.MakeSphereSeg(GraphicsDevice, 2, GetZoomPortion(), camera.cameraRotY, camera.cameraRotX);
             Texture2D renderToTexture = GetTexture();
             basicEffect3.Texture = renderToTexture;
+            GraphicsDevice.SetRenderTarget(Game1.renderTarget);
             foreach (EffectPass pass in basicEffect3.CurrentTechnique.Passes)
             {
                 pass.Apply();
@@ -47,6 +48,7 @@ namespace Zenith.EditorGameComponents
             }
             sphere.vertices.Dispose();
             sphere.indices.Dispose();
+            GraphicsDevice.SetRenderTarget(null);
         }
 
         public override void Update(GameTime gameTime)
@@ -58,7 +60,7 @@ namespace Zenith.EditorGameComponents
                 Vector2 circleStart2D = new Vector2((float)circleStart.X, (float)circleStart.Y);
                 foreach (var layer in flatComponents)
                 {
-                    layer.Update(circleStart2D.Y, circleStart2D.X);
+                    layer.Update(circleStart2D.X, circleStart2D.Y, camera.cameraZoom);
                 }
             }
         }

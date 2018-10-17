@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Zenith.MathHelpers;
 using Zenith.PrimitiveBuilder;
 using Zenith.ZGraphics;
 
@@ -14,27 +15,30 @@ namespace Zenith.EditorGameComponents.FlatComponents
     class GoogleMaps : IFlatComponent
     {
         private static int MAX_ZOOM = 19;
-        List<VertexIndiceBuffer>[] googleMapLayers = new List<VertexIndiceBuffer>[MAX_ZOOM + 1];
+        Dictionary<String, VertexIndiceBuffer> loadedMaps = new Dictionary<string, VertexIndiceBuffer>();
+        List<Sector>[] googleMapLayers = new List<Sector>[MAX_ZOOM + 1];
+        Sector previewSquare = null;
 
         public GoogleMaps()
         {
-            for (int i = 0; i <= MAX_ZOOM; i++) googleMapLayers[i] = new List<VertexIndiceBuffer>();
+            for (int i = 0; i <= MAX_ZOOM; i++) googleMapLayers[i] = new List<Sector>();
         }
 
         public void Draw(GraphicsDevice graphicsDevice, double minX, double maxX, double minY, double maxY)
         {
-            if (googleMapLayers[0].Count == 0)
-            {
-                LoadAll(graphicsDevice);
-            }
             var basicEffect = new BasicEffect(graphicsDevice);
             basicEffect.TextureEnabled = true;
             basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)minX, (float)maxX, (float)maxY, (float)minY, 1, 1000);
 
             foreach (var layer in googleMapLayers)
             {
-                foreach (var buffer in layer)
+                foreach (var sector in layer)
                 {
+                    if (!loadedMaps.ContainsKey(sector.ToString()))
+                    {
+                        loadedMaps[sector.ToString()] = GetCachedMap(graphicsDevice, sector);
+                    }
+                    VertexIndiceBuffer buffer = loadedMaps[sector.ToString()];
                     basicEffect.Texture = buffer.texture;
                     foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
                     {
@@ -46,10 +50,52 @@ namespace Zenith.EditorGameComponents.FlatComponents
                     graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, graphicsDevice.Viewport.MaxDepth, 0);
                 }
             }
+            if (previewSquare != null)
+            {
+                basicEffect.TextureEnabled = false;
+                basicEffect.VertexColorEnabled = true;
+                basicEffect.LightingEnabled = false;
+                float minLat = (float)ToLat(ToY(previewSquare.Latitude) - previewSquare.ZoomPortion / 2);
+                float maxLat = (float)ToLat(ToY(previewSquare.Latitude) + previewSquare.ZoomPortion / 2);
+                float minLong = (float)(previewSquare.Longitude - Math.PI * previewSquare.ZoomPortion);
+                float maxLong = (float)(previewSquare.Longitude + Math.PI * previewSquare.ZoomPortion);
+                float w = maxLong - minLong;
+                float h = maxLat - minLat;
+                Color color = CacheExists(previewSquare) ? Color.Green : Color.Red;
+                GraphicsBasic.DrawRect(graphicsDevice, basicEffect, minLong, minLat, w / 20, h, color);
+                GraphicsBasic.DrawRect(graphicsDevice, basicEffect, minLong, minLat, w, h / 20, color);
+                GraphicsBasic.DrawRect(graphicsDevice, basicEffect, minLong + w * 19 / 20, minLat, w / 20, h, color);
+                GraphicsBasic.DrawRect(graphicsDevice, basicEffect, minLong, minLat + h * 19 / 20, w, h / 20, color);
+            }
         }
 
-        public void Update(double mouseX, double mouseY)
+        private bool CacheExists(Sector sector)
         {
+            String fileName = sector.ToString() + ".PNG";
+            String filePath = @"..\..\..\..\LocalCache\" + fileName;
+            return File.Exists(filePath);
+        }
+
+        public void Update(double mouseX, double mouseY, double cameraZoom)
+        {
+            if (UILayer.LeftPressed) AddGoogleMap(mouseX, mouseY, cameraZoom);
+            previewSquare = GetSector(mouseX, mouseY, cameraZoom);
+        }
+
+        private int GetRoundedZoom(double cameraZoom)
+        {
+            return Math.Min((int)cameraZoom, MAX_ZOOM); // google only accepts integer zoom
+        }
+
+        private Sector GetSector(double mouseX, double mouseY, double cameraZoom)
+        {
+            int zoom = GetRoundedZoom(cameraZoom);
+            double zoomPortion = Math.Pow(0.5, zoom);
+            int x = (int)((mouseX + Math.PI) / (zoomPortion * 2 * Math.PI));
+            int y = (int)(ToY(mouseY) / (zoomPortion));
+            y = Math.Max(y, 0);
+            y = Math.Min(y, (1 << zoom) - 1);
+            return new Sector(x, y, zoom);
         }
 
         private void LoadAll(GraphicsDevice graphicsDevice)
@@ -64,9 +110,16 @@ namespace Zenith.EditorGameComponents.FlatComponents
                     int y = int.Parse(split[1].Split('=')[1]);
                     int zoom = int.Parse(split[2].Split('=', '.')[1]);
                     Sector newSec = new Sector(x, y, zoom);
-                    googleMapLayers[zoom].Add(GetCachedMap(graphicsDevice, newSec));
+                    googleMapLayers[zoom].Add(newSec);
                 }
             }
+        }
+
+        private void AddGoogleMap(double mouseX, double mouseY, double cameraZoom)
+        {
+            Sector squareCenter = GetSector(mouseX, mouseY, cameraZoom);
+            if (squareCenter == null) return;
+            googleMapLayers[squareCenter.zoom].Add(squareCenter);
         }
 
         private VertexIndiceBuffer GetCachedMap(GraphicsDevice graphicsDevice, Sector sector)

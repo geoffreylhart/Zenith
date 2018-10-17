@@ -16,6 +16,11 @@ namespace Zenith.ZGraphics
             var basicEffect = new BasicEffect(graphicsDevice);
             basicEffect.VertexColorEnabled = true;
             basicEffect.Projection = Matrix.CreateOrthographicOffCenter(0, graphicsDevice.Viewport.Width, graphicsDevice.Viewport.Height, 0, 1, 1000);
+            DrawRect(graphicsDevice, basicEffect, x, y, w, h, color);
+        }
+
+        internal static void DrawRect(GraphicsDevice graphicsDevice, BasicEffect basicEffect, float x, float y, float w, float h, Color color)
+        {
             float z = -10;
             List<VertexPositionColor> vertices = new List<VertexPositionColor>();
             vertices.Add(new VertexPositionColor(new Vector3(x, y + h, z), color));
