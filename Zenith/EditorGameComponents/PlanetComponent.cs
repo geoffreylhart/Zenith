@@ -14,6 +14,7 @@ namespace Zenith.EditorGameComponents
 {
     internal class PlanetComponent : EditorGameComponent
     {
+        private double aspectRatio = 1;
         private EditorCamera camera;
         private RenderTarget2D renderTarget;
         private List<IFlatComponent> flatComponents = new List<IFlatComponent>();
@@ -32,10 +33,11 @@ namespace Zenith.EditorGameComponents
 
         public override void Draw(GameTime gameTime)
         {
+            aspectRatio = GraphicsDevice.Viewport.AspectRatio;
             var basicEffect3 = this.GetDefaultEffect();
             camera.ApplyMatrices(basicEffect3);
             basicEffect3.TextureEnabled = true;
-            VertexIndiceBuffer sphere = SphereBuilder.MakeSphereSeg(GraphicsDevice, 2, GetZoomPortion(), camera.cameraRotY, camera.cameraRotX);
+            VertexIndiceBuffer sphere = SphereBuilder.MakeSphereSegExplicit(GraphicsDevice, 2, GetMinLong(), GetMinLat(), GetMaxLong(), GetMaxLat());
             Texture2D renderToTexture = GetTexture();
             basicEffect3.Texture = renderToTexture;
             GraphicsDevice.SetRenderTarget(Game1.renderTarget);
@@ -99,15 +101,10 @@ namespace Zenith.EditorGameComponents
             bf.World = Matrix.Identity;
             //bf.World *= Matrix.CreateTranslation((float)marker.X, (float)marker.Y, (float)marker.Z);
             bf.View = Matrix.CreateLookAt(new Vector3(0.0f, 0.0f, 1.0f), Vector3.Zero, Vector3.Up);
-
-            double lat = camera.cameraRotY; // same as for when generating the sphere
-            double longi = camera.cameraRotX; // same as for when generating the sohere etc
-            double portion = GetZoomPortion(); // same as for when generating the sphere
-                                               // literally copy-pasted
-            double minLat = Math.Max(lat - portion * Math.PI, -Math.PI / 2);
-            double maxLat = Math.Min(lat + portion * Math.PI, Math.PI / 2);
-            double minLong = longi - Math.PI * portion;
-            double maxLong = longi + Math.PI * portion;
+            double minLong = GetMinLong();
+            double maxLong = GetMaxLong();
+            double minLat = GetMinLat();
+            double maxLat = GetMaxLat();
             bf.Projection = Matrix.CreateOrthographicOffCenter((float)(minLong), (float)(maxLong), (float)maxLat, (float)minLat, 1, 1000);
 
             foreach (var layer in flatComponents)
@@ -118,6 +115,38 @@ namespace Zenith.EditorGameComponents
             // Drop the render target
             GraphicsDevice.SetRenderTarget(null);
             return renderTarget;
+        }
+
+        private double GetMinLong()
+        {
+            double longi = camera.cameraRotX;
+            double lat = camera.cameraRotY;
+            LongLatHelper.NormalizeLongLatRadians(ref longi, ref lat);
+            return longi - Math.PI * Math.Pow(0.5, camera.cameraZoom) * 3 * aspectRatio;
+        }
+
+        private double GetMaxLong()
+        {
+            double longi = camera.cameraRotX;
+            double lat = camera.cameraRotY;
+            LongLatHelper.NormalizeLongLatRadians(ref longi, ref lat);
+            return longi + Math.PI * Math.Pow(0.5, camera.cameraZoom) * 3 * aspectRatio;
+        }
+
+        private double GetMinLat()
+        {
+            double longi = camera.cameraRotX;
+            double lat = camera.cameraRotY;
+            LongLatHelper.NormalizeLongLatRadians(ref longi, ref lat);
+            return Math.Max(lat - Math.Pow(0.5, camera.cameraZoom) * 3 * Math.PI, -Math.PI / 2);
+        }
+
+        private double GetMaxLat()
+        {
+            double longi = camera.cameraRotX;
+            double lat = camera.cameraRotY;
+            LongLatHelper.NormalizeLongLatRadians(ref longi, ref lat);
+            return Math.Min(lat + Math.Pow(0.5, camera.cameraZoom) * 3 * Math.PI, Math.PI / 2);
         }
     }
 }

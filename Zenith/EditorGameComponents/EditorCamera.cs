@@ -78,14 +78,15 @@ namespace Zenith.EditorGameComponents
         // more accurate version
         internal Vector3d GetLatLongOfCoord2(double x, double y)
         {
-            Matrixd worldd = Matrixd.CreateRotationZ(-cameraRotX) * Matrixd.CreateRotationX(cameraRotY);
-            float distance = (float)(9 * Math.Pow(0.5, cameraZoom));
-            Matrixd viewd = Matrixd.CreateLookAt(new Vector3d(0, -1 - distance, 0), new Vector3d(0, 0, 0), new Vector3d(0, 0, 1));
-            Matrixd projectiond = Matrixd.CreatePerspectiveFieldOfView(Mathf.PI / 2, GetAspectRatio(), distance * 0.1f, distance * 100);
-            Rayd ray = Rayd.CastFromCamera2(Game.GraphicsDevice, x, y, projectiond, viewd, worldd);
+            double xRel = (x - GraphicsDevice.Viewport.Width / 2) / GraphicsDevice.Viewport.Width * 2; // change to range -1 to 1
+            double yRel = (y - GraphicsDevice.Viewport.Height / 2) / GraphicsDevice.Viewport.Height * 2;
+            double distance = 9 * Math.Pow(0.5, cameraZoom);
+            Rayd ray = new Rayd(new Vector3d(0, -1 - distance, 0), new Vector3d(xRel * GraphicsDevice.Viewport.AspectRatio, 1, -yRel));
             Vector3d intersection = ray.IntersectionSphere(new Vector3d(0, 0, 0), 1);
             if (intersection == null) return null;
-            return ToLatLong(intersection);
+            Matrixd world = Matrixd.Invert(Matrixd.CreateRotationZ(-cameraRotX) * Matrixd.CreateRotationX(cameraRotY));
+            intersection = Vector3d.Transform(intersection, world);
+            return ToLatLong(intersection);// + new Vector3d(cameraRotX, cameraRotY, 0);
         }
 
         private static bool WithinEpsilon(double a, double b)

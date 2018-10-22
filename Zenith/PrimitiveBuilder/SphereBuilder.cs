@@ -167,15 +167,19 @@ namespace Zenith.PrimitiveBuilder
         internal static VertexIndiceBuffer MakeSphereSeg(GraphicsDevice graphicsDevice, double diameter, double portion, double lat, double longi)
         {
             LongLatHelper.NormalizeLongLatRadians(ref longi, ref lat);
-            VertexIndiceBuffer buffer = new VertexIndiceBuffer();
-            List<VertexPositionNormalTexture> vertices = new List<VertexPositionNormalTexture>();
-
-            double radius = diameter / 2;
-
             double minLat = Math.Max(lat - portion * Math.PI, -Math.PI / 2);
             double maxLat = Math.Min(lat + portion * Math.PI, Math.PI / 2);
             double minLong = longi - Math.PI * portion;
             double maxLong = longi + Math.PI * portion;
+            return MakeSphereSegExplicit(graphicsDevice, diameter, minLong, minLat, maxLong, maxLat);
+        }
+
+        internal static VertexIndiceBuffer MakeSphereSegExplicit(GraphicsDevice graphicsDevice, double diameter, double minLong, double minLat, double maxLong, double maxLat)
+        {
+            VertexIndiceBuffer buffer = new VertexIndiceBuffer();
+            List<VertexPositionNormalTexture> vertices = new List<VertexPositionNormalTexture>();
+
+            double radius = diameter / 2;
             int verticalSegments = Math.Max((int)((maxLat - minLat) * 10), 1);
             int horizontalSegments = Math.Max((int)((maxLong - minLong) * 10), 1);
             for (int i = 0; i <= verticalSegments; i++)
