@@ -98,6 +98,11 @@ namespace Zenith.MathHelpers
             return (X * X) + (Y * Y) + (Z * Z);
         }
 
+        public Vector3d Normalized()
+        {
+            return Normalize(this);
+        }
+
         internal static Vector3d Normalize(Vector3d v)
         {
             double factor = Math.Sqrt((v.X * v.X) + (v.Y * v.Y) + (v.Z * v.Z));

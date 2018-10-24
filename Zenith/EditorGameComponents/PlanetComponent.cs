@@ -9,6 +9,7 @@ using Microsoft.Xna.Framework.Input;
 using Zenith.EditorGameComponents.FlatComponents;
 using Zenith.MathHelpers;
 using Zenith.PrimitiveBuilder;
+using Zenith.ZMath;
 
 namespace Zenith.EditorGameComponents
 {
@@ -37,8 +38,9 @@ namespace Zenith.EditorGameComponents
             var basicEffect3 = this.GetDefaultEffect();
             camera.ApplyMatrices(basicEffect3);
             basicEffect3.TextureEnabled = true;
-            VertexIndiceBuffer sphere = SphereBuilder.MakeSphereSegExplicit(GraphicsDevice, 2, GetMinLong(), GetMinLat(), GetMaxLong(), GetMaxLat());
-            Texture2D renderToTexture = GetTexture();
+            LongLatBounds bounds = GetLongLatBounds();
+            VertexIndiceBuffer sphere = SphereBuilder.MakeSphereSegExplicit(GraphicsDevice, 2, bounds.minLong, bounds.minLat, bounds.maxLong, bounds.maxLat);
+            Texture2D renderToTexture = GetTexture(bounds);
             basicEffect3.Texture = renderToTexture;
             GraphicsDevice.SetRenderTarget(Game1.renderTarget);
             foreach (EffectPass pass in basicEffect3.CurrentTechnique.Passes)
@@ -88,7 +90,7 @@ namespace Zenith.EditorGameComponents
             basicEffect.AmbientLightColor = new Vector3(0.2f, 0.2f, 0.2f);
             return basicEffect;
         }
-        private Texture2D GetTexture()
+        private Texture2D GetTexture(LongLatBounds bounds)
         {
             // Set the render target
             GraphicsDevice.SetRenderTarget(renderTarget);
@@ -101,15 +103,11 @@ namespace Zenith.EditorGameComponents
             bf.World = Matrix.Identity;
             //bf.World *= Matrix.CreateTranslation((float)marker.X, (float)marker.Y, (float)marker.Z);
             bf.View = Matrix.CreateLookAt(new Vector3(0.0f, 0.0f, 1.0f), Vector3.Zero, Vector3.Up);
-            double minLong = GetMinLong();
-            double maxLong = GetMaxLong();
-            double minLat = GetMinLat();
-            double maxLat = GetMaxLat();
-            bf.Projection = Matrix.CreateOrthographicOffCenter((float)(minLong), (float)(maxLong), (float)maxLat, (float)minLat, 1, 1000);
+            bf.Projection = Matrix.CreateOrthographicOffCenter((float)bounds.minLong, (float)bounds.maxLong, (float)bounds.maxLat, (float)bounds.minLat, 1, 1000);
 
             foreach (var layer in flatComponents)
             {
-                layer.Draw(GraphicsDevice, minLong, maxLong, minLat, maxLat);
+                layer.Draw(GraphicsDevice, bounds.minLong, bounds.maxLong, bounds.minLat, bounds.maxLat);
             }
 
             // Drop the render target
@@ -117,36 +115,49 @@ namespace Zenith.EditorGameComponents
             return renderTarget;
         }
 
-        private double GetMinLong()
+        //private LongLatBounds GetLongLatBounds()
+        //{
+        //    double longi = camera.cameraRotX;
+        //    double lat = camera.cameraRotY;
+        //    LongLatHelper.NormalizeLongLatRadians(ref longi, ref lat);
+        //    double minLong = longi - Math.PI * Math.Pow(0.5, camera.cameraZoom) * 3 * aspectRatio;
+        //    double maxLong = longi + Math.PI * Math.Pow(0.5, camera.cameraZoom) * 3 * aspectRatio;
+        //    double minLat = Math.Max(lat - Math.Pow(0.5, camera.cameraZoom) * 3 * Math.PI, -Math.PI / 2);
+        //    double maxLat = Math.Min(lat + Math.Pow(0.5, camera.cameraZoom) * 3 * Math.PI, Math.PI / 2);
+        //    return new LongLatBounds(minLong, maxLong, minLat, maxLat);
+        //}
+
+        private LongLatBounds GetLongLatBounds()
         {
-            double longi = camera.cameraRotX;
-            double lat = camera.cameraRotY;
-            LongLatHelper.NormalizeLongLatRadians(ref longi, ref lat);
-            return longi - Math.PI * Math.Pow(0.5, camera.cameraZoom) * 3 * aspectRatio;
+            // apparently we don't want to call this after changing our render target
+            double w = GraphicsDevice.Viewport.Width;
+            double h = GraphicsDevice.Viewport.Height;
+            var arcHoriz = camera.GetArc(0, h / 2, w, h / 2);
+            var arcVert = camera.GetArc(w / 2, 0, w / 2, h);
+            List<SphereArc> arcs = new List<SphereArc>();
+            if (arcHoriz != null) arcs.Add(arcHoriz);
+            if (arcVert != null) arcs.Add(arcVert);
+            double minLong = arcs.Min(x => x.MinLong());
+            double maxLong = arcs.Max(x => x.MaxLong());
+            double minLat = arcs.Min(x => x.MinLat());
+            double maxLat = arcs.Max(x => x.MaxLat());
+            return new LongLatBounds(minLong, maxLong, minLat, maxLat);
         }
 
-        private double GetMaxLong()
+        class LongLatBounds
         {
-            double longi = camera.cameraRotX;
-            double lat = camera.cameraRotY;
-            LongLatHelper.NormalizeLongLatRadians(ref longi, ref lat);
-            return longi + Math.PI * Math.Pow(0.5, camera.cameraZoom) * 3 * aspectRatio;
-        }
+            public double minLong;
+            public double maxLong;
+            public double minLat;
+            public double maxLat;
 
-        private double GetMinLat()
-        {
-            double longi = camera.cameraRotX;
-            double lat = camera.cameraRotY;
-            LongLatHelper.NormalizeLongLatRadians(ref longi, ref lat);
-            return Math.Max(lat - Math.Pow(0.5, camera.cameraZoom) * 3 * Math.PI, -Math.PI / 2);
-        }
-
-        private double GetMaxLat()
-        {
-            double longi = camera.cameraRotX;
-            double lat = camera.cameraRotY;
-            LongLatHelper.NormalizeLongLatRadians(ref longi, ref lat);
-            return Math.Min(lat + Math.Pow(0.5, camera.cameraZoom) * 3 * Math.PI, Math.PI / 2);
+            public LongLatBounds(double minLong, double maxLong, double minLat, double maxLat)
+            {
+                this.minLong = minLong;
+                this.maxLong = maxLong;
+                this.minLat = minLat;
+                this.maxLat = maxLat;
+            }
         }
     }
 }
