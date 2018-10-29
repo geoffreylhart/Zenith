@@ -9,7 +9,7 @@ using Zenith.ZMath;
 
 namespace Zenith.EditorGameComponents
 {
-    internal class EditorCamera : EditorGameComponent
+    public class EditorCamera : EditorGameComponent
     {
         public double cameraRotX = 0; // longitude coordinate of our character
         public double cameraRotY = 0; // latitude coordinate of our character
@@ -125,6 +125,24 @@ namespace Zenith.EditorGameComponents
             // TODO: correctly assign start/stop (I think our current logic works for our uses)
             if (xy1 == null || xy2 == null) return new SphereArc(intersection, tangents[0], tangents[1], true);
             return new SphereArc(intersection, xy1, xy2, true);
+        }
+
+        internal Circle3 GetUnitSphereVisibleCircle()
+        {
+            double cameraDistance = 9 * Math.Pow(0.5, cameraZoom) + 1;
+            double tangentDistance = Math.Sqrt(cameraDistance * cameraDistance - 1);
+            double angle = Math.Asin(1 / cameraDistance);
+            double circleRadius = Math.Sin(angle) * tangentDistance;
+            double centerDistance = Math.Sqrt(tangentDistance * tangentDistance - circleRadius * circleRadius);
+            Vector3d cameraVector = To3D(new Vector3d(cameraRotX, cameraRotY, 0));
+            return new Circle3(cameraVector * (cameraDistance - centerDistance), cameraVector, circleRadius);
+        }
+
+        internal bool IsUnitSpherePointVisible(Vector3d v)
+        {
+            double cameraDistance = 9 * Math.Pow(0.5, cameraZoom) + 1;
+            double tangentDistance = Math.Sqrt(cameraDistance * cameraDistance - 1);
+            return (v - GetPosition()).Length() <= tangentDistance;
         }
 
         // absolute coordinates

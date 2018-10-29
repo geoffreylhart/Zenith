@@ -115,32 +115,77 @@ namespace Zenith.EditorGameComponents
             return renderTarget;
         }
 
-        //private LongLatBounds GetLongLatBounds()
-        //{
-        //    double longi = camera.cameraRotX;
-        //    double lat = camera.cameraRotY;
-        //    LongLatHelper.NormalizeLongLatRadians(ref longi, ref lat);
-        //    double minLong = longi - Math.PI * Math.Pow(0.5, camera.cameraZoom) * 3 * aspectRatio;
-        //    double maxLong = longi + Math.PI * Math.Pow(0.5, camera.cameraZoom) * 3 * aspectRatio;
-        //    double minLat = Math.Max(lat - Math.Pow(0.5, camera.cameraZoom) * 3 * Math.PI, -Math.PI / 2);
-        //    double maxLat = Math.Min(lat + Math.Pow(0.5, camera.cameraZoom) * 3 * Math.PI, Math.PI / 2);
-        //    return new LongLatBounds(minLong, maxLong, minLat, maxLat);
-        //}
-
         private LongLatBounds GetLongLatBounds()
         {
             // apparently we don't want to call this after changing our render target
             double w = GraphicsDevice.Viewport.Width;
             double h = GraphicsDevice.Viewport.Height;
-            var arcHoriz = camera.GetArc(0, h / 2, w, h / 2);
-            var arcVert = camera.GetArc(w / 2, 0, w / 2, h);
+            var leftArc = camera.GetArc(0, 0, 0, h);
+            var rightArc = camera.GetArc(w, 0, w, h);
+            var topArc = camera.GetArc(0, 0, w, 0);
+            var bottomArc = camera.GetArc(0, h, w, h);
             List<SphereArc> arcs = new List<SphereArc>();
-            if (arcHoriz != null) arcs.Add(arcHoriz);
-            if (arcVert != null) arcs.Add(arcVert);
-            double minLong = arcs.Min(x => x.MinLong());
-            double maxLong = arcs.Max(x => x.MaxLong());
-            double minLat = arcs.Min(x => x.MinLat());
-            double maxLat = arcs.Max(x => x.MaxLat());
+            if (leftArc != null) arcs.Add(leftArc);
+            if (topArc != null) arcs.Add(topArc);
+            if (rightArc != null) arcs.Add(rightArc);
+            if (bottomArc != null) arcs.Add(bottomArc);
+            Circle3 visible = camera.GetUnitSphereVisibleCircle();
+            double minLong, maxLong, minLat, maxLat;
+            if (arcs.Count > 0)
+            {
+                int cnt = arcs.Count;
+                // try and construct the arc segments that connect our disconnected arcs if they are
+                //for(int i = 0; i < cnt; i++)
+                //{
+                //    SphereArc arc1 = arcs[i];
+                //    SphereArc arc2 = arcs[(i + 1) % cnt];
+                //    double bestDist = 1000;
+                //    Vector3d close1 = null;
+                //    Vector3d close2 = null;
+                //    for(int j = 0; j < 2; j++)
+                //    {
+                //        for (int k = 0; k < 2; k++)
+                //        {
+                //            Vector3d v1 = j == 0 ? arc1.start : arc1.stop;
+                //            Vector3d v2 = k == 0 ? arc2.start : arc2.stop;
+                //            double distance = (v1 - v2).Length();
+                //            if (distance < bestDist)
+                //            {
+                //                bestDist = distance;
+                //                close1 = v1;
+                //                close2 = v2;
+                //            }
+                //        }
+                //    }
+                //    if (bestDist > 0.01)
+                //    {
+                //        arcs.Add(new SphereArc(visible, close1, close2, true));
+                //    }
+                //}
+                minLong = arcs.Min(x => x.MinLong());
+                maxLong = arcs.Max(x => x.MaxLong());
+                minLat = arcs.Min(x => x.MinLat());
+                maxLat = arcs.Max(x => x.MaxLat());
+            }
+            else
+            {
+                minLong = visible.MinLong();
+                maxLong = visible.MaxLong();
+                minLat = visible.MinLat();
+                maxLat = visible.MaxLat();
+            }
+            if (camera.IsUnitSpherePointVisible(new Vector3d(0, 0, 1)))
+            {
+                maxLat = Math.PI / 2;
+                minLong = -Math.PI;
+                maxLong = Math.PI;
+            }
+            if (camera.IsUnitSpherePointVisible(new Vector3d(0, 0, -1)))
+            {
+                maxLat = -Math.PI / 2;
+                minLong = -Math.PI;
+                maxLong = Math.PI;
+            }
             return new LongLatBounds(minLong, maxLong, minLat, maxLat);
         }
 

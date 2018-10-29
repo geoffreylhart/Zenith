@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Zenith.EditorGameComponents;
 using Zenith.MathHelpers;
 using Zenith.ZMath;
 

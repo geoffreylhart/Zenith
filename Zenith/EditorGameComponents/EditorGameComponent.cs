@@ -9,7 +9,7 @@ using Zenith.EditorGameComponents.UIComponents;
 
 namespace Zenith.EditorGameComponents
 {
-    internal abstract class EditorGameComponent : DrawableGameComponent
+    public abstract class EditorGameComponent : DrawableGameComponent
     {
         protected EditorGameComponent(Game game) : base(game)
         {

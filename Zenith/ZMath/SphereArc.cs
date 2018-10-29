@@ -10,10 +10,10 @@ namespace Zenith.ZMath
     // represents any circle that lies on the unit sphere
     class SphereArc
     {
-        private Circle3 intersection;
-        private Vector3d start;
-        private Vector3d stop;
-        private bool shortPath; // there are two possible arcs otherwise
+        public Circle3 intersection;
+        public Vector3d start;
+        public Vector3d stop;
+        public bool shortPath; // there are two possible arcs otherwise
 
         public SphereArc(Circle3 intersection, Vector3d start, Vector3d stop, bool shortPath)
         {
@@ -36,7 +36,7 @@ namespace Zenith.ZMath
             List<Vector3d> longLats = new List<Vector3d>();
             for (int i = 0; i <= x; i++)
             {
-                longLats.Add(ToLatLong(((start * i + stop * (x - i)) / x).Normalized() * intersection.radius));
+                longLats.Add(ToLatLong((((start - intersection.center) * i + (stop - intersection.center) * (x - i)) / x).Normalized() * intersection.radius + intersection.center));
             }
             return longLats;
         }
