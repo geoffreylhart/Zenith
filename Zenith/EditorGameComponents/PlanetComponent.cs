@@ -120,10 +120,10 @@ namespace Zenith.EditorGameComponents
             // apparently we don't want to call this after changing our render target
             double w = GraphicsDevice.Viewport.Width;
             double h = GraphicsDevice.Viewport.Height;
-            var leftArc = camera.GetArc(0, 0, 0, h);
+            var leftArc = camera.GetArc(0, h, 0, 0);
             var rightArc = camera.GetArc(w, 0, w, h);
             var topArc = camera.GetArc(0, 0, w, 0);
-            var bottomArc = camera.GetArc(0, h, w, h);
+            var bottomArc = camera.GetArc(w, h, 0, h);
             List<SphereArc> arcs = new List<SphereArc>();
             if (leftArc != null) arcs.Add(leftArc);
             if (topArc != null) arcs.Add(topArc);
@@ -135,33 +135,17 @@ namespace Zenith.EditorGameComponents
             {
                 int cnt = arcs.Count;
                 // try and construct the arc segments that connect our disconnected arcs if they are
-                //for(int i = 0; i < cnt; i++)
-                //{
-                //    SphereArc arc1 = arcs[i];
-                //    SphereArc arc2 = arcs[(i + 1) % cnt];
-                //    double bestDist = 1000;
-                //    Vector3d close1 = null;
-                //    Vector3d close2 = null;
-                //    for(int j = 0; j < 2; j++)
-                //    {
-                //        for (int k = 0; k < 2; k++)
-                //        {
-                //            Vector3d v1 = j == 0 ? arc1.start : arc1.stop;
-                //            Vector3d v2 = k == 0 ? arc2.start : arc2.stop;
-                //            double distance = (v1 - v2).Length();
-                //            if (distance < bestDist)
-                //            {
-                //                bestDist = distance;
-                //                close1 = v1;
-                //                close2 = v2;
-                //            }
-                //        }
-                //    }
-                //    if (bestDist > 0.01)
-                //    {
-                //        arcs.Add(new SphereArc(visible, close1, close2, true));
-                //    }
-                //}
+                for (int i = 0; i < cnt; i++)
+                {
+                    SphereArc arc1 = arcs[i];
+                    SphereArc arc2 = arcs[(i + 1) % cnt];
+                    Vector3d close1 = arc1.stop;
+                    Vector3d close2 = arc2.start;
+                    if ((close1 - close2).Length() > 0.01)
+                    {
+                        arcs.Add(new SphereArc(visible, close1, close2, true));
+                    }
+                }
                 minLong = arcs.Min(x => x.MinLong());
                 maxLong = arcs.Max(x => x.MaxLong());
                 minLat = arcs.Min(x => x.MinLat());

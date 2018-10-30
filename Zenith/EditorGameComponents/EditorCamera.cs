@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -120,9 +121,16 @@ namespace Zenith.EditorGameComponents
             Circle3 intersection = plane.GetUnitSphereIntersection();
             if (intersection == null) return null;
             Vector3d[] tangents = intersection.GetTangents(GetPosition());
+            Vector3[] projected = tangents.Select(x => Project(x.ToVector3())).ToArray();
             Vector3d xy1 = GetUnitSphereIntersection(x1, y1);
             Vector3d xy2 = GetUnitSphereIntersection(x2, y2);
             // TODO: correctly assign start/stop (I think our current logic works for our uses)
+            if ((projected[0]-new Vector3((float)x1, (float)y1,0)).Length()> (projected[1] - new Vector3((float)x1, (float)y1, 0)).Length())
+            {
+                var temp = tangents[0];
+                tangents[0] = tangents[1];
+                tangents[1] = temp;
+            }
             if (xy1 == null || xy2 == null) return new SphereArc(intersection, tangents[0], tangents[1], true);
             return new SphereArc(intersection, xy1, xy2, true);
         }
