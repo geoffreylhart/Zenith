@@ -58,6 +58,7 @@ namespace Zenith
             //var geom = new SphericalGeometryEditor(this, camera);
             var earth = new PlanetComponent(this, camera);
             earth.Add(new GoogleMaps());
+            earth.Add(new GeometryEditor());
             Components.Add(earth);
             var uiLayer = new UILayer(this, new ComponentManager(camera, earth));
             Components.Add(uiLayer);

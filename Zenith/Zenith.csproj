@@ -44,6 +44,7 @@
   <ItemGroup>
     <Compile Include="AdvancedGeometryDataStructures\EditableMesh.cs" />
     <Compile Include="Configuration.cs" />
+    <Compile Include="EditorGameComponents\FlatComponents\GeometryEditor.cs" />
     <Compile Include="EditorGameComponents\FlatComponents\GoogleMaps.cs" />
     <Compile Include="EditorGameComponents\FlatComponents\I2DComponent.cs" />
     <Compile Include="EditorGameComponents\BlenderAxis.cs" />

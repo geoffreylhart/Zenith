@@ -62,9 +62,10 @@ namespace Zenith.EditorGameComponents
             if (circleStart != null)
             {
                 Vector2 circleStart2D = new Vector2((float)circleStart.X, (float)circleStart.Y);
-                foreach (var layer in flatComponents)
+                // update in reverse order
+                for (int i = 0; i < flatComponents.Count; i++)
                 {
-                    layer.Update(circleStart2D.X, circleStart2D.Y, camera.cameraZoom);
+                    flatComponents[flatComponents.Count - 1 - i].Update(circleStart2D.X, circleStart2D.Y, camera.cameraZoom);
                 }
             }
         }
