@@ -116,5 +116,10 @@ namespace Zenith.MathHelpers
             var z = vector1.X * vector2.Y - vector2.X * vector1.Y;
             return new Vector3d(x, y, z);
         }
+
+        public Vector3d Cross(Vector3d v)
+        {
+            return Cross(this, v);
+        }
     }
 }

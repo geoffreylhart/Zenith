@@ -24,7 +24,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
             for (int i = 0; i <= MAX_ZOOM; i++) googleMapLayers[i] = new List<Sector>();
         }
 
-        public void Draw(GraphicsDevice graphicsDevice, double minX, double maxX, double minY, double maxY)
+        public void Draw(GraphicsDevice graphicsDevice, double minX, double maxX, double minY, double maxY, double cameraZoom)
         {
             var basicEffect = new BasicEffect(graphicsDevice);
             basicEffect.TextureEnabled = true;
@@ -79,7 +79,14 @@ namespace Zenith.EditorGameComponents.FlatComponents
         public void Update(double mouseX, double mouseY, double cameraZoom)
         {
             if (UILayer.LeftPressed) AddGoogleMap(mouseX, mouseY, cameraZoom);
-            previewSquare = GetSector(mouseX, mouseY, cameraZoom);
+            if (UILayer.LeftAvailable)
+            {
+                previewSquare = GetSector(mouseX, mouseY, cameraZoom);
+            }
+            else
+            {
+                previewSquare = null;
+            }
         }
 
         private int GetRoundedZoom(double cameraZoom)

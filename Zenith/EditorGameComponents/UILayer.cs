@@ -32,17 +32,21 @@ namespace Zenith.EditorGameComponents
         internal static bool RightDown { get; private set; }
         internal static bool LeftPressed { get; private set; }
         internal static bool RightPressed { get; private set; }
+        internal static bool LeftAvailable { get; private set; }
+        internal static bool RightAvailable { get; private set; }
 
         internal static void ConsumeLeft()
         {
             LeftDown = false;
             LeftPressed = false;
+            LeftAvailable = false;
         }
 
         internal static void ConsumeRight()
         {
             RightDown = false;
             RightPressed = false;
+            RightAvailable = false;
         }
 
         internal UILayer(Game game, ComponentManager cm) : base(game)
@@ -70,6 +74,8 @@ namespace Zenith.EditorGameComponents
             // for instance, should be handle the new component click actions within that component's update step? or in our UIs?
             // if we update in the component's step, we get to pretend we're doing good by piggy-backing off monogame's update order stuff (instead of having our own)
             MouseState state = Mouse.GetState();
+            LeftAvailable = true;
+            RightAvailable = true;
             LeftDown = state.LeftButton == ButtonState.Pressed;
             RightDown = state.LeftButton == ButtonState.Pressed;
             LeftPressed = state.LeftButton == ButtonState.Pressed && !oldLeft;

@@ -88,7 +88,9 @@
     <Compile Include="MathHelpers\Matrixd.cs" />
     <Compile Include="MathHelpers\Rayd.cs" />
     <Compile Include="MathHelpers\RayHelper.cs" />
-    <Compile Include="MathHelpers\Vector3d.cs" />
+    <Compile Include="ZMath\LongLat.cs" />
+    <Compile Include="ZMath\Vector2d.cs" />
+    <Compile Include="ZMath\Vector3d.cs" />
     <Compile Include="MathHelpers\Vector3Helper.cs" />
     <Compile Include="PrimitiveBuilder\CubeBuilder.cs" />
     <Compile Include="PrimitiveBuilder\SphereBuilder.cs" />
@@ -99,6 +101,7 @@
     <Compile Include="ZMath\GlobeMath.cs" />
     <Compile Include="ZMath\Plane.cs" />
     <Compile Include="ZMath\SphereArc.cs" />
+    <Compile Include="ZMath\SphereVector.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="MonoGame.Framework">

@@ -11,7 +11,7 @@ namespace Zenith.ZGraphics
 {
     class GraphicsBasic
     {
-        internal static void DrawScreenRect(GraphicsDevice graphicsDevice, float x, float y, float w, float h, Color color)
+        internal static void DrawScreenRect(GraphicsDevice graphicsDevice, double x, double y, double w, double h, Color color)
         {
             var basicEffect = new BasicEffect(graphicsDevice);
             basicEffect.VertexColorEnabled = true;
@@ -19,14 +19,14 @@ namespace Zenith.ZGraphics
             DrawRect(graphicsDevice, basicEffect, x, y, w, h, color);
         }
 
-        internal static void DrawRect(GraphicsDevice graphicsDevice, BasicEffect basicEffect, float x, float y, float w, float h, Color color)
+        internal static void DrawRect(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double x, double y, double w, double h, Color color)
         {
             float z = -10;
             List<VertexPositionColor> vertices = new List<VertexPositionColor>();
-            vertices.Add(new VertexPositionColor(new Vector3(x, y + h, z), color));
-            vertices.Add(new VertexPositionColor(new Vector3(x, y, z), color));
-            vertices.Add(new VertexPositionColor(new Vector3(x + w, y + h, z), color));
-            vertices.Add(new VertexPositionColor(new Vector3(x + w, y, z), color));
+            vertices.Add(new VertexPositionColor(new Vector3((float)x, (float)(y + h), z), color));
+            vertices.Add(new VertexPositionColor(new Vector3((float)x, (float)y, z), color));
+            vertices.Add(new VertexPositionColor(new Vector3((float)(x + w), (float)(y + h), z), color));
+            vertices.Add(new VertexPositionColor(new Vector3((float)(x + w), (float)y, z), color));
             foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
             {
                 pass.Apply();

@@ -108,7 +108,7 @@ namespace Zenith.EditorGameComponents
 
             foreach (var layer in flatComponents)
             {
-                layer.Draw(GraphicsDevice, bounds.minLong, bounds.maxLong, bounds.minLat, bounds.maxLat);
+                layer.Draw(GraphicsDevice, bounds.minLong, bounds.maxLong, bounds.minLat, bounds.maxLat, camera.cameraZoom);
             }
 
             // Drop the render target
