@@ -36,7 +36,15 @@ namespace Zenith.ZMath
 
         public SphereVector WalkTowardsPortion(SphereVector v, double portion)
         {
-            return WalkTowards(v, this.Distance(v) * portion);
+            double distance = this.Distance(v);
+            if (distance < 0.001) // currently has precision issues
+            {
+                return new SphereVector(((1 - portion) * this + portion * v).Normalized());
+            }
+            else
+            {
+                return WalkTowards(v, this.Distance(v) * portion);
+            }
         }
 
         public LongLat ToLongLat()
@@ -47,6 +55,11 @@ namespace Zenith.ZMath
         public double Distance(SphereVector v)
         {
             return Math.Asin(this.Cross(v).Length());
+        }
+
+        internal SphereVector FlipOver(SphereVector v)
+        {
+            return this.WalkTowards(v, 2 * this.Distance(v));
         }
     }
 }

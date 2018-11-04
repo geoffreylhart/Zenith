@@ -24,28 +24,35 @@ namespace Zenith.EditorGameComponents
     // Only toggles visibility and such
     internal class UILayer : DrawableGameComponent
     {
+        private static int QUICK_CLICK_MAX_FRAMES = 10; // where 1 is minimum and 0 makes quick clicks impossible
         private List<ComponentCoord> components = new List<ComponentCoord>();
         private ComponentManager cm;
         private static bool oldLeft = false;
         private static bool oldRight = false;
+        private static int leftAge = 0;
+        private static int rightAge = 0;
         internal static bool LeftDown { get; private set; }
         internal static bool RightDown { get; private set; }
         internal static bool LeftPressed { get; private set; }
         internal static bool RightPressed { get; private set; }
+        internal static bool LeftQuickClicked { get; private set; }
+        internal static bool RightQuickClicked { get; private set; }
         internal static bool LeftAvailable { get; private set; }
         internal static bool RightAvailable { get; private set; }
 
         internal static void ConsumeLeft()
         {
-            LeftDown = false;
+            // don't set leftdown to false so components can still register dragging?
             LeftPressed = false;
+            LeftQuickClicked = false;
             LeftAvailable = false;
         }
 
         internal static void ConsumeRight()
         {
-            RightDown = false;
+            // don't set rightdown to false so components can still register dragging?
             RightPressed = false;
+            RightQuickClicked = false;
             RightAvailable = false;
         }
 
@@ -77,11 +84,29 @@ namespace Zenith.EditorGameComponents
             LeftAvailable = true;
             RightAvailable = true;
             LeftDown = state.LeftButton == ButtonState.Pressed;
-            RightDown = state.LeftButton == ButtonState.Pressed;
-            LeftPressed = state.LeftButton == ButtonState.Pressed && !oldLeft;
-            oldLeft = state.LeftButton == ButtonState.Pressed;
-            RightPressed = state.RightButton == ButtonState.Pressed && !oldRight;
-            oldRight = state.RightButton == ButtonState.Pressed;
+            RightDown = state.RightButton == ButtonState.Pressed;
+            LeftPressed = LeftDown && !oldLeft;
+            LeftQuickClicked = !LeftDown && oldLeft && leftAge < QUICK_CLICK_MAX_FRAMES;
+            if (oldLeft == LeftDown)
+            {
+                leftAge++;
+            }
+            else
+            {
+                leftAge = 0;
+            }
+            oldLeft = LeftDown;
+            RightPressed = RightDown && !oldRight;
+            RightQuickClicked = !RightDown && oldRight && rightAge < QUICK_CLICK_MAX_FRAMES;
+            if (oldRight == RightDown)
+            {
+                rightAge++;
+            }
+            else
+            {
+                rightAge = 0;
+            }
+            oldRight = RightDown;
             foreach (var component in components)
             {
                 component.Update();
