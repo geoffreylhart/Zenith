@@ -75,6 +75,16 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 }
                 throw new NotImplementedException();
             }
+
+            public SphereVector CurveTowards(VectorHandle v, double t)
+            {
+                SphereVector p12 = p.WalkTowardsPortion(GetPseudoOutgoing(), t);
+                SphereVector p23 = GetPseudoOutgoing().WalkTowardsPortion(v.GetPseudoIncoming(), t);
+                SphereVector p34 = v.GetPseudoIncoming().WalkTowardsPortion(v.p, t);
+                SphereVector p123 = p12.WalkTowardsPortion(p23, t);
+                SphereVector p234 = p23.WalkTowardsPortion(p34, t);
+                return p123.WalkTowardsPortion(p234, t);
+            }
         }
 
         private enum HandleType
@@ -243,6 +253,45 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 UILayer.ConsumeLeft();
                 UILayer.ConsumeRight();
             }
+            else
+            {
+                bestDist = double.MaxValue;
+                for (int i = 0; i < shape.Count; i++)
+                {
+                    SphereVector halfPoint = shape[i].CurveTowards(shape[(i + 1) % shape.Count], 0.5);
+                    double distBase = coord3D.Distance(halfPoint);
+                    if (distBase < bestDist)
+                    {
+                        bestDist = distBase;
+                        bestIndex = i;
+                    }
+                }
+                if (bestDist < maxDist)
+                {
+                    previewPoint = shape[bestIndex].CurveTowards(shape[(bestIndex + 1) % shape.Count], 0.5);
+                    if (UILayer.LeftPressed)
+                    {
+                        VectorHandle newH = new VectorHandle(previewPoint);
+                        newH.handleType = HandleType.SMOOTH;
+                        // just guessing the new handle positions
+                        VectorHandle p1 = shape[bestIndex];
+                        VectorHandle p4 = shape[(bestIndex + 1) % shape.Count];
+                        SphereVector p12 = p1.p.WalkTowardsPortion(p1.GetPseudoOutgoing(), 0.5);
+                        SphereVector p23 = p1.GetPseudoOutgoing().WalkTowardsPortion(p4.GetPseudoIncoming(), 0.5);
+                        SphereVector p34 = p4.GetPseudoIncoming().WalkTowardsPortion(p4.p, 0.5);
+                        SphereVector p123 = p12.WalkTowardsPortion(p23, 0.5);
+                        SphereVector p234 = p23.WalkTowardsPortion(p34, 0.5);
+                        newH.incoming = p123.WalkTowardsPortion(p234, 0.25);
+                        newH.outgoing = p234.WalkTowardsPortion(p123, 0.25);
+                        p1.outgoing = p1.outgoing.WalkTowardsPortion(p1.p, 0.5);
+                        p4.incoming = p4.incoming.WalkTowardsPortion(p4.p, 0.5);
+                        shape.Insert(bestIndex + 1, newH);
+                        draggingPointIndex = bestIndex + 1;
+                        draggingPointIndexType = IndexType.BASE;
+                    }
+                    UILayer.ConsumeLeft();
+                }
+            }
         }
 
         private void UpdateVertexBuffer(GraphicsDevice graphicsDevice)
@@ -255,12 +304,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 for (int j = 0; j < 10; j++)
                 {
                     float t = j / 10.0f;
-                    SphereVector p12 = p1.p.WalkTowardsPortion(p1.GetPseudoOutgoing(), t);
-                    SphereVector p23 = p1.GetPseudoOutgoing().WalkTowardsPortion(p4.GetPseudoIncoming(), t);
-                    SphereVector p34 = p4.GetPseudoIncoming().WalkTowardsPortion(p4.p, t);
-                    SphereVector p123 = p12.WalkTowardsPortion(p23, t);
-                    SphereVector p234 = p23.WalkTowardsPortion(p34, t);
-                    SphereVector curvePoint = p123.WalkTowardsPortion(p234, t);
+                    SphereVector curvePoint = p1.CurveTowards(p4, t);
                     shapeAsVertices.Add(new VertexPosition(new Vector3(curvePoint.ToLongLat(), -10f)));
                 }
             }
