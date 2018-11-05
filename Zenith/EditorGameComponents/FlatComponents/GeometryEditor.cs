@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using Zenith.Helpers;
 using Zenith.MathHelpers;
 using Zenith.ZGraphics;
@@ -14,12 +15,18 @@ namespace Zenith.EditorGameComponents.FlatComponents
 {
     class GeometryEditor : IFlatComponent
     {
-        private List<VectorHandle> shape;
+        private List<Shape> shapes = new List<Shape>();
         private SphereVector previewPoint;
+        private int draggingPointShapeIndex = -1;
         private int draggingPointIndex = -1;
         private IndexType draggingPointIndexType = IndexType.BASE;
-        private VertexBuffer vertexBuffer = null;
-        private bool updateVertexBuffer = false;
+
+        private class Shape
+        {
+            public List<VectorHandle> shape;
+            public VertexBuffer vertexBuffer = null;
+            public bool updateVertexBuffer = false;
+        }
 
         private class VectorHandle
         {
@@ -99,9 +106,24 @@ namespace Zenith.EditorGameComponents.FlatComponents
 
         public GeometryEditor()
         {
-            LongLat[] longLats = new[] { new LongLat(0, 0), new LongLat(0, 0.1f), new LongLat(0.1f, 0.1f), new LongLat(0.1f, 0) };
-            shape = new List<VectorHandle>();
-            foreach (var longLat in longLats) shape.Add(new VectorHandle(longLat.ToSphereVector()));
+            AddNewShape(new SphereVector(0, -1, 0));
+        }
+
+        private void AddNewShape(SphereVector center)
+        {
+            Shape newShape = new Shape();
+            newShape.shape = new List<VectorHandle>();
+            VectorHandle handle1 = new VectorHandle(center.WalkNorth(0.1));
+            handle1.handleType = HandleType.SMOOTH;
+            handle1.incoming = handle1.p.WalkEast(0.1);
+            handle1.outgoing = handle1.p.WalkEast(-0.1);
+            VectorHandle handle2 = new VectorHandle(center.WalkNorth(-0.1));
+            handle2.handleType = HandleType.SMOOTH;
+            handle2.incoming = handle2.p.WalkEast(-0.1);
+            handle2.outgoing = handle2.p.WalkEast(0.1);
+            newShape.shape.Add(handle1);
+            newShape.shape.Add(handle2);
+            shapes.Add(newShape);
         }
 
         public void Draw(GraphicsDevice graphicsDevice, double minX, double maxX, double minY, double maxY, double cameraZoom)
@@ -110,34 +132,43 @@ namespace Zenith.EditorGameComponents.FlatComponents
             var basicEffect = new BasicEffect(graphicsDevice);
             basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)minX, (float)maxX, (float)maxY, (float)minY, 1, 1000);
             basicEffect.VertexColorEnabled = true;
-            foreach (var point in shape)
+            foreach (var shape in shapes)
             {
-                DrawPoint(graphicsDevice, basicEffect, halfSize, point.p.ToLongLat(), Color.White);
-                if (point.handleType == HandleType.FREE || point.handleType == HandleType.SMOOTH)
+                foreach (var point in shape.shape)
                 {
-                    DrawPoint(graphicsDevice, basicEffect, halfSize, point.GetPseudoIncoming().ToLongLat(), Color.Orange);
-                    DrawPoint(graphicsDevice, basicEffect, halfSize, point.GetPseudoOutgoing().ToLongLat(), Color.Orange);
+                    DrawPoint(graphicsDevice, basicEffect, halfSize, point.p.ToLongLat(), Color.White);
+                    if (point.handleType == HandleType.FREE || point.handleType == HandleType.SMOOTH)
+                    {
+                        DrawPoint(graphicsDevice, basicEffect, halfSize, point.GetPseudoIncoming().ToLongLat(), Color.Orange);
+                        DrawPoint(graphicsDevice, basicEffect, halfSize, point.GetPseudoOutgoing().ToLongLat(), Color.Orange);
+                    }
                 }
             }
             var shapeHandles = new List<VertexPositionColor>();
             float z = -10;
-            foreach (var handle in shape) // for drawing lines from in/out handles to the base
+            foreach (var shape in shapes)
             {
-                if (handle.handleType == HandleType.FREE || handle.handleType == HandleType.SMOOTH)
+                foreach (var handle in shape.shape) // for drawing lines from in/out handles to the base
                 {
-                    shapeHandles.Add(new VertexPositionColor(new Vector3(handle.p.ToLongLat(), z), Color.Orange));
-                    shapeHandles.Add(new VertexPositionColor(new Vector3(handle.GetPseudoIncoming().ToLongLat(), z), Color.Orange));
-                    shapeHandles.Add(new VertexPositionColor(new Vector3(handle.p.ToLongLat(), z), Color.Orange));
-                    shapeHandles.Add(new VertexPositionColor(new Vector3(handle.GetPseudoOutgoing().ToLongLat(), z), Color.Orange));
+                    if (handle.handleType == HandleType.FREE || handle.handleType == HandleType.SMOOTH)
+                    {
+                        shapeHandles.Add(new VertexPositionColor(new Vector3(handle.p.ToLongLat(), z), Color.Orange));
+                        shapeHandles.Add(new VertexPositionColor(new Vector3(handle.GetPseudoIncoming().ToLongLat(), z), Color.Orange));
+                        shapeHandles.Add(new VertexPositionColor(new Vector3(handle.p.ToLongLat(), z), Color.Orange));
+                        shapeHandles.Add(new VertexPositionColor(new Vector3(handle.GetPseudoOutgoing().ToLongLat(), z), Color.Orange));
+                    }
                 }
             }
-            if (vertexBuffer != null)
+            foreach (var shape in shapes)
             {
-                graphicsDevice.SetVertexBuffer(vertexBuffer);
-                foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
+                if (shape.vertexBuffer != null)
                 {
-                    pass.Apply();
-                    graphicsDevice.DrawPrimitives(PrimitiveType.LineStrip, 0, vertexBuffer.VertexCount - 1);
+                    graphicsDevice.SetVertexBuffer(shape.vertexBuffer);
+                    foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
+                    {
+                        pass.Apply();
+                        graphicsDevice.DrawPrimitives(PrimitiveType.LineStrip, 0, shape.vertexBuffer.VertexCount - 1);
+                    }
                 }
             }
             if (shapeHandles.Count > 0)
@@ -153,11 +184,13 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 DrawPoint(graphicsDevice, basicEffect, halfSize, previewPoint.ToLongLat(), Color.Red);
             }
 
-            // TODO: going to have to double check all this logic if I ever use this class again
-            if (updateVertexBuffer || vertexBuffer == null)
+            foreach (var shape in shapes)
             {
-                updateVertexBuffer = false;
-                UpdateVertexBuffer(graphicsDevice);
+                if (shape.updateVertexBuffer || shape.vertexBuffer == null)
+                {
+                    shape.updateVertexBuffer = false;
+                    UpdateVertexBuffer(graphicsDevice, shape);
+                }
             }
         }
 
@@ -167,40 +200,47 @@ namespace Zenith.EditorGameComponents.FlatComponents
             SphereVector coord3D = new LongLat(mouseX, mouseY).ToSphereVector(); // TODO: just pass this coord directly from planet component
             previewPoint = null;
             var mouseAsVec2 = new Vector2((float)mouseX, (float)mouseY);
+            int bestShapeIndex = -1;
             int bestIndex = -1;
             IndexType bestIndexType = IndexType.BASE;
             double bestDist = double.MaxValue;
-            for (int i = 0; i < shape.Count; i++) // get closest line
+            for (int j = 0; j < shapes.Count; j++)
             {
-                double distBase = coord3D.Distance(shape[i].p);
-                if (distBase < bestDist)
+                for (int i = 0; i < shapes[j].shape.Count; i++) // get closest line
                 {
-                    bestDist = distBase;
-                    bestIndex = i;
-                    bestIndexType = IndexType.BASE;
-                }
-                if (shape[i].handleType == HandleType.FREE || shape[i].handleType == HandleType.SMOOTH)
-                {
-                    double distIncoming = coord3D.Distance(shape[i].GetPseudoIncoming());
-                    double distOutgoing = coord3D.Distance(shape[i].GetPseudoOutgoing());
-                    if (distIncoming < bestDist)
+                    double distBase = coord3D.Distance(shapes[j].shape[i].p);
+                    if (distBase < bestDist)
                     {
-                        bestDist = distIncoming;
+                        bestDist = distBase;
                         bestIndex = i;
-                        bestIndexType = IndexType.INCOMING;
+                        bestShapeIndex = j;
+                        bestIndexType = IndexType.BASE;
                     }
-                    if (distOutgoing < bestDist)
+                    if (shapes[j].shape[i].handleType == HandleType.FREE || shapes[j].shape[i].handleType == HandleType.SMOOTH)
                     {
-                        bestDist = distOutgoing;
-                        bestIndex = i;
-                        bestIndexType = IndexType.OUTGOING;
+                        double distIncoming = coord3D.Distance(shapes[j].shape[i].GetPseudoIncoming());
+                        double distOutgoing = coord3D.Distance(shapes[j].shape[i].GetPseudoOutgoing());
+                        if (distIncoming < bestDist)
+                        {
+                            bestDist = distIncoming;
+                            bestIndex = i;
+                            bestShapeIndex = j;
+                            bestIndexType = IndexType.INCOMING;
+                        }
+                        if (distOutgoing < bestDist)
+                        {
+                            bestDist = distOutgoing;
+                            bestIndex = i;
+                            bestShapeIndex = j;
+                            bestIndexType = IndexType.OUTGOING;
+                        }
                     }
                 }
             }
             double maxDist = 1 * Math.Pow(0.5, cameraZoom);
             if (bestDist < maxDist)
             {
-                previewPoint = bestIndexType == IndexType.BASE ? shape[bestIndex].p : (bestIndexType == IndexType.INCOMING ? shape[bestIndex].GetPseudoIncoming() : shape[bestIndex].GetPseudoOutgoing());
+                previewPoint = bestIndexType == IndexType.BASE ? shapes[bestShapeIndex].shape[bestIndex].p : (bestIndexType == IndexType.INCOMING ? shapes[bestShapeIndex].shape[bestIndex].GetPseudoIncoming() : shapes[bestShapeIndex].shape[bestIndex].GetPseudoOutgoing());
                 if (UILayer.LeftPressed)
                 {
                     draggingPointIndex = bestIndex;
@@ -208,47 +248,47 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 }
                 if (UILayer.LeftQuickClicked)
                 {
-                    shape[bestIndex].handleType++;
-                    if ((int)shape[bestIndex].handleType == 3)
+                    shapes[bestShapeIndex].shape[bestIndex].handleType++;
+                    if ((int)shapes[bestShapeIndex].shape[bestIndex].handleType == 3)
                     {
-                        shape[bestIndex].handleType = 0;
+                        shapes[bestShapeIndex].shape[bestIndex].handleType = 0;
                     }
-                    updateVertexBuffer = true;
+                    shapes[bestShapeIndex].updateVertexBuffer = true;
                 }
             }
             if (draggingPointIndex >= 0)
             {
                 if (draggingPointIndexType == IndexType.BASE)
                 {
-                    var diff = coord3D - shape[draggingPointIndex].p;
-                    shape[draggingPointIndex].p = coord3D;
-                    shape[draggingPointIndex].incoming = new SphereVector((shape[draggingPointIndex].incoming + diff).Normalized());
-                    shape[draggingPointIndex].outgoing = new SphereVector((shape[draggingPointIndex].outgoing + diff).Normalized());
+                    var diff = coord3D - shapes[bestShapeIndex].shape[draggingPointIndex].p;
+                    shapes[bestShapeIndex].shape[draggingPointIndex].p = coord3D;
+                    shapes[bestShapeIndex].shape[draggingPointIndex].incoming = new SphereVector((shapes[bestShapeIndex].shape[draggingPointIndex].incoming + diff).Normalized());
+                    shapes[bestShapeIndex].shape[draggingPointIndex].outgoing = new SphereVector((shapes[bestShapeIndex].shape[draggingPointIndex].outgoing + diff).Normalized());
                 }
                 if (draggingPointIndexType == IndexType.INCOMING)
                 {
-                    shape[draggingPointIndex].incoming = coord3D;
-                    if (shape[draggingPointIndex].handleType == HandleType.SMOOTH)
+                    shapes[bestShapeIndex].shape[draggingPointIndex].incoming = coord3D;
+                    if (shapes[bestShapeIndex].shape[draggingPointIndex].handleType == HandleType.SMOOTH)
                     {
-                        shape[draggingPointIndex].outgoing = shape[draggingPointIndex].p.WalkTowards(coord3D, -shape[draggingPointIndex].p.Distance(shape[draggingPointIndex].outgoing));
+                        shapes[bestShapeIndex].shape[draggingPointIndex].outgoing = shapes[bestShapeIndex].shape[draggingPointIndex].p.WalkTowards(coord3D, -shapes[bestShapeIndex].shape[draggingPointIndex].p.Distance(shapes[bestShapeIndex].shape[draggingPointIndex].outgoing));
                     }
                 }
                 if (draggingPointIndexType == IndexType.OUTGOING)
                 {
-                    shape[draggingPointIndex].outgoing = coord3D;
-                    if (shape[draggingPointIndex].handleType == HandleType.SMOOTH)
+                    shapes[bestShapeIndex].shape[draggingPointIndex].outgoing = coord3D;
+                    if (shapes[bestShapeIndex].shape[draggingPointIndex].handleType == HandleType.SMOOTH)
                     {
-                        shape[draggingPointIndex].incoming = shape[draggingPointIndex].p.WalkTowards(coord3D, -shape[draggingPointIndex].p.Distance(shape[draggingPointIndex].incoming));
+                        shapes[bestShapeIndex].shape[draggingPointIndex].incoming = shapes[bestShapeIndex].shape[draggingPointIndex].p.WalkTowards(coord3D, -shapes[bestShapeIndex].shape[draggingPointIndex].p.Distance(shapes[bestShapeIndex].shape[draggingPointIndex].incoming));
                     }
                 }
-                updateVertexBuffer = true;
+                shapes[bestShapeIndex].updateVertexBuffer = true;
             }
             if (bestDist < maxDist)
             {
                 if (bestIndexType == IndexType.BASE && UILayer.RightPressed && !UILayer.LeftDown)
                 {
-                    shape.RemoveAt(bestIndex);
-                    updateVertexBuffer = true;
+                    shapes[bestShapeIndex].shape.RemoveAt(bestIndex);
+                    shapes[bestShapeIndex].updateVertexBuffer = true;
                 }
                 UILayer.ConsumeLeft();
                 UILayer.ConsumeRight();
@@ -256,26 +296,30 @@ namespace Zenith.EditorGameComponents.FlatComponents
             else
             {
                 bestDist = double.MaxValue;
-                for (int i = 0; i < shape.Count; i++)
+                for (int j = 0; j < shapes.Count; j++)
                 {
-                    SphereVector halfPoint = shape[i].CurveTowards(shape[(i + 1) % shape.Count], 0.5);
-                    double distBase = coord3D.Distance(halfPoint);
-                    if (distBase < bestDist)
+                    for (int i = 0; i < shapes[j].shape.Count; i++)
                     {
-                        bestDist = distBase;
-                        bestIndex = i;
+                        SphereVector halfPoint = shapes[j].shape[i].CurveTowards(shapes[j].shape[(i + 1) % shapes[j].shape.Count], 0.5);
+                        double distBase = coord3D.Distance(halfPoint);
+                        if (distBase < bestDist)
+                        {
+                            bestDist = distBase;
+                            bestShapeIndex = j;
+                            bestIndex = i;
+                        }
                     }
                 }
                 if (bestDist < maxDist)
                 {
-                    previewPoint = shape[bestIndex].CurveTowards(shape[(bestIndex + 1) % shape.Count], 0.5);
+                    previewPoint = shapes[bestShapeIndex].shape[bestIndex].CurveTowards(shapes[bestShapeIndex].shape[(bestIndex + 1) % shapes[bestShapeIndex].shape.Count], 0.5);
                     if (UILayer.LeftPressed)
                     {
                         VectorHandle newH = new VectorHandle(previewPoint);
                         newH.handleType = HandleType.SMOOTH;
                         // just guessing the new handle positions
-                        VectorHandle p1 = shape[bestIndex];
-                        VectorHandle p4 = shape[(bestIndex + 1) % shape.Count];
+                        VectorHandle p1 = shapes[bestShapeIndex].shape[bestIndex];
+                        VectorHandle p4 = shapes[bestShapeIndex].shape[(bestIndex + 1) % shapes[bestShapeIndex].shape.Count];
                         SphereVector p12 = p1.p.WalkTowardsPortion(p1.GetPseudoOutgoing(), 0.5);
                         SphereVector p23 = p1.GetPseudoOutgoing().WalkTowardsPortion(p4.GetPseudoIncoming(), 0.5);
                         SphereVector p34 = p4.GetPseudoIncoming().WalkTowardsPortion(p4.p, 0.5);
@@ -285,22 +329,33 @@ namespace Zenith.EditorGameComponents.FlatComponents
                         newH.outgoing = p234.WalkTowardsPortion(p123, 0.25);
                         p1.outgoing = p1.outgoing.WalkTowardsPortion(p1.p, 0.5);
                         p4.incoming = p4.incoming.WalkTowardsPortion(p4.p, 0.5);
-                        shape.Insert(bestIndex + 1, newH);
+                        shapes[bestShapeIndex].shape.Insert(bestIndex + 1, newH);
                         draggingPointIndex = bestIndex + 1;
                         draggingPointIndexType = IndexType.BASE;
                     }
                     UILayer.ConsumeLeft();
                 }
+                else
+                {
+                    if (Keyboard.GetState().IsKeyDown(Keys.LeftControl))
+                    {
+                        if (UILayer.LeftPressed)
+                        {
+                            AddNewShape(coord3D);
+                        }
+                        UILayer.ConsumeLeft();
+                    }
+                }
             }
         }
 
-        private void UpdateVertexBuffer(GraphicsDevice graphicsDevice)
+        private void UpdateVertexBuffer(GraphicsDevice graphicsDevice, Shape shape)
         {
             var shapeAsVertices = new List<VertexPosition>();
-            for (int i = 0; i < shape.Count; i++)
+            for (int i = 0; i < shape.shape.Count; i++)
             {
-                var p1 = shape[i];
-                var p4 = shape[(i + 1) % shape.Count];
+                var p1 = shape.shape[i];
+                var p4 = shape.shape[(i + 1) % shape.shape.Count];
                 for (int j = 0; j < 10; j++)
                 {
                     float t = j / 10.0f;
@@ -309,8 +364,8 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 }
             }
             shapeAsVertices.Add(shapeAsVertices[0]);
-            vertexBuffer = new VertexBuffer(graphicsDevice, VertexPosition.VertexDeclaration, shapeAsVertices.Count, BufferUsage.WriteOnly);
-            vertexBuffer.SetData(shapeAsVertices.ToArray());
+            shape.vertexBuffer = new VertexBuffer(graphicsDevice, VertexPosition.VertexDeclaration, shapeAsVertices.Count, BufferUsage.WriteOnly);
+            shape.vertexBuffer.SetData(shapeAsVertices.ToArray());
         }
 
         private void DrawPoint(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double halfSize, Vector2d v, Color color)

@@ -28,6 +28,12 @@ namespace Zenith.ZMath
             return WalkTowardsPortion(new SphereVector(0, 0, 1), radians);
         }
 
+        public SphereVector WalkEast(double radians)
+        {
+            Vector3d eastVector = this.Cross(new Vector3d(0, 0, 1));
+            return new SphereVector(Math.Cos(radians) * this + Math.Sin(radians) * eastVector);
+        }
+
         public SphereVector WalkTowards(SphereVector v, double radians)
         {
             Vector3d D_tick = ((this.Cross(v).Cross(this)).Normalized()); // 90 degrees rotated towards v
