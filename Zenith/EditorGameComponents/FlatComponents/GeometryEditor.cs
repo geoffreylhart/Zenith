@@ -115,12 +115,12 @@ namespace Zenith.EditorGameComponents.FlatComponents
             newShape.shape = new List<VectorHandle>();
             VectorHandle handle1 = new VectorHandle(center.WalkNorth(0.1));
             handle1.handleType = HandleType.SMOOTH;
-            handle1.incoming = handle1.p.WalkEast(0.1);
-            handle1.outgoing = handle1.p.WalkEast(-0.1);
+            handle1.incoming = handle1.p.WalkEast(-0.1);
+            handle1.outgoing = handle1.p.WalkEast(0.1);
             VectorHandle handle2 = new VectorHandle(center.WalkNorth(-0.1));
             handle2.handleType = HandleType.SMOOTH;
-            handle2.incoming = handle2.p.WalkEast(-0.1);
-            handle2.outgoing = handle2.p.WalkEast(0.1);
+            handle2.incoming = handle2.p.WalkEast(0.1);
+            handle2.outgoing = handle2.p.WalkEast(-0.1);
             newShape.shape.Add(handle1);
             newShape.shape.Add(handle2);
             shapes.Add(newShape);
@@ -289,6 +289,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 {
                     shapes[bestShapeIndex].shape.RemoveAt(bestIndex);
                     shapes[bestShapeIndex].updateVertexBuffer = true;
+                    if (shapes[bestShapeIndex].shape.Count == 0) shapes.RemoveAt(bestShapeIndex);
                 }
                 UILayer.ConsumeLeft();
                 UILayer.ConsumeRight();
