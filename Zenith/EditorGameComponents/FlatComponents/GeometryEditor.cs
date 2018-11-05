@@ -20,6 +20,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
         private int draggingPointShapeIndex = -1;
         private int draggingPointIndex = -1;
         private IndexType draggingPointIndexType = IndexType.BASE;
+        private VertexBuffer landVertexBuffer = null;
 
         private class Shape
         {
@@ -159,6 +160,15 @@ namespace Zenith.EditorGameComponents.FlatComponents
                     }
                 }
             }
+            if (landVertexBuffer != null)
+            {
+                graphicsDevice.SetVertexBuffer(landVertexBuffer);
+                foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
+                {
+                    pass.Apply();
+                    graphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, landVertexBuffer.VertexCount - 2);
+                }
+            }
             foreach (var shape in shapes)
             {
                 if (shape.vertexBuffer != null)
@@ -183,15 +193,55 @@ namespace Zenith.EditorGameComponents.FlatComponents
             {
                 DrawPoint(graphicsDevice, basicEffect, halfSize, previewPoint.ToLongLat(), Color.Red);
             }
-
+            bool updateMainVertexBuffer = false;
             foreach (var shape in shapes)
             {
                 if (shape.updateVertexBuffer || shape.vertexBuffer == null)
                 {
                     shape.updateVertexBuffer = false;
+                    updateMainVertexBuffer = true;
                     UpdateVertexBuffer(graphicsDevice, shape);
                 }
             }
+            if (updateMainVertexBuffer)
+            {
+                UpdateMainVertexBuffer(graphicsDevice);
+            }
+        }
+
+        private void UpdateMainVertexBuffer(GraphicsDevice graphicsDevice)
+        {
+            List<VertexPositionColor> triangles = new List<VertexPositionColor>();
+            float z = -10f;
+            var tess = new LibTessDotNet.Tess();
+            foreach (var shape in shapes)
+            {
+                var contour = new LibTessDotNet.ContourVertex[shape.shape.Count * 10];
+                for (int i = 0; i < shape.shape.Count; i++)
+                {
+                    VectorHandle p1 = shape.shape[i];
+                    VectorHandle p4 = shape.shape[(i + 1) % shape.shape.Count];
+                    for (int j = 0; j < 10; j++)
+                    {
+                        float t = j / 10.0f;
+                        SphereVector curvePoint = p1.CurveTowards(p4, t);
+                        LongLat asLongLat = curvePoint.ToLongLat();
+                        contour[i * 10 + j].Position = new LibTessDotNet.Vec3 { X = (float)asLongLat.X, Y = (float)asLongLat.Y, Z = 0 };
+                    }
+                }
+                tess.AddContour(contour, LibTessDotNet.ContourOrientation.Original);
+            }
+            tess.Tessellate(LibTessDotNet.WindingRule.EvenOdd, LibTessDotNet.ElementType.Polygons, 3);
+            for (int i = 0; i < tess.ElementCount; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    var pos = tess.Vertices[tess.Elements[i * 3 + j]].Position;
+                    triangles.Add(new VertexPositionColor(new Vector3(pos.X, pos.Y, z), Color.Green));
+                }
+            }
+            landVertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, triangles.Count, BufferUsage.WriteOnly);
+            landVertexBuffer.SetData(triangles.ToArray());
         }
 
         public void Update(double mouseX, double mouseY, double cameraZoom)
