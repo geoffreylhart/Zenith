@@ -15,6 +15,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
 {
     class GeometryEditor : IFlatComponent
     {
+        private static bool TESSELATE = false;
         private List<Shape> shapes = new List<Shape>();
         private SphereVector previewPoint;
         private int draggingPointShapeIndex = -1;
@@ -153,10 +154,8 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 {
                     if (handle.handleType == HandleType.FREE || handle.handleType == HandleType.SMOOTH)
                     {
-                        shapeHandles.Add(new VertexPositionColor(new Vector3(handle.p.ToLongLat(), z), Color.Orange));
-                        shapeHandles.Add(new VertexPositionColor(new Vector3(handle.GetPseudoIncoming().ToLongLat(), z), Color.Orange));
-                        shapeHandles.Add(new VertexPositionColor(new Vector3(handle.p.ToLongLat(), z), Color.Orange));
-                        shapeHandles.Add(new VertexPositionColor(new Vector3(handle.GetPseudoOutgoing().ToLongLat(), z), Color.Orange));
+                        AddTwoLongLatLinesIfNecessary(shapeHandles, handle.p, handle.GetPseudoIncoming(), Color.Orange);
+                        AddTwoLongLatLinesIfNecessary(shapeHandles, handle.p, handle.GetPseudoOutgoing(), Color.Orange);
                     }
                 }
             }
@@ -177,7 +176,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                     foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
                     {
                         pass.Apply();
-                        graphicsDevice.DrawPrimitives(PrimitiveType.LineStrip, 0, shape.vertexBuffer.VertexCount - 1);
+                        graphicsDevice.DrawPrimitives(PrimitiveType.LineList, 0, shape.vertexBuffer.VertexCount / 2);
                     }
                 }
             }
@@ -203,9 +202,29 @@ namespace Zenith.EditorGameComponents.FlatComponents
                     UpdateVertexBuffer(graphicsDevice, shape);
                 }
             }
-            if (updateMainVertexBuffer)
+            if (updateMainVertexBuffer && TESSELATE)
             {
                 UpdateMainVertexBuffer(graphicsDevice);
+            }
+        }
+
+        private void AddTwoLongLatLinesIfNecessary(List<VertexPositionColor> vertexList, SphereVector v1, SphereVector v2, Color color)
+        {
+            LongLat v1l = v1.ToLongLat();
+            LongLat v2l = v2.ToLongLat();
+            if (Math.Abs(v1l.X - v2l.X) < Math.PI)
+            {
+                vertexList.Add(new VertexPositionColor(new Vector3(v1l, -10f), color));
+                vertexList.Add(new VertexPositionColor(new Vector3(v2l, -10f), color));
+            }
+            else
+            {
+                LongLat minP = v1l.X < v2l.X ? v1l : v2l;
+                LongLat maxP = v1l.X < v2l.X ? v2l : v1l;
+                vertexList.Add(new VertexPositionColor(new Vector3(minP, -10f), color));
+                vertexList.Add(new VertexPositionColor(new Vector3(maxP - new Vector2((float)(2 * Math.PI), 0), -10f), color));
+                vertexList.Add(new VertexPositionColor(new Vector3(minP + new Vector2((float)(2 * Math.PI), 0), -10f), color));
+                vertexList.Add(new VertexPositionColor(new Vector3(maxP, -10f), color));
             }
         }
 
@@ -240,6 +259,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                     triangles.Add(new VertexPositionColor(new Vector3(pos.X, pos.Y, z), Color.Green));
                 }
             }
+            if (landVertexBuffer != null) landVertexBuffer.Dispose();
             landVertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, triangles.Count, BufferUsage.WriteOnly);
             landVertexBuffer.SetData(triangles.ToArray());
         }
@@ -402,7 +422,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
 
         private void UpdateVertexBuffer(GraphicsDevice graphicsDevice, Shape shape)
         {
-            var shapeAsVertices = new List<VertexPosition>();
+            var shapeAsVertices = new List<VertexPositionColor>();
             for (int i = 0; i < shape.shape.Count; i++)
             {
                 var p1 = shape.shape[i];
@@ -410,12 +430,13 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 for (int j = 0; j < 10; j++)
                 {
                     float t = j / 10.0f;
-                    SphereVector curvePoint = p1.CurveTowards(p4, t);
-                    shapeAsVertices.Add(new VertexPosition(new Vector3(curvePoint.ToLongLat(), -10f)));
+                    SphereVector curvePoint = p1.CurveTowards(p4, j / 10.0f);
+                    SphereVector curvePoint2 = p1.CurveTowards(p4, ((j + 1) / 10.0f));
+                    AddTwoLongLatLinesIfNecessary(shapeAsVertices, curvePoint, curvePoint2, Color.Red);
                 }
             }
-            shapeAsVertices.Add(shapeAsVertices[0]);
-            shape.vertexBuffer = new VertexBuffer(graphicsDevice, VertexPosition.VertexDeclaration, shapeAsVertices.Count, BufferUsage.WriteOnly);
+            if (shape.vertexBuffer != null) shape.vertexBuffer.Dispose();
+            shape.vertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, shapeAsVertices.Count, BufferUsage.WriteOnly);
             shape.vertexBuffer.SetData(shapeAsVertices.ToArray());
         }
 
