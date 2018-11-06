@@ -266,7 +266,11 @@ namespace Zenith.EditorGameComponents.FlatComponents
 
         public void Update(double mouseX, double mouseY, double cameraZoom)
         {
-            if (!UILayer.LeftDown) draggingPointIndex = -1;
+            if (!UILayer.LeftDown)
+            {
+                draggingPointIndex = -1;
+                draggingPointShapeIndex = -1;
+            }
             SphereVector coord3D = new LongLat(mouseX, mouseY).ToSphereVector(); // TODO: just pass this coord directly from planet component
             previewPoint = null;
             var mouseAsVec2 = new Vector2((float)mouseX, (float)mouseY);
@@ -315,6 +319,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 {
                     draggingPointIndex = bestIndex;
                     draggingPointIndexType = bestIndexType;
+                    draggingPointShapeIndex = bestShapeIndex;
                 }
                 if (UILayer.LeftQuickClicked)
                 {
@@ -330,28 +335,28 @@ namespace Zenith.EditorGameComponents.FlatComponents
             {
                 if (draggingPointIndexType == IndexType.BASE)
                 {
-                    var diff = coord3D - shapes[bestShapeIndex].shape[draggingPointIndex].p;
-                    shapes[bestShapeIndex].shape[draggingPointIndex].p = coord3D;
-                    shapes[bestShapeIndex].shape[draggingPointIndex].incoming = new SphereVector((shapes[bestShapeIndex].shape[draggingPointIndex].incoming + diff).Normalized());
-                    shapes[bestShapeIndex].shape[draggingPointIndex].outgoing = new SphereVector((shapes[bestShapeIndex].shape[draggingPointIndex].outgoing + diff).Normalized());
+                    var diff = coord3D - shapes[draggingPointShapeIndex].shape[draggingPointIndex].p;
+                    shapes[draggingPointShapeIndex].shape[draggingPointIndex].p = coord3D;
+                    shapes[draggingPointShapeIndex].shape[draggingPointIndex].incoming = new SphereVector((shapes[draggingPointShapeIndex].shape[draggingPointIndex].incoming + diff).Normalized());
+                    shapes[draggingPointShapeIndex].shape[draggingPointIndex].outgoing = new SphereVector((shapes[draggingPointShapeIndex].shape[draggingPointIndex].outgoing + diff).Normalized());
                 }
                 if (draggingPointIndexType == IndexType.INCOMING)
                 {
-                    shapes[bestShapeIndex].shape[draggingPointIndex].incoming = coord3D;
-                    if (shapes[bestShapeIndex].shape[draggingPointIndex].handleType == HandleType.SMOOTH)
+                    shapes[draggingPointShapeIndex].shape[draggingPointIndex].incoming = coord3D;
+                    if (shapes[draggingPointShapeIndex].shape[draggingPointIndex].handleType == HandleType.SMOOTH)
                     {
-                        shapes[bestShapeIndex].shape[draggingPointIndex].outgoing = shapes[bestShapeIndex].shape[draggingPointIndex].p.WalkTowards(coord3D, -shapes[bestShapeIndex].shape[draggingPointIndex].p.Distance(shapes[bestShapeIndex].shape[draggingPointIndex].outgoing));
+                        shapes[draggingPointShapeIndex].shape[draggingPointIndex].outgoing = shapes[draggingPointShapeIndex].shape[draggingPointIndex].p.WalkTowards(coord3D, -shapes[draggingPointShapeIndex].shape[draggingPointIndex].p.Distance(shapes[draggingPointShapeIndex].shape[draggingPointIndex].outgoing));
                     }
                 }
                 if (draggingPointIndexType == IndexType.OUTGOING)
                 {
-                    shapes[bestShapeIndex].shape[draggingPointIndex].outgoing = coord3D;
-                    if (shapes[bestShapeIndex].shape[draggingPointIndex].handleType == HandleType.SMOOTH)
+                    shapes[draggingPointShapeIndex].shape[draggingPointIndex].outgoing = coord3D;
+                    if (shapes[draggingPointShapeIndex].shape[draggingPointIndex].handleType == HandleType.SMOOTH)
                     {
-                        shapes[bestShapeIndex].shape[draggingPointIndex].incoming = shapes[bestShapeIndex].shape[draggingPointIndex].p.WalkTowards(coord3D, -shapes[bestShapeIndex].shape[draggingPointIndex].p.Distance(shapes[bestShapeIndex].shape[draggingPointIndex].incoming));
+                        shapes[draggingPointShapeIndex].shape[draggingPointIndex].incoming = shapes[draggingPointShapeIndex].shape[draggingPointIndex].p.WalkTowards(coord3D, -shapes[draggingPointShapeIndex].shape[draggingPointIndex].p.Distance(shapes[draggingPointShapeIndex].shape[draggingPointIndex].incoming));
                     }
                 }
-                shapes[bestShapeIndex].updateVertexBuffer = true;
+                shapes[draggingPointShapeIndex].updateVertexBuffer = true;
             }
             if (bestDist < maxDist)
             {
@@ -403,6 +408,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                         shapes[bestShapeIndex].shape.Insert(bestIndex + 1, newH);
                         draggingPointIndex = bestIndex + 1;
                         draggingPointIndexType = IndexType.BASE;
+                        draggingPointShapeIndex = bestShapeIndex;
                     }
                     UILayer.ConsumeLeft();
                 }
