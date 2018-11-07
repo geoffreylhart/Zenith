@@ -45,8 +45,7 @@ namespace Zenith.ZMath
         {
             if (IntersectsSeam()) return -Math.PI;
             // TODO: fix issue where tangentPoint effectively has infinite z
-            Vector3d tangentPoint = intersection.GetPlane().GetIntersection(new Vector3d(0, 0, 0), new Vector3d(0, 0, 1));
-            Vector3d[] tangents = intersection.GetTangents(tangentPoint);
+            Vector3d[] tangents = intersection.GetTangentsFromAxis();
             double minLong = Math.Min(ToLatLong(start).X, ToLatLong(stop).X);
             foreach (var tangent in tangents)
             {
@@ -69,8 +68,7 @@ namespace Zenith.ZMath
         internal double MaxLong()
         {
             if (IntersectsSeam()) return Math.PI;
-            Vector3d tangentPoint = intersection.GetPlane().GetIntersection(new Vector3d(0, 0, 0), new Vector3d(0, 0, 1));
-            Vector3d[] tangents = intersection.GetTangents(tangentPoint);
+            Vector3d[] tangents = intersection.GetTangentsFromAxis();
             double maxLong = Math.Max(ToLatLong(start).X, ToLatLong(stop).X);
             foreach (var tangent in tangents)
             {

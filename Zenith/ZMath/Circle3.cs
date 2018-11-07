@@ -64,14 +64,27 @@ namespace Zenith.ZMath
         internal double MinLong()
         {
             if (IntersectsSeam()) return -Math.PI;
-            Vector3d tangentPoint = GetPlane().GetIntersection(new Vector3d(0, 0, 0), new Vector3d(0, 0, 1));
-            Vector3d[] tangents = GetTangents(tangentPoint);
+            Vector3d[] tangents = GetTangentsFromAxis();
             double minLong = 5;
             foreach (var tangent in tangents)
             {
                 minLong = Math.Min(minLong, ToLatLong(tangent).X);
             }
             return minLong;
+        }
+
+        public Vector3d[] GetTangentsFromAxis()
+        {
+            Vector3d tangentPoint;
+            if (Math.Abs(normal.Dot(new Vector3d(0, 0, 1))) == 0)
+            {
+                tangentPoint = new Vector3d(0, 0, 1000); // just make it far away for now
+            }
+            else
+            {
+                tangentPoint = GetPlane().GetIntersection(new Vector3d(0, 0, 0), new Vector3d(0, 0, 1));
+            }
+            return GetTangents(tangentPoint);
         }
 
         private bool IntersectsSeam()
@@ -88,8 +101,7 @@ namespace Zenith.ZMath
         internal double MaxLong()
         {
             if (IntersectsSeam()) return Math.PI;
-            Vector3d tangentPoint = GetPlane().GetIntersection(new Vector3d(0, 0, 0), new Vector3d(0, 0, 1));
-            Vector3d[] tangents = GetTangents(tangentPoint);
+            Vector3d[] tangents = GetTangentsFromAxis();
             double maxLong = -5;
             foreach (var tangent in tangents)
             {
@@ -114,7 +126,7 @@ namespace Zenith.ZMath
             Vector3d notPerp = normal.Cross(perp).Normalized(); // should point towards the line of intersection between the planes
             Vector3d intersect = plane.GetIntersection(center, center + notPerp);
             double diffLenSquared = radius * radius - (intersect - center).LengthSquared();
-            if (diffLenSquared<0) return new Vector3d[0];
+            if (diffLenSquared < 0) return new Vector3d[0];
             double perpLen = Math.Sqrt(diffLenSquared);
             return new Vector3d[] { intersect + perp * perpLen, intersect - perp * perpLen };
         }
