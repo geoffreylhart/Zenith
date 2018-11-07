@@ -43,12 +43,54 @@ namespace Zenith.ZMath
 
         internal double MinLong()
         {
-            return MakeLongLats(10).Min(x => x.X);
+            if (IntersectsSeam()) return -Math.PI;
+            // TODO: fix issue where tangentPoint effectively has infinite z
+            Vector3d tangentPoint = intersection.GetPlane().GetIntersection(new Vector3d(0, 0, 0), new Vector3d(0, 0, 1));
+            Vector3d[] tangents = intersection.GetTangents(tangentPoint);
+            double minLong = Math.Min(ToLatLong(start).X, ToLatLong(stop).X);
+            foreach (var tangent in tangents)
+            {
+                if (InArc(tangent))
+                {
+                    minLong = Math.Min(minLong, ToLatLong(tangent).X);
+                }
+            }
+            return minLong;
+        }
+
+        // assumes v lies on the circle containing this arc
+        // v is a spherevector
+        private bool InArc(Vector3d v)
+        {
+            if (v.Cross(start).Dot(v.Cross(stop)) < 0) return true;
+            return false;
         }
 
         internal double MaxLong()
         {
-            return MakeLongLats(10).Max(x => x.X);
+            if (IntersectsSeam()) return Math.PI;
+            Vector3d tangentPoint = intersection.GetPlane().GetIntersection(new Vector3d(0, 0, 0), new Vector3d(0, 0, 1));
+            Vector3d[] tangents = intersection.GetTangents(tangentPoint);
+            double maxLong = Math.Max(ToLatLong(start).X, ToLatLong(stop).X);
+            foreach (var tangent in tangents)
+            {
+                if (InArc(tangent))
+                {
+                    maxLong = Math.Max(maxLong, ToLatLong(tangent).X);
+                }
+            }
+            return maxLong;
+        }
+
+        private bool IntersectsSeam()
+        {
+            Plane seamPlane = new Plane(new Vector3d(0, 0, 0), new Vector3d(1, 0, 0));
+            Vector3d[] intersections = intersection.GetIntersection(seamPlane);
+            foreach(var v in intersections)
+            {
+                if (v.Y > 0 && this.InArc(v)) return true;
+            }
+            return false;
         }
 
         internal double MinLat()

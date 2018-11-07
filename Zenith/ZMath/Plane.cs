@@ -9,8 +9,8 @@ namespace Zenith.ZMath
 {
     public class Plane
     {
-        Vector3d center;
-        Vector3d normal;
+        public Vector3d center;
+        public Vector3d normal;
 
         public Plane(Vector3d center, Vector3d normal)
         {
@@ -36,6 +36,14 @@ namespace Zenith.ZMath
         public double GetDistanceFromPoint(Vector3d v)
         {
             return Vector3d.Dot(v - center, normal);
+        }
+
+        // intersect with line defined by 2 points
+        public Vector3d GetIntersection(Vector3d start, Vector3d end)
+        {
+            // from wiki because ehhh...
+            double d = (center - start).Dot(normal) / (end - start).Dot(normal);
+            return start + (end - start) * d;
         }
     }
 }

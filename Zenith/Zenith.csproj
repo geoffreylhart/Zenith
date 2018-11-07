@@ -88,6 +88,7 @@
     <Compile Include="MathHelpers\Matrixd.cs" />
     <Compile Include="MathHelpers\Rayd.cs" />
     <Compile Include="MathHelpers\RayHelper.cs" />
+    <Compile Include="ZMath\Line3.cs" />
     <Compile Include="ZMath\LongLat.cs" />
     <Compile Include="ZMath\Vector2d.cs" />
     <Compile Include="ZMath\Vector3d.cs" />

@@ -48,6 +48,11 @@ namespace Zenith.MathHelpers
             return new Vector3d(x, y, z);
         }
 
+        public double Dot(Vector3d normal)
+        {
+            return Vector3d.Dot(this, normal);
+        }
+
         public Vector3 ToVector3()
         {
             return new Vector3((float)X, (float)Y, (float)Z);

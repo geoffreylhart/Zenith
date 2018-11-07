@@ -167,7 +167,7 @@ namespace Zenith.EditorGameComponents
             }
             if (camera.IsUnitSpherePointVisible(new Vector3d(0, 0, -1)))
             {
-                maxLat = -Math.PI / 2;
+                minLat = -Math.PI / 2;
                 minLong = -Math.PI;
                 maxLong = Math.PI;
             }

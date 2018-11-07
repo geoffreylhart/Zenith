@@ -25,7 +25,7 @@ namespace Zenith.ZMath
         {
             v = GetPlane().Project(v);
             double distance = (v - center).Length();
-            if (distance < radius) throw new NotImplementedException();
+            if (distance < radius) return new Vector3d[0]; // no tangents, I guess
             double angle = Math.Acos(radius / distance);
             Vector3d towardsVUnit = (v - center).Normalized();
             Vector3d towardsV = towardsVUnit * Math.Cos(angle) * radius + center;
@@ -33,7 +33,7 @@ namespace Zenith.ZMath
             return new[] { towardsV + perpendicular, towardsV - perpendicular };
         }
 
-        private Plane GetPlane()
+        public Plane GetPlane()
         {
             return new Plane(center, normal);
         }
@@ -63,22 +63,60 @@ namespace Zenith.ZMath
 
         internal double MinLong()
         {
-            return MakeLongLats(100).Min(x => x.X);
+            if (IntersectsSeam()) return -Math.PI;
+            Vector3d tangentPoint = GetPlane().GetIntersection(new Vector3d(0, 0, 0), new Vector3d(0, 0, 1));
+            Vector3d[] tangents = GetTangents(tangentPoint);
+            double minLong = 5;
+            foreach (var tangent in tangents)
+            {
+                minLong = Math.Min(minLong, ToLatLong(tangent).X);
+            }
+            return minLong;
+        }
+
+        private bool IntersectsSeam()
+        {
+            Plane seamPlane = new Plane(new Vector3d(0, 0, 0), new Vector3d(1, 0, 0));
+            Vector3d[] intersections = GetIntersection(seamPlane);
+            foreach (var v in intersections)
+            {
+                if (v.Y > 0) return true;
+            }
+            return false;
         }
 
         internal double MaxLong()
         {
-            return MakeLongLats(100).Max(x => x.X);
+            if (IntersectsSeam()) return Math.PI;
+            Vector3d tangentPoint = GetPlane().GetIntersection(new Vector3d(0, 0, 0), new Vector3d(0, 0, 1));
+            Vector3d[] tangents = GetTangents(tangentPoint);
+            double maxLong = -5;
+            foreach (var tangent in tangents)
+            {
+                maxLong = Math.Max(maxLong, ToLatLong(tangent).X);
+            }
+            return maxLong;
         }
 
         internal double MinLat()
         {
-            return MakeLongLats(100).Min(x => x.Y);
+            return MakeLongLats(10).Min(x => x.Y);
         }
 
         internal double MaxLat()
         {
-            return MakeLongLats(100).Max(x => x.Y);
+            return MakeLongLats(10).Max(x => x.Y);
+        }
+
+        internal Vector3d[] GetIntersection(Plane plane)
+        {
+            Vector3d perp = normal.Cross(plane.normal).Normalized();
+            Vector3d notPerp = normal.Cross(perp).Normalized(); // should point towards the line of intersection between the planes
+            Vector3d intersect = plane.GetIntersection(center, center + notPerp);
+            double diffLenSquared = radius * radius - (intersect - center).LengthSquared();
+            if (diffLenSquared<0) return new Vector3d[0];
+            double perpLen = Math.Sqrt(diffLenSquared);
+            return new Vector3d[] { intersect + perp * perpLen, intersect - perp * perpLen };
         }
     }
 }
