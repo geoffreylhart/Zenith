@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -44,6 +45,10 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 handleType = HandleType.SHARP;
                 incoming = v.WalkNorth(0.01f);
                 outgoing = v.WalkNorth(-0.01f);
+            }
+
+            public VectorHandle()
+            {
             }
 
             public SphereVector GetPseudoIncoming()
@@ -109,7 +114,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
 
         public GeometryEditor()
         {
-            AddNewShape(new SphereVector(0, -1, 0));
+            LoadMap();
         }
 
         private void AddNewShape(SphereVector center)
@@ -459,7 +464,62 @@ namespace Zenith.EditorGameComponents.FlatComponents
 
         public List<IUIComponent> GetSettings()
         {
-            return new List<IUIComponent>();
+            List<IUIComponent> components = new List<IUIComponent>();
+            components.Add(new Button("Save Map") { OnClick = SaveMap });
+            return components;
+        }
+
+        private static string MAP_PATH = @"..\..\..\..\Data\EARTH";
+        private void LoadMap()
+        {
+            if (!File.Exists(MAP_PATH)) return;
+            shapes = new List<Shape>();
+            using (var reader = new BinaryReader(new FileStream(MAP_PATH, FileMode.Open)))
+            {
+                int shapeCount = reader.ReadInt32();
+                for(int i = 0; i < shapeCount; i++)
+                {
+                    var newShape = new Shape();
+                    newShape.shape = new List<VectorHandle>();
+                    int handleCount = reader.ReadInt32();
+                    for(int j = 0; j < handleCount; j++)
+                    {
+                        var newHandle = new VectorHandle();
+                        newHandle.handleType = (HandleType)reader.ReadInt32();
+                        newHandle.incoming = new SphereVector(reader.ReadDouble(), reader.ReadDouble(), reader.ReadDouble());
+                        newHandle.outgoing = new SphereVector(reader.ReadDouble(), reader.ReadDouble(), reader.ReadDouble());
+                        newHandle.p = new SphereVector(reader.ReadDouble(), reader.ReadDouble(), reader.ReadDouble());
+                        newShape.shape.Add(newHandle);
+                    }
+                    shapes.Add(newShape);
+                }
+            }
+        }
+
+        private void SaveMap()
+        {
+            // overwrites
+            using (var writer = new BinaryWriter(new FileStream(MAP_PATH, FileMode.Create)))
+            {
+                writer.Write(shapes.Count);
+                foreach (var shape in shapes)
+                {
+                    writer.Write(shape.shape.Count);
+                    foreach (var handle in shape.shape)
+                    {
+                        writer.Write((int)handle.handleType);
+                        writer.Write(handle.incoming.X);
+                        writer.Write(handle.incoming.Y);
+                        writer.Write(handle.incoming.Z);
+                        writer.Write(handle.outgoing.X);
+                        writer.Write(handle.outgoing.Y);
+                        writer.Write(handle.outgoing.Z);
+                        writer.Write(handle.p.X);
+                        writer.Write(handle.p.Y);
+                        writer.Write(handle.p.Z);
+                    }
+                }
+            }
         }
 
         public List<IEditorGameComponent> GetSubComponents()
