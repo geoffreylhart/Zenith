@@ -180,5 +180,10 @@ namespace Zenith.EditorGameComponents
         {
             return new List<IUIComponent>();
         }
+
+        public List<IEditorGameComponent> GetSubComponents()
+        {
+            return new List<IEditorGameComponent>();
+        }
     }
 }

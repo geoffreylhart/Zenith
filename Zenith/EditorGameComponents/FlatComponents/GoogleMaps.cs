@@ -6,13 +6,14 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Zenith.EditorGameComponents.UIComponents;
 using Zenith.MathHelpers;
 using Zenith.PrimitiveBuilder;
 using Zenith.ZGraphics;
 
 namespace Zenith.EditorGameComponents.FlatComponents
 {
-    class GoogleMaps : IFlatComponent
+    class GoogleMaps : IFlatComponent, IEditorGameComponent
     {
         private static int MAX_ZOOM = 19;
         Dictionary<String, VertexIndiceBuffer> loadedMaps = new Dictionary<string, VertexIndiceBuffer>();
@@ -186,6 +187,21 @@ namespace Zenith.EditorGameComponents.FlatComponents
         private static double ToY(double lat)
         {
             return Math.Log(Math.Tan(lat / 2 + Math.PI / 4)) / (Math.PI * 2) + 0.5;
+        }
+
+        public List<string> GetDebugInfo()
+        {
+            return new List<string>();
+        }
+
+        public List<IUIComponent> GetSettings()
+        {
+            return new List<IUIComponent>();
+        }
+
+        public List<IEditorGameComponent> GetSubComponents()
+        {
+            return new List<IEditorGameComponent>();
         }
     }
 }

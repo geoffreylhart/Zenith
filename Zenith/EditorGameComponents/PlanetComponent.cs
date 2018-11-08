@@ -185,6 +185,11 @@ namespace Zenith.EditorGameComponents
             return new List<IUIComponent>();
         }
 
+        public List<IEditorGameComponent> GetSubComponents()
+        {
+            return flatComponents.Where(x => x is IEditorGameComponent).Cast<IEditorGameComponent>().ToList();
+        }
+
         class LongLatBounds
         {
             public double minLong;

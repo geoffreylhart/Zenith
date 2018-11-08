@@ -10,12 +10,16 @@ namespace Zenith.EditorGameComponents
 {
     internal class ComponentManager
     {
-        private List<IEditorGameComponent> components;
+        private List<ComponentAndLabel> components;
         private ComponentList list;
 
         internal ComponentManager(params IEditorGameComponent[] components)
         {
-            this.components = components.ToList();
+            this.components = new List<ComponentAndLabel>();
+            foreach (var component in components)
+            {
+                RecursiveAddComponent(component, "");
+            }
             // TODO: why do we have this again?
             foreach (var component in components)
             {
@@ -23,6 +27,27 @@ namespace Zenith.EditorGameComponents
                 {
                     ((DrawableGameComponent)component).Enabled = true;
                 }
+            }
+        }
+
+        private void RecursiveAddComponent(IEditorGameComponent component, string prefix)
+        {
+            components.Add(new ComponentAndLabel(component, prefix + component.GetType().Name));
+            foreach (var c in component.GetSubComponents())
+            {
+                RecursiveAddComponent(c, prefix + "     ");
+            }
+        }
+
+        private class ComponentAndLabel
+        {
+            public IEditorGameComponent component;
+            public string label;
+
+            public ComponentAndLabel(IEditorGameComponent component, string label)
+            {
+                this.component = component;
+                this.label = label;
             }
         }
 
@@ -50,19 +75,19 @@ namespace Zenith.EditorGameComponents
 
             internal override string GetText()
             {
-                return String.Join("\n", cm.components[cm.list.activeIndex].GetDebugInfo());
+                return String.Join("\n", cm.components[cm.list.activeIndex].component.GetDebugInfo());
             }
         }
 
-        private class ComponentList : ListBox<IEditorGameComponent>
+        private class ComponentList : ListBox<ComponentAndLabel>
         {
-            public ComponentList(int w, List<IEditorGameComponent> components) : base(w, components)
+            public ComponentList(int w, List<ComponentAndLabel> components) : base(w, components)
             {
             }
 
-            internal override string GetItemAsString(IEditorGameComponent item)
+            internal override string GetItemAsString(ComponentAndLabel item)
             {
-                return item.GetType().Name;
+                return item.label;
             }
         }
 
@@ -77,7 +102,7 @@ namespace Zenith.EditorGameComponents
                 this.componentSettings = new List<IUIComponent>[cm.components.Count];
                 for (int i = 0; i < this.componentSettings.Length; i++)
                 {
-                    this.componentSettings[i] = cm.components[i].GetSettings();
+                    this.componentSettings[i] = cm.components[i].component.GetSettings();
                 }
             }
 

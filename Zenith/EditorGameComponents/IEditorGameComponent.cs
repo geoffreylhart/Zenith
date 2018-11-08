@@ -14,5 +14,7 @@ namespace Zenith.EditorGameComponents
         List<String> GetDebugInfo();
 
         List<IUIComponent> GetSettings();
+
+        List<IEditorGameComponent> GetSubComponents();
     }
 }

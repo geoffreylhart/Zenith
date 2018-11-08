@@ -200,6 +200,11 @@ namespace Zenith.EditorGameComponents
             }
         }
 
+        public List<IEditorGameComponent> GetSubComponents()
+        {
+            return new List<IEditorGameComponent>();
+        }
+
         private class Sector
         {
             public int x; // measured 0,1,2,3 from -pi to pi (opposite left to opposite right of prime meridian)

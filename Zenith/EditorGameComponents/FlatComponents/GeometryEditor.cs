@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Zenith.EditorGameComponents.UIComponents;
 using Zenith.Helpers;
 using Zenith.MathHelpers;
 using Zenith.ZGraphics;
@@ -13,7 +14,7 @@ using Zenith.ZMath;
 
 namespace Zenith.EditorGameComponents.FlatComponents
 {
-    class GeometryEditor : IFlatComponent
+    class GeometryEditor : IFlatComponent, IEditorGameComponent
     {
         private static bool TESSELATE = false;
         private List<Shape> shapes = new List<Shape>();
@@ -449,6 +450,21 @@ namespace Zenith.EditorGameComponents.FlatComponents
         private void DrawPoint(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double halfSize, Vector2d v, Color color)
         {
             GraphicsBasic.DrawRect(graphicsDevice, basicEffect, v.X - halfSize, v.Y - halfSize, halfSize * 2, halfSize * 2, color);
+        }
+
+        public List<string> GetDebugInfo()
+        {
+            return new List<string>();
+        }
+
+        public List<IUIComponent> GetSettings()
+        {
+            return new List<IUIComponent>();
+        }
+
+        public List<IEditorGameComponent> GetSubComponents()
+        {
+            return new List<IEditorGameComponent>();
         }
     }
 }

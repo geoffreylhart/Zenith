@@ -250,7 +250,12 @@ namespace Zenith.EditorGameComponents
 
         public List<IUIComponent> GetSettings()
         {
-            throw new NotImplementedException();
+            return new List<IUIComponent>();
+        }
+
+        public List<IEditorGameComponent> GetSubComponents()
+        {
+            return new List<IEditorGameComponent>();
         }
     }
 }
