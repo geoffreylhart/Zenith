@@ -7,7 +7,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Zenith.EditorGameComponents.UIComponents
 {
-    interface IUIComponent
+    public interface IUIComponent
     {
         int W { get; set; }
         int H { get; set; }

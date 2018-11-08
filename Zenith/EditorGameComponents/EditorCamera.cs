@@ -4,13 +4,14 @@ using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Zenith.EditorGameComponents.UIComponents;
 using Zenith.Helpers;
 using Zenith.MathHelpers;
 using Zenith.ZMath;
 
 namespace Zenith.EditorGameComponents
 {
-    public class EditorCamera : EditorGameComponent
+    public class EditorCamera : DrawableGameComponent, IEditorGameComponent
     {
         public double cameraRotX = 0; // longitude coordinate of our character
         public double cameraRotY = 0; // latitude coordinate of our character
@@ -170,9 +171,14 @@ namespace Zenith.EditorGameComponents
             return new Vector3d(Math.Atan2(v.X, -v.Y), Math.Asin(v.Z), 0);
         }
 
-        internal override List<string> GetDebugInfo()
+        public List<string> GetDebugInfo()
         {
             return new List<String> { "Controls: WASD, arrow keys, shift, space", $"{cameraRotX}:{cameraRotY}:{cameraZoom}" };
+        }
+
+        public List<IUIComponent> GetSettings()
+        {
+            return new List<IUIComponent>();
         }
     }
 }

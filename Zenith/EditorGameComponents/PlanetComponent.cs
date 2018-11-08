@@ -7,13 +7,14 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Zenith.EditorGameComponents.FlatComponents;
+using Zenith.EditorGameComponents.UIComponents;
 using Zenith.MathHelpers;
 using Zenith.PrimitiveBuilder;
 using Zenith.ZMath;
 
 namespace Zenith.EditorGameComponents
 {
-    internal class PlanetComponent : EditorGameComponent
+    internal class PlanetComponent : DrawableGameComponent, IEditorGameComponent
     {
         private double aspectRatio = 1;
         private EditorCamera camera;
@@ -172,6 +173,16 @@ namespace Zenith.EditorGameComponents
                 maxLong = Math.PI;
             }
             return new LongLatBounds(minLong, maxLong, minLat, maxLat);
+        }
+
+        public List<string> GetDebugInfo()
+        {
+            return new List<string>();
+        }
+
+        public List<IUIComponent> GetSettings()
+        {
+            return new List<IUIComponent>();
         }
 
         class LongLatBounds

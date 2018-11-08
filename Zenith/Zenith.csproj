@@ -62,7 +62,7 @@
     <Compile Include="EditorGameComponents\DebugConsole.cs" />
     <Compile Include="EditorGameComponents\EditorCamera.cs" />
     <Compile Include="EditorGameComponents\GoogleMapsSphere.cs" />
-    <Compile Include="EditorGameComponents\EditorGameComponent.cs" />
+    <Compile Include="EditorGameComponents\IEditorGameComponent.cs" />
     <Compile Include="EditorGameComponents\MultiResMesh.cs" />
     <Compile Include="EditorGameComponents\SphericalGeometryEditor.cs" />
     <Compile Include="EditorGameComponents\UITemp.cs" />

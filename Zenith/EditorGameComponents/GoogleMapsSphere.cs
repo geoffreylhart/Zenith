@@ -11,7 +11,7 @@ using Zenith.PrimitiveBuilder;
 
 namespace Zenith.EditorGameComponents
 {
-    internal class GoogleMapsSphere : EditorGameComponent
+    internal class GoogleMapsSphere : DrawableGameComponent, IEditorGameComponent
     {
         private static int MAX_ZOOM = 19;
         private EditorCamera camera;
@@ -152,13 +152,13 @@ namespace Zenith.EditorGameComponents
             return new Sector(x, y, zoom);
         }
 
-        internal override List<string> GetDebugInfo()
+        public List<string> GetDebugInfo()
         {
             Sector sector = GetSector();
             return new List<string> { "Controls: Left click", sector == null ? "null" : sector.ToString() };
         }
 
-        internal override List<IUIComponent> GetSettings()
+        public List<IUIComponent> GetSettings()
         {
             List<IUIComponent> components = new List<IUIComponent>();
             components.Add(new Checkbox("Auto-Load") { GetEnabled = () => Configuration.AUTO_LOAD, SetEnabled = x => Configuration.AUTO_LOAD = x });

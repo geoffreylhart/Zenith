@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Zenith.EditorGameComponents.UIComponents;
 using Zenith.Helpers;
 using Zenith.MathHelpers;
 using Zenith.PrimitiveBuilder;
 
 namespace Zenith.EditorGameComponents
 {
-    internal class MultiResMesh : EditorGameComponent
+    internal class MultiResMesh : DrawableGameComponent, IEditorGameComponent
     {
         private EditableMesh editableMesh = new EditableMesh();
         private EditorCamera camera;
@@ -192,7 +193,7 @@ namespace Zenith.EditorGameComponents
             bf.VertexColorEnabled = false;
         }
 
-        internal override List<string> GetDebugInfo()
+        public List<string> GetDebugInfo()
         {
             return new List<string>() { "Controls: Plus, minus, left/right click" };
         }
@@ -205,6 +206,11 @@ namespace Zenith.EditorGameComponents
             basicEffect.DirectionalLight0.DiffuseColor = new Vector3(1, 1, 1);
             basicEffect.AmbientLightColor = new Vector3(0.2f, 0.2f, 0.2f);
             return basicEffect;
+        }
+
+        public List<IUIComponent> GetSettings()
+        {
+            return new List<IUIComponent>();
         }
     }
 }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Zenith.EditorGameComponents.UIComponents;
 using Zenith.Helpers;
 using Zenith.MathHelpers;
 using Zenith.ZGraphics;
@@ -16,7 +17,7 @@ namespace Zenith.EditorGameComponents
     // - Right click a point to remove it
     // - Left click a point to drag it
     // - Left click on a line to add a point
-    internal class SphericalGeometryEditor : EditorGameComponent
+    internal class SphericalGeometryEditor : DrawableGameComponent, IEditorGameComponent
     {
         private EditorCamera camera;
         private List<VectorHandle> shape;
@@ -242,9 +243,14 @@ namespace Zenith.EditorGameComponents
             }
         }
 
-        internal override List<string> GetDebugInfo()
+        public List<string> GetDebugInfo()
         {
             return new List<string>() { "Controls: Left/Right click" };
+        }
+
+        public List<IUIComponent> GetSettings()
+        {
+            throw new NotImplementedException();
         }
     }
 }

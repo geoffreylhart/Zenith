@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Xna.Framework;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,16 +10,19 @@ namespace Zenith.EditorGameComponents
 {
     internal class ComponentManager
     {
-        private List<EditorGameComponent> components;
+        private List<IEditorGameComponent> components;
         private ComponentList list;
 
-        internal ComponentManager(params EditorGameComponent[] components)
+        internal ComponentManager(params IEditorGameComponent[] components)
         {
             this.components = components.ToList();
             // TODO: why do we have this again?
             foreach (var component in components)
             {
-                component.Enabled = true;
+                if (component is DrawableGameComponent)
+                {
+                    ((DrawableGameComponent)component).Enabled = true;
+                }
             }
         }
 
@@ -50,13 +54,13 @@ namespace Zenith.EditorGameComponents
             }
         }
 
-        private class ComponentList : ListBox<EditorGameComponent>
+        private class ComponentList : ListBox<IEditorGameComponent>
         {
-            public ComponentList(int w, List<EditorGameComponent> components) : base(w, components)
+            public ComponentList(int w, List<IEditorGameComponent> components) : base(w, components)
             {
             }
 
-            internal override string GetItemAsString(EditorGameComponent item)
+            internal override string GetItemAsString(IEditorGameComponent item)
             {
                 return item.GetType().Name;
             }
@@ -71,7 +75,7 @@ namespace Zenith.EditorGameComponents
             {
                 this.cm = cm;
                 this.componentSettings = new List<IUIComponent>[cm.components.Count];
-                for(int i = 0; i < this.componentSettings.Length; i++)
+                for (int i = 0; i < this.componentSettings.Length; i++)
                 {
                     this.componentSettings[i] = cm.components[i].GetSettings();
                 }
