@@ -17,13 +17,15 @@ namespace Zenith.EditorGameComponents.FlatComponents
 {
     class GeometryEditor : IFlatComponent, IEditorGameComponent
     {
-        private static bool TESSELATE = false;
+        private static bool TESSELATE = true;
         private List<Shape> shapes = new List<Shape>();
         private SphereVector previewPoint;
         private int draggingPointShapeIndex = -1;
         private int draggingPointIndex = -1;
         private IndexType draggingPointIndexType = IndexType.BASE;
         private VertexBuffer landVertexBuffer = null;
+        private Texture2D terrainTexture;
+        private Texture2D cloudTexture;
 
         private class Shape
         {
@@ -136,6 +138,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
 
         public void Draw(GraphicsDevice graphicsDevice, double minX, double maxX, double minY, double maxY, double cameraZoom)
         {
+            if (terrainTexture == null) InitTextures(graphicsDevice);
             float halfSize = (float)(0.2 * Math.Pow(0.5, cameraZoom));
             var basicEffect = new BasicEffect(graphicsDevice);
             basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)minX, (float)maxX, (float)maxY, (float)minY, 1, 1000);
@@ -168,6 +171,9 @@ namespace Zenith.EditorGameComponents.FlatComponents
             if (landVertexBuffer != null)
             {
                 graphicsDevice.SetVertexBuffer(landVertexBuffer);
+                basicEffect.TextureEnabled = true;
+                basicEffect.Texture = terrainTexture;
+                basicEffect.VertexColorEnabled = false;
                 foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
                 {
                     pass.Apply();
@@ -214,6 +220,19 @@ namespace Zenith.EditorGameComponents.FlatComponents
             }
         }
 
+        private void InitTextures(GraphicsDevice graphicsDevice)
+        {
+            String filePath = @"..\..\..\..\LocalCache\";
+            using (var reader = File.OpenRead(filePath + "terrain.png"))
+            {
+                terrainTexture = Texture2D.FromStream(graphicsDevice, reader);
+            }
+            using (var reader = File.OpenRead(filePath + "clouds.png"))
+            {
+                cloudTexture = Texture2D.FromStream(graphicsDevice, reader);
+            }
+        }
+
         private void AddTwoLongLatLinesIfNecessary(List<VertexPositionColor> vertexList, SphereVector v1, SphereVector v2, Color color)
         {
             LongLat v1l = v1.ToLongLat();
@@ -236,7 +255,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
 
         private void UpdateMainVertexBuffer(GraphicsDevice graphicsDevice)
         {
-            List<VertexPositionColor> triangles = new List<VertexPositionColor>();
+            List<VertexPositionTexture> triangles = new List<VertexPositionTexture>();
             float z = -10f;
             var tess = new LibTessDotNet.Tess();
             foreach (var shape in shapes)
@@ -262,11 +281,12 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 for (int j = 0; j < 3; j++)
                 {
                     var pos = tess.Vertices[tess.Elements[i * 3 + j]].Position;
-                    triangles.Add(new VertexPositionColor(new Vector3(pos.X, pos.Y, z), Color.Green));
+                    double toY = 1 - (Math.Log(Math.Tan(pos.Y / 2 + Math.PI / 4)) / (Math.PI * 2) + 0.5); // why 1-blah?
+                    triangles.Add(new VertexPositionTexture(new Vector3(pos.X, pos.Y, z), new Vector2((float)((pos.X + Math.PI) / (2 * Math.PI)), (float)toY)));
                 }
             }
             if (landVertexBuffer != null) landVertexBuffer.Dispose();
-            landVertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, triangles.Count, BufferUsage.WriteOnly);
+            landVertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionTexture.VertexDeclaration, triangles.Count, BufferUsage.WriteOnly);
             landVertexBuffer.SetData(triangles.ToArray());
         }
 
@@ -477,12 +497,12 @@ namespace Zenith.EditorGameComponents.FlatComponents
             using (var reader = new BinaryReader(new FileStream(MAP_PATH, FileMode.Open)))
             {
                 int shapeCount = reader.ReadInt32();
-                for(int i = 0; i < shapeCount; i++)
+                for (int i = 0; i < shapeCount; i++)
                 {
                     var newShape = new Shape();
                     newShape.shape = new List<VectorHandle>();
                     int handleCount = reader.ReadInt32();
-                    for(int j = 0; j < handleCount; j++)
+                    for (int j = 0; j < handleCount; j++)
                     {
                         var newHandle = new VectorHandle();
                         newHandle.handleType = (HandleType)reader.ReadInt32();

@@ -180,8 +180,8 @@ namespace Zenith.PrimitiveBuilder
             List<VertexPositionNormalTexture> vertices = new List<VertexPositionNormalTexture>();
 
             double radius = diameter / 2;
-            int verticalSegments = Math.Max((int)((maxLat - minLat) * 10), 1);
-            int horizontalSegments = Math.Max((int)((maxLong - minLong) * 10), 1);
+            int verticalSegments = Math.Max((int)((maxLat - minLat) * 50), 1);
+            int horizontalSegments = Math.Max((int)((maxLong - minLong) * 50), 1);
             for (int i = 0; i <= verticalSegments; i++)
             {
                 double latitude = (minLat + (maxLat - minLat) * i / (double)verticalSegments);
