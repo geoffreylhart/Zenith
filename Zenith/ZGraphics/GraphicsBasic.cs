@@ -51,5 +51,15 @@ namespace Zenith.ZGraphics
                 graphicsDevice.DrawUserPrimitives<VertexPositionTexture>(PrimitiveType.TriangleStrip, vertices.ToArray());
             }
         }
+
+        internal static void DrawSpriteRect(GraphicsDevice graphicsDevice, double x1, double y1, double w1, double h1, double x2, double y2, double w2, double h2, Texture2D texture)
+        {
+            Rectangle destRect = new Rectangle(0, 0, graphicsDevice.Viewport.Width, graphicsDevice.Viewport.Height);
+            Rectangle srcRect = new Rectangle((int)(texture.Width * x2), (int)(texture.Height * y2), (int)(texture.Width * w2), (int)(texture.Height * h2));
+            SpriteBatch spriteBatch = new SpriteBatch(graphicsDevice);
+            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.Additive, null, null, null, null);
+            spriteBatch.Draw(texture, destRect, srcRect, Color.White);
+            spriteBatch.End();
+        }
     }
 }
