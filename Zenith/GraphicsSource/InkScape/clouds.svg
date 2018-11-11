@@ -16,8 +16,8 @@
    version="1.1"
    id="svg4529"
    inkscape:version="0.92.1 r15371"
-   sodipodi:docname="terrain.svg"
-   inkscape:export-filename="C:\Users\Geoffrey Hart\Documents\Visual Studio 2017\Projects\Zenith\Zenith\LocalCache\terrain.png"
+   sodipodi:docname="clouds.svg"
+   inkscape:export-filename="C:\Users\Geoffrey Hart\Documents\Visual Studio 2017\Projects\Zenith\Zenith\LocalCache\clouds.png"
    inkscape:export-xdpi="96"
    inkscape:export-ydpi="96">
   <defs
@@ -29,9 +29,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.7"
-     inkscape:cx="402.12444"
-     inkscape:cy="348.89641"
+     inkscape:zoom="1.4"
+     inkscape:cx="144.98416"
+     inkscape:cy="284.35365"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -40,7 +40,8 @@
      inkscape:window-height="776"
      inkscape:window-x="176"
      inkscape:window-y="75"
-     inkscape:window-maximized="0" />
+     inkscape:window-maximized="0"
+     inkscape:pagecheckerboard="true" />
   <metadata
      id="metadata4526">
     <rdf:RDF>
@@ -66,6 +67,14 @@
        xlink:href="file:///C:/Users/Geoffrey%20Hart/Documents/Visual%20Studio%202017/Projects/Zenith/Zenith/LocalCache/X=0,Y=0,Zoom=0.PNG"
        preserveAspectRatio="none"
        height="135.46666"
-       width="135.46666" />
+       width="135.46666"
+       style="opacity:0" />
+    <ellipse
+       style="opacity:1;fill:#ffffff;fill-opacity:0.50196078;stroke:none;stroke-width:0;stroke-linecap:round;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="path4487"
+       cx="32.127975"
+       cy="208.93152"
+       rx="7.5595236"
+       ry="6.4255953" />
   </g>
 </svg>

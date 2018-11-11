@@ -33,5 +33,23 @@ namespace Zenith.ZGraphics
                 graphicsDevice.DrawUserPrimitives<VertexPositionColor>(PrimitiveType.TriangleStrip, vertices.ToArray());
             }
         }
+
+        internal static void DrawRect(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double x, double y, double w, double h, Texture2D texture)
+        {
+            basicEffect.TextureEnabled = true;
+            basicEffect.Texture = texture;
+            float z = -10;
+            List<VertexPositionTexture> vertices = new List<VertexPositionTexture>();
+            // TODO: again, we're hacking to flip the image upside down, but we really should figure out the source of the issue
+            vertices.Add(new VertexPositionTexture(new Vector3((float)x, (float)(y + h), z), new Vector2(0, 1 - 1)));
+            vertices.Add(new VertexPositionTexture(new Vector3((float)x, (float)y, z), new Vector2(0, 1 - 0)));
+            vertices.Add(new VertexPositionTexture(new Vector3((float)(x + w), (float)(y + h), z), new Vector2(1, 1 - 1)));
+            vertices.Add(new VertexPositionTexture(new Vector3((float)(x + w), (float)y, z), new Vector2(1, 1 - 0)));
+            foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                graphicsDevice.DrawUserPrimitives<VertexPositionTexture>(PrimitiveType.TriangleStrip, vertices.ToArray());
+            }
+        }
     }
 }

@@ -218,6 +218,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
             {
                 UpdateMainVertexBuffer(graphicsDevice);
             }
+            GraphicsBasic.DrawRect(graphicsDevice, basicEffect, -Math.PI, -Math.PI / 2, Math.PI * 2, Math.PI, cloudTexture);
         }
 
         private void InitTextures(GraphicsDevice graphicsDevice)
