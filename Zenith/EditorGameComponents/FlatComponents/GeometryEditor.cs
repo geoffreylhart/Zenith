@@ -186,15 +186,18 @@ namespace Zenith.EditorGameComponents.FlatComponents
                     graphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, landVertexBuffer.VertexCount - 2);
                 }
             }
-            foreach (var shape in shapes)
+            if (!TESSELATE)
             {
-                if (shape.vertexBuffer != null)
+                foreach (var shape in shapes)
                 {
-                    graphicsDevice.SetVertexBuffer(shape.vertexBuffer);
-                    foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
+                    if (shape.vertexBuffer != null)
                     {
-                        pass.Apply();
-                        graphicsDevice.DrawPrimitives(PrimitiveType.LineList, 0, shape.vertexBuffer.VertexCount / 2);
+                        graphicsDevice.SetVertexBuffer(shape.vertexBuffer);
+                        foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
+                        {
+                            pass.Apply();
+                            graphicsDevice.DrawPrimitives(PrimitiveType.LineList, 0, shape.vertexBuffer.VertexCount / 2);
+                        }
                     }
                 }
             }
@@ -620,20 +623,21 @@ namespace Zenith.EditorGameComponents.FlatComponents
                     //double maxLong = 190.519684 * Math.PI / 180;
                     //double minLat = -89.000389 * Math.PI / 180;
                     // low
-                    double xStart = -15.32;
+                    double xStart = 0;
                     double yStart = 0;
                     double w = 1024.71;
+                    // TODO: figure out why inkscape disagrees with me on the proportion of things
+                    w = 1009.890; // acording to inkscape
                     double h = 1224;
+                    h = 1224.100; // according to inkscape
                     double minLong = -169.522279 * Math.PI / 180;
                     double maxLat = 83.646363 * Math.PI / 180;
                     double maxLong = 190.518061 * Math.PI / 180;
                     double minLat = -89.000292 * Math.PI / 180;
                     double longVal = (x - xStart) / w * (maxLong - minLong) + minLong;
-                    double texY = (y - yStart) / h * (ToY(maxLat) - ToY(minLat)) + ToY(minLat);
-                    // TODO: I'm kind of manually adjusting here...
-                    double latVal = ToLat(0.705 - texY); // TODO: 1-?
-                    longVal += -0.07;
-                    //latVal = Math.PI - latVal; // TODO: again, upside down?
+                    // TODO: figure out why its max-x instead of x+min
+                    double texY = ToY(maxLat) - (y - yStart) / h * (ToY(maxLat) - ToY(minLat));
+                    double latVal = ToLat(texY);
                     LongLat longLat = new LongLat(longVal, latVal);
                     newHandle.p = longLat.ToSphereVector();
                     newHandle.incoming = newHandle.p;
