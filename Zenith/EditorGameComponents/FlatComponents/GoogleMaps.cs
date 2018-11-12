@@ -184,6 +184,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
         }
 
         // takes -pi/2 to pi/2, I assume, goes from -infinity to infinity??
+        // goes from 0 to 1 in the cutoff range of 85.051129 degrees
         private static double ToY(double lat)
         {
             return Math.Log(Math.Tan(lat / 2 + Math.PI / 4)) / (Math.PI * 2) + 0.5;

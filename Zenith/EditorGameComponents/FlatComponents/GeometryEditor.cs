@@ -17,7 +17,9 @@ namespace Zenith.EditorGameComponents.FlatComponents
 {
     class GeometryEditor : IFlatComponent, IEditorGameComponent
     {
+        private static int CURVE_SEGS = 1;
         private static bool TESSELATE = true;
+        private static bool SHOW_HANDLES = false;
         private List<Shape> shapes = new List<Shape>();
         private SphereVector previewPoint;
         private int draggingPointShapeIndex = -1;
@@ -143,28 +145,32 @@ namespace Zenith.EditorGameComponents.FlatComponents
             var basicEffect = new BasicEffect(graphicsDevice);
             basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)minX, (float)maxX, (float)maxY, (float)minY, 1, 1000);
             basicEffect.VertexColorEnabled = true;
-            foreach (var shape in shapes)
+            List<VertexPositionColor> shapeHandles = new List<VertexPositionColor>();
+            if (SHOW_HANDLES)
             {
-                foreach (var point in shape.shape)
+                foreach (var shape in shapes)
                 {
-                    DrawPoint(graphicsDevice, basicEffect, halfSize, point.p.ToLongLat(), Color.White);
-                    if (point.handleType == HandleType.FREE || point.handleType == HandleType.SMOOTH)
+                    foreach (var point in shape.shape)
                     {
-                        DrawPoint(graphicsDevice, basicEffect, halfSize, point.GetPseudoIncoming().ToLongLat(), Color.Orange);
-                        DrawPoint(graphicsDevice, basicEffect, halfSize, point.GetPseudoOutgoing().ToLongLat(), Color.Orange);
+                        DrawPoint(graphicsDevice, basicEffect, halfSize, point.p.ToLongLat(), Color.White);
+                        if (point.handleType == HandleType.FREE || point.handleType == HandleType.SMOOTH)
+                        {
+                            DrawPoint(graphicsDevice, basicEffect, halfSize, point.GetPseudoIncoming().ToLongLat(), Color.Orange);
+                            DrawPoint(graphicsDevice, basicEffect, halfSize, point.GetPseudoOutgoing().ToLongLat(), Color.Orange);
+                        }
                     }
                 }
-            }
-            var shapeHandles = new List<VertexPositionColor>();
-            float z = -10;
-            foreach (var shape in shapes)
-            {
-                foreach (var handle in shape.shape) // for drawing lines from in/out handles to the base
+                shapeHandles = new List<VertexPositionColor>();
+                float z = -10;
+                foreach (var shape in shapes)
                 {
-                    if (handle.handleType == HandleType.FREE || handle.handleType == HandleType.SMOOTH)
+                    foreach (var handle in shape.shape) // for drawing lines from in/out handles to the base
                     {
-                        AddTwoLongLatLinesIfNecessary(shapeHandles, handle.p, handle.GetPseudoIncoming(), Color.Orange);
-                        AddTwoLongLatLinesIfNecessary(shapeHandles, handle.p, handle.GetPseudoOutgoing(), Color.Orange);
+                        if (handle.handleType == HandleType.FREE || handle.handleType == HandleType.SMOOTH)
+                        {
+                            AddTwoLongLatLinesIfNecessary(shapeHandles, handle.p, handle.GetPseudoIncoming(), Color.Orange);
+                            AddTwoLongLatLinesIfNecessary(shapeHandles, handle.p, handle.GetPseudoOutgoing(), Color.Orange);
+                        }
                     }
                 }
             }
@@ -192,17 +198,20 @@ namespace Zenith.EditorGameComponents.FlatComponents
                     }
                 }
             }
-            if (shapeHandles.Count > 0)
+            if (SHOW_HANDLES)
             {
-                foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
+                if (shapeHandles.Count > 0)
                 {
-                    pass.Apply();
-                    graphicsDevice.DrawUserPrimitives<VertexPositionColor>(PrimitiveType.LineList, shapeHandles.ToArray());
+                    foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
+                    {
+                        pass.Apply();
+                        graphicsDevice.DrawUserPrimitives<VertexPositionColor>(PrimitiveType.LineList, shapeHandles.ToArray());
+                    }
                 }
-            }
-            if (previewPoint != null)
-            {
-                DrawPoint(graphicsDevice, basicEffect, halfSize, previewPoint.ToLongLat(), Color.Red);
+                if (previewPoint != null)
+                {
+                    DrawPoint(graphicsDevice, basicEffect, halfSize, previewPoint.ToLongLat(), Color.Red);
+                }
             }
             bool updateMainVertexBuffer = false;
             foreach (var shape in shapes)
@@ -261,17 +270,17 @@ namespace Zenith.EditorGameComponents.FlatComponents
             var tess = new LibTessDotNet.Tess();
             foreach (var shape in shapes)
             {
-                var contour = new LibTessDotNet.ContourVertex[shape.shape.Count * 10];
+                var contour = new LibTessDotNet.ContourVertex[shape.shape.Count * CURVE_SEGS];
                 for (int i = 0; i < shape.shape.Count; i++)
                 {
                     VectorHandle p1 = shape.shape[i];
                     VectorHandle p4 = shape.shape[(i + 1) % shape.shape.Count];
-                    for (int j = 0; j < 10; j++)
+                    for (int j = 0; j < CURVE_SEGS; j++)
                     {
-                        float t = j / 10.0f;
+                        float t = j / (float)CURVE_SEGS;
                         SphereVector curvePoint = p1.CurveTowards(p4, t);
                         LongLat asLongLat = curvePoint.ToLongLat();
-                        contour[i * 10 + j].Position = new LibTessDotNet.Vec3 { X = (float)asLongLat.X, Y = (float)asLongLat.Y, Z = 0 };
+                        contour[i * CURVE_SEGS + j].Position = new LibTessDotNet.Vec3 { X = (float)asLongLat.X, Y = (float)asLongLat.Y, Z = 0 };
                     }
                 }
                 tess.AddContour(contour, LibTessDotNet.ContourOrientation.Original);
@@ -293,6 +302,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
 
         public void Update(double mouseX, double mouseY, double cameraZoom)
         {
+            if (!SHOW_HANDLES) return;
             if (!UILayer.LeftDown)
             {
                 draggingPointIndex = -1;
@@ -460,11 +470,11 @@ namespace Zenith.EditorGameComponents.FlatComponents
             {
                 var p1 = shape.shape[i];
                 var p4 = shape.shape[(i + 1) % shape.shape.Count];
-                for (int j = 0; j < 10; j++)
+                for (int j = 0; j < CURVE_SEGS; j++)
                 {
-                    float t = j / 10.0f;
-                    SphereVector curvePoint = p1.CurveTowards(p4, j / 10.0f);
-                    SphereVector curvePoint2 = p1.CurveTowards(p4, ((j + 1) / 10.0f));
+                    float t = j / (float)CURVE_SEGS;
+                    SphereVector curvePoint = p1.CurveTowards(p4, j / (float)CURVE_SEGS);
+                    SphereVector curvePoint2 = p1.CurveTowards(p4, ((j + 1) / (float)CURVE_SEGS));
                     AddTwoLongLatLinesIfNecessary(shapeAsVertices, curvePoint, curvePoint2, Color.Red);
                 }
             }
@@ -493,7 +503,26 @@ namespace Zenith.EditorGameComponents.FlatComponents
         private static string MAP_PATH = @"..\..\..\..\Data\EARTH";
         private void LoadMap()
         {
-            if (!File.Exists(MAP_PATH)) return;
+            if (!File.Exists(MAP_PATH))
+            {
+                shapes = new List<Shape>();
+                // TODO: get rid of those code after conversion? or hide it away
+                using (var reader = new StreamReader(@"..\..\..\..\GraphicsSource\InkScape\continentsWithAntarcticaLow.svg"))
+                {
+                    String window = "";
+                    while (!reader.EndOfStream)
+                    {
+                        int asInt = reader.Read();
+                        window += (char)asInt;
+                        if (window.Length > 10) window = window.Substring(1, 10);
+                        if (window.EndsWith(" d="))
+                        {
+                            ReadShape(reader);
+                        }
+                    }
+                }
+                return;
+            }
             shapes = new List<Shape>();
             using (var reader = new BinaryReader(new FileStream(MAP_PATH, FileMode.Open)))
             {
@@ -515,6 +544,123 @@ namespace Zenith.EditorGameComponents.FlatComponents
                     shapes.Add(newShape);
                 }
             }
+        }
+
+        static double minX = 10000;
+        static double maxX = -10000;
+        static double minY = 10000;
+        static double maxY = -10000;
+        private void ReadShape(StreamReader reader)
+        {
+            reader.Read(); // skip first quote
+            var newShape = new Shape();
+            newShape.shape = new List<VectorHandle>();
+            String token = "";
+            double oldX = -1;
+            double oldY = -1;
+            while (true)
+            {
+                char asChar = (char)reader.Read();
+                if (asChar == '\"') break;
+                if (token.Equals("") && "MLHVmlhv".Contains(asChar))
+                {
+                    token += asChar;
+                    continue;
+                }
+                if ("MLHVmlhvz".Contains(asChar))
+                {
+                    double[] parsed = token.Substring(1).Split(',').Select(z => double.Parse(z)).ToArray();
+                    double x, y;
+                    switch (token[0])
+                    {
+                        case 'M':
+                        case 'L':
+                            x = parsed[0];
+                            y = parsed[1];
+                            break;
+                        case 'H':
+                            x = parsed[0];
+                            y = 0;
+                            break;
+                        case 'V':
+                            x = 0;
+                            y = parsed[0];
+                            break;
+                        case 'm':
+                        case 'l':
+                            x = parsed[0] + oldX;
+                            y = parsed[1] + oldY;
+                            break;
+                        case 'h':
+                            x = parsed[0] + oldX;
+                            y = oldY;
+                            break;
+                        case 'v':
+                            x = oldX;
+                            y = parsed[0] + oldY;
+                            break;
+                        default:
+                            throw new NotImplementedException();
+                    }
+                    oldX = x;
+                    oldY = y;
+                    minX = Math.Min(x, minX);
+                    maxX = Math.Max(x, maxX);
+                    minY = Math.Min(y, minY);
+                    maxY = Math.Max(y, maxY);
+                    var newHandle = new VectorHandle();
+                    newHandle.handleType = HandleType.SHARP;
+                    // high
+                    //double xStart = -0.050;
+                    //double yStart = -1124.050;
+                    //double w = 1010.430;
+                    //double h = 1224.100;
+                    //double minLong = -169.516691 * Math.PI / 180;
+                    //double maxLat = 83.600842 * Math.PI / 180;
+                    //double maxLong = 190.519684 * Math.PI / 180;
+                    //double minLat = -89.000389 * Math.PI / 180;
+                    // low
+                    double xStart = -15.32;
+                    double yStart = 0;
+                    double w = 1024.71;
+                    double h = 1224;
+                    double minLong = -169.522279 * Math.PI / 180;
+                    double maxLat = 83.646363 * Math.PI / 180;
+                    double maxLong = 190.518061 * Math.PI / 180;
+                    double minLat = -89.000292 * Math.PI / 180;
+                    double longVal = (x - xStart) / w * (maxLong - minLong) + minLong;
+                    double texY = (y - yStart) / h * (ToY(maxLat) - ToY(minLat)) + ToY(minLat);
+                    // TODO: I'm kind of manually adjusting here...
+                    double latVal = ToLat(0.705 - texY); // TODO: 1-?
+                    longVal += -0.07;
+                    //latVal = Math.PI - latVal; // TODO: again, upside down?
+                    LongLat longLat = new LongLat(longVal, latVal);
+                    newHandle.p = longLat.ToSphereVector();
+                    newHandle.incoming = newHandle.p;
+                    newHandle.outgoing = newHandle.p;
+                    newShape.shape.Add(newHandle);
+                    if (asChar == 'z')
+                    {
+                        shapes.Add(newShape);
+                        newShape = new Shape();
+                        newShape.shape = new List<VectorHandle>();
+                    }
+                    token = "";
+                    if ("MLHVmlhv".Contains(asChar)) token += asChar;
+                }
+                else
+                {
+                    token += asChar;
+                }
+            }
+        }
+        private static double ToLat(double y)
+        {
+            return 2 * Math.Atan(Math.Pow(Math.E, (y - 0.5) * 2 * Math.PI)) - Math.PI / 2;
+        }
+        private static double ToY(double lat)
+        {
+            return Math.Log(Math.Tan(lat / 2 + Math.PI / 4)) / (Math.PI * 2) + 0.5;
         }
 
         private void SaveMap()

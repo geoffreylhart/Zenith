@@ -1,0 +1,8 @@
+﻿Continents:
+	- Basic continents svg: https://commons.wikimedia.org/wiki/File:Continents.svg
+	- Equirectangular projection: https://en.wikipedia.org/wiki/Equirectangular_projection
+	- Also equirectangular projection: https://visibleearth.nasa.gov/view.php?id=57730
+	- Webmercator SVGs: https://www.amcharts.com/svg-maps/?map=continentsWithAntarctica
+
+Clouds:
+	- http://www.shadedrelief.com/natural3/pages/clouds.html

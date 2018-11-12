@@ -166,6 +166,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Documentation\CoordinateSystemCheatSheet.txt" />
+    <Content Include="Documentation\ImageSources.txt" />
     <Content Include="Documentation\LibraryInfo.txt" />
     <Content Include="GraphicsSource\Html\bg.png" />
     <Content Include="GraphicsSource\Html\bgblur.png" />
