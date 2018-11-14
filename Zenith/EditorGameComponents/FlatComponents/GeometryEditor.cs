@@ -20,6 +20,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
         private static int CURVE_SEGS = 1;
         private static bool TESSELATE = true;
         private static bool SHOW_HANDLES = false;
+        private static bool SHOW_CLOUDS = false;
         private List<Shape> shapes = new List<Shape>();
         private SphereVector previewPoint;
         private int draggingPointShapeIndex = -1;
@@ -230,7 +231,10 @@ namespace Zenith.EditorGameComponents.FlatComponents
             {
                 UpdateMainVertexBuffer(graphicsDevice);
             }
-            GraphicsBasic.DrawSpriteRect(graphicsDevice, -Math.PI, -Math.PI / 2, Math.PI * 2, Math.PI, (minX + Math.PI) / (2 * Math.PI), (minY + Math.PI / 2) / Math.PI, (maxX - minX) / (2 * Math.PI), (maxY - minY) / Math.PI, cloudTexture);
+            if (SHOW_CLOUDS)
+            {
+                GraphicsBasic.DrawSpriteRect(graphicsDevice, -Math.PI, -Math.PI / 2, Math.PI * 2, Math.PI, (minX + Math.PI) / (2 * Math.PI), (minY + Math.PI / 2) / Math.PI, (maxX - minX) / (2 * Math.PI), (maxY - minY) / Math.PI, cloudTexture);
+            }
         }
 
         private void InitTextures(GraphicsDevice graphicsDevice)
@@ -273,7 +277,8 @@ namespace Zenith.EditorGameComponents.FlatComponents
             var tess = new LibTessDotNet.Tess();
             foreach (var shape in shapes)
             {
-                var contour = new LibTessDotNet.ContourVertex[shape.shape.Count * CURVE_SEGS];
+                var contour = new List<LibTessDotNet.ContourVertex>();
+                LongLat prevLongLat = null;
                 for (int i = 0; i < shape.shape.Count; i++)
                 {
                     VectorHandle p1 = shape.shape[i];
@@ -283,10 +288,33 @@ namespace Zenith.EditorGameComponents.FlatComponents
                         float t = j / (float)CURVE_SEGS;
                         SphereVector curvePoint = p1.CurveTowards(p4, t);
                         LongLat asLongLat = curvePoint.ToLongLat();
-                        contour[i * CURVE_SEGS + j].Position = new LibTessDotNet.Vec3 { X = (float)asLongLat.X, Y = (float)asLongLat.Y, Z = 0 };
+                        if (prevLongLat != null)
+                        {
+                            if (Math.Abs(prevLongLat.X - asLongLat.X) > Math.PI)
+                            {
+                                double offsetX = asLongLat.X < prevLongLat.X ? Math.PI * 2 : -Math.PI * 2;
+                                // super cheaty way to make tesselator handle some logic for us
+                                var v1 = new LibTessDotNet.ContourVertex();
+                                var v2 = new LibTessDotNet.ContourVertex();
+                                var v3 = new LibTessDotNet.ContourVertex();
+                                var v4 = new LibTessDotNet.ContourVertex();
+                                v1.Position = new LibTessDotNet.Vec3 { X = (float)(asLongLat.X + offsetX), Y = (float)asLongLat.Y, Z = 0 };
+                                v2.Position = new LibTessDotNet.Vec3 { X = (float)(asLongLat.X + 2 * offsetX), Y = -20, Z = 0 };
+                                v3.Position = new LibTessDotNet.Vec3 { X = (float)(prevLongLat.X - 2 * offsetX), Y = -10, Z = 0 };
+                                v4.Position = new LibTessDotNet.Vec3 { X = (float)(prevLongLat.X - offsetX), Y = (float)prevLongLat.Y, Z = 0 };
+                                contour.Add(v1);
+                                contour.Add(v2);
+                                contour.Add(v3);
+                                contour.Add(v4);
+                            }
+                        }
+                        prevLongLat = asLongLat;
+                        LibTessDotNet.ContourVertex newVert = new LibTessDotNet.ContourVertex();
+                        newVert.Position = new LibTessDotNet.Vec3 { X = (float)asLongLat.X, Y = (float)asLongLat.Y, Z = 0 };
+                        contour.Add(newVert);
                     }
                 }
-                tess.AddContour(contour, LibTessDotNet.ContourOrientation.Original);
+                tess.AddContour(contour.ToArray(), LibTessDotNet.ContourOrientation.Original);
             }
             tess.Tessellate(LibTessDotNet.WindingRule.EvenOdd, LibTessDotNet.ElementType.Polygons, 3);
             for (int i = 0; i < tess.ElementCount; i++)
@@ -294,8 +322,8 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 for (int j = 0; j < 3; j++)
                 {
                     var pos = tess.Vertices[tess.Elements[i * 3 + j]].Position;
-                    double toY = 1 - (Math.Log(Math.Tan(pos.Y / 2 + Math.PI / 4)) / (Math.PI * 2) + 0.5); // why 1-blah?
-                    triangles.Add(new VertexPositionTexture(new Vector3(pos.X, pos.Y, z), new Vector2((float)((pos.X + Math.PI) / (2 * Math.PI)), (float)toY)));
+                    // TODO: why 1-y?
+                    triangles.Add(new VertexPositionTexture(new Vector3(pos.X, pos.Y, z), new Vector2((float)((pos.X + Math.PI) / (2 * Math.PI)), (float)(1 - (pos.Y + Math.PI / 2) / Math.PI))));
                 }
             }
             if (landVertexBuffer != null) landVertexBuffer.Dispose();
@@ -586,7 +614,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                             y = 0;
                             break;
                         case 'V':
-                            x = 0;
+                            x = oldX; // TODO: why doesn't this seem to match the specification?
                             y = parsed[0];
                             break;
                         case 'm':

@@ -64,8 +64,8 @@ namespace Zenith
             Components.Add(uiLayer);
             uiLayer.UpdateOrder = camera.UpdateOrder - 1;
             //Components.Add(geom);
-            Components.Add(new CityMarker(this, camera, "Pensacola", 30.4668536, -87.3294527));
-            Components.Add(new CityMarker(this, camera, "0, 0", 0, 0));
+            //Components.Add(new CityMarker(this, camera, "Pensacola", 30.4668536, -87.3294527));
+            //Components.Add(new CityMarker(this, camera, "0, 0", 0, 0));
             // Components.Add(new BlenderAxis(this, camera));
             Components.Add(debug = new DebugConsole(this));
             // TODO: just change the ordering to fix this? apparantly setting a render target clears the backbuffer due to Xbox stuff

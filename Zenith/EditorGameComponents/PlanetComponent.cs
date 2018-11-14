@@ -100,7 +100,7 @@ namespace Zenith.EditorGameComponents
             GraphicsDevice.DepthStencilState = new DepthStencilState() { DepthBufferEnable = true };
 
             // Draw the scene
-            GraphicsDevice.Clear(Color.CornflowerBlue);
+            GraphicsDevice.Clear(new Color(29/256f, 48 / 256f, 96 / 256f));
             BasicEffect bf = new BasicEffect(GraphicsDevice);
             bf.World = Matrix.Identity;
             //bf.World *= Matrix.CreateTranslation((float)marker.X, (float)marker.Y, (float)marker.Z);

@@ -30,7 +30,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.7"
-     inkscape:cx="402.12444"
+     inkscape:cx="169.98158"
      inkscape:cy="348.89641"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
@@ -49,7 +49,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -59,13 +59,13 @@
      id="layer1"
      transform="translate(0,-161.53331)">
     <image
-       sodipodi:absref="C:\Users\Geoffrey Hart\Documents\Visual Studio 2017\Projects\Zenith\Zenith\LocalCache\X=0,Y=0,Zoom=0.PNG"
-       y="161.53331"
-       x="0"
-       id="image5104"
-       xlink:href="file:///C:/Users/Geoffrey%20Hart/Documents/Visual%20Studio%202017/Projects/Zenith/Zenith/LocalCache/X=0,Y=0,Zoom=0.PNG"
-       preserveAspectRatio="none"
+       sodipodi:absref="C:\Users\Geoffrey Hart\Documents\Visual Studio 2017\Projects\Zenith\Zenith\GraphicsSource\InkScape\EquiRectangularProjection.jpg"
+       xlink:href="EquiRectangularProjection.jpg"
+       width="135.46666"
        height="135.46666"
-       width="135.46666" />
+       preserveAspectRatio="none"
+       id="image5104"
+       x="0"
+       y="161.53331" />
   </g>
 </svg>
