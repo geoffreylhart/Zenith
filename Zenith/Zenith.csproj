@@ -50,6 +50,7 @@
     <Compile Include="EditorGameComponents\BlenderAxis.cs" />
     <Compile Include="EditorGameComponents\CityMarker.cs" />
     <Compile Include="EditorGameComponents\ComponentManager.cs" />
+    <Compile Include="EditorGameComponents\FlatComponents\SectorLoader.cs" />
     <Compile Include="EditorGameComponents\PlanetComponent.cs" />
     <Compile Include="EditorGameComponents\UIComponents\Button.cs" />
     <Compile Include="EditorGameComponents\UIComponents\Checkbox.cs" />

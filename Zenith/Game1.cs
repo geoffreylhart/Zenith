@@ -58,13 +58,13 @@ namespace Zenith
             //var geom = new SphericalGeometryEditor(this, camera);
             var earth = new PlanetComponent(this, camera);
             earth.Add(new GoogleMaps());
-            earth.Add(new GeometryEditor());
+            //earth.Add(new GeometryEditor());
             Components.Add(earth);
             var uiLayer = new UILayer(this, new ComponentManager(camera, earth));
             Components.Add(uiLayer);
             uiLayer.UpdateOrder = camera.UpdateOrder - 1;
             //Components.Add(geom);
-            //Components.Add(new CityMarker(this, camera, "Pensacola", 30.4668536, -87.3294527));
+            Components.Add(new CityMarker(this, camera, "Pensacola", 30.4668536, -87.3294527));
             //Components.Add(new CityMarker(this, camera, "0, 0", 0, 0));
             // Components.Add(new BlenderAxis(this, camera));
             Components.Add(debug = new DebugConsole(this));
