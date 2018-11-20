@@ -147,6 +147,14 @@ namespace Zenith.EditorGameComponents.FlatComponents
             {
                 return $"X={x},Y={y},Zoom={zoom}";
             }
+
+            public bool ContainsSector(Sector sector)
+            {
+                if (sector.zoom < zoom) return false;
+                if ((sector.x >> (sector.zoom - zoom)) != x) return false;
+                if ((sector.y >> (sector.zoom - zoom)) != y) return false;
+                return true;
+            }
         }
 
 

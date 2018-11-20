@@ -47,28 +47,40 @@ namespace Zenith.EditorGameComponents.FlatComponents
             }
             else
             {
-                // render it using InkScapes help
-                Process exe = new Process();
-                ProcessStartInfo startInfo = new ProcessStartInfo();
-                startInfo.FileName = @"C:\Program Files\Inkscape\inkscape.com";
-                String src = @"C:\Users\Geoffrey Hart\Documents\Visual Studio 2017\Projects\Zenith\Zenith\GraphicsSource\InkScape\CustomMaps\X=0,Y=0,Zoom=0.svg";
-                String dest = filePath;
-                // remember that inkscape has 0,0 in the lower-left corner
-                double size = sector.ZoomPortion * 512;
-                double x1 = sector.x * size;
-                double y1 = sector.y * size;
-                double x2 = (sector.x + 1) * size;
-                double y2 = (sector.y + 1) * size;
-                startInfo.Arguments = $"-z \"{src}\" -e {dest} -a {x1}:{y1}:{x2}:{y2} -w 512 -h 512";
-                startInfo.CreateNoWindow = true;
-                startInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                exe.StartInfo = startInfo;
-                exe.Start();
-                exe.WaitForExit();
-                using (var reader = File.OpenRead(filePath))
+                if (!File.Exists(@"..\..\..\..\LocalCache\CustomMaps\X=131,Y=301,Zoom=9.svg")) GetTextureFromSVG(graphicsDevice, new Sector(131, 301, 9), new Sector(131, 301, 9)).Dispose();
+                if (new Sector(131, 301, 9).ContainsSector(sector))
                 {
-                    return Texture2D.FromStream(graphicsDevice, reader);
+                    return GetTextureFromSVG(graphicsDevice, sector, new Sector(131, 301, 9));
                 }
+                return GetTextureFromSVG(graphicsDevice, sector, new Sector(0, 0, 0));
+            }
+        }
+
+        private Texture2D GetTextureFromSVG(GraphicsDevice graphicsDevice, Sector target, Sector src)
+        {
+            String fileName = target.ToString() + ".PNG";
+            String filePath = @"..\..\..\..\LocalCache\CustomMaps\" + fileName;
+            // render it using InkScapes help
+            Process exe = new Process();
+            ProcessStartInfo startInfo = new ProcessStartInfo();
+            startInfo.FileName = @"C:\Program Files\Inkscape\inkscape.com";
+            String srcPath = @"C:\Users\Geoffrey Hart\Documents\Visual Studio 2017\Projects\Zenith\Zenith\GraphicsSource\InkScape\CustomMaps\" + src.ToString() + ".svg";
+            String dest = filePath;
+            // remember that inkscape has 0,0 in the lower-left corner
+            double size = (target.ZoomPortion / src.ZoomPortion) * 512;
+            double x1 = (target.x - src.x * src.ZoomPortion / target.ZoomPortion) * size;
+            double y1 = (target.y - src.y * src.ZoomPortion / target.ZoomPortion) * size;
+            double x2 = (target.x + 1 - src.x * src.ZoomPortion / target.ZoomPortion) * size;
+            double y2 = (target.y + 1 - src.y * src.ZoomPortion / target.ZoomPortion) * size;
+            startInfo.Arguments = $"-z \"{srcPath}\" -e {dest} -a {x1}:{y1}:{x2}:{y2} -w 512 -h 512";
+            startInfo.CreateNoWindow = true;
+            startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            exe.StartInfo = startInfo;
+            exe.Start();
+            exe.WaitForExit();
+            using (var reader = File.OpenRead(filePath))
+            {
+                return Texture2D.FromStream(graphicsDevice, reader);
             }
         }
     }
