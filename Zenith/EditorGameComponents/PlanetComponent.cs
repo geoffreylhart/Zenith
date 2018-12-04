@@ -26,8 +26,8 @@ namespace Zenith.EditorGameComponents
             this.camera = camera;
             renderTarget = new RenderTarget2D(
                  GraphicsDevice,
-                 512*4,
-                 512*4,
+                 512 * 4,
+                 512 * 4,
                  false,
                  GraphicsDevice.PresentationParameters.BackBufferFormat,
                  DepthFormat.Depth24);
@@ -88,7 +88,7 @@ namespace Zenith.EditorGameComponents
             var basicEffect = new BasicEffect(Game.GraphicsDevice);
             basicEffect.LightingEnabled = true;
             basicEffect.DirectionalLight0.Direction = new Vector3(-1, 1, 0);
-            basicEffect.DirectionalLight0.DiffuseColor = new Vector3(1, 1, 1);
+            basicEffect.DirectionalLight0.DiffuseColor = new Vector3(0.8f, 0.8f, 0.8f);
             basicEffect.AmbientLightColor = new Vector3(0.2f, 0.2f, 0.2f);
             return basicEffect;
         }
@@ -100,7 +100,7 @@ namespace Zenith.EditorGameComponents
             GraphicsDevice.DepthStencilState = new DepthStencilState() { DepthBufferEnable = true };
 
             // Draw the scene
-            GraphicsDevice.Clear(new Color(29/256f, 48 / 256f, 96 / 256f));
+            GraphicsDevice.Clear(new Color(29 / 256f, 48 / 256f, 96 / 256f));
             BasicEffect bf = new BasicEffect(GraphicsDevice);
             bf.World = Matrix.Identity;
             //bf.World *= Matrix.CreateTranslation((float)marker.X, (float)marker.Y, (float)marker.Z);
