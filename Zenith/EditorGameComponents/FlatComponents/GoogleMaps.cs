@@ -18,13 +18,13 @@ namespace Zenith.EditorGameComponents.FlatComponents
         public override bool CacheExists(Sector sector)
         {
             String fileName = sector.ToString() + ".PNG";
-            String filePath = @"..\..\..\..\LocalCache\GoogleMaps\Composite\" + fileName;
+            String filePath = @"..\..\..\..\LocalCache\GoogleMaps\COMPOSITE\" + fileName;
             return File.Exists(filePath);
         }
 
         public override IEnumerable<Sector> EnumerateCachedSectors()
         {
-            foreach (var file in Directory.EnumerateFiles(@"..\..\..\..\LocalCache\GoogleMaps\Composite"))
+            foreach (var file in Directory.EnumerateFiles(@"..\..\..\..\LocalCache\GoogleMaps\COMPOSITE"))
             {
                 String filename = Path.GetFileName(file);
                 if (filename.StartsWith("X"))
@@ -42,34 +42,52 @@ namespace Zenith.EditorGameComponents.FlatComponents
         {
             String fileName = sector.ToString() + ".PNG";
             // check for composite first
-            if (File.Exists(@"..\..\..\..\LocalCache\GoogleMaps\Composite\" + fileName))
+            if (File.Exists(@"..\..\..\..\LocalCache\GoogleMaps\COMPOSITE\" + fileName))
             {
-                using (var reader = File.OpenRead(@"..\..\..\..\LocalCache\GoogleMaps\Composite\" + fileName))
+                using (var reader = File.OpenRead(@"..\..\..\..\LocalCache\GoogleMaps\COMPOSITE\" + fileName))
                 {
                     return Texture2D.FromStream(graphicsDevice, reader);
                 }
             }
             // otherwise, build it
-            return GetMap(graphicsDevice, sector, MapGenerator.MapStyle.TERRAIN, false);
-            //Texture2D satellite = GetMap(graphicsDevice, sector, MapGenerator.MapStyle.SATELLITE, true);
-            //Texture2D terrain = GetMap(graphicsDevice, sector, MapGenerator.MapStyle.TERRAIN, true);
-            //Texture2D composite = MakeComposite(satellite, terrain);
-            //using (var writer = File.OpenWrite(@"..\..\..\..\LocalCache\GoogleMaps\Composite\" + fileName))
-            //{
-            //    composite.SaveAsPng(writer, composite.Width, composite.Height);
-            //}
-            //return composite;
+            Texture2D composite = MakeComposite(graphicsDevice, sector);
+            using (var writer = File.OpenWrite(@"..\..\..\..\LocalCache\GoogleMaps\Composite\" + fileName))
+            {
+                composite.SaveAsPng(writer, composite.Width, composite.Height);
+            }
+            return composite;
         }
 
-        private Texture2D MakeComposite(Texture2D satellite, Texture2D terrain)
+        private Texture2D MakeComposite(GraphicsDevice graphicsDevice, Sector sector)
         {
-            return satellite;
+            RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 512, 512, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
+            graphicsDevice.SetRenderTarget(newTarget);
+            Texture2D water = GetMap(graphicsDevice, sector, MapGenerator.MapStyle.LAND_WATER_ONLY, true);
+            GraphicsBasic.DrawScreenRect(graphicsDevice, 0, 0, 512, 512, Color.Blue);
+            BlendState bmMask = new BlendState()
+            {
+                AlphaBlendFunction = BlendFunction.Add,
+                AlphaDestinationBlend = Blend.InverseSourceAlpha,
+                AlphaSourceBlend = Blend.One,
+                BlendFactor = new Color(0,0,0,0),
+                ColorBlendFunction = BlendFunction.Add,
+                ColorDestinationBlend = Blend.InverseSourceAlpha, // normally InverseSourceAlpha (opaque)
+                ColorSourceBlend = Blend.One, // normally One (opaque)
+                ColorWriteChannels = ColorWriteChannels.All,
+                ColorWriteChannels1 = ColorWriteChannels.All,
+                ColorWriteChannels2 = ColorWriteChannels.All,
+                ColorWriteChannels3 = ColorWriteChannels.All,
+                IndependentBlendEnable = false,
+                MultiSampleMask = 2147483647
+            };
+            GraphicsBasic.DrawSpriteRect(graphicsDevice, 0, 0, 512, 512, water, bmMask, Color.White);
+            return newTarget;
         }
 
         private Texture2D GetMap(GraphicsDevice graphicsDevice, Sector sector, MapGenerator.MapStyle mapStyle, bool save)
         {
             String fileName = sector.ToString() + ".PNG";
-            String styleStr = mapStyle.ToString().Substring(0, 1).ToUpper() + mapStyle.ToString().Substring(1).ToLower();
+            String styleStr = mapStyle.ToString().ToUpper();
             if (File.Exists(@"..\..\..\..\LocalCache\GoogleMaps\" + styleStr + "\\" + fileName))
             {
                 using (var reader = File.OpenRead(@"..\..\..\..\LocalCache\GoogleMaps\" + styleStr + "\\" + fileName))

@@ -9,7 +9,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
 {
     interface IFlatComponent
     {
-        void Draw(GraphicsDevice graphicsDevice, double minX, double maxX, double minY, double maxY, double cameraZoom);
+        void Draw(RenderTarget2D renderTarget, double minLong, double maxLong, double minLat, double maxLat, double cameraZoom);
         void Update(double mouseX, double mouseY, double cameraZoom);
     }
 }

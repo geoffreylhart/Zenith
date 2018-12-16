@@ -19,7 +19,8 @@ namespace Zenith
             SATELLITE,
             ROADS_ONLY,
             BUILDINGS_ONLY,
-            LAND_WATER_ONLY
+            LAND_WATER_ONLY,
+            PLOTS_ONLY
         }
 
         // latitude and longitude given in degrees
@@ -51,14 +52,37 @@ namespace Zenith
                 case MapStyle.SATELLITE:
                     return "maptype=satellite";
                 case MapStyle.ROADS_ONLY:
-                    return "https://maps.googleapis.com/maps/api/staticmap?key=YOUR_API_KEY&center=30.502376571918788,-87.32878473940382&zoom=17&format=png&maptype=roadmap&style=element:labels%7Cvisibility:off&style=feature:administrative%7Cvisibility:off&style=feature:administrative.land_parcel%7Ccolor:0xbfbfbf%7Cvisibility:on%7Cweight:2&style=feature:landscape%7Cvisibility:off&style=feature:poi%7Cvisibility:off&style=feature:road%7Celement:geometry.fill%7Ccolor:0xffffff&style=feature:road%7Celement:geometry.stroke%7Cvisibility:off&style=feature:transit%7Cvisibility:off&style=feature:water%7Cvisibility:off&size=480x360";
+                    //roads first appear at 5
+                    //6 / 7 barely changes
+                    //non - highways appear at 8(lighting) ?
+                    //  more at 9
+                    //10 / 11 doesnt change much
+                    //12, more roads(local)
+                    //13, much better local roads
+                    //14, even better
+                    //15, best detail we need
+                    style += "&style=visibility:off";
+                    style += "&style=feature:landscape.natural%7Celement:geometry%7Ccolor:0x000000%7Cvisibility:on";
+                    style += "&style=feature:road%7Celement:geometry.fill%7Ccolor:0xffffff%7Cvisibility:on";
+                    return "maptype=roadmap" + style;
                 case MapStyle.BUILDINGS_ONLY:
+                    // only one which isn't b/w because styler won't let me
+                    // always use zoom level 17 for buidlings (hidden otherwise)
                     style += "&style=visibility:off";
                     style += "&style=feature:landscape.man_made%7Cvisibility:on";
+                    style += "&style=feature:landscape.natural%7Celement:geometry%7Ccolor:0xffffff%7Cvisibility:on";
                     return "maptype=roadmap" + style;
                 case MapStyle.LAND_WATER_ONLY:
+                    // we prefer to use 1 or 2 levls of HQ, to a max of 15 probably
                     style += "&style=visibility:off";
-                    style += "&style=feature:water%7Celement:geometry.fill%7Cvisibility:on";
+                    style += "&style=feature:landscape.natural%7Celement:geometry%7Ccolor:0xffffff%7Cvisibility:on";
+                    style += "&style=feature:water%7Celement:geometry%7Ccolor:0x000000%7Cvisibility:on";
+                    return "maptype=roadmap" + style;
+                case MapStyle.PLOTS_ONLY:
+                    // always use zoom level 17 for plots (hidden otherwise)
+                    style += "&style=visibility:off";
+                    style += "&style=feature:administrative.land_parcel%7Ccolor:0x000000%7Cvisibility:on";
+                    style += "&style=feature:landscape.natural%7Celement:geometry%7Ccolor:0xffffff%7Cvisibility:on";
                     return "maptype=roadmap" + style;
                 default:
                     throw new NotImplementedException();

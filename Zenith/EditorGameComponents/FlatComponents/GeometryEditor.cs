@@ -139,8 +139,9 @@ namespace Zenith.EditorGameComponents.FlatComponents
             shapes.Add(newShape);
         }
 
-        public void Draw(GraphicsDevice graphicsDevice, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        public void Draw(RenderTarget2D renderTarget, double minX, double maxX, double minY, double maxY, double cameraZoom)
         {
+            GraphicsDevice graphicsDevice = renderTarget.GraphicsDevice;
             if (terrainTexture == null) InitTextures(graphicsDevice);
             float halfSize = (float)(0.2 * Math.Pow(0.5, cameraZoom));
             var basicEffect = new BasicEffect(graphicsDevice);
@@ -233,7 +234,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
             }
             if (SHOW_CLOUDS)
             {
-                GraphicsBasic.DrawSpriteRect(graphicsDevice, -Math.PI, -Math.PI / 2, Math.PI * 2, Math.PI, (minX + Math.PI) / (2 * Math.PI), (minY + Math.PI / 2) / Math.PI, (maxX - minX) / (2 * Math.PI), (maxY - minY) / Math.PI, cloudTexture);
+                GraphicsBasic.DrawSpriteRectWeird(graphicsDevice, -Math.PI, -Math.PI / 2, Math.PI * 2, Math.PI, (minX + Math.PI) / (2 * Math.PI), (minY + Math.PI / 2) / Math.PI, (maxX - minX) / (2 * Math.PI), (maxY - minY) / Math.PI, cloudTexture);
             }
         }
 

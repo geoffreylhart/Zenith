@@ -24,8 +24,9 @@ namespace Zenith.EditorGameComponents.FlatComponents
             for (int i = 0; i <= MAX_ZOOM; i++) imageLayers[i] = new List<Sector>();
         }
 
-        public void Draw(GraphicsDevice graphicsDevice, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        public void Draw(RenderTarget2D renderTarget, double minX, double maxX, double minY, double maxY, double cameraZoom)
         {
+            GraphicsDevice graphicsDevice = renderTarget.GraphicsDevice;
             var basicEffect = new BasicEffect(graphicsDevice);
             basicEffect.TextureEnabled = true;
             basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)minX, (float)maxX, (float)maxY, (float)minY, 1, 1000);
@@ -36,7 +37,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 {
                     if (!loadedMaps.ContainsKey(sector.ToString()))
                     {
-                        loadedMaps[sector.ToString()] = GetCachedMap(graphicsDevice, sector);
+                        loadedMaps[sector.ToString()] = GetCachedMap(renderTarget, sector);
                     }
                     VertexIndiceBuffer buffer = loadedMaps[sector.ToString()];
                     basicEffect.Texture = buffer.texture;
@@ -119,10 +120,11 @@ namespace Zenith.EditorGameComponents.FlatComponents
 
         public abstract Texture2D GetTexture(GraphicsDevice graphicsDevice, Sector sector);
 
-        private VertexIndiceBuffer GetCachedMap(GraphicsDevice graphicsDevice, Sector sector)
+        private VertexIndiceBuffer GetCachedMap(RenderTarget2D renderTarget, Sector sector)
         {
-            VertexIndiceBuffer buffer = SphereBuilder.MapMercatorToCylindrical(graphicsDevice, 2, Math.Pow(0.5, sector.zoom), sector.Latitude, sector.Longitude);
-            buffer.texture = GetTexture(graphicsDevice, sector);
+            VertexIndiceBuffer buffer = SphereBuilder.MapMercatorToCylindrical(renderTarget.GraphicsDevice, 2, Math.Pow(0.5, sector.zoom), sector.Latitude, sector.Longitude);
+            buffer.texture = GetTexture(renderTarget.GraphicsDevice, sector);
+            renderTarget.GraphicsDevice.SetRenderTarget(renderTarget); // TODO: let's just assume this won't cause issues for now
             return buffer;
         }
 
