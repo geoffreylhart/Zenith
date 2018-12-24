@@ -69,11 +69,20 @@ namespace Zenith.ZGraphics
             spriteBatch.End();
         }
 
-        internal static void DrawSpriteRect(GraphicsDevice graphicsDevice, double x, double y, double w, double h, Texture2D texture, BlendState blendState, Color color)
+        internal static void DrawSpriteRect(GraphicsDevice graphicsDevice, int x, int y, int w, int h, Texture2D texture, BlendState blendState, Color color)
         {
-            Rectangle destRect = new Rectangle(0, 0, graphicsDevice.Viewport.Width, graphicsDevice.Viewport.Height);
+            Rectangle destRect = new Rectangle(x, y, w, h);
             SpriteBatch spriteBatch = new SpriteBatch(graphicsDevice);
             spriteBatch.Begin(SpriteSortMode.Deferred, blendState, null, null, null, null);
+            spriteBatch.Draw(texture, destRect, color);
+            spriteBatch.End();
+        }
+
+        internal static void DrawSpriteRect(GraphicsDevice graphicsDevice, int x, int y, int w, int h, Texture2D texture, Effect effect, Color color)
+        {
+            Rectangle destRect = new Rectangle(x, y, w, h);
+            SpriteBatch spriteBatch = new SpriteBatch(graphicsDevice);
+            spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.LinearClamp, DepthStencilState.Default, RasterizerState.CullNone, effect); // TODO: why immediate?
             spriteBatch.Draw(texture, destRect, color);
             spriteBatch.End();
         }

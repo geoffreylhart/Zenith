@@ -10,6 +10,7 @@ using Zenith.EditorGameComponents.FlatComponents;
 using Zenith.EditorGameComponents.UIComponents;
 using Zenith.MathHelpers;
 using Zenith.PrimitiveBuilder;
+using Zenith.ZGraphics;
 using Zenith.ZMath;
 
 namespace Zenith.EditorGameComponents
@@ -100,7 +101,7 @@ namespace Zenith.EditorGameComponents
             GraphicsDevice.DepthStencilState = new DepthStencilState() { DepthBufferEnable = true };
 
             // Draw the scene
-            GraphicsDevice.Clear(new Color(29 / 256f, 48 / 256f, 96 / 256f));
+            GraphicsDevice.Clear(Pallete.OCEAN_BLUE);
             BasicEffect bf = new BasicEffect(GraphicsDevice);
             bf.World = Matrix.Identity;
             //bf.World *= Matrix.CreateTranslation((float)marker.X, (float)marker.Y, (float)marker.Z);

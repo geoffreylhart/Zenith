@@ -26,6 +26,18 @@
 /processorParam:DebugMode=Auto
 /build:BlurShader.hlsl
 
+#begin MaskShader.hlsl
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:MaskShader.hlsl
+
+#begin InvertedMaskShader.hlsl
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:InvertedMaskShader.hlsl
+
 #begin ArialBold.spritefont
 /importer:FontDescriptionImporter
 /processor:FontDescriptionProcessor
