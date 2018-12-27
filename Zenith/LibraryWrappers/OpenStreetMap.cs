@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -17,6 +18,10 @@ namespace Zenith.LibraryWrappers
     {
         internal static Texture2D GetRoads(GraphicsDevice graphicsDevice, SectorLoader.Sector sector)
         {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            BreakupFile(@"..\..\..\..\LocalCache\Pensacola6.osm.pbf", sector, 10);
+            double secs = sw.Elapsed.TotalSeconds;
             string pensa6Path = @"..\..\..\..\LocalCache\Pensacola6.osm.pbf";
             string pensa10Path = @"..\..\..\..\LocalCache\Pensacola10.osm.pbf";
             if (!File.Exists(pensa10Path))
@@ -44,10 +49,11 @@ namespace Zenith.LibraryWrappers
             foreach (var element in source2)
             {
                 if (element is Node) nodes.Add((Node)element);
-                if (IsHighway(element)) highways.Add((Way)element);
+                //if (IsHighway(element)) highways.Add((Way)element);
+                if (element.Tags.Contains("natural", "coastline")) highways.Add((Way)element);
             }
             var basicEffect = new BasicEffect(graphicsDevice);
-            basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)sector.LeftLongitude, (float)sector.RightLongitude, (float)sector.TopLatitude, (float)sector.BottomLatitude, 1, 1000);
+            basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)sector.LeftLongitude, (float)sector.RightLongitude, (float)sector.BottomLatitude, (float)sector.TopLatitude, 1, 1000); // TODO: figure out if flip was appropriate
             basicEffect.VertexColorEnabled = true;
             var shapeAsVertices = new List<VertexPositionColor>();
             foreach (var highway in highways)
@@ -80,6 +86,37 @@ namespace Zenith.LibraryWrappers
             }
             //graphicsDevice.SetRenderTarget(null);
             return newTarget;
+        }
+
+        // est: since going from 6 to 10 took 1 minute, we might expect doing all 256 would take 256 minutes
+        // if we break it up into quadrants using the same library, maybe it'll only take (4+1+1/16...) roughly 5.33 minutes?
+        // actually took 8.673 mins (went from 450MB to 455MB)
+        private static void BreakupFile(string filePath, SectorLoader.Sector sector, int targetZoom)
+        {
+            if (sector.zoom == targetZoom) return;
+            List<SectorLoader.Sector> quadrants = sector.GetChildrenAtLevel(sector.zoom + 1);
+            foreach (var quadrant in quadrants)
+            {
+                String quadrantPath = @"..\..\..\..\LocalCache\OpenStreetMaps\" + quadrant.ToString() + ".osm.pbf";
+                var fInfo = new FileInfo(filePath);
+                using (var source = new PBFOsmStreamSource(fInfo.OpenRead()))
+                {
+                    var filtered = source.FilterBox((float)(quadrant.LeftLongitude * 180 / Math.PI), (float)(quadrant.TopLatitude * 180 / Math.PI),
+                        (float)(quadrant.RightLongitude * 180 / Math.PI), (float)(quadrant.BottomLatitude * 180 / Math.PI)); // left, top, right, bottom
+                    using (var stream = new FileInfo(quadrantPath).Open(FileMode.Create, FileAccess.ReadWrite))
+                    {
+                        var target = new PBFOsmStreamTarget(stream);
+                        target.RegisterSource(filtered);
+                        target.Pull();
+                    }
+                }
+            }
+            //File.Delete(filePath); TODO: cant access
+            foreach (var quadrant in quadrants)
+            {
+                String quadrantPath = @"..\..\..\..\LocalCache\OpenStreetMaps\" + quadrant.ToString() + ".osm.pbf";
+                BreakupFile(quadrantPath, quadrant, targetZoom);
+            }
         }
 
         private static bool IsHighway(OsmGeo element)
