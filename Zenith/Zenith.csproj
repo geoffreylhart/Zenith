@@ -51,6 +51,7 @@
     <Compile Include="EditorGameComponents\BlenderAxis.cs" />
     <Compile Include="EditorGameComponents\CityMarker.cs" />
     <Compile Include="EditorGameComponents\ComponentManager.cs" />
+    <Compile Include="EditorGameComponents\FlatComponents\OpenStreetMaps.cs" />
     <Compile Include="EditorGameComponents\FlatComponents\SectorLoader.cs" />
     <Compile Include="EditorGameComponents\PlanetComponent.cs" />
     <Compile Include="EditorGameComponents\UIComponents\Button.cs" />
@@ -69,6 +70,7 @@
     <Compile Include="EditorGameComponents\UITemp.cs" />
     <Compile Include="Game1.cs" />
     <Compile Include="GlobalContent.cs" />
+    <Compile Include="LibraryWrappers\OpenStreetMap.cs" />
     <Compile Include="ZGraphics\GraphicsBasic.cs" />
     <Compile Include="Helpers\GraphicsDeviceHelper.cs" />
     <Compile Include="Helpers\KeyboardStateHelper.cs" />
@@ -108,11 +110,21 @@
     <Compile Include="ZMath\SphereVector.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
     <Reference Include="MonoGame.Framework">
       <HintPath>$(MonoGameInstallDirectory)\MonoGame\v3.0\Assemblies\DesktopGL\MonoGame.Framework.dll</HintPath>
     </Reference>
+    <Reference Include="OsmSharp, Version=6.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\OsmSharp.6.1.0\lib\net45\OsmSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="protobuf-net, Version=2.3.7.0, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
+      <HintPath>..\packages\protobuf-net.2.3.7\lib\net40\protobuf-net.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
@@ -166,6 +178,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="app.manifest" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Documentation\CoordinateSystemCheatSheet.txt" />

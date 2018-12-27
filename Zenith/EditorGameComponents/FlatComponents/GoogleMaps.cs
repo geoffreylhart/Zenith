@@ -89,7 +89,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 }
                 else
                 {
-                    int subd = 1 << (s.zoom - sector.zoom);
+                    int subd = 1 << (sector.zoom - s.zoom);
                     size = 512 << (sector.zoom - s.zoom);
                     x = -s.GetRelativeXOf(sector) * 512;
                     y = -(subd - 1 - s.GetRelativeYOf(sector)) * 512;
@@ -97,6 +97,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 Texture2D water = LoadMap(graphicsDevice, s, MapGenerator.MapStyle.LAND_WATER_ONLY);
                 if (water != null)
                 {
+                    GraphicsBasic.DrawScreenRect(graphicsDevice, x, y, size, size, Pallete.OCEAN_BLUE);
                     SpriteBatchBasic.DrawColorWithMask(graphicsDevice, x, y, size, size, water, Pallete.GRASS_GREEN);
                 }
             }
@@ -112,7 +113,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 }
                 else
                 {
-                    int subd = 1 << (s.zoom - sector.zoom);
+                    int subd = 1 << (sector.zoom - s.zoom);
                     size = 512 << (sector.zoom - s.zoom);
                     x = -s.GetRelativeXOf(sector) * 512;
                     y = -(subd - 1 - s.GetRelativeYOf(sector)) * 512;
@@ -135,7 +136,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 }
                 else
                 {
-                    int subd = 1 << (s.zoom - sector.zoom);
+                    int subd = 1 << (sector.zoom - s.zoom);
                     size = 512 << (sector.zoom - s.zoom);
                     x = -s.GetRelativeXOf(sector) * 512;
                     y = -(subd - 1 - s.GetRelativeYOf(sector)) * 512;
