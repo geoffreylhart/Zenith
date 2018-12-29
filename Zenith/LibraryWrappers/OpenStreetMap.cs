@@ -18,30 +18,17 @@ namespace Zenith.LibraryWrappers
     {
         internal static Texture2D GetRoads(GraphicsDevice graphicsDevice, SectorLoader.Sector sector)
         {
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-            BreakupFile(@"..\..\..\..\LocalCache\Pensacola6.osm.pbf", sector, 10);
-            double secs = sw.Elapsed.TotalSeconds;
-            string pensa6Path = @"..\..\..\..\LocalCache\Pensacola6.osm.pbf";
-            string pensa10Path = @"..\..\..\..\LocalCache\Pensacola10.osm.pbf";
-            if (!File.Exists(pensa10Path))
+            SectorLoader.Sector parent = null;
+            if (sector.zoom > 10)
             {
-                // took forever going from the entire north america to a section surrounding pensacola at zoom 6 (47.7833 minutes)
-                // going from zoom 10 to 6 only took 1 minute
-                using (var source = new PBFOsmStreamSource(new FileInfo(pensa6Path).OpenRead()))
-                {
-                    var filtered = source.FilterBox((float)(sector.LeftLongitude * 180 / Math.PI), (float)(sector.TopLatitude * 180 / Math.PI),
-                        (float)(sector.RightLongitude * 180 / Math.PI), (float)(sector.BottomLatitude * 180 / Math.PI)); // left, top, right, bottom
-                    using (var stream = new FileInfo(pensa10Path).Open(FileMode.Create, FileAccess.ReadWrite))
-                    {
-                        var target = new PBFOsmStreamTarget(stream);
-                        target.RegisterSource(filtered);
-                        target.Pull();
-                    }
-                }
+                parent = sector.GetAllParents().Where(x => x.zoom == 10).Single();
             }
+            else
+            {
+                parent = sector;
+            }
+            string pensa10Path = @"..\..\..\..\LocalCache\OpenStreetMaps\" + parent.ToString() + ".osm.pbf";
             var source2 = new PBFOsmStreamSource(new FileInfo(pensa10Path).OpenRead());
-            //LoadTonsOfMaps(graphicsDevice);
             RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 512, 512, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
             graphicsDevice.SetRenderTarget(newTarget);
             List<Node> nodes = new List<Node>();
@@ -49,8 +36,8 @@ namespace Zenith.LibraryWrappers
             foreach (var element in source2)
             {
                 if (element is Node) nodes.Add((Node)element);
-                //if (IsHighway(element)) highways.Add((Way)element);
-                if (element.Tags.Contains("natural", "coastline")) highways.Add((Way)element);
+                if (IsHighway(element)) highways.Add((Way)element);
+                //if (element.Tags.Contains("natural", "coastline")) highways.Add((Way)element);
             }
             var basicEffect = new BasicEffect(graphicsDevice);
             basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)sector.LeftLongitude, (float)sector.RightLongitude, (float)sector.BottomLatitude, (float)sector.TopLatitude, 1, 1000); // TODO: figure out if flip was appropriate
@@ -76,21 +63,24 @@ namespace Zenith.LibraryWrappers
                     shapeAsVertices.Add(new VertexPositionColor(new Vector3(longlat2, -10f), Color.White));
                 }
             }
-            VertexBuffer vertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, shapeAsVertices.Count, BufferUsage.WriteOnly);
-            vertexBuffer.SetData(shapeAsVertices.ToArray());
-            graphicsDevice.SetVertexBuffer(vertexBuffer);
-            foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
+            if (shapeAsVertices.Count > 0)
             {
-                pass.Apply();
-                graphicsDevice.DrawPrimitives(PrimitiveType.LineList, 0, vertexBuffer.VertexCount / 2);
+                VertexBuffer vertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, shapeAsVertices.Count, BufferUsage.WriteOnly);
+                vertexBuffer.SetData(shapeAsVertices.ToArray());
+                graphicsDevice.SetVertexBuffer(vertexBuffer);
+                foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
+                {
+                    pass.Apply();
+                    graphicsDevice.DrawPrimitives(PrimitiveType.LineList, 0, vertexBuffer.VertexCount / 2);
+                }
             }
-            //graphicsDevice.SetRenderTarget(null);
             return newTarget;
         }
 
         // est: since going from 6 to 10 took 1 minute, we might expect doing all 256 would take 256 minutes
         // if we break it up into quadrants using the same library, maybe it'll only take (4+1+1/16...) roughly 5.33 minutes?
         // actually took 8.673 mins (went from 450MB to 455MB)
+        // estimated time to segment the whole 43.1 GB planet? 12/28/2018 = 8.673 * 43.1 / 8.05 * 47.7833 = 36.98 hours
         private static void BreakupFile(string filePath, SectorLoader.Sector sector, int targetZoom)
         {
             if (sector.zoom == targetZoom) return;

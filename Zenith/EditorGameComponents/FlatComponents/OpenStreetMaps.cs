@@ -4,14 +4,16 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Zenith.LibraryWrappers;
+using Zenith.ZGraphics;
 
 namespace Zenith.EditorGameComponents.FlatComponents
 {
     class OpenStreetMaps : SectorLoader
     {
-        private static string mapFolder = @"..\..\..\..\LocalCache\OpenStreetMaps\";
+        private static string mapFolder = @"..\..\..\..\LocalCache\OpenStreetMaps\Renders\";
 
         public override bool CacheExists(Sector sector)
         {
@@ -48,7 +50,43 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 }
             }
             // otherwise, build it
-            return OpenStreetMap.GetRoads(graphicsDevice, sector);
+            Texture2D rendered;
+            if (sector.zoom >= 10)
+            {
+                rendered = OpenStreetMap.GetRoads(graphicsDevice, sector);
+            }
+            else
+            {
+                rendered = new RenderTarget2D(graphicsDevice, 512, 512, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
+                List<Sector> roadSectors = sector.GetChildrenAtLevel(sector.zoom + 1);
+                Texture2D[] textures = new Texture2D[roadSectors.Count];
+                for (int i = 0; i < roadSectors.Count; i++)
+                {
+                    textures[i] = GetTexture(graphicsDevice, roadSectors[i]);
+                }
+                if (textures.Any(x => x != null))
+                {
+                    graphicsDevice.SetRenderTarget((RenderTarget2D)rendered);
+                    for (int i = 0; i < roadSectors.Count; i++)
+                    {
+                        int size, x, y;
+                        int subd = 1 << (roadSectors[i].zoom - sector.zoom);
+                        size = 512 >> (roadSectors[i].zoom - sector.zoom);
+                        x = sector.GetRelativeXOf(roadSectors[i]) * size;
+                        y = (subd - 1 - sector.GetRelativeYOf(roadSectors[i])) * size;
+                        if (textures[i] != null)
+                        {
+                            GraphicsBasic.DrawSpriteRect(graphicsDevice, x, y, size, size, textures[i], BlendState.AlphaBlend, Color.White);
+                        }
+                    }
+                }
+            }
+            // save texture
+            using (var writer = File.OpenWrite(mapFolder + fileName))
+            {
+                rendered.SaveAsPng(writer, rendered.Width, rendered.Height);
+            }
+            return rendered;
         }
     }
 }
