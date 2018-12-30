@@ -40,6 +40,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
 
         public override Texture2D GetTexture(GraphicsDevice graphicsDevice, Sector sector)
         {
+            // TODO: partial picture saving of textures is happening for some other reason - not internet connection issues
             String fileName = sector.ToString() + ".PNG";
             // check for composite first
             if (File.Exists(mapFolder + fileName))

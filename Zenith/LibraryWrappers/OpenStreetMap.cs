@@ -10,7 +10,9 @@ using Microsoft.Xna.Framework.Graphics;
 using OsmSharp;
 using OsmSharp.Streams;
 using Zenith.EditorGameComponents.FlatComponents;
+using Zenith.ZGraphics;
 using Zenith.ZMath;
+using static Zenith.EditorGameComponents.FlatComponents.SectorLoader;
 
 namespace Zenith.LibraryWrappers
 {
@@ -118,6 +120,34 @@ namespace Zenith.LibraryWrappers
                 {
                     return true;
                 }
+            }
+            return false;
+        }
+
+        // make a lo-rez map showing where there's coast so we can flood-fill it later with land/water
+        public static void SaveCoastLineMap(GraphicsDevice graphicsDevice)
+        {
+            RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 1024, 1024, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
+            graphicsDevice.SetRenderTarget(newTarget);
+            List<Sector> sectorsToCheck = new Sector(16, 37, 6).GetChildrenAtLevel(10);
+            foreach (var s in sectorsToCheck)
+            {
+                GraphicsBasic.DrawScreenRect(graphicsDevice, s.x, s.y, 1, 1, ContainsCoast(s) ? Color.Gray : Color.White);
+            }
+            string mapFile = @"..\..\..\..\LocalCache\OpenStreetMaps\Renders\Coastline.PNG";
+            using (var writer = File.OpenWrite(mapFile))
+            {
+                newTarget.SaveAsPng(writer, 1024, 1024);
+            }
+        }
+
+        private static bool ContainsCoast(Sector s)
+        {
+            string pensa10Path = @"..\..\..\..\LocalCache\OpenStreetMaps\" + s.ToString() + ".osm.pbf";
+            var source = new PBFOsmStreamSource(new FileInfo(pensa10Path).OpenRead());
+            foreach (var element in source)
+            {
+                if (element.Tags.Contains("natural", "coastline")) return true;
             }
             return false;
         }
