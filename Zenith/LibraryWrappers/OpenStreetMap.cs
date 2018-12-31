@@ -18,28 +18,114 @@ namespace Zenith.LibraryWrappers
 {
     class OpenStreetMap
     {
-        internal static Texture2D GetRoads(GraphicsDevice graphicsDevice, SectorLoader.Sector sector)
+        internal static Texture2D GetRoads(GraphicsDevice graphicsDevice, Sector sector)
         {
-            SectorLoader.Sector parent = null;
-            if (sector.zoom > 10)
-            {
-                parent = sector.GetAllParents().Where(x => x.zoom == 10).Single();
-            }
-            else
-            {
-                parent = sector;
-            }
-            string pensa10Path = @"..\..\..\..\LocalCache\OpenStreetMaps\" + parent.ToString() + ".osm.pbf";
-            var source2 = new PBFOsmStreamSource(new FileInfo(pensa10Path).OpenRead());
             RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 512, 512, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
             graphicsDevice.SetRenderTarget(newTarget);
+            DrawCoast(graphicsDevice, sector);
+            //DrawRoads(graphicsDevice, sector);
+            return newTarget;
+        }
+
+        private static void DrawCoast(GraphicsDevice graphicsDevice, Sector sector)
+        {
+            Sector parent = sector.GetChildrenAtLevel(sector.zoom + 1)[0].GetAllParents().Where(x => x.zoom == 10).Single();
+            string pensa10Path = @"..\..\..\..\LocalCache\OpenStreetMaps\" + parent.ToString() + ".osm.pbf";
+            var src = new PBFOsmStreamSource(new FileInfo(pensa10Path).OpenRead());
+            List<Node> nodes = new List<Node>();
+            List<Way> ways = new List<Way>();
+            foreach (var element in src)
+            {
+                if (element is Node) nodes.Add((Node)element);
+                if (element.Tags.Contains("natural", "coastline")) ways.Add((Way)element);
+            }
+            // TODO: currently assuming all the data is good
+            // TODO: currently ignoring closed loops (lakes)
+            Dictionary<long, Way> startsWith = new Dictionary<long, Way>();
+            Dictionary<long, Way> endsWith = new Dictionary<long, Way>();
+            foreach (var way in ways)
+            {
+                startsWith[way.Nodes[0]] = way;
+                endsWith[way.Nodes[way.Nodes.Length - 1]] = way;
+            }
+            List<List<LibTessDotNet.ContourVertex>> contours = new List<List<LibTessDotNet.ContourVertex>>();
+            foreach (var way in ways)
+            {
+                if (endsWith.ContainsKey(way.Nodes[0])) continue;
+                List<LibTessDotNet.ContourVertex> contour = new List<LibTessDotNet.ContourVertex>();
+                Way next = way;
+                bool first = true;
+                while (true)
+                {
+                    for (int i = first ? 0 : 1; i < next.Nodes.Length; i++)
+                    {
+                        Node node1 = new Node();
+                        node1.Id = next.Nodes[i];
+                        int found1 = nodes.BinarySearch(node1, new NodeComparer());
+                        if (found1 < 0) continue;
+                        node1 = nodes[found1];
+                        LongLat longlat1 = new LongLat(node1.Longitude.Value * Math.PI / 180, node1.Latitude.Value * Math.PI / 180);
+                        LibTessDotNet.ContourVertex vertex = new LibTessDotNet.ContourVertex();
+                        vertex.Position = new LibTessDotNet.Vec3 { X = (float)longlat1.X, Y = (float)longlat1.Y, Z = 0 };
+                        contour.Add(vertex);
+                    }
+                    if (!startsWith.ContainsKey(next.Nodes.Last())) break;
+                    next = startsWith[next.Nodes.Last()];
+                    first = false;
+                }
+                if (contour.Count > 0)
+                {
+                    // super hacky
+                    contours.Add(contour);
+                }
+            }
+            TesselateThenDraw(graphicsDevice, sector, contours);
+        }
+
+        private static void TesselateThenDraw(GraphicsDevice graphicsDevice, Sector sector, List<List<LibTessDotNet.ContourVertex>> contours)
+        {
+            if (contours.Count == 0) return;
+            List<VertexPositionColor> triangles = new List<VertexPositionColor>();
+            float z = -10f;
+            var tess = new LibTessDotNet.Tess();
+            foreach (var contour in contours)
+            {
+                tess.AddContour(contour.ToArray(), LibTessDotNet.ContourOrientation.Original);
+            }
+            tess.Tessellate(LibTessDotNet.WindingRule.EvenOdd, LibTessDotNet.ElementType.Polygons, 3);
+            for (int i = 0; i < tess.ElementCount; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    var pos = tess.Vertices[tess.Elements[i * 3 + j]].Position;
+                    // TODO: why 1-y?
+                    triangles.Add(new VertexPositionColor(new Vector3(pos.X, pos.Y, z), Color.Green));
+                }
+            }
+            VertexBuffer landVertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, triangles.Count, BufferUsage.WriteOnly);
+            landVertexBuffer.SetData(triangles.ToArray());
+            graphicsDevice.SetVertexBuffer(landVertexBuffer);
+            var basicEffect = new BasicEffect(graphicsDevice);
+            basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)sector.LeftLongitude, (float)sector.RightLongitude, (float)sector.BottomLatitude, (float)sector.TopLatitude, 1, 1000); // TODO: figure out if flip was appropriate
+            basicEffect.VertexColorEnabled = true;
+            foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                graphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, landVertexBuffer.VertexCount - 2);
+            }
+        }
+
+        private static void DrawRoads(GraphicsDevice graphicsDevice, Sector sector)
+        {
+            Sector parent = sector.GetChildrenAtLevel(sector.zoom + 1)[0].GetAllParents().Where(x => x.zoom == 10).Single();
+            string pensa10Path = @"..\..\..\..\LocalCache\OpenStreetMaps\" + parent.ToString() + ".osm.pbf";
+            var src = new PBFOsmStreamSource(new FileInfo(pensa10Path).OpenRead());
             List<Node> nodes = new List<Node>();
             List<Way> highways = new List<Way>();
-            foreach (var element in source2)
+            foreach (var element in src)
             {
                 if (element is Node) nodes.Add((Node)element);
                 if (IsHighway(element)) highways.Add((Way)element);
-                //if (element.Tags.Contains("natural", "coastline")) highways.Add((Way)element);
             }
             var basicEffect = new BasicEffect(graphicsDevice);
             basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)sector.LeftLongitude, (float)sector.RightLongitude, (float)sector.BottomLatitude, (float)sector.TopLatitude, 1, 1000); // TODO: figure out if flip was appropriate
@@ -76,7 +162,6 @@ namespace Zenith.LibraryWrappers
                     graphicsDevice.DrawPrimitives(PrimitiveType.LineList, 0, vertexBuffer.VertexCount / 2);
                 }
             }
-            return newTarget;
         }
 
         // est: since going from 6 to 10 took 1 minute, we might expect doing all 256 would take 256 minutes
