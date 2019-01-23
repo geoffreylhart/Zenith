@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using LibTessDotNet;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using OsmSharp;
@@ -79,9 +80,64 @@ namespace Zenith.LibraryWrappers
                     contours.Add(contour);
                 }
             }
-            //TesselateThenDraw(graphicsDevice, sector, contours);
+            var outline = CloseLines(sector, contours);
+            TesselateThenDraw(graphicsDevice, sector, outline);
             //DrawDebugLines(graphicsDevice, sector, contours);
-            DrawLines(graphicsDevice, sector, contours);
+            //DrawLines(graphicsDevice, sector, contours);
+        }
+
+        // currently doesn't expect loops
+        private static List<List<ContourVertex>> CloseLines(Sector sector, List<List<ContourVertex>> contours)
+        {
+            var indices = Enumerable.Range(0, contours.Count * 2).ToList();
+            indices.Sort((x, y) => AngleOf(x, sector, contours).CompareTo(AngleOf(y, sector, contours)));
+            int[] lookup = new int[contours.Count * 2];
+            for (int i = 0; i < contours.Count * 2; i++) lookup[indices[i]] = i;
+            var closed = new List<List<ContourVertex>>();
+            bool[] visited = new bool[contours.Count * 2];
+            for (int i = 0; i < contours.Count * 2; i++)
+            {
+                if (!visited[i])
+                {
+                    List<ContourVertex> newLoop = new List<ContourVertex>();
+                    int next = indices[(lookup[i] + 1) % (contours.Count * 2)]; // start of a line on the inside
+                    while (true)
+                    {
+                        if (visited[next]) break;
+                        visited[next] = true;
+                        if (next / contours.Count == 0)
+                        {
+                            visited[next + contours.Count] = true;
+                            for (int j = 0; j < contours[next % contours.Count].Count; j++)
+                            {
+                                newLoop.Add(contours[next % contours.Count][j]);
+                            }
+                            next = indices[(lookup[next + contours.Count] + 1) % (contours.Count * 2)];
+                        }
+                        else
+                        {
+                            visited[next - contours.Count] = true;
+                            for (int j = contours[next % contours.Count].Count - 1; j >= 0; j--)
+                            {
+                                newLoop.Add(contours[next % contours.Count][j]);
+                            }
+                            next = indices[(lookup[next - contours.Count] + 1) % (contours.Count * 2)];
+                        }
+                    }
+                    closed.Add(newLoop);
+                }
+            }
+            return closed;
+        }
+
+        // very special sort
+        private static double AngleOf(int index, Sector sector, List<List<ContourVertex>> contours)
+        {
+            var line = contours[index % contours.Count];
+            ContourVertex vertex = line[index / contours.Count == 0 ? 0 : line.Count - 1];
+            double x = vertex.Position.X - sector.Longitude;
+            double y = vertex.Position.Y - sector.Latitude;
+            return Math.Atan2(y, x);
         }
 
         private static void DrawLines(GraphicsDevice graphicsDevice, Sector sector, List<List<LibTessDotNet.ContourVertex>> contours)
@@ -134,7 +190,7 @@ namespace Zenith.LibraryWrappers
             tess.Tessellate(LibTessDotNet.WindingRule.EvenOdd, LibTessDotNet.ElementType.Polygons, 3);
             for (int i = 0; i < tess.ElementCount; i++)
             {
-                for (int j = 0; j < 3; j++)
+                for (int j = 2; j >= 0; j--) // TODO: don't flip
                 {
                     var pos = tess.Vertices[tess.Elements[i * 3 + j]].Position;
                     // TODO: why 1-y?
