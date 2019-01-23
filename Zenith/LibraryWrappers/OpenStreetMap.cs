@@ -79,7 +79,46 @@ namespace Zenith.LibraryWrappers
                     contours.Add(contour);
                 }
             }
-            TesselateThenDraw(graphicsDevice, sector, contours);
+            //TesselateThenDraw(graphicsDevice, sector, contours);
+            //DrawDebugLines(graphicsDevice, sector, contours);
+            DrawLines(graphicsDevice, sector, contours);
+        }
+
+        private static void DrawLines(GraphicsDevice graphicsDevice, Sector sector, List<List<LibTessDotNet.ContourVertex>> contours)
+        {
+            if (contours.Count == 0) return;
+            List<VertexPositionColor> lines = new List<VertexPositionColor>();
+            float z = -10f;
+            foreach (var contour in contours)
+            {
+                Color color = Color.Green;
+                Color fadeTo = Color.White;
+                for (int i = 1; i < contour.Count; i++)
+                {
+                    double percent = i / (double)(contour.Count - 1); // fade from color to white
+                    double percent2 = (i + 1) / (double)(contour.Count - 1); // fade from color to white
+                    Color newColor = new Color((byte)(color.R * percent2 + fadeTo.R * (1 - percent2)), (byte)(color.G * percent2 + fadeTo.G * (1 - percent2)), (byte)(color.B * percent2 + fadeTo.B * (1 - percent2)));
+                    Color newColor2 = new Color((byte)(color.R * percent2 + fadeTo.R * (1 - percent2)), (byte)(color.G * percent2 + fadeTo.G * (1 - percent2)), (byte)(color.B * percent2 + fadeTo.B * (1 - percent2)));
+                    lines.Add(new VertexPositionColor(new Vector3(contour[i - 1].Position.X, contour[i - 1].Position.Y, z), newColor));
+                    lines.Add(new VertexPositionColor(new Vector3(contour[i].Position.X, contour[i].Position.Y, z), newColor2));
+                }
+            }
+            VertexBuffer landVertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, lines.Count, BufferUsage.WriteOnly);
+            landVertexBuffer.SetData(lines.ToArray());
+            graphicsDevice.SetVertexBuffer(landVertexBuffer);
+            var basicEffect = new BasicEffect(graphicsDevice);
+            basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)sector.LeftLongitude, (float)sector.RightLongitude, (float)sector.BottomLatitude, (float)sector.TopLatitude, 1, 1000); // TODO: figure out if flip was appropriate
+            basicEffect.VertexColorEnabled = true;
+            foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                graphicsDevice.DrawPrimitives(PrimitiveType.LineList, 0, landVertexBuffer.VertexCount / 2);
+            }
+        }
+
+        private static void DrawDebugLines(GraphicsDevice graphicsDevice, Sector sector, List<List<LibTessDotNet.ContourVertex>> contours)
+        {
+
         }
 
         private static void TesselateThenDraw(GraphicsDevice graphicsDevice, Sector sector, List<List<LibTessDotNet.ContourVertex>> contours)

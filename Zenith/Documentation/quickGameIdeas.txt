@@ -1,0 +1,13 @@
+game mechanics as upgrades
+	- such as the ability to survey planets without using your spaceship
+	- survey stations (think xcom)
+	- ability to slow/stop time under certain conditions, globally or for specific squad members, or in space combat
+	- ability to show percentage chance to hit things, or distribution
+
+how to fix non-fun issue of ev where you just buy all software because its super cheap? dont make it cheap, dont make it software?
+	- make it like xcom or moo2 or anything
+
+ - morale damage weapons
+ - adjustablilty being a perk for a spaceship, cheaply switching out different weapons without retrofitting
+ - can't see enemies until they're called in? (maybe they get spooked and ramble sometimes, just giving you an idea something's there)
+ - complex xcom stats that can be processed (even if modded) to give you more useful info. Also, research to learn stats.
