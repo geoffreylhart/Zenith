@@ -10,6 +10,8 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using OsmSharp;
 using OsmSharp.Streams;
+using TriangleNet.Geometry;
+using TriangleNet.Meshing;
 using Zenith.EditorGameComponents.FlatComponents;
 using Zenith.ZGraphics;
 using Zenith.ZMath;
@@ -81,7 +83,7 @@ namespace Zenith.LibraryWrappers
                 }
             }
             var outline = CloseLines(sector, contours);
-            TesselateThenDraw(graphicsDevice, sector, outline);
+            TesselateThenDraw2(graphicsDevice, sector, outline);
             //DrawDebugLines(graphicsDevice, sector, contours);
             //DrawLines(graphicsDevice, sector, contours);
         }
@@ -89,6 +91,8 @@ namespace Zenith.LibraryWrappers
         // currently doesn't expect loops
         private static List<List<ContourVertex>> CloseLines(Sector sector, List<List<ContourVertex>> contours)
         {
+            // TODO: did I accidentally properly do the winding rule thing?
+            foreach (var contour in contours) contour.Reverse(); // TODO: get rid of hack
             var indices = Enumerable.Range(0, contours.Count * 2).ToList();
             indices.Sort((x, y) => AngleOf(x, sector, contours).CompareTo(AngleOf(y, sector, contours)));
             int[] lookup = new int[contours.Count * 2];
@@ -112,7 +116,11 @@ namespace Zenith.LibraryWrappers
                             {
                                 newLoop.Add(contours[next % contours.Count][j]);
                             }
+                            ContourVertex edgeStart = contours[next % contours.Count].Last();
                             next = indices[(lookup[next + contours.Count] + 1) % (contours.Count * 2)];
+                            // TODO: don't assume the data works
+                            ContourVertex edgeEnd = contours[next % contours.Count].First();
+                            AddEdgeConnection(newLoop, sector, edgeStart, edgeEnd);
                         }
                         else
                         {
@@ -121,7 +129,11 @@ namespace Zenith.LibraryWrappers
                             {
                                 newLoop.Add(contours[next % contours.Count][j]);
                             }
+                            ContourVertex edgeStart = contours[next % contours.Count].First();
                             next = indices[(lookup[next - contours.Count] + 1) % (contours.Count * 2)];
+                            // TODO: don't assume the data works
+                            ContourVertex edgeEnd = contours[next % contours.Count].Last();
+                            AddEdgeConnection(newLoop, sector, edgeStart, edgeEnd);
                         }
                     }
                     closed.Add(newLoop);
@@ -130,11 +142,41 @@ namespace Zenith.LibraryWrappers
             return closed;
         }
 
+        private static void AddEdgeConnection(List<ContourVertex> loop, Sector sector, ContourVertex edgeStart, ContourVertex edgeEnd)
+        {
+            List<ContourVertex> vertices = new List<ContourVertex>();
+            vertices.Add(edgeStart);
+            vertices.Add(edgeEnd);
+            vertices.Add(ToVertex(sector.TopLeftCorner));
+            vertices.Add(ToVertex(sector.TopRightCorner));
+            vertices.Add(ToVertex(sector.BottomLeftCorner));
+            vertices.Add(ToVertex(sector.BottomRightCorner));
+            vertices.Sort((x, y) => AngleOf(sector, x).CompareTo(AngleOf(sector, y)));
+            int start = vertices.IndexOf(edgeStart);
+            int end = vertices.IndexOf(edgeEnd);
+            if (end < start) end += vertices.Count;
+            for (int i = start + 1; i < end; i++)
+            {
+                loop.Add(vertices[i % vertices.Count]);
+            }
+        }
+
+        private static ContourVertex ToVertex(LongLat longlat)
+        {
+            ContourVertex vertex = new ContourVertex(); ;
+            vertex.Position = new Vec3() { X = (float)longlat.X, Y = (float)longlat.Y, Z = 0 };
+            return vertex;
+        }
+
         // very special sort
         private static double AngleOf(int index, Sector sector, List<List<ContourVertex>> contours)
         {
             var line = contours[index % contours.Count];
             ContourVertex vertex = line[index / contours.Count == 0 ? 0 : line.Count - 1];
+            return AngleOf(sector, vertex);
+        }
+        private static double AngleOf(Sector sector, ContourVertex vertex)
+        {
             double x = vertex.Position.X - sector.Longitude;
             double y = vertex.Position.Y - sector.Latitude;
             return Math.Atan2(y, x);
@@ -197,16 +239,72 @@ namespace Zenith.LibraryWrappers
                     triangles.Add(new VertexPositionColor(new Vector3(pos.X, pos.Y, z), Color.Green));
                 }
             }
-            VertexBuffer landVertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, triangles.Count, BufferUsage.WriteOnly);
-            landVertexBuffer.SetData(triangles.ToArray());
-            graphicsDevice.SetVertexBuffer(landVertexBuffer);
-            var basicEffect = new BasicEffect(graphicsDevice);
-            basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)sector.LeftLongitude, (float)sector.RightLongitude, (float)sector.BottomLatitude, (float)sector.TopLatitude, 1, 1000); // TODO: figure out if flip was appropriate
-            basicEffect.VertexColorEnabled = true;
-            foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
+            if (triangles.Count > 0)
             {
-                pass.Apply();
-                graphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, landVertexBuffer.VertexCount - 2);
+                VertexBuffer landVertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, triangles.Count, BufferUsage.WriteOnly);
+                landVertexBuffer.SetData(triangles.ToArray());
+                graphicsDevice.SetVertexBuffer(landVertexBuffer);
+                var basicEffect = new BasicEffect(graphicsDevice);
+                basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)sector.LeftLongitude, (float)sector.RightLongitude, (float)sector.BottomLatitude, (float)sector.TopLatitude, 1, 1000); // TODO: figure out if flip was appropriate
+                basicEffect.VertexColorEnabled = true;
+                foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
+                {
+                    pass.Apply();
+                    graphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, landVertexBuffer.VertexCount - 2);
+                }
+            }
+        }
+
+        // manually implement triangulation algorithm
+        // library takes like 8 seconds
+        private static void TesselateThenDraw2(GraphicsDevice graphicsDevice, Sector sector, List<List<LibTessDotNet.ContourVertex>> contours)
+        {
+            List<Polygon> polygons = new List<Polygon>();
+            foreach(var contour in contours)
+            {
+                if (contour.Count > 2)
+                {
+                    Polygon polygon = new Polygon();
+                    List<Vertex> blah = new List<Vertex>();
+                    foreach (var v in contour)
+                    {
+                        blah.Add(new Vertex(v.Position.X, v.Position.Y));
+                    }
+                    polygon.AddContour(blah);
+                    polygons.Add(polygon);
+                }
+            }
+            if (contours.Count == 0) return;
+            List<VertexPositionColor> triangles = new List<VertexPositionColor>();
+            float z = -10f;
+            foreach (var polygon in polygons)
+            {
+                var mesh = polygon.Triangulate();
+                foreach(var triangle in mesh.Triangles)
+                {
+                    for (int j = 2; j >= 0; j--) // TODO: don't flip
+                    {
+                        var pos = triangle.GetVertex(j);
+                        var pos2 = triangle.GetVertex((j+1)%3);
+                        // TODO: why 1-y?
+                        triangles.Add(new VertexPositionColor(new Vector3((float)pos.X, (float)pos.Y, z), Color.Green));
+                        //triangles.Add(new VertexPositionColor(new Vector3((float)pos2.X, (float)pos2.Y, z), Color.Green));
+                    }
+                }
+            }
+            if (triangles.Count > 0)
+            {
+                VertexBuffer landVertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, triangles.Count, BufferUsage.WriteOnly);
+                landVertexBuffer.SetData(triangles.ToArray());
+                graphicsDevice.SetVertexBuffer(landVertexBuffer);
+                var basicEffect = new BasicEffect(graphicsDevice);
+                basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)sector.LeftLongitude, (float)sector.RightLongitude, (float)sector.BottomLatitude, (float)sector.TopLatitude, 1, 1000); // TODO: figure out if flip was appropriate
+                basicEffect.VertexColorEnabled = true;
+                foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
+                {
+                    pass.Apply();
+                    graphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, landVertexBuffer.VertexCount - 2);
+                }
             }
         }
 
