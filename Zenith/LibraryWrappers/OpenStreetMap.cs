@@ -23,6 +23,7 @@ namespace Zenith.LibraryWrappers
     {
         internal static Texture2D GetRoads(GraphicsDevice graphicsDevice, Sector sector)
         {
+            BreakupFile(@"C:\Users\Geoffrey\Source\Repos\Zenith\Zenith\LocalCache\planet-latest.osm.pbf", new Sector(0, 0, 0), 10);
             RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 512, 512, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
             graphicsDevice.SetRenderTarget(newTarget);
             DrawCoast(graphicsDevice, sector);
@@ -260,7 +261,7 @@ namespace Zenith.LibraryWrappers
         private static void TesselateThenDraw2(GraphicsDevice graphicsDevice, Sector sector, List<List<LibTessDotNet.ContourVertex>> contours)
         {
             List<Polygon> polygons = new List<Polygon>();
-            foreach(var contour in contours)
+            foreach (var contour in contours)
             {
                 if (contour.Count > 2)
                 {
@@ -280,12 +281,12 @@ namespace Zenith.LibraryWrappers
             foreach (var polygon in polygons)
             {
                 var mesh = polygon.Triangulate();
-                foreach(var triangle in mesh.Triangles)
+                foreach (var triangle in mesh.Triangles)
                 {
                     for (int j = 2; j >= 0; j--) // TODO: don't flip
                     {
                         var pos = triangle.GetVertex(j);
-                        var pos2 = triangle.GetVertex((j+1)%3);
+                        var pos2 = triangle.GetVertex((j + 1) % 3);
                         // TODO: why 1-y?
                         triangles.Add(new VertexPositionColor(new Vector3((float)pos.X, (float)pos.Y, z), Color.Green));
                         //triangles.Add(new VertexPositionColor(new Vector3((float)pos2.X, (float)pos2.Y, z), Color.Green));
@@ -372,16 +373,17 @@ namespace Zenith.LibraryWrappers
                 using (var source = new PBFOsmStreamSource(fInfo.OpenRead()))
                 {
                     var filtered = source.FilterBox((float)(quadrant.LeftLongitude * 180 / Math.PI), (float)(quadrant.TopLatitude * 180 / Math.PI),
-                        (float)(quadrant.RightLongitude * 180 / Math.PI), (float)(quadrant.BottomLatitude * 180 / Math.PI)); // left, top, right, bottom
+                        (float)(quadrant.RightLongitude * 180 / Math.PI), (float)(quadrant.BottomLatitude * 180 / Math.PI), true); // left, top, right, bottom
                     using (var stream = new FileInfo(quadrantPath).Open(FileMode.Create, FileAccess.ReadWrite))
                     {
                         var target = new PBFOsmStreamTarget(stream);
                         target.RegisterSource(filtered);
                         target.Pull();
+                        target.Close();
                     }
                 }
             }
-            //File.Delete(filePath); TODO: cant access
+            if (sector.zoom > 0) File.Delete(filePath);
             foreach (var quadrant in quadrants)
             {
                 String quadrantPath = @"..\..\..\..\LocalCache\OpenStreetMaps\" + quadrant.ToString() + ".osm.pbf";
