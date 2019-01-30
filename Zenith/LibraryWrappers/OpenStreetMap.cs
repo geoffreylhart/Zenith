@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,7 +24,7 @@ namespace Zenith.LibraryWrappers
     {
         internal static Texture2D GetRoads(GraphicsDevice graphicsDevice, Sector sector)
         {
-            BreakupFile(@"C:\Users\Geoffrey\Source\Repos\Zenith\Zenith\LocalCache\planet-latest.osm.pbf", new Sector(0, 0, 0), 10);
+            BreakupFile(@"..\..\..\..\LocalCache\planet-latest.osm.pbf", new Sector(0, 0, 0), 10);
             RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 512, 512, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
             graphicsDevice.SetRenderTarget(newTarget);
             DrawCoast(graphicsDevice, sector);
@@ -368,26 +369,54 @@ namespace Zenith.LibraryWrappers
             List<SectorLoader.Sector> quadrants = sector.GetChildrenAtLevel(sector.zoom + 1);
             foreach (var quadrant in quadrants)
             {
+                // TODO: this isn't actually restartable. It'll start redoing completed dissected files because it thinks it hasn't been done yet (ex: a zoom3 was turned into all zoom10s)
                 String quadrantPath = @"..\..\..\..\LocalCache\OpenStreetMaps\" + quadrant.ToString() + ".osm.pbf";
-                var fInfo = new FileInfo(filePath);
-                using (var source = new PBFOsmStreamSource(fInfo.OpenRead()))
+                //String quadrantPathGz = @"..\..\..\..\LocalCache\OpenStreetMaps\" + quadrant.ToString() + ".osm.pbf.gz";
+                if (!File.Exists(quadrantPath))
                 {
-                    var filtered = source.FilterBox((float)(quadrant.LeftLongitude * 180 / Math.PI), (float)(quadrant.TopLatitude * 180 / Math.PI),
-                        (float)(quadrant.RightLongitude * 180 / Math.PI), (float)(quadrant.BottomLatitude * 180 / Math.PI), true); // left, top, right, bottom
-                    using (var stream = new FileInfo(quadrantPath).Open(FileMode.Create, FileAccess.ReadWrite))
+                    var fInfo = new FileInfo(filePath);
+                    using (var fileInfoStream = fInfo.OpenRead())
                     {
-                        var target = new PBFOsmStreamTarget(stream);
-                        target.RegisterSource(filtered);
-                        target.Pull();
-                        target.Close();
+                        using (var source = new PBFOsmStreamSource(fileInfoStream))
+                        {
+                            var filtered = source.FilterBox((float)(quadrant.LeftLongitude * 180 / Math.PI), (float)(quadrant.TopLatitude * 180 / Math.PI),
+                                (float)(quadrant.RightLongitude * 180 / Math.PI), (float)(quadrant.BottomLatitude * 180 / Math.PI), true); // left, top, right, bottom
+                            using (var stream = new FileInfo(quadrantPath).Open(FileMode.Create, FileAccess.ReadWrite))
+                            {
+                                var target = new PBFOsmStreamTarget(stream, true);
+                                target.RegisterSource(filtered);
+                                target.Pull();
+                            }
+                        }
                     }
                 }
+                // compression on big files: 2.49GB/8.82GB
+                //if (!File.Exists(quadrantPathGz) && new FileInfo(quadrantPath).Length > 1024 && quadrant.zoom == targetZoom) // Note: doesn't apply to root (aka the planet osm)
+                //{
+                //    Compress(quadrantPath, quadrantPathGz);
+                //    File.Delete(quadrantPath);
+                //}
+                //BreakupFile(quadrantPath, quadrant, targetZoom);
             }
             if (sector.zoom > 0) File.Delete(filePath);
             foreach (var quadrant in quadrants)
             {
                 String quadrantPath = @"..\..\..\..\LocalCache\OpenStreetMaps\" + quadrant.ToString() + ".osm.pbf";
                 BreakupFile(quadrantPath, quadrant, targetZoom);
+            }
+        }
+
+        private static void Compress(string path, string pathGz)
+        {
+            using (FileStream originalFileStream = new FileInfo(path).OpenRead())
+            {
+                using (FileStream compressedFileStream = File.Create(pathGz))
+                {
+                    using (GZipStream compressionStream = new GZipStream(compressedFileStream, CompressionMode.Compress))
+                    {
+                        originalFileStream.CopyTo(compressionStream);
+                    }
+                }
             }
         }
 
