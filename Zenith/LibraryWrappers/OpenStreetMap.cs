@@ -24,7 +24,14 @@ namespace Zenith.LibraryWrappers
     {
         internal static Texture2D GetRoads(GraphicsDevice graphicsDevice, Sector sector)
         {
-            BreakupFile(@"..\..\..\..\LocalCache\planet-latest.osm.pbf", new Sector(0, 0, 0), 10);
+            //BreakupFile(@"..\..\..\..\LocalCache\planet-latest.osm.pbf", new Sector(0, 0, 0), 5);
+            //BreakupFile(@"..\..\..\..\LocalCache\OpenStreetMaps\X=1,Y=1,Zoom=1.osm.pbf", new Sector(1, 1, 1), 5);
+            foreach (var smallSector in new Sector(0, 0, 0).GetChildrenAtLevel(5))
+            {
+                String quadrantPath = @"..\..\..\..\LocalCache\OpenStreetMaps\" + smallSector.ToString() + ".osm.pbf";
+                Directory.CreateDirectory(@"..\..\..\..\LocalCache\OpenStreetMaps\" + smallSector.ToString());
+                BreakupFile(quadrantPath, smallSector, 10);
+            }
             RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 512, 512, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
             graphicsDevice.SetRenderTarget(newTarget);
             DrawCoast(graphicsDevice, sector);
@@ -370,7 +377,7 @@ namespace Zenith.LibraryWrappers
             foreach (var quadrant in quadrants)
             {
                 // TODO: this isn't actually restartable. It'll start redoing completed dissected files because it thinks it hasn't been done yet (ex: a zoom3 was turned into all zoom10s)
-                String quadrantPath = @"..\..\..\..\LocalCache\OpenStreetMaps\" + quadrant.ToString() + ".osm.pbf";
+                String quadrantPath = @"..\..\..\..\LocalCache\OpenStreetMaps\" + quadrant.GetAllParents().Where(x => x.zoom == 5).Single().ToString() + "\\" + quadrant.ToString() + ".osm.pbf";
                 //String quadrantPathGz = @"..\..\..\..\LocalCache\OpenStreetMaps\" + quadrant.ToString() + ".osm.pbf.gz";
                 if (!File.Exists(quadrantPath))
                 {
@@ -401,7 +408,7 @@ namespace Zenith.LibraryWrappers
             if (sector.zoom > 0) File.Delete(filePath);
             foreach (var quadrant in quadrants)
             {
-                String quadrantPath = @"..\..\..\..\LocalCache\OpenStreetMaps\" + quadrant.ToString() + ".osm.pbf";
+                String quadrantPath = @"..\..\..\..\LocalCache\OpenStreetMaps\" + quadrant.GetAllParents().Where(x => x.zoom == 5).Single().ToString() + "\\" + quadrant.ToString() + ".osm.pbf";
                 BreakupFile(quadrantPath, quadrant, targetZoom);
             }
         }
