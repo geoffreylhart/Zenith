@@ -24,14 +24,6 @@ namespace Zenith.LibraryWrappers
     {
         internal static Texture2D GetRoads(GraphicsDevice graphicsDevice, Sector sector)
         {
-            //BreakupFile(@"..\..\..\..\LocalCache\planet-latest.osm.pbf", new Sector(0, 0, 0), 5);
-            //BreakupFile(@"..\..\..\..\LocalCache\OpenStreetMaps\X=1,Y=1,Zoom=1.osm.pbf", new Sector(1, 1, 1), 5);
-            foreach (var smallSector in new Sector(0, 0, 0).GetChildrenAtLevel(5))
-            {
-                String quadrantPath = @"..\..\..\..\LocalCache\OpenStreetMaps\" + smallSector.ToString() + ".osm.pbf";
-                Directory.CreateDirectory(@"..\..\..\..\LocalCache\OpenStreetMaps\" + smallSector.ToString());
-                BreakupFile(quadrantPath, smallSector, 10);
-            }
             RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 512, 512, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
             graphicsDevice.SetRenderTarget(newTarget);
             DrawCoast(graphicsDevice, sector);
@@ -42,7 +34,8 @@ namespace Zenith.LibraryWrappers
         private static void DrawCoast(GraphicsDevice graphicsDevice, Sector sector)
         {
             Sector parent = sector.GetChildrenAtLevel(sector.zoom + 1)[0].GetAllParents().Where(x => x.zoom == 10).Single();
-            string pensa10Path = @"..\..\..\..\LocalCache\OpenStreetMaps\" + parent.ToString() + ".osm.pbf";
+            Sector parent5 = sector.GetChildrenAtLevel(sector.zoom + 1)[0].GetAllParents().Where(x => x.zoom == 5).Single();
+            string pensa10Path = @"..\..\..\..\LocalCache\OpenStreetMaps\" + parent5.ToString() + "\\" + parent.ToString() + ".osm.pbf";
             var src = new PBFOsmStreamSource(new FileInfo(pensa10Path).OpenRead());
             List<Node> nodes = new List<Node>();
             List<Way> ways = new List<Way>();
@@ -63,7 +56,7 @@ namespace Zenith.LibraryWrappers
             List<List<LibTessDotNet.ContourVertex>> contours = new List<List<LibTessDotNet.ContourVertex>>();
             foreach (var way in ways)
             {
-                if (endsWith.ContainsKey(way.Nodes[0])) continue;
+                if (endsWith.ContainsKey(way.Nodes[0])) continue; // I guess I'm discarding loops here?
                 List<LibTessDotNet.ContourVertex> contour = new List<LibTessDotNet.ContourVertex>();
                 Way next = way;
                 bool first = true;
@@ -91,10 +84,53 @@ namespace Zenith.LibraryWrappers
                     contours.Add(contour);
                 }
             }
-            var outline = CloseLines(sector, contours);
+            var outline = TrimLines(sector, contours);
+            outline = CloseLines(sector, outline);
             TesselateThenDraw2(graphicsDevice, sector, outline);
             //DrawDebugLines(graphicsDevice, sector, contours);
-            //DrawLines(graphicsDevice, sector, contours);
+            //DrawLines(graphicsDevice, sector, outline);
+        }
+
+        // cut off the lines hanging outside of the sector
+        // we call this before closing lines to prevent any possible confusion on how lines should connect
+        private static List<List<ContourVertex>> TrimLines(Sector sector, List<List<ContourVertex>> contours)
+        {
+            List<List<ContourVertex>> answer = new List<List<ContourVertex>>();
+            foreach (var contour in contours)
+            {
+                List<ContourVertex> currLine = new List<ContourVertex>();
+                bool lastPointInside = sector.ContainsLongLat(new LongLat(contour[0].Position.X, contour[0].Position.Y));
+                if (lastPointInside) currLine.Add(contour[0]);
+                for (int i = 1; i < contour.Count; i++) // iterate through lines
+                {
+                    LongLat ll1 = new LongLat(contour[i - 1].Position.X, contour[i - 1].Position.Y);
+                    LongLat ll2 = new LongLat(contour[i].Position.X, contour[i].Position.Y);
+                    bool isInside = sector.ContainsLongLat(ll2);
+                    LongLat[] intersections = sector.GetIntersections(ll1, ll2);
+                    if (intersections.Length >= 2) throw new NotImplementedException();
+                    if (lastPointInside && intersections.Length == 0)
+                    {
+                        currLine.Add(contour[i]);
+                    }
+                    if (intersections.Length == 1)
+                    {
+                        if (lastPointInside)
+                        {
+                            currLine.Add(new ContourVertex() { Position = new Vec3() { X = (float)intersections[0].X, Y = (float)intersections[0].Y, Z = 0 } });
+                            answer.Add(currLine);
+                            currLine = new List<ContourVertex>();
+                        }
+                        else
+                        {
+                            currLine.Add(new ContourVertex() { Position = new Vec3() { X = (float)intersections[0].X, Y = (float)intersections[0].Y, Z = 0 } });
+                            currLine.Add(contour[i]);
+                        }
+                    }
+                    if (intersections.Length % 2 == 1) lastPointInside = !lastPointInside;
+                }
+                if (currLine.Count > 0) answer.Add(currLine);
+            }
+            return answer;
         }
 
         // currently doesn't expect loops
@@ -196,9 +232,10 @@ namespace Zenith.LibraryWrappers
             if (contours.Count == 0) return;
             List<VertexPositionColor> lines = new List<VertexPositionColor>();
             float z = -10f;
-            foreach (var contour in contours)
+            for (int j = 0; j < contours.Count; j++)
             {
-                Color color = Color.Green;
+                List<ContourVertex> contour = contours[j];
+                Color color = new[] { Color.Green, Color.Blue, Color.Red, Color.Yellow, Color.Orange, Color.Cyan, Color.Magenta }[j%7];
                 Color fadeTo = Color.White;
                 for (int i = 1; i < contour.Count; i++)
                 {

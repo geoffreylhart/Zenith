@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Zenith.EditorGameComponents.UIComponents;
+using Zenith.MathHelpers;
 using Zenith.PrimitiveBuilder;
 using Zenith.ZGraphics;
 using Zenith.ZMath;
@@ -243,11 +244,56 @@ namespace Zenith.EditorGameComponents.FlatComponents
             internal IEnumerable<Sector> GetAllParents()
             {
                 List<Sector> answer = new List<Sector>();
-                for(int i = 1; i <= zoom; i++)
+                for (int i = 1; i <= zoom; i++)
                 {
                     answer.Add(new Sector(x >> i, y >> i, zoom - i));
                 }
                 return answer;
+            }
+
+            internal bool ContainsLongLat(LongLat longLat)
+            {
+                if (longLat.X < LeftLongitude || longLat.X > RightLongitude) return false;
+                if (longLat.Y < BottomLatitude || longLat.Y > TopLatitude) return false;
+                return true;
+            }
+
+            // do we treat these as straight lines or arc lines?
+            // I guess lets do straight lines
+            // let's return them in order of intersection
+            internal LongLat[] GetIntersections(LongLat start, LongLat end)
+            {
+                List<LongLat> answer = new List<LongLat>();
+                answer.AddRange(GetIntersections(start, end, TopLeftCorner, TopRightCorner));
+                answer.AddRange(GetIntersections(start, end, TopRightCorner, BottomRightCorner));
+                answer.AddRange(GetIntersections(start, end, BottomRightCorner, BottomLeftCorner));
+                answer.AddRange(GetIntersections(start, end, BottomLeftCorner, TopLeftCorner));
+                answer.Sort((x, y) => (Math.Pow(x.X - start.X, 2) * Math.Pow(x.Y - start.Y, 2)).CompareTo(Math.Pow(y.X - start.X, 2) * Math.Pow(y.Y - start.Y, 2)));
+                return answer.ToArray();
+            }
+
+            private LongLat[] GetIntersections(LongLat A, LongLat B, LongLat C, LongLat D)
+            {
+                LongLat CmP = new LongLat(C.X - A.X, C.Y - A.Y);
+                LongLat r = new LongLat(B.X - A.X, B.Y - A.Y);
+                LongLat s = new LongLat(D.X - C.X, D.Y - C.Y);
+
+                double CmPxr = CmP.X * r.Y - CmP.Y * r.X;
+                double CmPxs = CmP.X * s.Y - CmP.Y * s.X;
+                double rxs = r.X * s.Y - r.Y * s.X;
+
+                double rxsr = 1f / rxs;
+                double t = CmPxs * rxsr;
+                double u = CmPxr * rxsr;
+
+                if ((t >= 0) && (t <= 1) && (u >= 0) && (u <= 1))
+                {
+                    return new[] { new LongLat(A.X * (1 - t) + B.X * t, A.Y * (1 - t) + B.Y * t) };
+                }
+                else
+                {
+                    return new LongLat[0];
+                }
             }
         }
 
