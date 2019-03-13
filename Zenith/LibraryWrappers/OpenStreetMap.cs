@@ -24,10 +24,11 @@ namespace Zenith.LibraryWrappers
     {
         internal static Texture2D GetRoads(GraphicsDevice graphicsDevice, Sector sector)
         {
+            //SaveCoastLineMap(graphicsDevice);
             RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 512, 512, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
             graphicsDevice.SetRenderTarget(newTarget);
             DrawCoast(graphicsDevice, sector);
-            //DrawRoads(graphicsDevice, sector);
+            DrawRoads(graphicsDevice, sector);
             return newTarget;
         }
 
@@ -357,7 +358,8 @@ namespace Zenith.LibraryWrappers
         private static void DrawRoads(GraphicsDevice graphicsDevice, Sector sector)
         {
             Sector parent = sector.GetChildrenAtLevel(sector.zoom + 1)[0].GetAllParents().Where(x => x.zoom == 10).Single();
-            string pensa10Path = @"..\..\..\..\LocalCache\OpenStreetMaps\" + parent.ToString() + ".osm.pbf";
+            Sector parent5 = sector.GetChildrenAtLevel(sector.zoom + 1)[0].GetAllParents().Where(x => x.zoom == 5).Single();
+            string pensa10Path = @"..\..\..\..\LocalCache\OpenStreetMaps\" + parent5.ToString() + "\\" + parent.ToString() + ".osm.pbf";
             var src = new PBFOsmStreamSource(new FileInfo(pensa10Path).OpenRead());
             List<Node> nodes = new List<Node>();
             List<Way> highways = new List<Way>();
@@ -482,7 +484,7 @@ namespace Zenith.LibraryWrappers
         {
             RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 1024, 1024, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
             graphicsDevice.SetRenderTarget(newTarget);
-            List<Sector> sectorsToCheck = new Sector(16, 37, 6).GetChildrenAtLevel(10);
+            List<Sector> sectorsToCheck = new Sector(0, 0, 0).GetChildrenAtLevel(10);
             foreach (var s in sectorsToCheck)
             {
                 GraphicsBasic.DrawScreenRect(graphicsDevice, s.x, s.y, 1, 1, ContainsCoast(s) ? Color.Gray : Color.White);
@@ -496,7 +498,9 @@ namespace Zenith.LibraryWrappers
 
         private static bool ContainsCoast(Sector s)
         {
-            string pensa10Path = @"..\..\..\..\LocalCache\OpenStreetMaps\" + s.ToString() + ".osm.pbf";
+            Sector parent = s.GetChildrenAtLevel(s.zoom + 1)[0].GetAllParents().Where(x => x.zoom == 10).Single();
+            Sector parent5 = s.GetChildrenAtLevel(s.zoom + 1)[0].GetAllParents().Where(x => x.zoom == 5).Single();
+            string pensa10Path = @"..\..\..\..\LocalCache\OpenStreetMaps\" + parent5.ToString() + "\\" + parent.ToString() + ".osm.pbf";
             var source = new PBFOsmStreamSource(new FileInfo(pensa10Path).OpenRead());
             foreach (var element in source)
             {
