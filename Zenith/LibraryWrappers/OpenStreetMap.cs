@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -44,6 +45,13 @@ namespace Zenith.LibraryWrappers
             {
                 if (element is Node) nodes.Add((Node)element);
                 if (element.Tags.Contains("natural", "coastline")) ways.Add((Way)element);
+            }
+            if (ways.Count == 0)
+            {
+                if (PixelIsLand(sector))
+                {
+                    graphicsDevice.Clear(Pallete.GRASS_GREEN);
+                }
             }
             // TODO: currently assuming all the data is good
             // TODO: currently ignoring closed loops (lakes)
@@ -90,6 +98,13 @@ namespace Zenith.LibraryWrappers
             TesselateThenDraw2(graphicsDevice, sector, outline);
             //DrawDebugLines(graphicsDevice, sector, contours);
             //DrawLines(graphicsDevice, sector, outline);
+        }
+
+        private static bool PixelIsLand(Sector sector)
+        {
+            string mapFile = @"..\..\..\..\LocalCache\OpenStreetMaps\Renders\Coastline.PNG";
+            Bitmap img = new Bitmap(mapFile);
+            return img.GetPixel(sector.x, sector.y) == System.Drawing.Color.FromArgb(255, 0, 255, 0);
         }
 
         // cut off the lines hanging outside of the sector
@@ -236,14 +251,14 @@ namespace Zenith.LibraryWrappers
             for (int j = 0; j < contours.Count; j++)
             {
                 List<ContourVertex> contour = contours[j];
-                Color color = new[] { Color.Green, Color.Blue, Color.Red, Color.Yellow, Color.Orange, Color.Cyan, Color.Magenta }[j%7];
-                Color fadeTo = Color.White;
+                Microsoft.Xna.Framework.Color color = new[] { Microsoft.Xna.Framework.Color.Green, Microsoft.Xna.Framework.Color.Blue, Microsoft.Xna.Framework.Color.Red, Microsoft.Xna.Framework.Color.Yellow, Microsoft.Xna.Framework.Color.Orange, Microsoft.Xna.Framework.Color.Cyan, Microsoft.Xna.Framework.Color.Magenta }[j%7];
+                Microsoft.Xna.Framework.Color fadeTo = Microsoft.Xna.Framework.Color.White;
                 for (int i = 1; i < contour.Count; i++)
                 {
                     double percent = i / (double)(contour.Count - 1); // fade from color to white
                     double percent2 = (i + 1) / (double)(contour.Count - 1); // fade from color to white
-                    Color newColor = new Color((byte)(color.R * percent2 + fadeTo.R * (1 - percent2)), (byte)(color.G * percent2 + fadeTo.G * (1 - percent2)), (byte)(color.B * percent2 + fadeTo.B * (1 - percent2)));
-                    Color newColor2 = new Color((byte)(color.R * percent2 + fadeTo.R * (1 - percent2)), (byte)(color.G * percent2 + fadeTo.G * (1 - percent2)), (byte)(color.B * percent2 + fadeTo.B * (1 - percent2)));
+                    Microsoft.Xna.Framework.Color newColor = new Microsoft.Xna.Framework.Color((byte)(color.R * percent2 + fadeTo.R * (1 - percent2)), (byte)(color.G * percent2 + fadeTo.G * (1 - percent2)), (byte)(color.B * percent2 + fadeTo.B * (1 - percent2)));
+                    Microsoft.Xna.Framework.Color newColor2 = new Microsoft.Xna.Framework.Color((byte)(color.R * percent2 + fadeTo.R * (1 - percent2)), (byte)(color.G * percent2 + fadeTo.G * (1 - percent2)), (byte)(color.B * percent2 + fadeTo.B * (1 - percent2)));
                     lines.Add(new VertexPositionColor(new Vector3(contour[i - 1].Position.X, contour[i - 1].Position.Y, z), newColor));
                     lines.Add(new VertexPositionColor(new Vector3(contour[i].Position.X, contour[i].Position.Y, z), newColor2));
                 }
@@ -283,7 +298,7 @@ namespace Zenith.LibraryWrappers
                 {
                     var pos = tess.Vertices[tess.Elements[i * 3 + j]].Position;
                     // TODO: why 1-y?
-                    triangles.Add(new VertexPositionColor(new Vector3(pos.X, pos.Y, z), Color.Green));
+                    triangles.Add(new VertexPositionColor(new Vector3(pos.X, pos.Y, z), Microsoft.Xna.Framework.Color.Green));
                 }
             }
             if (triangles.Count > 0)
@@ -334,7 +349,7 @@ namespace Zenith.LibraryWrappers
                         var pos = triangle.GetVertex(j);
                         var pos2 = triangle.GetVertex((j + 1) % 3);
                         // TODO: why 1-y?
-                        triangles.Add(new VertexPositionColor(new Vector3((float)pos.X, (float)pos.Y, z), Color.Green));
+                        triangles.Add(new VertexPositionColor(new Vector3((float)pos.X, (float)pos.Y, z), Pallete.GRASS_GREEN));
                         //triangles.Add(new VertexPositionColor(new Vector3((float)pos2.X, (float)pos2.Y, z), Color.Green));
                     }
                 }
@@ -388,8 +403,8 @@ namespace Zenith.LibraryWrappers
                     node2 = nodes[found2];
                     LongLat longlat1 = new LongLat(node1.Longitude.Value * Math.PI / 180, node1.Latitude.Value * Math.PI / 180);
                     LongLat longlat2 = new LongLat(node2.Longitude.Value * Math.PI / 180, node2.Latitude.Value * Math.PI / 180);
-                    shapeAsVertices.Add(new VertexPositionColor(new Vector3(longlat1, -10f), Color.White));
-                    shapeAsVertices.Add(new VertexPositionColor(new Vector3(longlat2, -10f), Color.White));
+                    shapeAsVertices.Add(new VertexPositionColor(new Vector3(longlat1, -10f), Microsoft.Xna.Framework.Color.White));
+                    shapeAsVertices.Add(new VertexPositionColor(new Vector3(longlat2, -10f), Microsoft.Xna.Framework.Color.White));
                 }
             }
             if (shapeAsVertices.Count > 0)
@@ -487,7 +502,7 @@ namespace Zenith.LibraryWrappers
             List<Sector> sectorsToCheck = new Sector(0, 0, 0).GetChildrenAtLevel(10);
             foreach (var s in sectorsToCheck)
             {
-                GraphicsBasic.DrawScreenRect(graphicsDevice, s.x, s.y, 1, 1, ContainsCoast(s) ? Color.Gray : Color.White);
+                GraphicsBasic.DrawScreenRect(graphicsDevice, s.x, s.y, 1, 1, ContainsCoast(s) ? Microsoft.Xna.Framework.Color.Gray : Microsoft.Xna.Framework.Color.White);
             }
             string mapFile = @"..\..\..\..\LocalCache\OpenStreetMaps\Renders\Coastline.PNG";
             using (var writer = File.OpenWrite(mapFile))
