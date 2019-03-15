@@ -38,19 +38,24 @@ namespace Zenith.LibraryWrappers
             Sector parent = sector.GetChildrenAtLevel(sector.zoom + 1)[0].GetAllParents().Where(x => x.zoom == 10).Single();
             Sector parent5 = sector.GetChildrenAtLevel(sector.zoom + 1)[0].GetAllParents().Where(x => x.zoom == 5).Single();
             string pensa10Path = @"..\..\..\..\LocalCache\OpenStreetMaps\" + parent5.ToString() + "\\" + parent.ToString() + ".osm.pbf";
-            var src = new PBFOsmStreamSource(new FileInfo(pensa10Path).OpenRead());
             List<Node> nodes = new List<Node>();
             List<Way> ways = new List<Way>();
-            foreach (var element in src)
+            using (var reader = new FileInfo(pensa10Path).OpenRead())
             {
-                if (element is Node) nodes.Add((Node)element);
-                if (element.Tags.Contains("natural", "coastline")) ways.Add((Way)element);
-            }
-            if (ways.Count == 0)
-            {
-                if (PixelIsLand(sector))
+                using (var src = new PBFOsmStreamSource(reader))
                 {
-                    graphicsDevice.Clear(Pallete.GRASS_GREEN);
+                    foreach (var element in src)
+                    {
+                        if (element is Node) nodes.Add((Node)element);
+                        if (element.Tags.Contains("natural", "coastline")) ways.Add((Way)element);
+                    }
+                    if (ways.Count == 0)
+                    {
+                        if (PixelIsLand(sector))
+                        {
+                            graphicsDevice.Clear(Pallete.GRASS_GREEN);
+                        }
+                    }
                 }
             }
             // TODO: currently assuming all the data is good
@@ -100,11 +105,15 @@ namespace Zenith.LibraryWrappers
             //DrawLines(graphicsDevice, sector, outline);
         }
 
+        static Bitmap landImage = null;
         private static bool PixelIsLand(Sector sector)
         {
-            string mapFile = @"..\..\..\..\LocalCache\OpenStreetMaps\Renders\Coastline.PNG";
-            Bitmap img = new Bitmap(mapFile);
-            return img.GetPixel(sector.x, sector.y) == System.Drawing.Color.FromArgb(255, 0, 255, 0);
+            if (landImage == null)
+            {
+                string mapFile = @"..\..\..\..\LocalCache\OpenStreetMaps\Renders\Coastline.PNG";
+                landImage = new Bitmap(mapFile);
+            }
+            return landImage.GetPixel(sector.x, sector.y) == System.Drawing.Color.FromArgb(255, 0, 255, 0);
         }
 
         // cut off the lines hanging outside of the sector
@@ -123,26 +132,27 @@ namespace Zenith.LibraryWrappers
                     LongLat ll2 = new LongLat(contour[i].Position.X, contour[i].Position.Y);
                     bool isInside = sector.ContainsLongLat(ll2);
                     LongLat[] intersections = sector.GetIntersections(ll1, ll2);
-                    if (intersections.Length >= 2) throw new NotImplementedException();
                     if (lastPointInside && intersections.Length == 0)
                     {
                         currLine.Add(contour[i]);
                     }
-                    if (intersections.Length == 1)
+                    if (intersections.Length >= 1)
                     {
-                        if (lastPointInside)
+                        foreach (var intersection in intersections)
                         {
                             currLine.Add(new ContourVertex() { Position = new Vec3() { X = (float)intersections[0].X, Y = (float)intersections[0].Y, Z = 0 } });
-                            answer.Add(currLine);
-                            currLine = new List<ContourVertex>();
-                        }
-                        else
-                        {
-                            currLine.Add(new ContourVertex() { Position = new Vec3() { X = (float)intersections[0].X, Y = (float)intersections[0].Y, Z = 0 } });
-                            currLine.Add(contour[i]);
+                            if (lastPointInside)
+                            {
+                                answer.Add(currLine);
+                                currLine = new List<ContourVertex>();
+                            }
+                            else
+                            {
+                                currLine.Add(contour[i]);
+                            }
+                            lastPointInside = !lastPointInside;
                         }
                     }
-                    if (intersections.Length % 2 == 1) lastPointInside = !lastPointInside;
                 }
                 if (currLine.Count > 0) answer.Add(currLine);
             }
@@ -251,7 +261,7 @@ namespace Zenith.LibraryWrappers
             for (int j = 0; j < contours.Count; j++)
             {
                 List<ContourVertex> contour = contours[j];
-                Microsoft.Xna.Framework.Color color = new[] { Microsoft.Xna.Framework.Color.Green, Microsoft.Xna.Framework.Color.Blue, Microsoft.Xna.Framework.Color.Red, Microsoft.Xna.Framework.Color.Yellow, Microsoft.Xna.Framework.Color.Orange, Microsoft.Xna.Framework.Color.Cyan, Microsoft.Xna.Framework.Color.Magenta }[j%7];
+                Microsoft.Xna.Framework.Color color = new[] { Microsoft.Xna.Framework.Color.Green, Microsoft.Xna.Framework.Color.Blue, Microsoft.Xna.Framework.Color.Red, Microsoft.Xna.Framework.Color.Yellow, Microsoft.Xna.Framework.Color.Orange, Microsoft.Xna.Framework.Color.Cyan, Microsoft.Xna.Framework.Color.Magenta }[j % 7];
                 Microsoft.Xna.Framework.Color fadeTo = Microsoft.Xna.Framework.Color.White;
                 for (int i = 1; i < contour.Count; i++)
                 {
@@ -303,16 +313,18 @@ namespace Zenith.LibraryWrappers
             }
             if (triangles.Count > 0)
             {
-                VertexBuffer landVertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, triangles.Count, BufferUsage.WriteOnly);
-                landVertexBuffer.SetData(triangles.ToArray());
-                graphicsDevice.SetVertexBuffer(landVertexBuffer);
-                var basicEffect = new BasicEffect(graphicsDevice);
-                basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)sector.LeftLongitude, (float)sector.RightLongitude, (float)sector.BottomLatitude, (float)sector.TopLatitude, 1, 1000); // TODO: figure out if flip was appropriate
-                basicEffect.VertexColorEnabled = true;
-                foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
+                using (var landVertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, triangles.Count, BufferUsage.WriteOnly))
                 {
-                    pass.Apply();
-                    graphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, landVertexBuffer.VertexCount - 2);
+                    landVertexBuffer.SetData(triangles.ToArray());
+                    graphicsDevice.SetVertexBuffer(landVertexBuffer);
+                    var basicEffect = new BasicEffect(graphicsDevice);
+                    basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)sector.LeftLongitude, (float)sector.RightLongitude, (float)sector.BottomLatitude, (float)sector.TopLatitude, 1, 1000); // TODO: figure out if flip was appropriate
+                    basicEffect.VertexColorEnabled = true;
+                    foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
+                    {
+                        pass.Apply();
+                        graphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, landVertexBuffer.VertexCount - 2);
+                    }
                 }
             }
         }
@@ -333,7 +345,7 @@ namespace Zenith.LibraryWrappers
                         blah.Add(new Vertex(v.Position.X, v.Position.Y));
                     }
                     polygon.AddContour(blah);
-                    polygons.Add(polygon);
+                    if (polygon.Count > 2) polygons.Add(polygon); // somestimes doesn't like flat triangles, seems like
                 }
             }
             if (contours.Count == 0) return;
@@ -356,16 +368,18 @@ namespace Zenith.LibraryWrappers
             }
             if (triangles.Count > 0)
             {
-                VertexBuffer landVertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, triangles.Count, BufferUsage.WriteOnly);
-                landVertexBuffer.SetData(triangles.ToArray());
-                graphicsDevice.SetVertexBuffer(landVertexBuffer);
-                var basicEffect = new BasicEffect(graphicsDevice);
-                basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)sector.LeftLongitude, (float)sector.RightLongitude, (float)sector.BottomLatitude, (float)sector.TopLatitude, 1, 1000); // TODO: figure out if flip was appropriate
-                basicEffect.VertexColorEnabled = true;
-                foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
+                using (var landVertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, triangles.Count, BufferUsage.WriteOnly))
                 {
-                    pass.Apply();
-                    graphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, landVertexBuffer.VertexCount - 2);
+                    landVertexBuffer.SetData(triangles.ToArray());
+                    graphicsDevice.SetVertexBuffer(landVertexBuffer);
+                    var basicEffect = new BasicEffect(graphicsDevice);
+                    basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)sector.LeftLongitude, (float)sector.RightLongitude, (float)sector.BottomLatitude, (float)sector.TopLatitude, 1, 1000); // TODO: figure out if flip was appropriate
+                    basicEffect.VertexColorEnabled = true;
+                    foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
+                    {
+                        pass.Apply();
+                        graphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, landVertexBuffer.VertexCount - 2);
+                    }
                 }
             }
         }
@@ -375,13 +389,18 @@ namespace Zenith.LibraryWrappers
             Sector parent = sector.GetChildrenAtLevel(sector.zoom + 1)[0].GetAllParents().Where(x => x.zoom == 10).Single();
             Sector parent5 = sector.GetChildrenAtLevel(sector.zoom + 1)[0].GetAllParents().Where(x => x.zoom == 5).Single();
             string pensa10Path = @"..\..\..\..\LocalCache\OpenStreetMaps\" + parent5.ToString() + "\\" + parent.ToString() + ".osm.pbf";
-            var src = new PBFOsmStreamSource(new FileInfo(pensa10Path).OpenRead());
             List<Node> nodes = new List<Node>();
             List<Way> highways = new List<Way>();
-            foreach (var element in src)
+            using (var reader = new FileInfo(pensa10Path).OpenRead())
             {
-                if (element is Node) nodes.Add((Node)element);
-                if (IsHighway(element)) highways.Add((Way)element);
+                using (var src = new PBFOsmStreamSource(reader))
+                {
+                    foreach (var element in src)
+                    {
+                        if (element is Node) nodes.Add((Node)element);
+                        if (IsHighway(element)) highways.Add((Way)element);
+                    }
+                }
             }
             var basicEffect = new BasicEffect(graphicsDevice);
             basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)sector.LeftLongitude, (float)sector.RightLongitude, (float)sector.BottomLatitude, (float)sector.TopLatitude, 1, 1000); // TODO: figure out if flip was appropriate
@@ -409,13 +428,15 @@ namespace Zenith.LibraryWrappers
             }
             if (shapeAsVertices.Count > 0)
             {
-                VertexBuffer vertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, shapeAsVertices.Count, BufferUsage.WriteOnly);
-                vertexBuffer.SetData(shapeAsVertices.ToArray());
-                graphicsDevice.SetVertexBuffer(vertexBuffer);
-                foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
+                using (var vertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, shapeAsVertices.Count, BufferUsage.WriteOnly))
                 {
-                    pass.Apply();
-                    graphicsDevice.DrawPrimitives(PrimitiveType.LineList, 0, vertexBuffer.VertexCount / 2);
+                    vertexBuffer.SetData(shapeAsVertices.ToArray());
+                    graphicsDevice.SetVertexBuffer(vertexBuffer);
+                    foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
+                    {
+                        pass.Apply();
+                        graphicsDevice.DrawPrimitives(PrimitiveType.LineList, 0, vertexBuffer.VertexCount / 2);
+                    }
                 }
             }
         }

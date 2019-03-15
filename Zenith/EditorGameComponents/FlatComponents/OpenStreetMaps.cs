@@ -81,11 +81,18 @@ namespace Zenith.EditorGameComponents.FlatComponents
                         }
                     }
                 }
+                for(int i = 0; i < textures.Length; i++)
+                {
+                    if (textures[i] != null) textures[i].Dispose();
+                }
             }
-            // save texture
-            using (var writer = File.OpenWrite(mapFolder + fileName))
+            // save texture, but not if its too small
+            if (sector.zoom <= 7)
             {
-                rendered.SaveAsPng(writer, rendered.Width, rendered.Height);
+                using (var writer = File.OpenWrite(mapFolder + fileName))
+                {
+                    rendered.SaveAsPng(writer, rendered.Width, rendered.Height);
+                }
             }
             return rendered;
         }
