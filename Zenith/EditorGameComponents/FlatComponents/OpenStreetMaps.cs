@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Zenith.LibraryWrappers;
 using Zenith.ZGraphics;
+using Zenith.ZMath;
 
 namespace Zenith.EditorGameComponents.FlatComponents
 {

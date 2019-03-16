@@ -445,10 +445,10 @@ namespace Zenith.LibraryWrappers
         // if we break it up into quadrants using the same library, maybe it'll only take (4+1+1/16...) roughly 5.33 minutes?
         // actually took 8.673 mins (went from 450MB to 455MB)
         // estimated time to segment the whole 43.1 GB planet? 12/28/2018 = 8.673 * 43.1 / 8.05 * 47.7833 = 36.98 hours
-        private static void BreakupFile(string filePath, SectorLoader.Sector sector, int targetZoom)
+        private static void BreakupFile(string filePath, Sector sector, int targetZoom)
         {
             if (sector.zoom == targetZoom) return;
-            List<SectorLoader.Sector> quadrants = sector.GetChildrenAtLevel(sector.zoom + 1);
+            List<Sector> quadrants = sector.GetChildrenAtLevel(sector.zoom + 1);
             foreach (var quadrant in quadrants)
             {
                 // TODO: this isn't actually restartable. It'll start redoing completed dissected files because it thinks it hasn't been done yet (ex: a zoom3 was turned into all zoom10s)

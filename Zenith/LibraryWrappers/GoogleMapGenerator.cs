@@ -6,6 +6,7 @@ using System.IO;
 using System.Net;
 using Microsoft.Xna.Framework.Graphics;
 using Zenith.MathHelpers;
+using Zenith.ZMath;
 using static System.Net.Mime.MediaTypeNames;
 using static Zenith.EditorGameComponents.FlatComponents.SectorLoader;
 
