@@ -23,6 +23,16 @@ namespace Zenith.EditorGameComponents.FlatComponents
             return File.Exists(filePath);
         }
 
+        public override bool DoAutoLoad(Sector sector)
+        {
+            return sector.zoom <= 7 || sector.zoom==10;
+        }
+
+        public override bool AllowUnload(Sector sector)
+        {
+            return sector.zoom <= 7;
+        }
+
         public override IEnumerable<Sector> EnumerateCachedSectors()
         {
             foreach (var file in Directory.EnumerateFiles(mapFolder))

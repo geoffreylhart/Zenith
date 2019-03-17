@@ -17,41 +17,72 @@ namespace Zenith.EditorGameComponents.FlatComponents
     abstract class SectorLoader : IFlatComponent, IEditorGameComponent
     {
         private static int MAX_ZOOM = 19;
-        Dictionary<String, VertexIndiceBuffer> loadedMaps = new Dictionary<string, VertexIndiceBuffer>();
-        List<Sector>[] imageLayers = new List<Sector>[MAX_ZOOM + 1];
+        Dictionary<Sector, VertexIndiceBuffer> loadedMaps = new Dictionary<Sector, VertexIndiceBuffer>();
+        HashSet<Sector> toLoad = new HashSet<Sector>();
         Sector previewSquare = null;
-
-        public SectorLoader()
-        {
-            for (int i = 0; i <= MAX_ZOOM; i++) imageLayers[i] = new List<Sector>();
-        }
 
         public void Draw(RenderTarget2D renderTarget, double minX, double maxX, double minY, double maxY, double cameraZoom)
         {
+            // autoload stuff
+            // TODO: move to update step?
+            int zoomLevel = (int)(Math.Log((maxX - minX) / (2 * Math.PI)) / Math.Log(0.5));
+            Sector bottomLeft = GetSector(minX, minY, zoomLevel);
+            Sector bottomRight = GetSector(maxX, minY, zoomLevel);
+            Sector topLeft = GetSector(minX, maxY, zoomLevel);
+            Sector topRight = GetSector(maxX, maxY, zoomLevel);
+            List<Sector> containedSectors = new List<Sector>();
+            for (int i = bottomLeft.x; i <= bottomRight.x; i++)
+            {
+                for (int j = bottomLeft.y; j <= topLeft.y; j++)
+                {
+                    containedSectors.Add(new Sector(i % (1 << bottomLeft.zoom), j % (1 << bottomLeft.zoom), bottomLeft.zoom));
+                }
+            }
+            List<Sector> unload = new List<Sector>();
+            foreach (var pair in loadedMaps)
+            {
+                if (!containedSectors.Contains(pair.Key))
+                {
+                    unload.Add(pair.Key);
+                }
+            }
+            foreach (var u in unload)
+            {
+                if (!AllowUnload(u)) continue;
+                loadedMaps[u].Dispose();
+                loadedMaps.Remove(u);
+            }
+            foreach (var c in containedSectors)
+            {
+                if (DoAutoLoad(c)) toLoad.Add(c);
+            }
+            // end autoload stuff
             GraphicsDevice graphicsDevice = renderTarget.GraphicsDevice;
             var basicEffect = new BasicEffect(graphicsDevice);
             basicEffect.TextureEnabled = true;
             basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)minX, (float)maxX, (float)maxY, (float)minY, 1, 1000);
-
-            foreach (var layer in imageLayers)
+            foreach (var l in toLoad)
             {
-                foreach (var sector in layer)
+                if (!loadedMaps.ContainsKey(l))
                 {
-                    if (!loadedMaps.ContainsKey(sector.ToString()))
-                    {
-                        loadedMaps[sector.ToString()] = GetCachedMap(renderTarget, sector);
-                    }
-                    VertexIndiceBuffer buffer = loadedMaps[sector.ToString()];
-                    basicEffect.Texture = buffer.texture;
-                    foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
-                    {
-                        pass.Apply();
-                        graphicsDevice.Indices = buffer.indices;
-                        graphicsDevice.SetVertexBuffer(buffer.vertices);
-                        graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, buffer.indices.IndexCount / 3);
-                    }
-                    graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, graphicsDevice.Viewport.MaxDepth, 0);
+                    loadedMaps[l] = GetCachedMap(renderTarget, l);
                 }
+            }
+            toLoad = new HashSet<Sector>();
+            List<Sector> sorted = loadedMaps.Keys.ToList();
+            sorted.Sort((x, y) => x.zoom.CompareTo(y.zoom));
+            foreach (var sector in sorted)
+            {
+                VertexIndiceBuffer buffer = loadedMaps[sector];
+                basicEffect.Texture = buffer.texture;
+                foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
+                {
+                    pass.Apply();
+                    graphicsDevice.Indices = buffer.indices;
+                    graphicsDevice.SetVertexBuffer(buffer.vertices);
+                    graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, buffer.indices.IndexCount / 3);
+                }
+                graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, graphicsDevice.Viewport.MaxDepth, 0);
             }
             if (previewSquare != null)
             {
@@ -73,6 +104,8 @@ namespace Zenith.EditorGameComponents.FlatComponents
         }
 
         public abstract bool CacheExists(Sector sector);
+        public abstract bool DoAutoLoad(Sector sector); // safe to autoload? (fast/already cached)
+        public abstract bool AllowUnload(Sector sector); // allowed to unload? (cached)
 
         public void Update(double mouseX, double mouseY, double cameraZoom)
         {
@@ -107,17 +140,17 @@ namespace Zenith.EditorGameComponents.FlatComponents
 
         private void LoadAllCached(GraphicsDevice graphicsDevice)
         {
-            foreach (var sector in EnumerateCachedSectors())
-            {
-                imageLayers[sector.zoom].Add(sector);
-            }
+            //foreach (var sector in EnumerateCachedSectors())
+            //{
+            //    imageLayers[sector.zoom].Add(sector);
+            //}
         }
 
         private void AddImage(double mouseX, double mouseY, double cameraZoom)
         {
             Sector squareCenter = GetSector(mouseX, mouseY, cameraZoom);
             if (squareCenter == null) return;
-            imageLayers[squareCenter.zoom].Add(squareCenter);
+            toLoad.Add(squareCenter);
         }
 
         public abstract Texture2D GetTexture(GraphicsDevice graphicsDevice, Sector sector);

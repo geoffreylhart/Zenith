@@ -23,6 +23,16 @@ namespace Zenith.EditorGameComponents.FlatComponents
             return File.Exists(filePath);
         }
 
+        public override bool DoAutoLoad(Sector sector)
+        {
+            return false;
+        }
+
+        public override bool AllowUnload(Sector sector)
+        {
+            return false;
+        }
+
         public override IEnumerable<Sector> EnumerateCachedSectors()
         {
             foreach (var file in Directory.EnumerateFiles(@"..\..\..\..\LocalCache\GoogleMaps\COMPOSITE"))

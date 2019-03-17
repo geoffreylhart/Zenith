@@ -184,5 +184,19 @@ namespace Zenith.ZMath
         {
             return Math.Log(Math.Tan(lat / 2 + Math.PI / 4)) / (Math.PI * 2) + 0.5;
         }
+
+        public override bool Equals(object obj)
+        {
+            Sector that = (Sector)obj;
+            if (this.x != that.x) return false;
+            if (this.y != that.y) return false;
+            if (this.zoom != that.zoom) return false;
+            return true;
+        }
+
+        public override int GetHashCode()
+        {
+            return (x * 31 + y) * 31 + zoom;
+        }
     }
 }
