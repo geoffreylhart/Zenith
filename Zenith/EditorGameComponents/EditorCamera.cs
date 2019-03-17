@@ -26,10 +26,10 @@ namespace Zenith.EditorGameComponents
 
         public override void Update(GameTime gameTime)
         {
-            double cameraMoveAmount = 0.05 * Math.Pow(0.5, cameraZoom);
+            double cameraMoveAmount = 0.15 * Math.Pow(0.5, cameraZoom);
             Keyboard.GetState().AffectNumber(ref cameraRotX, Keys.Left, Keys.Right, Keys.A, Keys.D, cameraMoveAmount);
             Keyboard.GetState().AffectNumber(ref cameraRotY, Keys.Down, Keys.Up, Keys.S, Keys.W, cameraMoveAmount);
-            Keyboard.GetState().AffectNumber(ref cameraZoom, Keys.Space, Keys.LeftShift, 0.01);
+            Keyboard.GetState().AffectNumber(ref cameraZoom, Keys.Space, Keys.LeftShift, 0.03);
             world = Matrix.CreateRotationZ(-(float)cameraRotX) * Matrix.CreateRotationX((float)cameraRotY); // eh.... think hard on this later
             float distance = (float)(9 * Math.Pow(0.5, cameraZoom));
             view = Matrix.CreateLookAt(new Vector3(0, -1 - distance, 0), new Vector3(0, 0, 0), Vector3.UnitZ);

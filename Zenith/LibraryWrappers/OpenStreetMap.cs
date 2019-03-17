@@ -28,7 +28,7 @@ namespace Zenith.LibraryWrappers
             //SaveCoastLineMap(graphicsDevice);
             RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 512, 512, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
             graphicsDevice.SetRenderTarget(newTarget);
-            DrawCoast(graphicsDevice, sector);
+            //DrawCoast(graphicsDevice, sector);
             DrawRoads(graphicsDevice, sector);
             return newTarget;
         }
