@@ -389,43 +389,10 @@ namespace Zenith.LibraryWrappers
             Sector parent = sector.GetChildrenAtLevel(sector.zoom + 1)[0].GetAllParents().Where(x => x.zoom == 10).Single();
             Sector parent5 = sector.GetChildrenAtLevel(sector.zoom + 1)[0].GetAllParents().Where(x => x.zoom == 5).Single();
             string pensa10Path = @"..\..\..\..\LocalCache\OpenStreetMaps\" + parent5.ToString() + "\\" + parent.ToString() + ".osm.pbf";
-            List<Node> nodes = new List<Node>();
-            List<Way> highways = new List<Way>();
-            using (var reader = new FileInfo(pensa10Path).OpenRead())
-            {
-                using (var src = new PBFOsmStreamSource(reader))
-                {
-                    foreach (var element in src)
-                    {
-                        if (element is Node) nodes.Add((Node)element);
-                        if (IsHighway(element)) highways.Add((Way)element);
-                    }
-                }
-            }
             var basicEffect = new BasicEffect(graphicsDevice);
             basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)sector.LeftLongitude, (float)sector.RightLongitude, (float)sector.BottomLatitude, (float)sector.TopLatitude, 1, 1000); // TODO: figure out if flip was appropriate
             basicEffect.VertexColorEnabled = true;
-            var shapeAsVertices = new List<VertexPositionColor>();
-            foreach (var highway in highways)
-            {
-                for (int i = 0; i < highway.Nodes.Length - 1; i++)
-                {
-                    Node node1 = new Node();
-                    Node node2 = new Node();
-                    node1.Id = highway.Nodes[i];
-                    node2.Id = highway.Nodes[i + 1];
-                    int found1 = nodes.BinarySearch(node1, new NodeComparer());
-                    int found2 = nodes.BinarySearch(node2, new NodeComparer());
-                    if (found1 < 0) continue;
-                    if (found2 < 0) continue;
-                    node1 = nodes[found1];
-                    node2 = nodes[found2];
-                    LongLat longlat1 = new LongLat(node1.Longitude.Value * Math.PI / 180, node1.Latitude.Value * Math.PI / 180);
-                    LongLat longlat2 = new LongLat(node2.Longitude.Value * Math.PI / 180, node2.Latitude.Value * Math.PI / 180);
-                    shapeAsVertices.Add(new VertexPositionColor(new Vector3(longlat1, -10f), Microsoft.Xna.Framework.Color.White));
-                    shapeAsVertices.Add(new VertexPositionColor(new Vector3(longlat2, -10f), Microsoft.Xna.Framework.Color.White));
-                }
-            }
+            var shapeAsVertices = OSM.OSM.GetRoadsFast(pensa10Path);
             if (shapeAsVertices.Count > 0)
             {
                 using (var vertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, shapeAsVertices.Count, BufferUsage.WriteOnly))
@@ -500,19 +467,6 @@ namespace Zenith.LibraryWrappers
                     }
                 }
             }
-        }
-
-        private static bool IsHighway(OsmGeo element)
-        {
-            if (!(element is OsmSharp.Way)) return false;
-            foreach (var tag in element.Tags)
-            {
-                if (tag.Key.Contains("highway"))
-                {
-                    return true;
-                }
-            }
-            return false;
         }
 
         // make a lo-rez map showing where there's coast so we can flood-fill it later with land/water
