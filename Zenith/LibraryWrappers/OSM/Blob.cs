@@ -36,7 +36,7 @@ namespace Zenith.LibraryWrappers.OSM
                     byte[] unzipped = new byte[raw_size];
                     deflateStream.Read(unzipped, 0, raw_size);
                     zlib_data = unzipped;
-                    PrimitiveBlock pBlock = PrimitiveBlock.Read(new MemoryStream(zlib_data));
+                    PrimitiveBlock pBlock = PrimitiveBlock.Read(new MemoryStream(zlib_data), "highway");
                     int highwayIndex = pBlock.stringtable.vals.IndexOf("highway");
                     foreach (var pGroup in pBlock.primitivegroup)
                     {

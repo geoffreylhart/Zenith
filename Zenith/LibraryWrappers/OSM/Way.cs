@@ -15,7 +15,7 @@ namespace Zenith.LibraryWrappers.OSM
         public Info info; // 4
         public List<long> refs = new List<long>(); // 8, packed, signed, delta coded
 
-        internal static Way Read(Stream stream)
+        internal static Way Read(Stream stream, int keyFilter)
         {
             Way obj = new Way();
             long lengthInBytes = OSM.ReadVarInt(stream);
@@ -27,6 +27,7 @@ namespace Zenith.LibraryWrappers.OSM
             if (b == 18)
             {
                 obj.keys = OSM.ReadPackedVarInts(stream).ConvertAll(x => (int)x).ToList();
+                if (!obj.keys.Contains(keyFilter)) stream.Seek(end, SeekOrigin.Begin);
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();

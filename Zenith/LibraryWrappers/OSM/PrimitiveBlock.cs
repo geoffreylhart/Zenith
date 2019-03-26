@@ -17,16 +17,17 @@ namespace Zenith.LibraryWrappers.OSM
         public long lon_offset = 0; // 20
         public int date_granularity = 1000; // 18
 
-        internal static PrimitiveBlock Read(Stream stream)
+        internal static PrimitiveBlock Read(Stream stream, string keyFilter)
         {
             PrimitiveBlock obj = new PrimitiveBlock();
             int b = stream.ReadByte();
             if (b != 10) throw new NotImplementedException();
             obj.stringtable = StringTable.Read(stream);
+            int keyFilterIndex = obj.stringtable.vals.IndexOf(keyFilter);
             b = stream.ReadByte();
             while (b == 18)
             {
-                obj.primitivegroup.Add(PrimitiveGroup.Read(stream));
+                obj.primitivegroup.Add(PrimitiveGroup.Read(stream, keyFilterIndex));
                 b = stream.ReadByte();
             }
             // NOTE: looks like those OSMSharp broken up files don't have any of these
