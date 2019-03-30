@@ -19,7 +19,6 @@ namespace Zenith.LibraryWrappers.OSM
         public byte[] raw; // 10
         public int raw_size; // 16
         public byte[] zlib_data; // 26
-        public static long maxid = 0;
         internal RoadInfo GetRoads()
         {
             if (type != "OSMData") return new RoadInfo();
@@ -47,7 +46,6 @@ namespace Zenith.LibraryWrappers.OSM
                             {
                                 double longitude = .000000001 * (pBlock.lon_offset + (pBlock.granularity * d.lon[i]));
                                 double latitude = .000000001 * (pBlock.lat_offset + (pBlock.granularity * d.lat[i]));
-                                maxid = Math.Max(maxid, d.id[i]);
                                 info.nodes[d.id[i]] = new Vector3((float)(longitude * Math.PI / 180), (float)(latitude * Math.PI / 180), -10f);
                             }
                         }

@@ -77,7 +77,7 @@ namespace Zenith.LibraryWrappers.OSM
             int b = reader.ReadByte();
             if ((b & 1) == 1)
             {
-                long value = (b & 127) / -2;
+                long value = ((b & 127) + 1) / -2;
                 long move = -64;
                 while ((b & 128) == 128)
                 {
@@ -259,7 +259,7 @@ namespace Zenith.LibraryWrappers.OSM
             if (!(element is OsmSharp.Way)) return false;
             foreach (var tag in element.Tags)
             {
-                if (tag.Key.Contains("highway"))
+                if (tag.Key == "highway")
                 {
                     return true;
                 }
