@@ -65,6 +65,36 @@ namespace Zenith.LibraryWrappers.OSM
             return info;
         }
 
+        internal void WriteWayIds(FileStream writer, string keyFilter)
+        {
+            if (type != "OSMData") return;
+            using (var memStream = new MemoryStream(zlib_data))
+            {
+                memStream.ReadByte();
+                memStream.ReadByte();
+                using (var deflateStream = new DeflateStream(memStream, CompressionMode.Decompress))
+                {
+                    byte[] unzipped = new byte[raw_size];
+                    deflateStream.Read(unzipped, 0, raw_size);
+                    zlib_data = unzipped;
+                    PrimitiveBlock pBlock = PrimitiveBlock.ReadWayInfoOnly(new MemoryStream(zlib_data), "highway");
+                    int highwayIndex = pBlock.stringtable.vals.IndexOf("highway");
+                    var bWriter = new BinaryWriter(writer);
+                    foreach (var pGroup in pBlock.primitivegroup)
+                    {
+                        foreach (var way in pGroup.ways)
+                        {
+                            if (way.keys.Contains(highwayIndex))
+                            {
+                                bWriter.Write(way.refs.Count);
+                                foreach (long id in way.refs) bWriter.Write(id);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         internal class RoadInfo
         {
             public Dictionary<long, Vector3> nodes = new Dictionary<long, Vector3>();

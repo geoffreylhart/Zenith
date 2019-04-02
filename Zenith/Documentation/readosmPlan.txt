@@ -1,0 +1,17 @@
+these were the steps I was thinking of originally:
+- filter out ways that have highway tag and grab their node ids
+- sort ways (how to do efficiently?)
+- filter out nodes that match
+- use smaller files to lookup nodes faster ?
+- write all the long lats, sure
+- somehow sort into regions (how?)
+
+
+- note, looks like way node refs tend to reference ids close to each other in our files, so batching will likely be fast
+- instead of batching, we could do caching? with some maximum node blocks loaded at one time
+- recall that pgroups are only supposed to have at most 8k items
+- you will probably need to use that file share property to have multiple readers or something
+
+- all thats left is efficient region output. We -could- just use windows for this... or...? one pass could be done to determine appropriate file size
+	- then the next to actually allocate. i doubt you could use compression at the same time, though
+	- also, seems like itd be definitely faster to just abuse windows

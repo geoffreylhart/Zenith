@@ -199,6 +199,7 @@
     <Content Include="Documentation\CoordinateSystemCheatSheet.txt" />
     <Content Include="Documentation\ImageSources.txt" />
     <Content Include="Documentation\LibraryInfo.txt" />
+    <Content Include="Documentation\readosmPlan.txt" />
     <Content Include="GraphicsSource\Html\bg.png" />
     <Content Include="GraphicsSource\Html\bgblur.png" />
     <Content Include="GraphicsSource\Html\UI.css" />
