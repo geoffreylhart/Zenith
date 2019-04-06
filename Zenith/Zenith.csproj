@@ -82,6 +82,7 @@
     <Compile Include="LibraryWrappers\OSM\PrimitiveBlock.cs" />
     <Compile Include="LibraryWrappers\OSM\PrimitiveGroup.cs" />
     <Compile Include="LibraryWrappers\OSM\Relation.cs" />
+    <Compile Include="LibraryWrappers\OSM\Restructurer.cs" />
     <Compile Include="LibraryWrappers\OSM\StringTable.cs" />
     <Compile Include="LibraryWrappers\OSM\Way.cs" />
     <Compile Include="ZGraphics\GraphicsBasic.cs" />

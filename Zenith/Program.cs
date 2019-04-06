@@ -20,6 +20,7 @@ namespace Zenith
             double time2 = sw.Elapsed.TotalSeconds - time1;
             // takes 57.25 minutes to churn through roads (without associating ways and nodes)
             // OSM.PrintHighwayIds(@"..\..\..\..\LocalCache\planet-latest.osm.pbf", @"..\..\..\..\LocalCache\highwayids.txt"); // took 38.49 minutes and 15.5 gb
+            new Restructurer().WorkOnRestructuring(@"..\..\..\..\LocalCache\planet-latest.osm.pbf", "highway", @"..\..\..\..\LocalCache\temp");
             double time3 = sw.Elapsed.TotalSeconds - time2;
             using (var game = new Game1())
             {

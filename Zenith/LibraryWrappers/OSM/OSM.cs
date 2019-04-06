@@ -90,7 +90,7 @@ namespace Zenith.LibraryWrappers.OSM
             return nums;
         }
 
-        private static long ReadSignedVarInt(Stream reader)
+        public static long ReadSignedVarInt(Stream reader)
         {
             // note, these varints have the least significant byte first
             // note, the sign bit is the first byte
@@ -136,6 +136,35 @@ namespace Zenith.LibraryWrappers.OSM
             return value;
         }
 
+        internal static void WriteSignedVarInt(Stream writer, long x)
+        {
+            if (x < 0)
+            {
+                WriteVarInt(writer, x * -2 - 1);
+            }
+            else
+            {
+                WriteVarInt(writer, x * 2);
+            }
+        }
+
+        internal static void WriteVarInt(Stream writer, long x)
+        {
+            while (x > 0)
+            {
+                if (x > 127)
+                {
+                    writer.WriteByte((byte)(x & 127));
+                    x >>= 7;
+                }
+                else
+                {
+                    writer.WriteByte((byte)x);
+                    return;
+                }
+            }
+        }
+
         internal static List<long> ReadPackedDeltaCodedVarInts(Stream stream)
         {
             long length = ReadVarInt(stream);
@@ -175,14 +204,14 @@ namespace Zenith.LibraryWrappers.OSM
             stream.Seek(length, SeekOrigin.Current);
         }
 
-        private static bool CanRead(FileStream reader)
+        public static bool CanRead(FileStream reader)
         {
             if (reader.ReadByte() < 0) return false;
             reader.Seek(-1, SeekOrigin.Current);
             return true;
         }
 
-        private static Blob ReadBlob(Stream reader)
+        public static Blob ReadBlob(Stream reader)
         {
             Blob blob = new Blob();
             blob.length = ReadInt32(reader);

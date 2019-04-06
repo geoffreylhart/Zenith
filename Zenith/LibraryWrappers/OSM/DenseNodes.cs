@@ -58,5 +58,53 @@ namespace Zenith.LibraryWrappers.OSM
             }
             throw new NotImplementedException();
         }
+
+        internal static DenseNodes ReadNodeStart(MemoryStream stream)
+        {
+            DenseNodes obj = new DenseNodes();
+            long lengthInBytes = OSM.ReadVarInt(stream);
+            long end = stream.Position + lengthInBytes;
+            int b = stream.ReadByte();
+            if (b == 10)
+            {
+                obj.id = new List<long>();
+                long length = OSM.ReadVarInt(stream);
+                if (length > 0)
+                {
+                    obj.id.Add(OSM.ReadSignedVarInt(stream));
+                }
+                stream.Seek(end, SeekOrigin.Begin);
+                return obj;
+            }
+            if (b == 42)
+            {
+                OSM.SkipBytes(stream);
+                if (stream.Position > end) throw new NotImplementedException();
+                if (stream.Position == end) return obj;
+                b = stream.ReadByte();
+            }
+            if (b == 66)
+            {
+                OSM.SkipBytes(stream);
+                if (stream.Position > end) throw new NotImplementedException();
+                if (stream.Position == end) return obj;
+                b = stream.ReadByte();
+            }
+            if (b == 74)
+            {
+                OSM.SkipBytes(stream);
+                if (stream.Position > end) throw new NotImplementedException();
+                if (stream.Position == end) return obj;
+                b = stream.ReadByte();
+            }
+            if (b == 82)
+            {
+                OSM.SkipBytes(stream);
+                if (stream.Position > end) throw new NotImplementedException();
+                if (stream.Position == end) return obj;
+                b = stream.ReadByte();
+            }
+            throw new NotImplementedException();
+        }
     }
 }

@@ -92,5 +92,79 @@ namespace Zenith.LibraryWrappers.OSM
             if (b != -1) throw new NotImplementedException();
             return obj;
         }
+
+        internal static PrimitiveBlock ReadDenseNodesOnly(MemoryStream stream)
+        {
+            PrimitiveBlock obj = new PrimitiveBlock();
+            int b = stream.ReadByte();
+            if (b != 10) throw new NotImplementedException();
+            OSM.SkipBytes(stream);
+            b = stream.ReadByte();
+            while (b == 18)
+            {
+                obj.primitivegroup.Add(PrimitiveGroup.ReadDenseNodesOnly(stream));
+                b = stream.ReadByte();
+            }
+            // NOTE: looks like those OSMSharp broken up files don't have any of these
+            if (b == 136)
+            {
+                obj.granularity = (int)OSM.ReadVarInt(stream);
+                b = stream.ReadByte();
+            }
+            if (b == 152)
+            {
+                obj.lat_offset = OSM.ReadVarInt(stream);
+                b = stream.ReadByte();
+            }
+            if (b == 160)
+            {
+                obj.lon_offset = OSM.ReadVarInt(stream);
+                b = stream.ReadByte();
+            }
+            if (b == 144)
+            {
+                obj.date_granularity = (int)OSM.ReadVarInt(stream);
+                b = stream.ReadByte();
+            }
+            if (b != -1) throw new NotImplementedException();
+            return obj;
+        }
+
+        internal static PrimitiveBlock ReadDenseNodeStartOnly(MemoryStream stream)
+        {
+            PrimitiveBlock obj = new PrimitiveBlock();
+            int b = stream.ReadByte();
+            if (b != 10) throw new NotImplementedException();
+            OSM.SkipBytes(stream);
+            b = stream.ReadByte();
+            while (b == 18)
+            {
+                obj.primitivegroup.Add(PrimitiveGroup.ReadDenseNodeStartOnly(stream));
+                b = stream.ReadByte();
+            }
+            // NOTE: looks like those OSMSharp broken up files don't have any of these
+            if (b == 136)
+            {
+                obj.granularity = (int)OSM.ReadVarInt(stream);
+                b = stream.ReadByte();
+            }
+            if (b == 152)
+            {
+                obj.lat_offset = OSM.ReadVarInt(stream);
+                b = stream.ReadByte();
+            }
+            if (b == 160)
+            {
+                obj.lon_offset = OSM.ReadVarInt(stream);
+                b = stream.ReadByte();
+            }
+            if (b == 144)
+            {
+                obj.date_granularity = (int)OSM.ReadVarInt(stream);
+                b = stream.ReadByte();
+            }
+            if (b != -1) throw new NotImplementedException();
+            return obj;
+        }
     }
 }

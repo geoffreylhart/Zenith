@@ -19,6 +19,7 @@ namespace Zenith.LibraryWrappers.OSM
         public byte[] raw; // 10
         public int raw_size; // 16
         public byte[] zlib_data; // 26
+
         internal RoadInfo GetRoads()
         {
             if (type != "OSMData") return new RoadInfo();
@@ -65,6 +66,31 @@ namespace Zenith.LibraryWrappers.OSM
             return info;
         }
 
+        internal List<long> GetDenseNodeStarts()
+        {
+            var answer = new List<long>();
+            if (type != "OSMData") return answer;
+            using (var memStream = new MemoryStream(zlib_data))
+            {
+                memStream.ReadByte();
+                memStream.ReadByte();
+                using (var deflateStream = new DeflateStream(memStream, CompressionMode.Decompress))
+                {
+                    byte[] unzipped = new byte[raw_size];
+                    deflateStream.Read(unzipped, 0, raw_size);
+                    zlib_data = unzipped;
+                    PrimitiveBlock pBlock = PrimitiveBlock.ReadDenseNodeStartOnly(new MemoryStream(zlib_data));
+                    foreach (var pGroup in pBlock.primitivegroup)
+                    {
+                        foreach (var d in pGroup.dense) {
+                            if (d.id.Count > 0) answer.Add(d.id[0]);
+                        }
+                    }
+                }
+            }
+            return answer;
+        }
+
         internal void WriteWayIds(FileStream writer, string keyFilter)
         {
             if (type != "OSMData") return;
@@ -95,10 +121,63 @@ namespace Zenith.LibraryWrappers.OSM
             }
         }
 
+        internal List<List<long>> GetWayIds(string keyFilter)
+        {
+            var answer = new List<List<long>>();
+            if (type != "OSMData") return answer;
+            using (var memStream = new MemoryStream(zlib_data))
+            {
+                memStream.ReadByte();
+                memStream.ReadByte();
+                using (var deflateStream = new DeflateStream(memStream, CompressionMode.Decompress))
+                {
+                    byte[] unzipped = new byte[raw_size];
+                    deflateStream.Read(unzipped, 0, raw_size);
+                    zlib_data = unzipped;
+                    PrimitiveBlock pBlock = PrimitiveBlock.ReadWayInfoOnly(new MemoryStream(zlib_data), "highway");
+                    int highwayIndex = pBlock.stringtable.vals.IndexOf("highway");
+                    foreach (var pGroup in pBlock.primitivegroup)
+                    {
+                        foreach (var way in pGroup.ways)
+                        {
+                            if (way.keys.Contains(highwayIndex))
+                            {
+                                answer.Add(way.refs);
+                            }
+                        }
+                    }
+                }
+            }
+            return answer;
+        }
+
         internal class RoadInfo
         {
             public Dictionary<long, Vector3> nodes = new Dictionary<long, Vector3>();
             public List<List<long>> refs = new List<List<long>>();
+        }
+
+        internal List<DenseNodes> GetDense()
+        {
+            var answer = new List<DenseNodes>();
+            if (type != "OSMData") return answer;
+            using (var memStream = new MemoryStream(zlib_data))
+            {
+                memStream.ReadByte();
+                memStream.ReadByte();
+                using (var deflateStream = new DeflateStream(memStream, CompressionMode.Decompress))
+                {
+                    byte[] unzipped = new byte[raw_size];
+                    deflateStream.Read(unzipped, 0, raw_size);
+                    zlib_data = unzipped;
+                    PrimitiveBlock pBlock = PrimitiveBlock.ReadDenseNodesOnly(new MemoryStream(zlib_data));
+                    foreach (var pGroup in pBlock.primitivegroup)
+                    {
+                        answer.AddRange(pGroup.dense);
+                    }
+                }
+            }
+            return answer;
         }
     }
 }
