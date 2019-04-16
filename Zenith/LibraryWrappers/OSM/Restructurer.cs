@@ -14,40 +14,76 @@ namespace Zenith.LibraryWrappers.OSM
         FileStream nodeReader;
         long[] blobStarts; // the id of the first node in a blob (that contains nodes)
         long[] blobPos; // the file pos of the blob 
+        bool ACTUALLY_WRITE = false;
 
         internal void WorkOnRestructuring(string planetPath, string wayKey, string outputFolder)
         {
-            for (int i = 0; i < 1024; i++)
+            if (ACTUALLY_WRITE)
             {
-                for (int j = 0; j < 1024; j++)
+                for (int i = 0; i < 1024; i++)
                 {
-                    Sector parent = new Sector(i, j, 10);
-                    Sector parent5 = new Sector(i / 32, j / 32, 5);
-                    string folder = Path.Combine(outputFolder, parent5.ToString());
-                    string outputPath = Path.Combine(outputFolder, parent5.ToString(), parent.ToString() + ".dat");
-                    if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
-                    outputStreams[i, j] = File.OpenWrite(outputPath);
-                }
-            }
-            using (var reader = File.OpenRead(planetPath))
-            {
-                while (OSM.CanRead(reader))
-                {
-                    BlobRef blobRef = new BlobRef(reader.Position);
-                    Blob blob = OSM.ReadBlob(reader);
-                    List<long> blobDenseNodeStarts = blob.GetDenseNodeStarts(); // TODO: write this method
-                    for (int i = 0; i < blobDenseNodeStarts.Count; i++)
+                    for (int j = 0; j < 1024; j++)
                     {
-                        denseNodeStarts.Add(blobDenseNodeStarts[i]);
-                        blobRefs.Add(blobRef);
-                        denseNodeIndexes.Add(i);
+                        Sector parent = new Sector(i, j, 10);
+                        Sector parent5 = new Sector(i / 32, j / 32, 5);
+                        string folder = Path.Combine(outputFolder, parent5.ToString());
+                        string outputPath = Path.Combine(outputFolder, parent5.ToString(), parent.ToString() + ".dat");
+                        if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+                        outputStreams[i, j] = File.OpenWrite(outputPath);
                     }
                 }
+            }
+            string denseCachePath = @"..\..\..\..\LocalCache\denseCache.txt";
+            string denseIndexCachePath = @"..\..\..\..\LocalCache\denseIndexCache.txt";
+            string denseCountCachePath = @"..\..\..\..\LocalCache\denseCountCache.txt";
+            if (File.Exists(denseCachePath) && File.Exists(denseIndexCachePath) && File.Exists(denseCountCachePath))
+            {
+                denseNodeStarts = File.ReadAllText(denseCachePath).Split(',').Select(x => long.Parse(x)).ToList();
+                denseNodeIndexes = File.ReadAllText(denseIndexCachePath).Split(',').Select(x => int.Parse(x)).ToList();
+                List<int> denseNodeCounts = File.ReadAllText(denseCountCachePath).Split(',').Select(x => int.Parse(x)).ToList();
+                int di = 0;
+                using (var reader = File.OpenRead(planetPath))
+                {
+                    while (OSM.CanRead(reader))
+                    {
+                        BlobRef blobRef = new BlobRef(reader.Position);
+                        Blob blob = OSM.ReadBlob(reader);
+                        for (int i = 0; i < denseNodeCounts[di]; i++)
+                        {
+                            blobRefs.Add(blobRef);
+                        }
+                        di++;
+                    }
+                }
+            }
+            else
+            {
+                List<int> denseNodeCounts = new List<int>();
+                using (var reader = File.OpenRead(planetPath))
+                {
+                    while (OSM.CanRead(reader))
+                    {
+                        BlobRef blobRef = new BlobRef(reader.Position);
+                        Blob blob = OSM.ReadBlob(reader);
+                        List<long> blobDenseNodeStarts = blob.GetDenseNodeStarts(); // TODO: write this method
+                        denseNodeCounts.Add(blobDenseNodeStarts.Count);
+                        for (int i = 0; i < blobDenseNodeStarts.Count; i++)
+                        {
+                            denseNodeStarts.Add(blobDenseNodeStarts[i]);
+                            blobRefs.Add(blobRef);
+                            denseNodeIndexes.Add(i);
+                        }
+                    }
+                }
+                File.WriteAllText(denseCachePath, string.Join(",", denseNodeStarts));
+                File.WriteAllText(denseIndexCachePath, string.Join(",", denseNodeIndexes));
+                File.WriteAllText(denseCountCachePath, string.Join(",", denseNodeCounts));
             }
             using (nodeReader = File.OpenRead(planetPath))
             {
                 using (var reader = File.OpenRead(planetPath))
                 {
+                    reader.Seek(31341741752, SeekOrigin.Begin);
                     while (OSM.CanRead(reader))
                     {
                         Blob blob = OSM.ReadBlob(reader);
@@ -80,18 +116,24 @@ namespace Zenith.LibraryWrappers.OSM
                                 {
                                     int x = (i + 10240) % 1024;
                                     int y = (j + 10240) % 1024;
-                                    WriteLongLats(longLats, outputStreams[x, y]);
+                                    if (ACTUALLY_WRITE)
+                                    {
+                                        WriteLongLats(longLats, outputStreams[x, y]);
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-            for (int i = 0; i < 1024; i++)
+            if (ACTUALLY_WRITE)
             {
-                for (int j = 0; j < 1024; j++)
+                for (int i = 0; i < 1024; i++)
                 {
-                    outputStreams[i, j].Dispose();
+                    for (int j = 0; j < 1024; j++)
+                    {
+                        outputStreams[i, j].Dispose();
+                    }
                 }
             }
         }
@@ -112,25 +154,28 @@ namespace Zenith.LibraryWrappers.OSM
             }
         }
 
+        long NODE_GETS = 0;
+        long DENSE_GETS = 0;
         private LongLatPair GetNodeLongLatInfo(long nodeId)
         {
+            NODE_GETS++;
             DenseNodes dense = GetDenseNodes(nodeId);
             int pos = dense.id.BinarySearch(nodeId);
             if (pos < 0) throw new NotImplementedException();
             return new LongLatPair(dense.lon[pos], dense.lat[pos]);
         }
-        // TODO: generate these
         List<long> denseNodeStarts = new List<long>(); // the id of the first item in each denseNode
         List<BlobRef> blobRefs = new List<BlobRef>(); // a reference to the blob containing the denseNode
         List<int> denseNodeIndexes = new List<int>(); // the index of the denseNode within its blob
         Queue<BlobRef> lastAccessedBlobs = new Queue<BlobRef>(); // keeps track of last blobs used
-        static int MAX_CACHE = 3;
+        static int MAX_CACHE = 50;
         private DenseNodes GetDenseNodes(long nodeId)
         {
             int pos = denseNodeStarts.BinarySearch(nodeId);
             if (pos < 0) pos = (~pos) - 1;
             if (!lastAccessedBlobs.Contains(blobRefs[pos]))
             {
+                DENSE_GETS++;
                 blobRefs[pos].Load(nodeReader);
                 if (lastAccessedBlobs.Count >= MAX_CACHE) lastAccessedBlobs.Dequeue().Unload();
                 lastAccessedBlobs.Enqueue(blobRefs[pos]);
