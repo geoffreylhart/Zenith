@@ -19,14 +19,14 @@ namespace Zenith.LibraryWrappers.OSM
         internal static List<VertexPositionColor> GetRoadsFast(string path)
         {
             List<Blob> blobs = new List<Blob>();
-            List<RoadInfo> roads = new List<RoadInfo>();
+            List<RoadInfoVector> roads = new List<RoadInfoVector>();
             using (var reader = File.OpenRead(path))
             {
                 while (CanRead(reader))
                 {
                     Blob blob = ReadBlob(reader);
                     blobs.Add(blob);
-                    roads.Add(blob.GetRoads());
+                    roads.Add(blob.GetRoadVectors());
                 }
             }
             List<VertexPositionColor> vertices = new List<VertexPositionColor>();

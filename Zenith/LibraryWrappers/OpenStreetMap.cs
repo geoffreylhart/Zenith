@@ -15,6 +15,7 @@ using OsmSharp.Streams;
 using TriangleNet.Geometry;
 using TriangleNet.Meshing;
 using Zenith.EditorGameComponents.FlatComponents;
+using Zenith.LibraryWrappers.OSM;
 using Zenith.ZGraphics;
 using Zenith.ZMath;
 using static Zenith.EditorGameComponents.FlatComponents.SectorLoader;
@@ -35,12 +36,9 @@ namespace Zenith.LibraryWrappers
 
         private static void DrawCoast(GraphicsDevice graphicsDevice, Sector sector)
         {
-            Sector parent = sector.GetChildrenAtLevel(sector.zoom + 1)[0].GetAllParents().Where(x => x.zoom == 10).Single();
-            Sector parent5 = sector.GetChildrenAtLevel(sector.zoom + 1)[0].GetAllParents().Where(x => x.zoom == 5).Single();
-            string pensa10Path = @"..\..\..\..\LocalCache\OpenStreetMaps\" + parent5.ToString() + "\\" + parent.ToString() + ".osm.pbf";
             List<Node> nodes = new List<Node>();
             List<Way> ways = new List<Way>();
-            using (var reader = new FileInfo(pensa10Path).OpenRead())
+            using (var reader = new FileInfo(OSMPaths.GetSectorPath(sector)).OpenRead())
             {
                 using (var src = new PBFOsmStreamSource(reader))
                 {
@@ -386,13 +384,10 @@ namespace Zenith.LibraryWrappers
 
         private static void DrawRoads(GraphicsDevice graphicsDevice, Sector sector)
         {
-            Sector parent = sector.GetChildrenAtLevel(sector.zoom + 1)[0].GetAllParents().Where(x => x.zoom == 10).Single();
-            Sector parent5 = sector.GetChildrenAtLevel(sector.zoom + 1)[0].GetAllParents().Where(x => x.zoom == 5).Single();
-            string pensa10Path = @"..\..\..\..\LocalCache\OpenStreetMaps\" + parent5.ToString() + "\\" + parent.ToString() + ".osm.pbf";
             var basicEffect = new BasicEffect(graphicsDevice);
             basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)sector.LeftLongitude, (float)sector.RightLongitude, (float)sector.BottomLatitude, (float)sector.TopLatitude, 1, 1000); // TODO: figure out if flip was appropriate
             basicEffect.VertexColorEnabled = true;
-            var shapeAsVertices = OSM.OSM.GetRoadsFast(pensa10Path);
+            var shapeAsVertices = OSM.OSM.GetRoadsFast(OSMPaths.GetSectorPath(sector));
             if (shapeAsVertices.Count > 0)
             {
                 using (var vertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, shapeAsVertices.Count, BufferUsage.WriteOnly))
@@ -488,10 +483,7 @@ namespace Zenith.LibraryWrappers
 
         private static bool ContainsCoast(Sector s)
         {
-            Sector parent = s.GetChildrenAtLevel(s.zoom + 1)[0].GetAllParents().Where(x => x.zoom == 10).Single();
-            Sector parent5 = s.GetChildrenAtLevel(s.zoom + 1)[0].GetAllParents().Where(x => x.zoom == 5).Single();
-            string pensa10Path = @"..\..\..\..\LocalCache\OpenStreetMaps\" + parent5.ToString() + "\\" + parent.ToString() + ".osm.pbf";
-            var source = new PBFOsmStreamSource(new FileInfo(pensa10Path).OpenRead());
+            var source = new PBFOsmStreamSource(new FileInfo(OSMPaths.GetSectorPath(s)).OpenRead());
             foreach (var element in source)
             {
                 if (element.Tags.Contains("natural", "coastline")) return true;

@@ -79,12 +79,13 @@
     <Compile Include="LibraryWrappers\OSM\Info.cs" />
     <Compile Include="LibraryWrappers\OSM\Node.cs" />
     <Compile Include="LibraryWrappers\OSM\OSM.cs" />
+    <Compile Include="LibraryWrappers\OSM\OSMPaths.cs" />
     <Compile Include="LibraryWrappers\OSM\PrimitiveBlock.cs" />
     <Compile Include="LibraryWrappers\OSM\PrimitiveGroup.cs" />
     <Compile Include="LibraryWrappers\OSM\Relation.cs" />
     <Compile Include="LibraryWrappers\OSM\Restructurer.cs" />
     <Compile Include="LibraryWrappers\OSM\StringTable.cs" />
-    <Compile Include="LibraryWrappers\OSM\Way.cs" />
+    <Compile Include="LibraryWrappers\OSM\Way2.cs" />
     <Compile Include="ZGraphics\GraphicsBasic.cs" />
     <Compile Include="Helpers\GraphicsDeviceHelper.cs" />
     <Compile Include="Helpers\KeyboardStateHelper.cs" />
@@ -200,6 +201,7 @@
     <Content Include="Documentation\CoordinateSystemCheatSheet.txt" />
     <Content Include="Documentation\ImageSources.txt" />
     <Content Include="Documentation\LibraryInfo.txt" />
+    <Content Include="Documentation\RandomIdeas.txt" />
     <Content Include="Documentation\readosmPlan.txt" />
     <Content Include="GraphicsSource\Html\bg.png" />
     <Content Include="GraphicsSource\Html\bgblur.png" />

@@ -20,10 +20,10 @@ namespace Zenith.LibraryWrappers.OSM
         public int raw_size; // 16
         public byte[] zlib_data; // 26
 
-        internal RoadInfo GetRoads()
+        internal RoadInfoVector GetRoadVectors()
         {
-            if (type != "OSMData") return new RoadInfo();
-            RoadInfo info = new RoadInfo();
+            if (type != "OSMData") return new RoadInfoVector();
+            RoadInfoVector info = new RoadInfoVector();
             List<VertexPositionColor> roads = new List<VertexPositionColor>();
             using (var memStream = new MemoryStream(zlib_data))
             {
@@ -48,6 +48,52 @@ namespace Zenith.LibraryWrappers.OSM
                                 double longitude = .000000001 * (pBlock.lon_offset + (pBlock.granularity * d.lon[i]));
                                 double latitude = .000000001 * (pBlock.lat_offset + (pBlock.granularity * d.lat[i]));
                                 info.nodes[d.id[i]] = new Vector3((float)(longitude * Math.PI / 180), (float)(latitude * Math.PI / 180), -10f);
+                            }
+                        }
+                    }
+                    foreach (var pGroup in pBlock.primitivegroup)
+                    {
+                        foreach (var way in pGroup.ways)
+                        {
+                            if (way.keys.Contains(highwayIndex))
+                            {
+                                info.refs.Add(way.refs);
+                            }
+                        }
+                    }
+                }
+            }
+            return info;
+        }
+
+        internal RoadInfo GetRoadLongLats()
+        {
+            if (type != "OSMData") return new RoadInfo();
+            RoadInfo info = new RoadInfo();
+            List<VertexPositionColor> roads = new List<VertexPositionColor>();
+            using (var memStream = new MemoryStream(zlib_data))
+            {
+                // skip first two bytes
+                // "Those bytes are part of the zlib specification (RFC 1950), not the deflate specification (RFC 1951). Those bytes contain information about the compression method and flags."
+                memStream.ReadByte();
+                memStream.ReadByte();
+                using (var deflateStream = new DeflateStream(memStream, CompressionMode.Decompress))
+                {
+                    byte[] unzipped = new byte[raw_size];
+                    deflateStream.Read(unzipped, 0, raw_size);
+                    zlib_data = unzipped;
+                    PrimitiveBlock pBlock = PrimitiveBlock.Read(new MemoryStream(zlib_data), "highway");
+                    int highwayIndex = pBlock.stringtable.vals.IndexOf("highway");
+                    foreach (var pGroup in pBlock.primitivegroup)
+                    {
+                        foreach (var d in pGroup.dense)
+                        {
+                            if (d.id.Count != d.lat.Count || d.lat.Count != d.lon.Count) throw new NotImplementedException();
+                            for (int i = 0; i < d.id.Count; i++)
+                            {
+                                long longitude = pBlock.lon_offset + (pBlock.granularity * d.lon[i]);
+                                long latitude = pBlock.lat_offset + (pBlock.granularity * d.lat[i]);
+                                info.nodes[d.id[i]] = new LongLatPair(longitude, latitude);
                             }
                         }
                     }
@@ -150,8 +196,25 @@ namespace Zenith.LibraryWrappers.OSM
             }
             return answer;
         }
+        internal class LongLatPair
+        {
+            public long x;
+            public long y;
+
+            public LongLatPair(long x, long y)
+            {
+                this.x = x;
+                this.y = y;
+            }
+        }
 
         internal class RoadInfo
+        {
+            public Dictionary<long, LongLatPair> nodes = new Dictionary<long, LongLatPair>();
+            public List<List<long>> refs = new List<List<long>>();
+        }
+
+        internal class RoadInfoVector
         {
             public Dictionary<long, Vector3> nodes = new Dictionary<long, Vector3>();
             public List<List<long>> refs = new List<List<long>>();
