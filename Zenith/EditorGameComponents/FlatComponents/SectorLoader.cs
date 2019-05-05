@@ -10,6 +10,7 @@ using Zenith.EditorGameComponents.UIComponents;
 using Zenith.MathHelpers;
 using Zenith.PrimitiveBuilder;
 using Zenith.ZGraphics;
+using Zenith.ZGraphics.GraphicsBuffers;
 using Zenith.ZMath;
 
 namespace Zenith.EditorGameComponents.FlatComponents
@@ -17,7 +18,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
     abstract class SectorLoader : IFlatComponent, IEditorGameComponent
     {
         private static int MAX_ZOOM = 19;
-        Dictionary<Sector, VertexIndiceBuffer> loadedMaps = new Dictionary<Sector, VertexIndiceBuffer>();
+        Dictionary<Sector, IGraphicsBuffer> loadedMaps = new Dictionary<Sector, IGraphicsBuffer>();
         HashSet<Sector> toLoad = new HashSet<Sector>();
         Sector previewSquare = null;
 
@@ -58,14 +59,11 @@ namespace Zenith.EditorGameComponents.FlatComponents
             }
             // end autoload stuff
             GraphicsDevice graphicsDevice = renderTarget.GraphicsDevice;
-            var basicEffect = new BasicEffect(graphicsDevice);
-            basicEffect.TextureEnabled = true;
-            basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)minX, (float)maxX, (float)maxY, (float)minY, 1, 1000);
             foreach (var l in toLoad)
             {
                 if (!loadedMaps.ContainsKey(l))
                 {
-                    loadedMaps[l] = GetCachedMap(renderTarget, l);
+                    loadedMaps[l] = GetGraphicsBuffer(renderTarget.GraphicsDevice, l);
                 }
             }
             toLoad = new HashSet<Sector>();
@@ -73,19 +71,14 @@ namespace Zenith.EditorGameComponents.FlatComponents
             sorted.Sort((x, y) => x.zoom.CompareTo(y.zoom));
             foreach (var sector in sorted)
             {
-                VertexIndiceBuffer buffer = loadedMaps[sector];
-                basicEffect.Texture = buffer.texture;
-                foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
-                {
-                    pass.Apply();
-                    graphicsDevice.Indices = buffer.indices;
-                    graphicsDevice.SetVertexBuffer(buffer.vertices);
-                    graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, buffer.indices.IndexCount / 3);
-                }
-                graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, graphicsDevice.Viewport.MaxDepth, 0);
+                IGraphicsBuffer buffer = loadedMaps[sector];
+                buffer.Draw(renderTarget, minX, maxX, minY, maxY, cameraZoom);
             }
             if (previewSquare != null)
             {
+                var basicEffect = new BasicEffect(graphicsDevice);
+                basicEffect.TextureEnabled = true;
+                basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)minX, (float)maxX, (float)maxY, (float)minY, 1, 1000);
                 basicEffect.TextureEnabled = false;
                 basicEffect.VertexColorEnabled = true;
                 basicEffect.LightingEnabled = false;
@@ -153,16 +146,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
             toLoad.Add(squareCenter);
         }
 
-        public abstract Texture2D GetTexture(GraphicsDevice graphicsDevice, Sector sector);
-
-        private VertexIndiceBuffer GetCachedMap(RenderTarget2D renderTarget, Sector sector)
-        {
-            VertexIndiceBuffer buffer = SphereBuilder.MapMercatorToCylindrical(renderTarget.GraphicsDevice, 2, Math.Pow(0.5, sector.zoom), sector.Latitude, sector.Longitude);
-            buffer.texture = GetTexture(renderTarget.GraphicsDevice, sector);
-            renderTarget.GraphicsDevice.SetRenderTarget(renderTarget); // TODO: let's just assume this won't cause issues for now
-            return buffer;
-        }
-
+        public abstract IGraphicsBuffer GetGraphicsBuffer(GraphicsDevice graphicsDevice, Sector sector);
 
         private static double ToLat(double y)
         {

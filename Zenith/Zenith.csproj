@@ -44,9 +44,7 @@
   <ItemGroup>
     <Compile Include="AdvancedGeometryDataStructures\EditableMesh.cs" />
     <Compile Include="Configuration.cs" />
-    <Compile Include="EditorGameComponents\FlatComponents\CustomMaps.cs" />
     <Compile Include="EditorGameComponents\FlatComponents\GeometryEditor.cs" />
-    <Compile Include="EditorGameComponents\FlatComponents\GoogleMaps.cs" />
     <Compile Include="EditorGameComponents\FlatComponents\I2DComponent.cs" />
     <Compile Include="EditorGameComponents\BlenderAxis.cs" />
     <Compile Include="EditorGameComponents\CityMarker.cs" />
@@ -106,6 +104,9 @@
     <Compile Include="MathHelpers\Matrixd.cs" />
     <Compile Include="MathHelpers\Rayd.cs" />
     <Compile Include="MathHelpers\RayHelper.cs" />
+    <Compile Include="ZGraphics\GraphicsBuffers\GraphicsBuffer.cs" />
+    <Compile Include="ZGraphics\GraphicsBuffers\IGraphicsBuffer.cs" />
+    <Compile Include="ZGraphics\GraphicsBuffers\ImageTileBuffer.cs" />
     <Compile Include="ZGraphics\Pallete.cs" />
     <Compile Include="ZGraphics\SpriteBatchBasic.cs" />
     <Compile Include="ZMath\Line3.cs" />

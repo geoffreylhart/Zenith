@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Zenith.LibraryWrappers;
 using Zenith.ZGraphics;
+using Zenith.ZGraphics.GraphicsBuffers;
 using Zenith.ZMath;
 
 namespace Zenith.EditorGameComponents.FlatComponents
@@ -49,7 +50,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
             }
         }
 
-        public override Texture2D GetTexture(GraphicsDevice graphicsDevice, Sector sector)
+        private Texture2D GetImage(GraphicsDevice graphicsDevice, Sector sector)
         {
             // TODO: partial picture saving of textures is happening for some other reason - not internet connection issues
             String fileName = sector.ToString() + ".PNG";
@@ -74,7 +75,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 Texture2D[] textures = new Texture2D[roadSectors.Count];
                 for (int i = 0; i < roadSectors.Count; i++)
                 {
-                    textures[i] = GetTexture(graphicsDevice, roadSectors[i]);
+                    textures[i] = GetImage(graphicsDevice, roadSectors[i]);
                 }
                 if (textures.Any(x => x != null))
                 {
@@ -106,6 +107,11 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 }
             }
             return rendered;
+        }
+
+        public override IGraphicsBuffer GetGraphicsBuffer(GraphicsDevice graphicsDevice, Sector sector)
+        {
+            return new ImageTileBuffer(graphicsDevice, GetImage(graphicsDevice, sector), sector);
         }
     }
 }
