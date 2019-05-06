@@ -50,32 +50,30 @@ namespace Zenith.EditorGameComponents.FlatComponents
             }
         }
 
-        private Texture2D GetImage(GraphicsDevice graphicsDevice, Sector sector)
+        public override IGraphicsBuffer GetGraphicsBuffer(GraphicsDevice graphicsDevice, Sector sector)
         {
-            // TODO: partial picture saving of textures is happening for some other reason - not internet connection issues
             String fileName = sector.ToString() + ".PNG";
-            // check for composite first
             if (File.Exists(mapFolder + fileName))
             {
                 using (var reader = File.OpenRead(mapFolder + fileName))
                 {
-                    return Texture2D.FromStream(graphicsDevice, reader);
+                    return new ImageTileBuffer(graphicsDevice, Texture2D.FromStream(graphicsDevice, reader), sector);
                 }
             }
             // otherwise, build it
-            Texture2D rendered;
             if (sector.zoom >= 10)
             {
-                rendered = OpenStreetMap.GetRoads(graphicsDevice, sector);
+                return new VectorTileBuffer(graphicsDevice, OpenStreetMap.GetRoads(graphicsDevice, sector), sector);
             }
             else
             {
-                rendered = new RenderTarget2D(graphicsDevice, 512, 512, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
+                // combination image
+                Texture2D rendered = new RenderTarget2D(graphicsDevice, 512, 512, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
                 List<Sector> roadSectors = sector.GetChildrenAtLevel(sector.zoom + 1);
                 Texture2D[] textures = new Texture2D[roadSectors.Count];
                 for (int i = 0; i < roadSectors.Count; i++)
                 {
-                    textures[i] = GetImage(graphicsDevice, roadSectors[i]);
+                    textures[i] = GetGraphicsBuffer(graphicsDevice, roadSectors[i]).GetImage(graphicsDevice);
                 }
                 if (textures.Any(x => x != null))
                 {
@@ -93,25 +91,19 @@ namespace Zenith.EditorGameComponents.FlatComponents
                         }
                     }
                 }
-                for(int i = 0; i < textures.Length; i++)
+                for (int i = 0; i < textures.Length; i++)
                 {
                     if (textures[i] != null) textures[i].Dispose();
                 }
-            }
-            // save texture, but not if its too small
-            if (sector.zoom <= 7)
-            {
-                using (var writer = File.OpenWrite(mapFolder + fileName))
+                if (sector.zoom <= 7)
                 {
-                    rendered.SaveAsPng(writer, rendered.Width, rendered.Height);
+                    using (var writer = File.OpenWrite(mapFolder + fileName))
+                    {
+                        rendered.SaveAsPng(writer, rendered.Width, rendered.Height);
+                    }
                 }
+                return new ImageTileBuffer(graphicsDevice, rendered, sector);
             }
-            return rendered;
-        }
-
-        public override IGraphicsBuffer GetGraphicsBuffer(GraphicsDevice graphicsDevice, Sector sector)
-        {
-            return new ImageTileBuffer(graphicsDevice, GetImage(graphicsDevice, sector), sector);
         }
     }
 }

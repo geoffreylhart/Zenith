@@ -24,14 +24,11 @@ namespace Zenith.LibraryWrappers
 {
     class OpenStreetMap
     {
-        internal static Texture2D GetRoads(GraphicsDevice graphicsDevice, Sector sector)
+        internal static List<VertexPositionColor> GetRoads(GraphicsDevice graphicsDevice, Sector sector)
         {
             //SaveCoastLineMap(graphicsDevice);
-            RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 512, 512, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
-            graphicsDevice.SetRenderTarget(newTarget);
             //DrawCoast(graphicsDevice, sector);
-            DrawRoads(graphicsDevice, sector);
-            return newTarget;
+            return DrawRoads(graphicsDevice, sector);
         }
 
         private static void DrawCoast(GraphicsDevice graphicsDevice, Sector sector)
@@ -382,25 +379,9 @@ namespace Zenith.LibraryWrappers
             }
         }
 
-        private static void DrawRoads(GraphicsDevice graphicsDevice, Sector sector)
+        private static List<VertexPositionColor> DrawRoads(GraphicsDevice graphicsDevice, Sector sector)
         {
-            var basicEffect = new BasicEffect(graphicsDevice);
-            basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)sector.LeftLongitude, (float)sector.RightLongitude, (float)sector.BottomLatitude, (float)sector.TopLatitude, 1, 1000); // TODO: figure out if flip was appropriate
-            basicEffect.VertexColorEnabled = true;
-            var shapeAsVertices = OSM.OSM.GetRoadsFast(OSMPaths.GetSectorPath(sector));
-            if (shapeAsVertices.Count > 0)
-            {
-                using (var vertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, shapeAsVertices.Count, BufferUsage.WriteOnly))
-                {
-                    vertexBuffer.SetData(shapeAsVertices.ToArray());
-                    graphicsDevice.SetVertexBuffer(vertexBuffer);
-                    foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
-                    {
-                        pass.Apply();
-                        graphicsDevice.DrawPrimitives(PrimitiveType.LineList, 0, vertexBuffer.VertexCount / 2);
-                    }
-                }
-            }
+            return OSM.OSM.GetRoadsFast(OSMPaths.GetSectorPath(sector));
         }
 
         // est: since going from 6 to 10 took 1 minute, we might expect doing all 256 would take 256 minutes

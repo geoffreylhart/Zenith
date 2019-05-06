@@ -10,5 +10,6 @@ namespace Zenith.ZGraphics.GraphicsBuffers
     interface IGraphicsBuffer : IDisposable
     {
         void Draw(RenderTarget2D renderTarget, double minX, double maxX, double minY, double maxY, double cameraZoom);
+        Texture2D GetImage(GraphicsDevice graphicsDevice);
     }
 }

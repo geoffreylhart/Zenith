@@ -42,5 +42,10 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             }
             graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, graphicsDevice.Viewport.MaxDepth, 0);
         }
+
+        public Texture2D GetImage(GraphicsDevice graphicsDevice)
+        {
+            return buffer.texture;
+        }
     }
 }
