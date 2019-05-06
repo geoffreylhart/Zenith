@@ -19,5 +19,56 @@ namespace Zenith.ZMath
         {
             return new Vector2((float)v.X, (float)v.Y);
         }
+
+        public static Vector2d operator +(Vector2d value1, Vector2d value2)
+        {
+            return new Vector2d(value1.X + value2.X, value1.Y + value2.Y);
+        }
+
+        public static Vector2d operator -(Vector2d value)
+        {
+            return new Vector2d(-value.X, -value.Y);
+        }
+
+        public static Vector2d operator -(Vector2d value1, Vector2d value2)
+        {
+            return new Vector2d(value1.X - value2.X, value1.Y - value2.Y);
+        }
+        public static Vector2d operator *(Vector2d value, double scaleFactor)
+        {
+
+            return new Vector2d(value.X * scaleFactor, value.Y * scaleFactor);
+        }
+
+        public static Vector2d operator *(double scaleFactor, Vector2d value)
+        {
+            return new Vector2d(value.X * scaleFactor, value.Y * scaleFactor);
+        }
+
+        public static Vector2d operator /(Vector2d value, double divider)
+        {
+            return new Vector2d(value.X / divider, value.Y / divider);
+        }
+
+        public Vector2d Normalized()
+        {
+            return Normalize(this);
+        }
+
+        internal static Vector2d Normalize(Vector2d v)
+        {
+            double factor = Math.Sqrt((v.X * v.X) + (v.Y * v.Y));
+            return v / factor;
+        }
+
+        internal Vector2d RotateCW90()
+        {
+            return new Vector2d(this.Y, -this.X);
+        }
+
+        internal Vector2d RotateCCW90()
+        {
+            return new Vector2d(-this.Y, this.X);
+        }
     }
 }

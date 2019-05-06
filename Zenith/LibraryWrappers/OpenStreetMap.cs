@@ -26,7 +26,10 @@ namespace Zenith.LibraryWrappers
     {
         internal static BasicVertexBuffer GetRoads(GraphicsDevice graphicsDevice, Sector sector)
         {
-            return OSM.OSM.GetRoadsFast(OSMPaths.GetSectorPath(sector)).Construct(graphicsDevice);
+            double widthInFeet = 10.7 * 4; // extra thick
+            double circumEarth = 24901 * 5280;
+            double width = widthInFeet / circumEarth * 2 * Math.PI;
+            return OSM.OSM.GetRoadsFast(OSMPaths.GetSectorPath(sector)).ConstructWithThickness(graphicsDevice, width, Microsoft.Xna.Framework.Color.White);
         }
 
         internal static BasicVertexBuffer GetCoast(GraphicsDevice graphicsDevice, Sector sector)
