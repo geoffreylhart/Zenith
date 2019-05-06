@@ -63,7 +63,10 @@ namespace Zenith.EditorGameComponents.FlatComponents
             // otherwise, build it
             if (sector.zoom >= 10)
             {
-                return new VectorTileBuffer(graphicsDevice, OpenStreetMap.GetRoads(graphicsDevice, sector), sector);
+                VectorTileBuffer buffer = new VectorTileBuffer();
+                buffer.Add(graphicsDevice, OpenStreetMap.GetCoast(graphicsDevice, sector), sector, true);
+                buffer.Add(graphicsDevice, OpenStreetMap.GetRoads(graphicsDevice, sector), sector, false);
+                return buffer;
             }
             else
             {

@@ -26,12 +26,10 @@ namespace Zenith.LibraryWrappers
     {
         internal static List<VertexPositionColor> GetRoads(GraphicsDevice graphicsDevice, Sector sector)
         {
-            //SaveCoastLineMap(graphicsDevice);
-            //DrawCoast(graphicsDevice, sector);
-            return DrawRoads(graphicsDevice, sector);
+            return OSM.OSM.GetRoadsFast(OSMPaths.GetSectorPath(sector));
         }
 
-        private static void DrawCoast(GraphicsDevice graphicsDevice, Sector sector)
+        internal static List<VertexPositionColor> GetCoast(GraphicsDevice graphicsDevice, Sector sector)
         {
             List<Node> nodes = new List<Node>();
             List<Way> ways = new List<Way>();
@@ -95,9 +93,7 @@ namespace Zenith.LibraryWrappers
             }
             var outline = TrimLines(sector, contours);
             outline = CloseLines(sector, outline);
-            TesselateThenDraw2(graphicsDevice, sector, outline);
-            //DrawDebugLines(graphicsDevice, sector, contours);
-            //DrawLines(graphicsDevice, sector, outline);
+            return Tesselate(graphicsDevice, sector, outline);
         }
 
         static Bitmap landImage = null;
@@ -286,47 +282,9 @@ namespace Zenith.LibraryWrappers
 
         }
 
-        private static void TesselateThenDraw(GraphicsDevice graphicsDevice, Sector sector, List<List<LibTessDotNet.ContourVertex>> contours)
-        {
-            if (contours.Count == 0) return;
-            List<VertexPositionColor> triangles = new List<VertexPositionColor>();
-            float z = -10f;
-            var tess = new LibTessDotNet.Tess();
-            foreach (var contour in contours)
-            {
-                tess.AddContour(contour.ToArray(), LibTessDotNet.ContourOrientation.Original);
-            }
-            tess.Tessellate(LibTessDotNet.WindingRule.EvenOdd, LibTessDotNet.ElementType.Polygons, 3);
-            for (int i = 0; i < tess.ElementCount; i++)
-            {
-                for (int j = 2; j >= 0; j--) // TODO: don't flip
-                {
-                    var pos = tess.Vertices[tess.Elements[i * 3 + j]].Position;
-                    // TODO: why 1-y?
-                    triangles.Add(new VertexPositionColor(new Vector3(pos.X, pos.Y, z), Microsoft.Xna.Framework.Color.Green));
-                }
-            }
-            if (triangles.Count > 0)
-            {
-                using (var landVertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, triangles.Count, BufferUsage.WriteOnly))
-                {
-                    landVertexBuffer.SetData(triangles.ToArray());
-                    graphicsDevice.SetVertexBuffer(landVertexBuffer);
-                    var basicEffect = new BasicEffect(graphicsDevice);
-                    basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)sector.LeftLongitude, (float)sector.RightLongitude, (float)sector.BottomLatitude, (float)sector.TopLatitude, 1, 1000); // TODO: figure out if flip was appropriate
-                    basicEffect.VertexColorEnabled = true;
-                    foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
-                    {
-                        pass.Apply();
-                        graphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, landVertexBuffer.VertexCount - 2);
-                    }
-                }
-            }
-        }
-
         // manually implement triangulation algorithm
         // library takes like 8 seconds
-        private static void TesselateThenDraw2(GraphicsDevice graphicsDevice, Sector sector, List<List<LibTessDotNet.ContourVertex>> contours)
+        private static List<VertexPositionColor> Tesselate(GraphicsDevice graphicsDevice, Sector sector, List<List<LibTessDotNet.ContourVertex>> contours)
         {
             List<Polygon> polygons = new List<Polygon>();
             foreach (var contour in contours)
@@ -343,15 +301,15 @@ namespace Zenith.LibraryWrappers
                     if (polygon.Count > 2) polygons.Add(polygon); // somestimes doesn't like flat triangles, seems like
                 }
             }
-            if (contours.Count == 0) return;
             List<VertexPositionColor> triangles = new List<VertexPositionColor>();
+            if (contours.Count == 0) return triangles;
             float z = -10f;
             foreach (var polygon in polygons)
             {
                 var mesh = polygon.Triangulate();
                 foreach (var triangle in mesh.Triangles)
                 {
-                    for (int j = 2; j >= 0; j--) // TODO: don't flip
+                    for (int j = 0; j < 3; j++)
                     {
                         var pos = triangle.GetVertex(j);
                         var pos2 = triangle.GetVertex((j + 1) % 3);
@@ -361,27 +319,7 @@ namespace Zenith.LibraryWrappers
                     }
                 }
             }
-            if (triangles.Count > 0)
-            {
-                using (var landVertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, triangles.Count, BufferUsage.WriteOnly))
-                {
-                    landVertexBuffer.SetData(triangles.ToArray());
-                    graphicsDevice.SetVertexBuffer(landVertexBuffer);
-                    var basicEffect = new BasicEffect(graphicsDevice);
-                    basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)sector.LeftLongitude, (float)sector.RightLongitude, (float)sector.BottomLatitude, (float)sector.TopLatitude, 1, 1000); // TODO: figure out if flip was appropriate
-                    basicEffect.VertexColorEnabled = true;
-                    foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
-                    {
-                        pass.Apply();
-                        graphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, landVertexBuffer.VertexCount - 2);
-                    }
-                }
-            }
-        }
-
-        private static List<VertexPositionColor> DrawRoads(GraphicsDevice graphicsDevice, Sector sector)
-        {
-            return OSM.OSM.GetRoadsFast(OSMPaths.GetSectorPath(sector));
+            return triangles;
         }
 
         // est: since going from 6 to 10 took 1 minute, we might expect doing all 256 would take 256 minutes

@@ -12,35 +12,43 @@ namespace Zenith.ZGraphics.GraphicsBuffers
 {
     class VectorTileBuffer : IGraphicsBuffer
     {
-        VertexBuffer buffer = null;
+        List<VertexBuffer> buffers = new List<VertexBuffer>();
+        List<bool> isTrianglesList = new List<bool>();
+
+        public VectorTileBuffer()
+        {
+        }
 
         public VectorTileBuffer(GraphicsDevice graphicsDevice, List<VertexPositionColor> vectors, Sector sector)
         {
-            if (vectors.Count > 0)
-            {
-                buffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, vectors.Count, BufferUsage.WriteOnly);
-                buffer.SetData(vectors.ToArray());
-            }
         }
 
         public void Dispose()
         {
-            if (buffer != null) buffer.Dispose();
+            foreach (var buffer in buffers) buffer.Dispose();
         }
 
         public void Draw(RenderTarget2D renderTarget, double minX, double maxX, double minY, double maxY, double cameraZoom)
         {
-            if (buffer != null)
+            for (int i = 0; i < buffers.Count; i++)
             {
+                var buffer = buffers[i];
                 GraphicsDevice graphicsDevice = renderTarget.GraphicsDevice;
                 var basicEffect = new BasicEffect(graphicsDevice);
-                basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)minX, (float)maxX, (float)maxY, (float)minY, 1, 1000); // TODO: figure out if flip was appropriate
+                basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)minX, (float)maxX, (float)maxY, (float)minY, 1, 1000);
                 basicEffect.VertexColorEnabled = true;
                 graphicsDevice.SetVertexBuffer(buffer);
                 foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
                 {
                     pass.Apply();
-                    graphicsDevice.DrawPrimitives(PrimitiveType.LineList, 0, buffer.VertexCount / 2);
+                    if (isTrianglesList[i])
+                    {
+                        graphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, buffer.VertexCount - 2);
+                    }
+                    else
+                    {
+                        graphicsDevice.DrawPrimitives(PrimitiveType.LineList, 0, buffer.VertexCount / 2);
+                    }
                 }
                 graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, graphicsDevice.Viewport.MaxDepth, 0);
             }
@@ -52,6 +60,17 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             graphicsDevice.SetRenderTarget(newTarget);
             Draw(newTarget, 0, 512, 0, 512, 0);
             return newTarget;
+        }
+
+        internal void Add(GraphicsDevice graphicsDevice, List<VertexPositionColor> list, Sector sector, bool isTriangles)
+        {
+            if (list.Count > 0)
+            {
+                VertexBuffer buffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, list.Count, BufferUsage.WriteOnly);
+                buffer.SetData(list.ToArray());
+                buffers.Add(buffer);
+                isTrianglesList.Add(isTriangles);
+            }
         }
     }
 }
