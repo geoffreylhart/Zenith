@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Zenith.ZMath;
 
 namespace Zenith.LibraryWrappers.OSM
 {
@@ -47,7 +48,7 @@ namespace Zenith.LibraryWrappers.OSM
                             {
                                 double longitude = .000000001 * (pBlock.lon_offset + (pBlock.granularity * d.lon[i]));
                                 double latitude = .000000001 * (pBlock.lat_offset + (pBlock.granularity * d.lat[i]));
-                                info.nodes[d.id[i]] = new Vector3((float)(longitude * Math.PI / 180), (float)(latitude * Math.PI / 180), -10f);
+                                info.nodes[d.id[i]] = new Vector2d(longitude * Math.PI / 180, latitude * Math.PI / 180);
                             }
                         }
                     }
@@ -128,7 +129,8 @@ namespace Zenith.LibraryWrappers.OSM
                     PrimitiveBlock pBlock = PrimitiveBlock.ReadDenseNodeStartOnly(new MemoryStream(zlib_data));
                     foreach (var pGroup in pBlock.primitivegroup)
                     {
-                        foreach (var d in pGroup.dense) {
+                        foreach (var d in pGroup.dense)
+                        {
                             if (d.id.Count > 0) answer.Add(d.id[0]);
                         }
                     }
@@ -216,7 +218,7 @@ namespace Zenith.LibraryWrappers.OSM
 
         internal class RoadInfoVector
         {
-            public Dictionary<long, Vector3> nodes = new Dictionary<long, Vector3>();
+            public Dictionary<long, Vector2d> nodes = new Dictionary<long, Vector2d>();
             public List<List<long>> refs = new List<List<long>>();
         }
 

@@ -12,8 +12,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
 {
     class VectorTileBuffer : IGraphicsBuffer
     {
-        List<VertexBuffer> buffers = new List<VertexBuffer>();
-        List<bool> isTrianglesList = new List<bool>();
+        List<BasicVertexBuffer> buffers = new List<BasicVertexBuffer>();
 
         public VectorTileBuffer()
         {
@@ -37,18 +36,10 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                 var basicEffect = new BasicEffect(graphicsDevice);
                 basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)minX, (float)maxX, (float)maxY, (float)minY, 1, 1000);
                 basicEffect.VertexColorEnabled = true;
-                graphicsDevice.SetVertexBuffer(buffer);
                 foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
                 {
                     pass.Apply();
-                    if (isTrianglesList[i])
-                    {
-                        graphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, buffer.VertexCount - 2);
-                    }
-                    else
-                    {
-                        graphicsDevice.DrawPrimitives(PrimitiveType.LineList, 0, buffer.VertexCount / 2);
-                    }
+                    buffer.Draw(graphicsDevice);
                 }
                 graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, graphicsDevice.Viewport.MaxDepth, 0);
             }
@@ -62,15 +53,9 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             return newTarget;
         }
 
-        internal void Add(GraphicsDevice graphicsDevice, List<VertexPositionColor> list, Sector sector, bool isTriangles)
+        internal void Add(GraphicsDevice graphicsDevice, BasicVertexBuffer buffer, Sector sector)
         {
-            if (list.Count > 0)
-            {
-                VertexBuffer buffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, list.Count, BufferUsage.WriteOnly);
-                buffer.SetData(list.ToArray());
-                buffers.Add(buffer);
-                isTrianglesList.Add(isTriangles);
-            }
+            buffers.Add(buffer);
         }
     }
 }

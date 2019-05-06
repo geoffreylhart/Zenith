@@ -24,12 +24,12 @@ namespace Zenith.LibraryWrappers
 {
     class OpenStreetMap
     {
-        internal static List<VertexPositionColor> GetRoads(GraphicsDevice graphicsDevice, Sector sector)
+        internal static BasicVertexBuffer GetRoads(GraphicsDevice graphicsDevice, Sector sector)
         {
-            return OSM.OSM.GetRoadsFast(OSMPaths.GetSectorPath(sector));
+            return OSM.OSM.GetRoadsFast(OSMPaths.GetSectorPath(sector)).Construct(graphicsDevice);
         }
 
-        internal static List<VertexPositionColor> GetCoast(GraphicsDevice graphicsDevice, Sector sector)
+        internal static BasicVertexBuffer GetCoast(GraphicsDevice graphicsDevice, Sector sector)
         {
             List<Node> nodes = new List<Node>();
             List<Way> ways = new List<Way>();
@@ -93,7 +93,7 @@ namespace Zenith.LibraryWrappers
             }
             var outline = TrimLines(sector, contours);
             outline = CloseLines(sector, outline);
-            return Tesselate(graphicsDevice, sector, outline);
+            return new BasicVertexBuffer(graphicsDevice, Tesselate(graphicsDevice, sector, outline), PrimitiveType.TriangleList);
         }
 
         static Bitmap landImage = null;

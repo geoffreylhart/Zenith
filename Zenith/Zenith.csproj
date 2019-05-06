@@ -84,6 +84,9 @@
     <Compile Include="LibraryWrappers\OSM\Restructurer.cs" />
     <Compile Include="LibraryWrappers\OSM\StringTable.cs" />
     <Compile Include="LibraryWrappers\OSM\Way2.cs" />
+    <Compile Include="ZGeom\IGeom.cs" />
+    <Compile Include="ZGeom\LineGraph.cs" />
+    <Compile Include="ZGraphics\BasicVertexBuffer.cs" />
     <Compile Include="ZGraphics\GraphicsBasic.cs" />
     <Compile Include="Helpers\GraphicsDeviceHelper.cs" />
     <Compile Include="Helpers\KeyboardStateHelper.cs" />

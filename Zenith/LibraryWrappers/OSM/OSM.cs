@@ -9,52 +9,53 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Zenith.ZGeom;
 using Zenith.ZMath;
 using static Zenith.LibraryWrappers.OSM.Blob;
+using static Zenith.ZGeom.LineGraph;
 
 namespace Zenith.LibraryWrappers.OSM
 {
     class OSM
     {
-        internal static List<VertexPositionColor> GetRoadsFast(string path)
+        internal static LineGraph GetRoadsFast(string path)
         {
             List<Blob> blobs = new List<Blob>();
-            List<RoadInfoVector> roads = new List<RoadInfoVector>();
+            RoadInfoVector roads = new RoadInfoVector();
             using (var reader = File.OpenRead(path))
             {
                 while (CanRead(reader))
                 {
                     Blob blob = ReadBlob(reader);
                     blobs.Add(blob);
-                    roads.Add(blob.GetRoadVectors());
+                    var roadInfo = blob.GetRoadVectors();
+                    roads.refs.AddRange(roadInfo.refs);
+                    foreach (var pair in roadInfo.nodes) roads.nodes.Add(pair.Key, pair.Value);
                 }
             }
-            List<VertexPositionColor> vertices = new List<VertexPositionColor>();
-            foreach (var r in roads)
+            LineGraph answer = new LineGraph();
+            Dictionary<long, GraphNode> graphNodes = new Dictionary<long, GraphNode>();
+            foreach (var way in roads.refs)
             {
-                foreach (var way in r.refs)
+                long? prev = null;
+                foreach (var nodeRef in way)
                 {
-                    VertexPositionColor? prev = null;
-                    for (int i = 0; i < way.Count; i++)
+                    long? v = roads.nodes.ContainsKey(nodeRef) ? nodeRef : (long?)null;
+                    if (v != null && !graphNodes.ContainsKey(v.Value))
                     {
-                        VertexPositionColor? v = null;
-                        foreach (var r2 in roads)
-                        {
-                            if (r2.nodes.ContainsKey(way[i]))
-                            {
-                                v = new VertexPositionColor(r2.nodes[way[i]], Color.White);
-                            }
-                        }
-                        if (prev != null && v != null)
-                        {
-                            vertices.Add(prev.Value);
-                            vertices.Add(v.Value);
-                        }
-                        prev = v;
+                        var newNode = new GraphNode(roads.nodes[v.Value]);
+                        graphNodes[nodeRef] = newNode;
+                        answer.nodes.Add(newNode);
                     }
+                    if (prev != null && v != null)
+                    {
+                        graphNodes[prev.Value].connections.Add(graphNodes[v.Value]);
+                        graphNodes[v.Value].connections.Add(graphNodes[prev.Value]);
+                    }
+                    prev = v;
                 }
             }
-            return vertices;
+            return answer;
         }
 
         internal static void PrintHighwayIds(string path, string outputPath)
