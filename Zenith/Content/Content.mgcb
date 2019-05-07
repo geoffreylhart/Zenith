@@ -1,4 +1,4 @@
-
+﻿
 #----------------------------- Global Properties ----------------------------#
 
 /outputDir:bin/$(Platform)
@@ -13,35 +13,36 @@
 
 #---------------------------------- Content ---------------------------------#
 
-#begin Arial.spritefont
+#begin Fonts/Arial.spritefont
 /importer:FontDescriptionImporter
 /processor:FontDescriptionProcessor
 /processorParam:PremultiplyAlpha=True
 /processorParam:TextureFormat=Compressed
-/build:Arial.spritefont
+/build:Fonts/Arial.spritefont
 
-#begin BlurShader.hlsl
-/importer:EffectImporter
-/processor:EffectProcessor
-/processorParam:DebugMode=Auto
-/build:BlurShader.hlsl
-
-#begin MaskShader.hlsl
-/importer:EffectImporter
-/processor:EffectProcessor
-/processorParam:DebugMode=Auto
-/build:MaskShader.hlsl
-
-#begin InvertedMaskShader.hlsl
-/importer:EffectImporter
-/processor:EffectProcessor
-/processorParam:DebugMode=Auto
-/build:InvertedMaskShader.hlsl
-
-#begin ArialBold.spritefont
+#begin Fonts/ArialBold.spritefont
 /importer:FontDescriptionImporter
 /processor:FontDescriptionProcessor
 /processorParam:PremultiplyAlpha=True
 /processorParam:TextureFormat=Compressed
-/build:ArialBold.spritefont
+/build:Fonts/ArialBold.spritefont
+
+
+#begin Shaders/BlurShader.hlsl
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Shaders/BlurShader.hlsl
+
+#begin Shaders/InvertedMaskShader.hlsl
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Shaders/InvertedMaskShader.hlsl
+
+#begin Shaders/MaskShader.hlsl
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Shaders/MaskShader.hlsl
 

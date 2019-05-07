@@ -1,0 +1,40 @@
+﻿<#@ template debug="false" hostspecific="true" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".mgcb" #>
+
+#----------------------------- Global Properties ----------------------------#
+
+/outputDir:bin/$(Platform)
+/intermediateDir:obj/$(Platform)
+/platform:DesktopGL
+/config:
+/profile:Reach
+/compress:False
+
+#-------------------------------- References --------------------------------#
+
+
+#---------------------------------- Content ---------------------------------#
+
+<#foreach (var x in Directory.GetFiles(this.Host.ResolvePath(".") + "\\Fonts", "*.*", SearchOption.TopDirectoryOnly)) {#>
+#begin Fonts/<#Write(Path.GetFileName(x) + "\r\n");#>
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:Fonts/<#Write(Path.GetFileName(x) + "\r\n");#>
+
+<#}#>
+
+<#foreach (var x in Directory.GetFiles(this.Host.ResolvePath(".") + "\\Shaders", "*.*", SearchOption.TopDirectoryOnly)) {#>
+#begin Shaders/<#Write(Path.GetFileName(x) + "\r\n");#>
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Shaders/<#Write(Path.GetFileName(x) + "\r\n");#>
+
+<#}#>

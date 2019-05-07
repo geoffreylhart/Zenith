@@ -18,11 +18,11 @@ namespace Zenith
 
         public static void Init(ContentManager content)
         {
-            BlurShader = content.Load<Effect>("BlurShader");
-            MaskShader = content.Load<Effect>("MaskShader");
-            InvertedMaskShader = content.Load<Effect>("InvertedMaskShader");
-            Arial = content.Load<SpriteFont>("Arial");
-            ArialBold = content.Load<SpriteFont>("ArialBold");
+            BlurShader = content.Load<Effect>("Shaders/BlurShader");
+            MaskShader = content.Load<Effect>("Shaders/MaskShader");
+            InvertedMaskShader = content.Load<Effect>("Shaders/InvertedMaskShader");
+            Arial = content.Load<SpriteFont>("Fonts/Arial");
+            ArialBold = content.Load<SpriteFont>("Fonts/ArialBold");
         }
     }
 }
