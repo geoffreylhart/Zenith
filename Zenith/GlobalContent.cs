@@ -15,6 +15,7 @@ namespace Zenith
         public static Effect InvertedMaskShader;
         public static SpriteFont Arial;
         public static SpriteFont ArialBold;
+        public static Texture2D Road;
 
         public static void Init(ContentManager content)
         {
@@ -23,6 +24,7 @@ namespace Zenith
             InvertedMaskShader = content.Load<Effect>("Shaders/InvertedMaskShader");
             Arial = content.Load<SpriteFont>("Fonts/Arial");
             ArialBold = content.Load<SpriteFont>("Fonts/ArialBold");
+            Road = content.Load<Texture2D>("Images/Road");
         }
     }
 }

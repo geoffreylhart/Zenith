@@ -5,6 +5,7 @@
 
 # Geoffrey files
 LocalCache/
+Content.mgcb
 
 # User-specific files
 *.suo

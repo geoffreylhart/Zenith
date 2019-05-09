@@ -29,12 +29,25 @@
 /build:Fonts/<#Write(Path.GetFileName(x) + "\r\n");#>
 
 <#}#>
-
 <#foreach (var x in Directory.GetFiles(this.Host.ResolvePath(".") + "\\Shaders", "*.*", SearchOption.TopDirectoryOnly)) {#>
 #begin Shaders/<#Write(Path.GetFileName(x) + "\r\n");#>
 /importer:EffectImporter
 /processor:EffectProcessor
 /processorParam:DebugMode=Auto
 /build:Shaders/<#Write(Path.GetFileName(x) + "\r\n");#>
+
+<#}#>
+<#foreach (var x in Directory.GetFiles(this.Host.ResolvePath(".") + "\\Images", "*.*", SearchOption.TopDirectoryOnly)) {#>
+#begin Images/<#Write(Path.GetFileName(x) + "\r\n");#>
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Images/<#Write(Path.GetFileName(x) + "\r\n");#>
 
 <#}#>

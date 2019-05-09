@@ -33,14 +33,8 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             {
                 var buffer = buffers[i];
                 GraphicsDevice graphicsDevice = renderTarget.GraphicsDevice;
-                var basicEffect = new BasicEffect(graphicsDevice);
-                basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)minX, (float)maxX, (float)maxY, (float)minY, 1, 1000);
-                basicEffect.VertexColorEnabled = true;
-                foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
-                {
-                    pass.Apply();
-                    buffer.Draw(graphicsDevice);
-                }
+                Matrix projection = Matrix.CreateOrthographicOffCenter((float)minX, (float)maxX, (float)maxY, (float)minY, 1, 1000);
+                buffer.Draw(graphicsDevice, projection);
                 graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, graphicsDevice.Viewport.MaxDepth, 0);
             }
         }
