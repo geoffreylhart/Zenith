@@ -9,7 +9,7 @@ namespace Zenith.ZGraphics
 {
     class Pallete
     {
-        public static Color OCEAN_BLUE = Color.CornflowerBlue;
+        public static Color OCEAN_BLUE = Color.MidnightBlue;
         public static Color GRASS_GREEN = Color.ForestGreen;
     }
 }

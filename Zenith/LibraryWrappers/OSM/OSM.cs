@@ -20,6 +20,11 @@ namespace Zenith.LibraryWrappers.OSM
     {
         internal static LineGraph GetRoadsFast(string path)
         {
+            return GetFast(path, "highway", null);
+        }
+
+        internal static LineGraph GetFast(string path, string key, string value)
+        {
             List<Blob> blobs = new List<Blob>();
             RoadInfoVector roads = new RoadInfoVector();
             using (var reader = File.OpenRead(path))
@@ -28,7 +33,7 @@ namespace Zenith.LibraryWrappers.OSM
                 {
                     Blob blob = ReadBlob(reader);
                     blobs.Add(blob);
-                    var roadInfo = blob.GetRoadVectors();
+                    var roadInfo = blob.GetVectors(key, value);
                     roads.refs.AddRange(roadInfo.refs);
                     foreach (var pair in roadInfo.nodes) roads.nodes.Add(pair.Key, pair.Value);
                 }
@@ -56,6 +61,10 @@ namespace Zenith.LibraryWrappers.OSM
                 }
             }
             return answer;
+        }
+        internal static LineGraph GetBeachFast(string path)
+        {
+            return GetFast(path, "natural", "coastline");
         }
 
         internal static void PrintHighwayIds(string path, string outputPath)

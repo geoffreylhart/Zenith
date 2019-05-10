@@ -66,6 +66,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 VectorTileBuffer buffer = new VectorTileBuffer();
                 buffer.Add(graphicsDevice, OpenStreetMap.GetCoast(graphicsDevice, sector), sector);
                 buffer.Add(graphicsDevice, OpenStreetMap.GetRoads(graphicsDevice, sector), sector);
+                buffer.Add(graphicsDevice, OpenStreetMap.GetCoast2(graphicsDevice, sector), sector);
                 return buffer;
             }
             else

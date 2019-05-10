@@ -29,7 +29,7 @@ namespace Zenith.LibraryWrappers
             double widthInFeet = 10.7 * 4; // extra thick
             double circumEarth = 24901 * 5280;
             double width = widthInFeet / circumEarth * 2 * Math.PI;
-            return OSM.OSM.GetRoadsFast(OSMPaths.GetSectorPath(sector)).ConstructAsRoads(graphicsDevice, width, Microsoft.Xna.Framework.Color.White);
+            return OSM.OSM.GetRoadsFast(OSMPaths.GetSectorPath(sector)).ConstructAsRoads(graphicsDevice, width, GlobalContent.Road, Microsoft.Xna.Framework.Color.White);
         }
 
         internal static BasicVertexBuffer GetCoast(GraphicsDevice graphicsDevice, Sector sector)
@@ -97,6 +97,14 @@ namespace Zenith.LibraryWrappers
             var outline = TrimLines(sector, contours);
             outline = CloseLines(sector, outline);
             return new BasicVertexBuffer(graphicsDevice, Tesselate(graphicsDevice, sector, outline), PrimitiveType.TriangleList);
+        }
+
+        internal static BasicVertexBuffer GetCoast2(GraphicsDevice graphicsDevice, Sector sector)
+        {
+            double widthInFeet = 10.7 * 4; // extra thick
+            double circumEarth = 24901 * 5280;
+            double width = widthInFeet / circumEarth * 2 * Math.PI;
+            return OSM.OSM.GetBeachFast(OSMPaths.GetSectorPath(sector)).ConstructAsRoads(graphicsDevice, width, GlobalContent.Beach, Microsoft.Xna.Framework.Color.White);
         }
 
         static Bitmap landImage = null;

@@ -15,7 +15,7 @@ namespace Zenith.LibraryWrappers.OSM
         public List<Relation> relations = new List<Relation>(); // 4
         public List<ChangeSet> changesets = new List<ChangeSet>(); // 5
 
-        internal static PrimitiveGroup Read(Stream stream, int keyFilter)
+        internal static PrimitiveGroup Read(Stream stream, int keyFilter, int? valueFilter)
         {
             PrimitiveGroup obj = new PrimitiveGroup();
             long lengthInBytes = OSM.ReadVarInt(stream);
@@ -39,7 +39,7 @@ namespace Zenith.LibraryWrappers.OSM
                 }
                 else if (b == 26)
                 {
-                    obj.ways.Add(RawWay.Read(stream, keyFilter));
+                    obj.ways.Add(RawWay.Read(stream, keyFilter, valueFilter));
                     if (stream.Position > end) throw new NotImplementedException();
                     if (stream.Position == end) return obj;
                     b = stream.ReadByte();
@@ -86,7 +86,7 @@ namespace Zenith.LibraryWrappers.OSM
                 }
                 else if (b == 26)
                 {
-                    obj.ways.Add(RawWay.Read(stream, keyFilter));
+                    obj.ways.Add(RawWay.Read(stream, keyFilter, null));
                     if (stream.Position > end) throw new NotImplementedException();
                     if (stream.Position == end) return obj;
                     b = stream.ReadByte();

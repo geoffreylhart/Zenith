@@ -21,7 +21,7 @@ namespace Zenith.LibraryWrappers.OSM
         public int raw_size; // 16
         public byte[] zlib_data; // 26
 
-        internal RoadInfoVector GetRoadVectors()
+        internal RoadInfoVector GetVectors(string key, string value)
         {
             if (type != "OSMData") return new RoadInfoVector();
             RoadInfoVector info = new RoadInfoVector();
@@ -37,8 +37,9 @@ namespace Zenith.LibraryWrappers.OSM
                     byte[] unzipped = new byte[raw_size];
                     deflateStream.Read(unzipped, 0, raw_size);
                     zlib_data = unzipped;
-                    PrimitiveBlock pBlock = PrimitiveBlock.Read(new MemoryStream(zlib_data), "highway");
-                    int highwayIndex = pBlock.stringtable.vals.IndexOf("highway");
+                    PrimitiveBlock pBlock = PrimitiveBlock.Read(new MemoryStream(zlib_data), key, value);
+                    int highwayIndex = pBlock.stringtable.vals.IndexOf(key);
+                    int? valueIndex = value == null ? (int?)null : pBlock.stringtable.vals.IndexOf(value);
                     foreach (var pGroup in pBlock.primitivegroup)
                     {
                         foreach (var d in pGroup.dense)
@@ -56,7 +57,7 @@ namespace Zenith.LibraryWrappers.OSM
                     {
                         foreach (var way in pGroup.ways)
                         {
-                            if (way.keys.Contains(highwayIndex))
+                            if (way.keys.Contains(highwayIndex) && (valueIndex == null || way.vals.Contains(valueIndex.Value)))
                             {
                                 info.refs.Add(way.refs);
                             }
@@ -83,7 +84,7 @@ namespace Zenith.LibraryWrappers.OSM
                     byte[] unzipped = new byte[raw_size];
                     deflateStream.Read(unzipped, 0, raw_size);
                     zlib_data = unzipped;
-                    PrimitiveBlock pBlock = PrimitiveBlock.Read(new MemoryStream(zlib_data), "highway");
+                    PrimitiveBlock pBlock = PrimitiveBlock.Read(new MemoryStream(zlib_data), "highway", null);
                     int highwayIndex = pBlock.stringtable.vals.IndexOf("highway");
                     foreach (var pGroup in pBlock.primitivegroup)
                     {

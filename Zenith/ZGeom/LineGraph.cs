@@ -37,7 +37,7 @@ namespace Zenith.ZGeom
             return new BasicVertexBuffer(graphicsDevice, indices, vertices, PrimitiveType.LineList);
         }
 
-        internal BasicVertexBuffer ConstructAsRoads(GraphicsDevice graphicsDevice, double width, Color color)
+        internal BasicVertexBuffer ConstructAsRoads(GraphicsDevice graphicsDevice, double width, Texture2D texture, Color color)
         {
             List<int> indices = new List<int>();
             List<VertexPositionTexture> vertices = new List<VertexPositionTexture>();
@@ -67,7 +67,7 @@ namespace Zenith.ZGeom
                     indices.Add(i + 2);
                 }
             }
-            return new BasicVertexBuffer(graphicsDevice, indices, vertices, GlobalContent.Road, PrimitiveType.TriangleList);
+            return new BasicVertexBuffer(graphicsDevice, indices, vertices, texture, PrimitiveType.TriangleList);
         }
 
         internal class GraphNode
