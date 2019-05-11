@@ -66,7 +66,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
             {
                 VectorTileBuffer buffer = new VectorTileBuffer();
 
-                List<Blob> blobs = OSM.GetAllBlobs(sector);
+                BlobCollection blobs = OSM.GetAllBlobs(sector);
                 buffer.Add(graphicsDevice, OpenStreetMap.GetCoast(graphicsDevice, blobs, sector), sector);
                 buffer.Add(graphicsDevice, OpenStreetMap.GetCoast2(graphicsDevice, blobs), sector);
                 buffer.Add(graphicsDevice, OpenStreetMap.GetLakes(graphicsDevice, blobs, sector), sector);

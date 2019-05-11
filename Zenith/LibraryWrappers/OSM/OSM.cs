@@ -18,50 +18,8 @@ namespace Zenith.LibraryWrappers.OSM
 {
     class OSM
     {
-        internal static LineGraph GetRoadsFast(List<Blob> blobs)
-        {
-            return GetFast(blobs, "highway", null);
-        }
 
-        internal static LineGraph GetFast(List<Blob> blobs, string key, string value)
-        {
-            RoadInfoVector roads = new RoadInfoVector();
-            foreach (var blob in blobs)
-            {
-                var roadInfo = blob.GetVectors(key, value);
-                roads.refs.AddRange(roadInfo.refs);
-                foreach (var pair in roadInfo.nodes) roads.nodes.Add(pair.Key, pair.Value);
-            }
-            LineGraph answer = new LineGraph();
-            Dictionary<long, GraphNode> graphNodes = new Dictionary<long, GraphNode>();
-            foreach (var way in roads.refs)
-            {
-                long? prev = null;
-                foreach (var nodeRef in way)
-                {
-                    long? v = roads.nodes.ContainsKey(nodeRef) ? nodeRef : (long?)null;
-                    if (v != null && !graphNodes.ContainsKey(v.Value))
-                    {
-                        var newNode = new GraphNode(roads.nodes[v.Value]);
-                        graphNodes[nodeRef] = newNode;
-                        answer.nodes.Add(newNode);
-                    }
-                    if (prev != null && v != null)
-                    {
-                        graphNodes[prev.Value].nextConnections.Add(graphNodes[v.Value]);
-                        graphNodes[v.Value].prevConnections.Add(graphNodes[prev.Value]);
-                    }
-                    prev = v;
-                }
-            }
-            return answer;
-        }
-        internal static LineGraph GetBeachFast(List<Blob> blobs)
-        {
-            return GetFast(blobs, "natural", "coastline");
-        }
-
-        internal static List<Blob> GetAllBlobs(Sector sector)
+        internal static BlobCollection GetAllBlobs(Sector sector)
         {
             List<Blob> blobs = new List<Blob>();
             string path = OSMPaths.GetSectorPath(sector);
@@ -74,13 +32,9 @@ namespace Zenith.LibraryWrappers.OSM
                     blobs.Add(blob);
                 }
             }
-            return blobs;
-        }
-
-        internal static LineGraph GetLakesFast(List<Blob> blobs)
-        {
-            // TODO: handles those multipolygon lakes
-            return GetFast(blobs, "natural", "water");
+            var collection =  new BlobCollection(blobs);
+            collection.Init();
+            return collection;
         }
 
         internal static void PrintHighwayIds(string path, string outputPath)

@@ -70,6 +70,7 @@
     <Compile Include="GlobalContent.cs" />
     <Compile Include="LibraryWrappers\OpenStreetMap.cs" />
     <Compile Include="LibraryWrappers\OSM\Blob.cs" />
+    <Compile Include="LibraryWrappers\OSM\BlobCollection.cs" />
     <Compile Include="LibraryWrappers\OSM\ChangeSet.cs" />
     <Compile Include="LibraryWrappers\OSM\DenseInfo.cs" />
     <Compile Include="LibraryWrappers\OSM\DenseNodes.cs" />
