@@ -25,17 +25,17 @@ namespace Zenith.LibraryWrappers
 {
     class OpenStreetMap
     {
-        internal static BasicVertexBuffer GetRoads(GraphicsDevice graphicsDevice, Sector sector)
+        internal static BasicVertexBuffer GetRoads(GraphicsDevice graphicsDevice, List<Blob> blobs)
         {
             double widthInFeet = 10.7 * 4; // extra thick
             double circumEarth = 24901 * 5280;
             double width = widthInFeet / circumEarth * 2 * Math.PI;
-            return OSM.OSM.GetRoadsFast(OSMPaths.GetSectorPath(sector)).ConstructAsRoads(graphicsDevice, width, GlobalContent.Road, Microsoft.Xna.Framework.Color.White);
+            return OSM.OSM.GetRoadsFast(blobs).ConstructAsRoads(graphicsDevice, width, GlobalContent.Road, Microsoft.Xna.Framework.Color.White);
         }
 
-        internal static BasicVertexBuffer GetCoast(GraphicsDevice graphicsDevice, Sector sector)
+        internal static BasicVertexBuffer GetCoast(GraphicsDevice graphicsDevice, List<Blob> blobs, Sector sector)
         {
-            LineGraph graph = OSM.OSM.GetBeachFast(OSMPaths.GetSectorPath(sector));
+            LineGraph graph = OSM.OSM.GetBeachFast(blobs);
             if (graph.nodes.Count == 0)
             {
                 if (PixelIsLand(sector))
@@ -49,19 +49,19 @@ namespace Zenith.LibraryWrappers
             return new BasicVertexBuffer(graphicsDevice, Tesselate(graphicsDevice, sector, outline, Pallete.GRASS_GREEN), PrimitiveType.TriangleList);
         }
 
-        internal static BasicVertexBuffer GetLakes(GraphicsDevice graphicsDevice, Sector sector)
+        internal static BasicVertexBuffer GetLakes(GraphicsDevice graphicsDevice, List<Blob> blobs, Sector sector)
         {
-            LineGraph graph = OSM.OSM.GetLakesFast(OSMPaths.GetSectorPath(sector));
+            LineGraph graph = OSM.OSM.GetLakesFast(blobs);
             List<List<ContourVertex>> contours = graph.ToContours();
             return new BasicVertexBuffer(graphicsDevice, Tesselate(graphicsDevice, sector, contours, Pallete.OCEAN_BLUE), PrimitiveType.TriangleList);
         }
 
-        internal static BasicVertexBuffer GetCoast2(GraphicsDevice graphicsDevice, Sector sector)
+        internal static BasicVertexBuffer GetCoast2(GraphicsDevice graphicsDevice, List<Blob> blobs)
         {
             double widthInFeet = 10.7 * 4; // extra thick
             double circumEarth = 24901 * 5280;
             double width = widthInFeet / circumEarth * 2 * Math.PI;
-            return OSM.OSM.GetBeachFast(OSMPaths.GetSectorPath(sector)).ConstructAsRoads(graphicsDevice, width, GlobalContent.Beach, Microsoft.Xna.Framework.Color.White);
+            return OSM.OSM.GetBeachFast(blobs).ConstructAsRoads(graphicsDevice, width, GlobalContent.Beach, Microsoft.Xna.Framework.Color.White);
         }
 
         static Bitmap landImage = null;

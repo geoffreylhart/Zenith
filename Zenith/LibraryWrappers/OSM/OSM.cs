@@ -18,25 +18,19 @@ namespace Zenith.LibraryWrappers.OSM
 {
     class OSM
     {
-        internal static LineGraph GetRoadsFast(string path)
+        internal static LineGraph GetRoadsFast(List<Blob> blobs)
         {
-            return GetFast(path, "highway", null);
+            return GetFast(blobs, "highway", null);
         }
 
-        internal static LineGraph GetFast(string path, string key, string value)
+        internal static LineGraph GetFast(List<Blob> blobs, string key, string value)
         {
-            List<Blob> blobs = new List<Blob>();
             RoadInfoVector roads = new RoadInfoVector();
-            using (var reader = File.OpenRead(path))
+            foreach (var blob in blobs)
             {
-                while (CanRead(reader))
-                {
-                    Blob blob = ReadBlob(reader);
-                    blobs.Add(blob);
-                    var roadInfo = blob.GetVectors(key, value);
-                    roads.refs.AddRange(roadInfo.refs);
-                    foreach (var pair in roadInfo.nodes) roads.nodes.Add(pair.Key, pair.Value);
-                }
+                var roadInfo = blob.GetVectors(key, value);
+                roads.refs.AddRange(roadInfo.refs);
+                foreach (var pair in roadInfo.nodes) roads.nodes.Add(pair.Key, pair.Value);
             }
             LineGraph answer = new LineGraph();
             Dictionary<long, GraphNode> graphNodes = new Dictionary<long, GraphNode>();
@@ -62,15 +56,31 @@ namespace Zenith.LibraryWrappers.OSM
             }
             return answer;
         }
-        internal static LineGraph GetBeachFast(string path)
+        internal static LineGraph GetBeachFast(List<Blob> blobs)
         {
-            return GetFast(path, "natural", "coastline");
+            return GetFast(blobs, "natural", "coastline");
         }
 
-        internal static LineGraph GetLakesFast(string path)
+        internal static List<Blob> GetAllBlobs(Sector sector)
+        {
+            List<Blob> blobs = new List<Blob>();
+            string path = OSMPaths.GetSectorPath(sector);
+            using (var reader = File.OpenRead(path))
+            {
+                while (CanRead(reader))
+                {
+                    Blob blob = ReadBlob(reader);
+                    blob.Init();
+                    blobs.Add(blob);
+                }
+            }
+            return blobs;
+        }
+
+        internal static LineGraph GetLakesFast(List<Blob> blobs)
         {
             // TODO: handles those multipolygon lakes
-            return GetFast(path, "natural", "water");
+            return GetFast(blobs, "natural", "water");
         }
 
         internal static void PrintHighwayIds(string path, string outputPath)

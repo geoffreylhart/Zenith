@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Zenith.LibraryWrappers;
+using Zenith.LibraryWrappers.OSM;
 using Zenith.ZGraphics;
 using Zenith.ZGraphics.GraphicsBuffers;
 using Zenith.ZMath;
@@ -64,10 +65,12 @@ namespace Zenith.EditorGameComponents.FlatComponents
             if (sector.zoom >= 10)
             {
                 VectorTileBuffer buffer = new VectorTileBuffer();
-                buffer.Add(graphicsDevice, OpenStreetMap.GetCoast(graphicsDevice, sector), sector);
-                buffer.Add(graphicsDevice, OpenStreetMap.GetCoast2(graphicsDevice, sector), sector);
-                buffer.Add(graphicsDevice, OpenStreetMap.GetLakes(graphicsDevice, sector), sector);
-                buffer.Add(graphicsDevice, OpenStreetMap.GetRoads(graphicsDevice, sector), sector);
+
+                List<Blob> blobs = OSM.GetAllBlobs(sector);
+                buffer.Add(graphicsDevice, OpenStreetMap.GetCoast(graphicsDevice, blobs, sector), sector);
+                buffer.Add(graphicsDevice, OpenStreetMap.GetCoast2(graphicsDevice, blobs), sector);
+                buffer.Add(graphicsDevice, OpenStreetMap.GetLakes(graphicsDevice, blobs, sector), sector);
+                buffer.Add(graphicsDevice, OpenStreetMap.GetRoads(graphicsDevice, blobs), sector);
                 return buffer;
             }
             else

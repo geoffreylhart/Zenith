@@ -26,6 +26,37 @@ namespace Zenith.LibraryWrappers.OSM
             if (type != "OSMData") return new RoadInfoVector();
             RoadInfoVector info = new RoadInfoVector();
             List<VertexPositionColor> roads = new List<VertexPositionColor>();
+            PrimitiveBlock pBlock = PrimitiveBlock.Read(new MemoryStream(zlib_data), key, value);
+            int highwayIndex = pBlock.stringtable.vals.IndexOf(key);
+            int? valueIndex = value == null ? (int?)null : pBlock.stringtable.vals.IndexOf(value);
+            foreach (var pGroup in pBlock.primitivegroup)
+            {
+                foreach (var d in pGroup.dense)
+                {
+                    if (d.id.Count != d.lat.Count || d.lat.Count != d.lon.Count) throw new NotImplementedException();
+                    for (int i = 0; i < d.id.Count; i++)
+                    {
+                        double longitude = .000000001 * (pBlock.lon_offset + (pBlock.granularity * d.lon[i]));
+                        double latitude = .000000001 * (pBlock.lat_offset + (pBlock.granularity * d.lat[i]));
+                        info.nodes[d.id[i]] = new Vector2d(longitude * Math.PI / 180, latitude * Math.PI / 180);
+                    }
+                }
+            }
+            foreach (var pGroup in pBlock.primitivegroup)
+            {
+                foreach (var way in pGroup.ways)
+                {
+                    if (way.keys.Contains(highwayIndex) && (valueIndex == null || way.vals.Contains(valueIndex.Value)))
+                    {
+                        info.refs.Add(way.refs);
+                    }
+                }
+            }
+            return info;
+        }
+
+        internal void Init()
+        {
             using (var memStream = new MemoryStream(zlib_data))
             {
                 // skip first two bytes
@@ -37,35 +68,8 @@ namespace Zenith.LibraryWrappers.OSM
                     byte[] unzipped = new byte[raw_size];
                     deflateStream.Read(unzipped, 0, raw_size);
                     zlib_data = unzipped;
-                    PrimitiveBlock pBlock = PrimitiveBlock.Read(new MemoryStream(zlib_data), key, value);
-                    int highwayIndex = pBlock.stringtable.vals.IndexOf(key);
-                    int? valueIndex = value == null ? (int?)null : pBlock.stringtable.vals.IndexOf(value);
-                    foreach (var pGroup in pBlock.primitivegroup)
-                    {
-                        foreach (var d in pGroup.dense)
-                        {
-                            if (d.id.Count != d.lat.Count || d.lat.Count != d.lon.Count) throw new NotImplementedException();
-                            for (int i = 0; i < d.id.Count; i++)
-                            {
-                                double longitude = .000000001 * (pBlock.lon_offset + (pBlock.granularity * d.lon[i]));
-                                double latitude = .000000001 * (pBlock.lat_offset + (pBlock.granularity * d.lat[i]));
-                                info.nodes[d.id[i]] = new Vector2d(longitude * Math.PI / 180, latitude * Math.PI / 180);
-                            }
-                        }
-                    }
-                    foreach (var pGroup in pBlock.primitivegroup)
-                    {
-                        foreach (var way in pGroup.ways)
-                        {
-                            if (way.keys.Contains(highwayIndex) && (valueIndex == null || way.vals.Contains(valueIndex.Value)))
-                            {
-                                info.refs.Add(way.refs);
-                            }
-                        }
-                    }
                 }
             }
-            return info;
         }
 
         internal RoadInfo GetRoadLongLats()
@@ -73,41 +77,28 @@ namespace Zenith.LibraryWrappers.OSM
             if (type != "OSMData") return new RoadInfo();
             RoadInfo info = new RoadInfo();
             List<VertexPositionColor> roads = new List<VertexPositionColor>();
-            using (var memStream = new MemoryStream(zlib_data))
+            PrimitiveBlock pBlock = PrimitiveBlock.Read(new MemoryStream(zlib_data), "highway", null);
+            int highwayIndex = pBlock.stringtable.vals.IndexOf("highway");
+            foreach (var pGroup in pBlock.primitivegroup)
             {
-                // skip first two bytes
-                // "Those bytes are part of the zlib specification (RFC 1950), not the deflate specification (RFC 1951). Those bytes contain information about the compression method and flags."
-                memStream.ReadByte();
-                memStream.ReadByte();
-                using (var deflateStream = new DeflateStream(memStream, CompressionMode.Decompress))
+                foreach (var d in pGroup.dense)
                 {
-                    byte[] unzipped = new byte[raw_size];
-                    deflateStream.Read(unzipped, 0, raw_size);
-                    zlib_data = unzipped;
-                    PrimitiveBlock pBlock = PrimitiveBlock.Read(new MemoryStream(zlib_data), "highway", null);
-                    int highwayIndex = pBlock.stringtable.vals.IndexOf("highway");
-                    foreach (var pGroup in pBlock.primitivegroup)
+                    if (d.id.Count != d.lat.Count || d.lat.Count != d.lon.Count) throw new NotImplementedException();
+                    for (int i = 0; i < d.id.Count; i++)
                     {
-                        foreach (var d in pGroup.dense)
-                        {
-                            if (d.id.Count != d.lat.Count || d.lat.Count != d.lon.Count) throw new NotImplementedException();
-                            for (int i = 0; i < d.id.Count; i++)
-                            {
-                                long longitude = pBlock.lon_offset + (pBlock.granularity * d.lon[i]);
-                                long latitude = pBlock.lat_offset + (pBlock.granularity * d.lat[i]);
-                                info.nodes[d.id[i]] = new LongLatPair(longitude, latitude);
-                            }
-                        }
+                        long longitude = pBlock.lon_offset + (pBlock.granularity * d.lon[i]);
+                        long latitude = pBlock.lat_offset + (pBlock.granularity * d.lat[i]);
+                        info.nodes[d.id[i]] = new LongLatPair(longitude, latitude);
                     }
-                    foreach (var pGroup in pBlock.primitivegroup)
+                }
+            }
+            foreach (var pGroup in pBlock.primitivegroup)
+            {
+                foreach (var way in pGroup.ways)
+                {
+                    if (way.keys.Contains(highwayIndex))
                     {
-                        foreach (var way in pGroup.ways)
-                        {
-                            if (way.keys.Contains(highwayIndex))
-                            {
-                                info.refs.Add(way.refs);
-                            }
-                        }
+                        info.refs.Add(way.refs);
                     }
                 }
             }
@@ -118,23 +109,12 @@ namespace Zenith.LibraryWrappers.OSM
         {
             var answer = new List<long>();
             if (type != "OSMData") return answer;
-            using (var memStream = new MemoryStream(zlib_data))
+            PrimitiveBlock pBlock = PrimitiveBlock.ReadDenseNodeStartOnly(new MemoryStream(zlib_data));
+            foreach (var pGroup in pBlock.primitivegroup)
             {
-                memStream.ReadByte();
-                memStream.ReadByte();
-                using (var deflateStream = new DeflateStream(memStream, CompressionMode.Decompress))
+                foreach (var d in pGroup.dense)
                 {
-                    byte[] unzipped = new byte[raw_size];
-                    deflateStream.Read(unzipped, 0, raw_size);
-                    zlib_data = unzipped;
-                    PrimitiveBlock pBlock = PrimitiveBlock.ReadDenseNodeStartOnly(new MemoryStream(zlib_data));
-                    foreach (var pGroup in pBlock.primitivegroup)
-                    {
-                        foreach (var d in pGroup.dense)
-                        {
-                            if (d.id.Count > 0) answer.Add(d.id[0]);
-                        }
-                    }
+                    if (d.id.Count > 0) answer.Add(d.id[0]);
                 }
             }
             return answer;
@@ -143,28 +123,17 @@ namespace Zenith.LibraryWrappers.OSM
         internal void WriteWayIds(FileStream writer, string keyFilter)
         {
             if (type != "OSMData") return;
-            using (var memStream = new MemoryStream(zlib_data))
+            PrimitiveBlock pBlock = PrimitiveBlock.ReadWayInfoOnly(new MemoryStream(zlib_data), "highway");
+            int highwayIndex = pBlock.stringtable.vals.IndexOf("highway");
+            var bWriter = new BinaryWriter(writer);
+            foreach (var pGroup in pBlock.primitivegroup)
             {
-                memStream.ReadByte();
-                memStream.ReadByte();
-                using (var deflateStream = new DeflateStream(memStream, CompressionMode.Decompress))
+                foreach (var way in pGroup.ways)
                 {
-                    byte[] unzipped = new byte[raw_size];
-                    deflateStream.Read(unzipped, 0, raw_size);
-                    zlib_data = unzipped;
-                    PrimitiveBlock pBlock = PrimitiveBlock.ReadWayInfoOnly(new MemoryStream(zlib_data), "highway");
-                    int highwayIndex = pBlock.stringtable.vals.IndexOf("highway");
-                    var bWriter = new BinaryWriter(writer);
-                    foreach (var pGroup in pBlock.primitivegroup)
+                    if (way.keys.Contains(highwayIndex))
                     {
-                        foreach (var way in pGroup.ways)
-                        {
-                            if (way.keys.Contains(highwayIndex))
-                            {
-                                bWriter.Write(way.refs.Count);
-                                foreach (long id in way.refs) bWriter.Write(id);
-                            }
-                        }
+                        bWriter.Write(way.refs.Count);
+                        foreach (long id in way.refs) bWriter.Write(id);
                     }
                 }
             }
@@ -174,26 +143,15 @@ namespace Zenith.LibraryWrappers.OSM
         {
             var answer = new List<List<long>>();
             if (type != "OSMData") return answer;
-            using (var memStream = new MemoryStream(zlib_data))
+            PrimitiveBlock pBlock = PrimitiveBlock.ReadWayInfoOnly(new MemoryStream(zlib_data), "highway");
+            int highwayIndex = pBlock.stringtable.vals.IndexOf("highway");
+            foreach (var pGroup in pBlock.primitivegroup)
             {
-                memStream.ReadByte();
-                memStream.ReadByte();
-                using (var deflateStream = new DeflateStream(memStream, CompressionMode.Decompress))
+                foreach (var way in pGroup.ways)
                 {
-                    byte[] unzipped = new byte[raw_size];
-                    deflateStream.Read(unzipped, 0, raw_size);
-                    zlib_data = unzipped;
-                    PrimitiveBlock pBlock = PrimitiveBlock.ReadWayInfoOnly(new MemoryStream(zlib_data), "highway");
-                    int highwayIndex = pBlock.stringtable.vals.IndexOf("highway");
-                    foreach (var pGroup in pBlock.primitivegroup)
+                    if (way.keys.Contains(highwayIndex))
                     {
-                        foreach (var way in pGroup.ways)
-                        {
-                            if (way.keys.Contains(highwayIndex))
-                            {
-                                answer.Add(way.refs);
-                            }
-                        }
+                        answer.Add(way.refs);
                     }
                 }
             }
@@ -227,21 +185,10 @@ namespace Zenith.LibraryWrappers.OSM
         {
             var answer = new List<DenseNodes>();
             if (type != "OSMData") return answer;
-            using (var memStream = new MemoryStream(zlib_data))
+            PrimitiveBlock pBlock = PrimitiveBlock.ReadDenseNodesOnly(new MemoryStream(zlib_data));
+            foreach (var pGroup in pBlock.primitivegroup)
             {
-                memStream.ReadByte();
-                memStream.ReadByte();
-                using (var deflateStream = new DeflateStream(memStream, CompressionMode.Decompress))
-                {
-                    byte[] unzipped = new byte[raw_size];
-                    deflateStream.Read(unzipped, 0, raw_size);
-                    zlib_data = unzipped;
-                    PrimitiveBlock pBlock = PrimitiveBlock.ReadDenseNodesOnly(new MemoryStream(zlib_data));
-                    foreach (var pGroup in pBlock.primitivegroup)
-                    {
-                        answer.AddRange(pGroup.dense);
-                    }
-                }
+                answer.AddRange(pGroup.dense);
             }
             return answer;
         }
