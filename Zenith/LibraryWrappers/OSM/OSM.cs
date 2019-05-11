@@ -37,26 +37,6 @@ namespace Zenith.LibraryWrappers.OSM
             return collection;
         }
 
-        internal static void PrintHighwayIds(string path, string outputPath)
-        {
-            int blobcount = 0; // 8262
-            using (var writer = File.OpenWrite(outputPath))
-            {
-                using (var reader = File.OpenRead(path))
-                {
-                    while (CanRead(reader))
-                    {
-                        Blob blob = ReadBlob(reader);
-                        if (blobcount > 8262)
-                        {
-                            blob.WriteWayIds(writer, "highway");
-                        }
-                        blobcount++;
-                    }
-                }
-            }
-        }
-
         internal static List<long> ReadPackedSignedVarInts(Stream stream)
         {
             long length = ReadVarInt(stream);

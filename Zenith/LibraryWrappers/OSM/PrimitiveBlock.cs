@@ -17,130 +17,16 @@ namespace Zenith.LibraryWrappers.OSM
         public long lon_offset = 0; // 20
         public int date_granularity = 1000; // 18
 
-        internal static PrimitiveBlock Read(Stream stream, string keyFilter, string valueFilter)
+        internal static PrimitiveBlock Read(Stream stream)
         {
             PrimitiveBlock obj = new PrimitiveBlock();
             int b = stream.ReadByte();
             if (b != 10) throw new NotImplementedException();
             obj.stringtable = StringTable.Read(stream);
-            int keyFilterIndex = obj.stringtable.vals.IndexOf(keyFilter);
-            int? valueFilterIndex = valueFilter == null ? (int?)null : obj.stringtable.vals.IndexOf(valueFilter);
             b = stream.ReadByte();
             while (b == 18)
             {
-                obj.primitivegroup.Add(PrimitiveGroup.Read(stream, keyFilterIndex, valueFilterIndex));
-                b = stream.ReadByte();
-            }
-            // NOTE: looks like those OSMSharp broken up files don't have any of these
-            if (b == 136)
-            {
-                obj.granularity = (int)OSM.ReadVarInt(stream);
-                b = stream.ReadByte();
-            }
-            if (b == 152)
-            {
-                obj.lat_offset = OSM.ReadVarInt(stream);
-                b = stream.ReadByte();
-            }
-            if (b == 160)
-            {
-                obj.lon_offset = OSM.ReadVarInt(stream);
-                b = stream.ReadByte();
-            }
-            if (b == 144)
-            {
-                obj.date_granularity = (int)OSM.ReadVarInt(stream);
-                b = stream.ReadByte();
-            }
-            if (b != -1) throw new NotImplementedException();
-            return obj;
-        }
-
-        internal static PrimitiveBlock ReadWayInfoOnly(MemoryStream stream, string keyFilter)
-        {
-            PrimitiveBlock obj = new PrimitiveBlock();
-            int b = stream.ReadByte();
-            if (b != 10) throw new NotImplementedException();
-            obj.stringtable = StringTable.Read(stream);
-            int keyFilterIndex = obj.stringtable.vals.IndexOf(keyFilter);
-            b = stream.ReadByte();
-            while (b == 18)
-            {
-                obj.primitivegroup.Add(PrimitiveGroup.ReadWayInfoOnly(stream, keyFilterIndex));
-                b = stream.ReadByte();
-            }
-            // NOTE: looks like those OSMSharp broken up files don't have any of these
-            if (b == 136)
-            {
-                obj.granularity = (int)OSM.ReadVarInt(stream);
-                b = stream.ReadByte();
-            }
-            if (b == 152)
-            {
-                obj.lat_offset = OSM.ReadVarInt(stream);
-                b = stream.ReadByte();
-            }
-            if (b == 160)
-            {
-                obj.lon_offset = OSM.ReadVarInt(stream);
-                b = stream.ReadByte();
-            }
-            if (b == 144)
-            {
-                obj.date_granularity = (int)OSM.ReadVarInt(stream);
-                b = stream.ReadByte();
-            }
-            if (b != -1) throw new NotImplementedException();
-            return obj;
-        }
-
-        internal static PrimitiveBlock ReadDenseNodesOnly(MemoryStream stream)
-        {
-            PrimitiveBlock obj = new PrimitiveBlock();
-            int b = stream.ReadByte();
-            if (b != 10) throw new NotImplementedException();
-            OSM.SkipBytes(stream);
-            b = stream.ReadByte();
-            while (b == 18)
-            {
-                obj.primitivegroup.Add(PrimitiveGroup.ReadDenseNodesOnly(stream));
-                b = stream.ReadByte();
-            }
-            // NOTE: looks like those OSMSharp broken up files don't have any of these
-            if (b == 136)
-            {
-                obj.granularity = (int)OSM.ReadVarInt(stream);
-                b = stream.ReadByte();
-            }
-            if (b == 152)
-            {
-                obj.lat_offset = OSM.ReadVarInt(stream);
-                b = stream.ReadByte();
-            }
-            if (b == 160)
-            {
-                obj.lon_offset = OSM.ReadVarInt(stream);
-                b = stream.ReadByte();
-            }
-            if (b == 144)
-            {
-                obj.date_granularity = (int)OSM.ReadVarInt(stream);
-                b = stream.ReadByte();
-            }
-            if (b != -1) throw new NotImplementedException();
-            return obj;
-        }
-
-        internal static PrimitiveBlock ReadDenseNodeStartOnly(MemoryStream stream)
-        {
-            PrimitiveBlock obj = new PrimitiveBlock();
-            int b = stream.ReadByte();
-            if (b != 10) throw new NotImplementedException();
-            OSM.SkipBytes(stream);
-            b = stream.ReadByte();
-            while (b == 18)
-            {
-                obj.primitivegroup.Add(PrimitiveGroup.ReadDenseNodeStartOnly(stream));
+                obj.primitivegroup.Add(PrimitiveGroup.Read(stream));
                 b = stream.ReadByte();
             }
             // NOTE: looks like those OSMSharp broken up files don't have any of these

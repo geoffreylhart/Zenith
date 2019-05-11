@@ -21,12 +21,14 @@ namespace Zenith.LibraryWrappers.OSM
         public int raw_size; // 16
         public byte[] zlib_data; // 26
 
+        // parsed stuff
+        PrimitiveBlock pBlock;
+
         internal RoadInfoVector GetVectors(string key, string value)
         {
             if (type != "OSMData") return new RoadInfoVector();
             RoadInfoVector info = new RoadInfoVector();
             List<VertexPositionColor> roads = new List<VertexPositionColor>();
-            PrimitiveBlock pBlock = PrimitiveBlock.Read(new MemoryStream(zlib_data), key, value);
             int highwayIndex = pBlock.stringtable.vals.IndexOf(key);
             int? valueIndex = value == null ? (int?)null : pBlock.stringtable.vals.IndexOf(value);
             foreach (var pGroup in pBlock.primitivegroup)
@@ -57,6 +59,7 @@ namespace Zenith.LibraryWrappers.OSM
 
         internal void Init()
         {
+            if (type != "OSMData") return;
             using (var memStream = new MemoryStream(zlib_data))
             {
                 // skip first two bytes
@@ -68,129 +71,15 @@ namespace Zenith.LibraryWrappers.OSM
                     byte[] unzipped = new byte[raw_size];
                     deflateStream.Read(unzipped, 0, raw_size);
                     zlib_data = unzipped;
+                    pBlock = PrimitiveBlock.Read(new MemoryStream(zlib_data));
                 }
             }
-        }
-
-        internal RoadInfo GetRoadLongLats()
-        {
-            if (type != "OSMData") return new RoadInfo();
-            RoadInfo info = new RoadInfo();
-            List<VertexPositionColor> roads = new List<VertexPositionColor>();
-            PrimitiveBlock pBlock = PrimitiveBlock.Read(new MemoryStream(zlib_data), "highway", null);
-            int highwayIndex = pBlock.stringtable.vals.IndexOf("highway");
-            foreach (var pGroup in pBlock.primitivegroup)
-            {
-                foreach (var d in pGroup.dense)
-                {
-                    if (d.id.Count != d.lat.Count || d.lat.Count != d.lon.Count) throw new NotImplementedException();
-                    for (int i = 0; i < d.id.Count; i++)
-                    {
-                        long longitude = pBlock.lon_offset + (pBlock.granularity * d.lon[i]);
-                        long latitude = pBlock.lat_offset + (pBlock.granularity * d.lat[i]);
-                        info.nodes[d.id[i]] = new LongLatPair(longitude, latitude);
-                    }
-                }
-            }
-            foreach (var pGroup in pBlock.primitivegroup)
-            {
-                foreach (var way in pGroup.ways)
-                {
-                    if (way.keys.Contains(highwayIndex))
-                    {
-                        info.refs.Add(way.refs);
-                    }
-                }
-            }
-            return info;
-        }
-
-        internal List<long> GetDenseNodeStarts()
-        {
-            var answer = new List<long>();
-            if (type != "OSMData") return answer;
-            PrimitiveBlock pBlock = PrimitiveBlock.ReadDenseNodeStartOnly(new MemoryStream(zlib_data));
-            foreach (var pGroup in pBlock.primitivegroup)
-            {
-                foreach (var d in pGroup.dense)
-                {
-                    if (d.id.Count > 0) answer.Add(d.id[0]);
-                }
-            }
-            return answer;
-        }
-
-        internal void WriteWayIds(FileStream writer, string keyFilter)
-        {
-            if (type != "OSMData") return;
-            PrimitiveBlock pBlock = PrimitiveBlock.ReadWayInfoOnly(new MemoryStream(zlib_data), "highway");
-            int highwayIndex = pBlock.stringtable.vals.IndexOf("highway");
-            var bWriter = new BinaryWriter(writer);
-            foreach (var pGroup in pBlock.primitivegroup)
-            {
-                foreach (var way in pGroup.ways)
-                {
-                    if (way.keys.Contains(highwayIndex))
-                    {
-                        bWriter.Write(way.refs.Count);
-                        foreach (long id in way.refs) bWriter.Write(id);
-                    }
-                }
-            }
-        }
-
-        internal List<List<long>> GetWayIds(string keyFilter)
-        {
-            var answer = new List<List<long>>();
-            if (type != "OSMData") return answer;
-            PrimitiveBlock pBlock = PrimitiveBlock.ReadWayInfoOnly(new MemoryStream(zlib_data), "highway");
-            int highwayIndex = pBlock.stringtable.vals.IndexOf("highway");
-            foreach (var pGroup in pBlock.primitivegroup)
-            {
-                foreach (var way in pGroup.ways)
-                {
-                    if (way.keys.Contains(highwayIndex))
-                    {
-                        answer.Add(way.refs);
-                    }
-                }
-            }
-            return answer;
-        }
-        internal class LongLatPair
-        {
-            public long x;
-            public long y;
-
-            public LongLatPair(long x, long y)
-            {
-                this.x = x;
-                this.y = y;
-            }
-        }
-
-        internal class RoadInfo
-        {
-            public Dictionary<long, LongLatPair> nodes = new Dictionary<long, LongLatPair>();
-            public List<List<long>> refs = new List<List<long>>();
         }
 
         internal class RoadInfoVector
         {
             public Dictionary<long, Vector2d> nodes = new Dictionary<long, Vector2d>();
             public List<List<long>> refs = new List<List<long>>();
-        }
-
-        internal List<DenseNodes> GetDense()
-        {
-            var answer = new List<DenseNodes>();
-            if (type != "OSMData") return answer;
-            PrimitiveBlock pBlock = PrimitiveBlock.ReadDenseNodesOnly(new MemoryStream(zlib_data));
-            foreach (var pGroup in pBlock.primitivegroup)
-            {
-                answer.AddRange(pGroup.dense);
-            }
-            return answer;
         }
     }
 }

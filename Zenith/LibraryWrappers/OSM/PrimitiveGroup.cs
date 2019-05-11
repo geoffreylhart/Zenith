@@ -15,7 +15,7 @@ namespace Zenith.LibraryWrappers.OSM
         public List<Relation> relations = new List<Relation>(); // 4
         public List<ChangeSet> changesets = new List<ChangeSet>(); // 5
 
-        internal static PrimitiveGroup Read(Stream stream, int keyFilter, int? valueFilter)
+        internal static PrimitiveGroup Read(Stream stream)
         {
             PrimitiveGroup obj = new PrimitiveGroup();
             long lengthInBytes = OSM.ReadVarInt(stream);
@@ -39,148 +39,7 @@ namespace Zenith.LibraryWrappers.OSM
                 }
                 else if (b == 26)
                 {
-                    obj.ways.Add(RawWay.Read(stream, keyFilter, valueFilter));
-                    if (stream.Position > end) throw new NotImplementedException();
-                    if (stream.Position == end) return obj;
-                    b = stream.ReadByte();
-                }
-                else if (b == 34)
-                {
-                    OSM.SkipBytes(stream);
-                    if (stream.Position > end) throw new NotImplementedException();
-                    if (stream.Position == end) return obj;
-                    b = stream.ReadByte();
-                }
-                else if (b == 42)
-                {
-                    OSM.SkipBytes(stream);
-                    if (stream.Position > end) throw new NotImplementedException();
-                    if (stream.Position == end) return obj;
-                    b = stream.ReadByte();
-                }
-            }
-            throw new NotImplementedException();
-        }
-
-        internal static PrimitiveGroup ReadWayInfoOnly(MemoryStream stream, int keyFilter)
-        {
-            PrimitiveGroup obj = new PrimitiveGroup();
-            long lengthInBytes = OSM.ReadVarInt(stream);
-            long end = stream.Position + lengthInBytes;
-            int b = stream.ReadByte();
-            while (b == 10 || b == 18 || b == 26 || b == 34 || b == 42)
-            {
-                if (b == 10)
-                {
-                    OSM.SkipBytes(stream);
-                    if (stream.Position > end) throw new NotImplementedException();
-                    if (stream.Position == end) return obj;
-                    b = stream.ReadByte();
-                }
-                else if (b == 18)
-                {
-                    OSM.SkipBytes(stream);
-                    if (stream.Position > end) throw new NotImplementedException();
-                    if (stream.Position == end) return obj;
-                    b = stream.ReadByte();
-                }
-                else if (b == 26)
-                {
-                    obj.ways.Add(RawWay.Read(stream, keyFilter, null));
-                    if (stream.Position > end) throw new NotImplementedException();
-                    if (stream.Position == end) return obj;
-                    b = stream.ReadByte();
-                }
-                else if (b == 34)
-                {
-                    OSM.SkipBytes(stream);
-                    if (stream.Position > end) throw new NotImplementedException();
-                    if (stream.Position == end) return obj;
-                    b = stream.ReadByte();
-                }
-                else if (b == 42)
-                {
-                    OSM.SkipBytes(stream);
-                    if (stream.Position > end) throw new NotImplementedException();
-                    if (stream.Position == end) return obj;
-                    b = stream.ReadByte();
-                }
-            }
-            throw new NotImplementedException();
-        }
-
-        internal static PrimitiveGroup ReadDenseNodesOnly(MemoryStream stream)
-        {
-            PrimitiveGroup obj = new PrimitiveGroup();
-            long lengthInBytes = OSM.ReadVarInt(stream);
-            long end = stream.Position + lengthInBytes;
-            int b = stream.ReadByte();
-            while (b == 10 || b == 18 || b == 26 || b == 34 || b == 42)
-            {
-                if (b == 10)
-                {
-                    OSM.SkipBytes(stream);
-                    if (stream.Position > end) throw new NotImplementedException();
-                    if (stream.Position == end) return obj;
-                    b = stream.ReadByte();
-                }
-                else if (b == 18)
-                {
-                    obj.dense.Add(DenseNodes.Read(stream));
-                    if (stream.Position > end) throw new NotImplementedException();
-                    if (stream.Position == end) return obj;
-                    b = stream.ReadByte();
-                }
-                else if (b == 26)
-                {
-                    OSM.SkipBytes(stream);
-                    if (stream.Position > end) throw new NotImplementedException();
-                    if (stream.Position == end) return obj;
-                    b = stream.ReadByte();
-                }
-                else if (b == 34)
-                {
-                    OSM.SkipBytes(stream);
-                    if (stream.Position > end) throw new NotImplementedException();
-                    if (stream.Position == end) return obj;
-                    b = stream.ReadByte();
-                }
-                else if (b == 42)
-                {
-                    OSM.SkipBytes(stream);
-                    if (stream.Position > end) throw new NotImplementedException();
-                    if (stream.Position == end) return obj;
-                    b = stream.ReadByte();
-                }
-            }
-            throw new NotImplementedException();
-        }
-
-        internal static PrimitiveGroup ReadDenseNodeStartOnly(MemoryStream stream)
-        {
-            PrimitiveGroup obj = new PrimitiveGroup();
-            long lengthInBytes = OSM.ReadVarInt(stream);
-            long end = stream.Position + lengthInBytes;
-            int b = stream.ReadByte();
-            while (b == 10 || b == 18 || b == 26 || b == 34 || b == 42)
-            {
-                if (b == 10)
-                {
-                    OSM.SkipBytes(stream);
-                    if (stream.Position > end) throw new NotImplementedException();
-                    if (stream.Position == end) return obj;
-                    b = stream.ReadByte();
-                }
-                else if (b == 18)
-                {
-                    obj.dense.Add(DenseNodes.ReadNodeStart(stream));
-                    if (stream.Position > end) throw new NotImplementedException();
-                    if (stream.Position == end) return obj;
-                    b = stream.ReadByte();
-                }
-                else if (b == 26)
-                {
-                    OSM.SkipBytes(stream);
+                    obj.ways.Add(RawWay.Read(stream));
                     if (stream.Position > end) throw new NotImplementedException();
                     if (stream.Position == end) return obj;
                     b = stream.ReadByte();
