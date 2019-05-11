@@ -115,7 +115,7 @@ namespace Zenith.EditorGameComponents
 
         internal void Add(IUIComponent component, int x, int y)
         {
-            components.Add(new ComponentCoord(component, x, y));
+            //components.Add(new ComponentCoord(component, x, y));
         }
     }
 

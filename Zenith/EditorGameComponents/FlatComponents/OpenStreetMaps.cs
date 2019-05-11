@@ -26,7 +26,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
 
         public override bool DoAutoLoad(Sector sector)
         {
-            return sector.zoom <= 7 || sector.zoom==10;
+            return sector.zoom <= 7 || sector.zoom == 10;
         }
 
         public override bool AllowUnload(Sector sector)
@@ -65,8 +65,9 @@ namespace Zenith.EditorGameComponents.FlatComponents
             {
                 VectorTileBuffer buffer = new VectorTileBuffer();
                 buffer.Add(graphicsDevice, OpenStreetMap.GetCoast(graphicsDevice, sector), sector);
-                buffer.Add(graphicsDevice, OpenStreetMap.GetRoads(graphicsDevice, sector), sector);
                 buffer.Add(graphicsDevice, OpenStreetMap.GetCoast2(graphicsDevice, sector), sector);
+                buffer.Add(graphicsDevice, OpenStreetMap.GetLakes(graphicsDevice, sector), sector);
+                buffer.Add(graphicsDevice, OpenStreetMap.GetRoads(graphicsDevice, sector), sector);
                 return buffer;
             }
             else

@@ -54,8 +54,8 @@ namespace Zenith.LibraryWrappers.OSM
                     }
                     if (prev != null && v != null)
                     {
-                        graphNodes[prev.Value].connections.Add(graphNodes[v.Value]);
-                        graphNodes[v.Value].connections.Add(graphNodes[prev.Value]);
+                        graphNodes[prev.Value].nextConnections.Add(graphNodes[v.Value]);
+                        graphNodes[v.Value].prevConnections.Add(graphNodes[prev.Value]);
                     }
                     prev = v;
                 }
@@ -65,6 +65,12 @@ namespace Zenith.LibraryWrappers.OSM
         internal static LineGraph GetBeachFast(string path)
         {
             return GetFast(path, "natural", "coastline");
+        }
+
+        internal static LineGraph GetLakesFast(string path)
+        {
+            // TODO: handles those multipolygon lakes
+            return GetFast(path, "natural", "water");
         }
 
         internal static void PrintHighwayIds(string path, string outputPath)

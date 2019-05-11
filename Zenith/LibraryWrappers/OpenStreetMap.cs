@@ -16,6 +16,7 @@ using TriangleNet.Geometry;
 using TriangleNet.Meshing;
 using Zenith.EditorGameComponents.FlatComponents;
 using Zenith.LibraryWrappers.OSM;
+using Zenith.ZGeom;
 using Zenith.ZGraphics;
 using Zenith.ZMath;
 using static Zenith.EditorGameComponents.FlatComponents.SectorLoader;
@@ -34,69 +35,25 @@ namespace Zenith.LibraryWrappers
 
         internal static BasicVertexBuffer GetCoast(GraphicsDevice graphicsDevice, Sector sector)
         {
-            List<Node> nodes = new List<Node>();
-            List<Way> ways = new List<Way>();
-            using (var reader = new FileInfo(OSMPaths.GetSectorPath(sector)).OpenRead())
+            LineGraph graph = OSM.OSM.GetBeachFast(OSMPaths.GetSectorPath(sector));
+            if (graph.nodes.Count == 0)
             {
-                using (var src = new PBFOsmStreamSource(reader))
+                if (PixelIsLand(sector))
                 {
-                    foreach (var element in src)
-                    {
-                        if (element is Node) nodes.Add((Node)element);
-                        if (element.Tags.Contains("natural", "coastline")) ways.Add((Way)element);
-                    }
-                    if (ways.Count == 0)
-                    {
-                        if (PixelIsLand(sector))
-                        {
-                            graphicsDevice.Clear(Pallete.GRASS_GREEN);
-                        }
-                    }
+                    graphicsDevice.Clear(Pallete.GRASS_GREEN);
                 }
             }
-            // TODO: currently assuming all the data is good
-            // TODO: currently ignoring closed loops (lakes)
-            Dictionary<long, Way> startsWith = new Dictionary<long, Way>();
-            Dictionary<long, Way> endsWith = new Dictionary<long, Way>();
-            foreach (var way in ways)
-            {
-                startsWith[way.Nodes[0]] = way;
-                endsWith[way.Nodes[way.Nodes.Length - 1]] = way;
-            }
-            List<List<LibTessDotNet.ContourVertex>> contours = new List<List<LibTessDotNet.ContourVertex>>();
-            foreach (var way in ways)
-            {
-                if (endsWith.ContainsKey(way.Nodes[0])) continue; // I guess I'm discarding loops here?
-                List<LibTessDotNet.ContourVertex> contour = new List<LibTessDotNet.ContourVertex>();
-                Way next = way;
-                bool first = true;
-                while (true)
-                {
-                    for (int i = first ? 0 : 1; i < next.Nodes.Length; i++)
-                    {
-                        Node node1 = new Node();
-                        node1.Id = next.Nodes[i];
-                        int found1 = nodes.BinarySearch(node1, new NodeComparer());
-                        if (found1 < 0) continue;
-                        node1 = nodes[found1];
-                        LongLat longlat1 = new LongLat(node1.Longitude.Value * Math.PI / 180, node1.Latitude.Value * Math.PI / 180);
-                        LibTessDotNet.ContourVertex vertex = new LibTessDotNet.ContourVertex();
-                        vertex.Position = new LibTessDotNet.Vec3 { X = (float)longlat1.X, Y = (float)longlat1.Y, Z = 0 };
-                        contour.Add(vertex);
-                    }
-                    if (!startsWith.ContainsKey(next.Nodes.Last())) break;
-                    next = startsWith[next.Nodes.Last()];
-                    first = false;
-                }
-                if (contour.Count > 0)
-                {
-                    // super hacky
-                    contours.Add(contour);
-                }
-            }
+            List<List<ContourVertex>> contours = graph.ToContours();
             var outline = TrimLines(sector, contours);
             outline = CloseLines(sector, outline);
-            return new BasicVertexBuffer(graphicsDevice, Tesselate(graphicsDevice, sector, outline), PrimitiveType.TriangleList);
+            return new BasicVertexBuffer(graphicsDevice, Tesselate(graphicsDevice, sector, outline, Pallete.GRASS_GREEN), PrimitiveType.TriangleList);
+        }
+
+        internal static BasicVertexBuffer GetLakes(GraphicsDevice graphicsDevice, Sector sector)
+        {
+            LineGraph graph = OSM.OSM.GetLakesFast(OSMPaths.GetSectorPath(sector));
+            List<List<ContourVertex>> contours = graph.ToContours();
+            return new BasicVertexBuffer(graphicsDevice, Tesselate(graphicsDevice, sector, contours, Pallete.OCEAN_BLUE), PrimitiveType.TriangleList);
         }
 
         internal static BasicVertexBuffer GetCoast2(GraphicsDevice graphicsDevice, Sector sector)
@@ -295,7 +252,7 @@ namespace Zenith.LibraryWrappers
 
         // manually implement triangulation algorithm
         // library takes like 8 seconds
-        private static List<VertexPositionColor> Tesselate(GraphicsDevice graphicsDevice, Sector sector, List<List<LibTessDotNet.ContourVertex>> contours)
+        private static List<VertexPositionColor> Tesselate(GraphicsDevice graphicsDevice, Sector sector, List<List<LibTessDotNet.ContourVertex>> contours, Microsoft.Xna.Framework.Color color)
         {
             List<Polygon> polygons = new List<Polygon>();
             foreach (var contour in contours)
@@ -325,7 +282,7 @@ namespace Zenith.LibraryWrappers
                         var pos = triangle.GetVertex(j);
                         var pos2 = triangle.GetVertex((j + 1) % 3);
                         // TODO: why 1-y?
-                        triangles.Add(new VertexPositionColor(new Vector3((float)pos.X, (float)pos.Y, z), Pallete.GRASS_GREEN));
+                        triangles.Add(new VertexPositionColor(new Vector3((float)pos.X, (float)pos.Y, z), color));
                         //triangles.Add(new VertexPositionColor(new Vector3((float)pos2.X, (float)pos2.Y, z), Color.Green));
                     }
                 }

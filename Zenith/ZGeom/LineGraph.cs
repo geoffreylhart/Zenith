@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using LibTessDotNet;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
@@ -23,7 +24,7 @@ namespace Zenith.ZGeom
             foreach (var node in nodes)
             {
                 vertices.Add(new VertexPositionColor(new Vector3(node.pos, -10f), Color.White));
-                foreach (var c in node.connections)
+                foreach (var c in node.nextConnections)
                 {
                     int i1 = indexLookup[node];
                     int i2 = indexLookup[c];
@@ -45,7 +46,7 @@ namespace Zenith.ZGeom
             for (int i = 0; i < nodes.Count; i++) indexLookup[nodes[i]] = i;
             foreach (var node in nodes)
             {
-                foreach (var c in node.connections)
+                foreach (var c in node.nextConnections)
                 {
                     Vector2d v1 = node.pos;
                     Vector2d v2 = c.pos;
@@ -70,10 +71,56 @@ namespace Zenith.ZGeom
             return new BasicVertexBuffer(graphicsDevice, indices, vertices, texture, PrimitiveType.TriangleList);
         }
 
+        internal List<List<ContourVertex>> ToContours()
+        {
+            List<List<ContourVertex>> contours = new List<List<ContourVertex>>();
+            List<GraphNode> starts = nodes.Where(x => x.prevConnections.Count == 0).ToList();
+            HashSet<GraphNode> visited = new HashSet<GraphNode>();
+            foreach (var start in starts)
+            {
+                List<ContourVertex> contour = new List<ContourVertex>();
+                GraphNode next = start;
+                while (true)
+                {
+                    ContourVertex vertex = new ContourVertex();
+                    vertex.Position = new Vec3 { X = (float)next.pos.X, Y = (float)next.pos.Y, Z = 0 };
+                    contour.Add(vertex);
+                    visited.Add(next);
+                    if (next.nextConnections.Count == 0) break;
+                    next = next.nextConnections.Single();
+                }
+                if (contour.Count > 0)
+                {
+                    contours.Add(contour);
+                }
+            }
+            // now find the loops
+            foreach(var node in nodes)
+            {
+                List<ContourVertex> contour = new List<ContourVertex>();
+                GraphNode next = node;
+                while (!visited.Contains(next))
+                {
+                    ContourVertex vertex = new ContourVertex();
+                    vertex.Position = new Vec3 { X = (float)next.pos.X, Y = (float)next.pos.Y, Z = 0 };
+                    contour.Add(vertex);
+                    visited.Add(next);
+                    next = next.nextConnections.Single();
+                }
+                if (contour.Count > 0)
+                {
+                    contour.Add(contour[0]); // close it?
+                    contours.Add(contour);
+                }
+            }
+            return contours;
+        }
+
         internal class GraphNode
         {
             internal Vector2d pos;
-            internal List<GraphNode> connections = new List<GraphNode>();
+            internal List<GraphNode> nextConnections = new List<GraphNode>();
+            internal List<GraphNode> prevConnections = new List<GraphNode>();
 
             public GraphNode(Vector2d pos)
             {
