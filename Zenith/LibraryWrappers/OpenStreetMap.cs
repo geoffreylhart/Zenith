@@ -254,37 +254,33 @@ namespace Zenith.LibraryWrappers
         // library takes like 8 seconds
         private static List<VertexPositionColor> Tesselate(GraphicsDevice graphicsDevice, Sector sector, List<List<LibTessDotNet.ContourVertex>> contours, Microsoft.Xna.Framework.Color color)
         {
-            List<Polygon> polygons = new List<Polygon>();
+            Polygon polygon = new Polygon();
             foreach (var contour in contours)
             {
                 if (contour.Count > 2)
                 {
-                    Polygon polygon = new Polygon();
+                    bool isHole = contour[0].Data != null && ((bool)contour[0].Data);
                     List<Vertex> blah = new List<Vertex>();
                     foreach (var v in contour)
                     {
                         blah.Add(new Vertex(v.Position.X, v.Position.Y));
                     }
-                    polygon.AddContour(blah);
-                    if (polygon.Count > 2) polygons.Add(polygon); // somestimes doesn't like flat triangles, seems like
+                    polygon.AddContour(blah, 0, isHole);
                 }
             }
             List<VertexPositionColor> triangles = new List<VertexPositionColor>();
             if (contours.Count == 0) return triangles;
             float z = -10f;
-            foreach (var polygon in polygons)
+            var mesh = polygon.Triangulate();
+            foreach (var triangle in mesh.Triangles)
             {
-                var mesh = polygon.Triangulate();
-                foreach (var triangle in mesh.Triangles)
+                for (int j = 0; j < 3; j++)
                 {
-                    for (int j = 0; j < 3; j++)
-                    {
-                        var pos = triangle.GetVertex(j);
-                        var pos2 = triangle.GetVertex((j + 1) % 3);
-                        // TODO: why 1-y?
-                        triangles.Add(new VertexPositionColor(new Vector3((float)pos.X, (float)pos.Y, z), color));
-                        //triangles.Add(new VertexPositionColor(new Vector3((float)pos2.X, (float)pos2.Y, z), Color.Green));
-                    }
+                    var pos = triangle.GetVertex(j);
+                    var pos2 = triangle.GetVertex((j + 1) % 3);
+                    // TODO: why 1-y?
+                    triangles.Add(new VertexPositionColor(new Vector3((float)pos.X, (float)pos.Y, z), color));
+                    //triangles.Add(new VertexPositionColor(new Vector3((float)pos2.X, (float)pos2.Y, z), Color.Green));
                 }
             }
             return triangles;

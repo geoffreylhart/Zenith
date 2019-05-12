@@ -108,6 +108,7 @@ namespace Zenith.ZGeom
                 while (!visited.Contains(next))
                 {
                     ContourVertex vertex = new ContourVertex();
+                    vertex.Data = next.isHole; // TODO: get rid of this
                     vertex.Position = new Vec3 { X = (float)next.pos.X, Y = (float)next.pos.Y, Z = 0 };
                     contour.Add(vertex);
                     visited.Add(next);
@@ -127,6 +128,7 @@ namespace Zenith.ZGeom
             internal Vector2d pos;
             internal List<GraphNode> nextConnections = new List<GraphNode>();
             internal List<GraphNode> prevConnections = new List<GraphNode>();
+            internal bool isHole = false; // TODO: get rid of this
 
             public GraphNode(Vector2d pos)
             {

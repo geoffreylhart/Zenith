@@ -75,7 +75,8 @@ namespace Zenith.LibraryWrappers.OSM
 
         private LineGraph GetLakeMulti()
         {
-            List<long> wayIds = new List<long>();
+            List<long> innerWayIds = new List<long>();
+            List<long> outerWayIds = new List<long>();
             foreach (var blob in blobs)
             {
                 if (blob.type != "OSMData") continue;
@@ -102,33 +103,62 @@ namespace Zenith.LibraryWrappers.OSM
                             for (int i = 0; i < relation.roles_sid.Count; i++)
                             {
                                 // just outer for now
-                                if (relation.roles_sid[i] == outerIndex && relation.types[i] == 1)
+                                if (relation.types[i] == 1)
                                 {
-                                    wayIds.Add(relation.memids[i]);
+                                    if (relation.roles_sid[i] == innerIndex) innerWayIds.Add(relation.memids[i]);
+                                    if (relation.roles_sid[i] == outerIndex) outerWayIds.Add(relation.memids[i]);
                                 }
                             }
                         }
                     }
                 }
             }
-            RoadInfoVector roads = new RoadInfoVector();
+            RoadInfoVector roadsInner = new RoadInfoVector();
             foreach (var blob in blobs)
             {
-                var roadInfo = blob.GetVectors(wayIds);
-                roads.refs.AddRange(roadInfo.refs);
-                foreach (var pair in roadInfo.nodes) roads.nodes.Add(pair.Key, pair.Value);
+                var roadInfo = blob.GetVectors(innerWayIds);
+                roadsInner.refs.AddRange(roadInfo.refs);
+                foreach (var pair in roadInfo.nodes) roadsInner.nodes.Add(pair.Key, pair.Value);
+            }
+            RoadInfoVector roadsOuter = new RoadInfoVector();
+            foreach (var blob in blobs)
+            {
+                var roadInfo = blob.GetVectors(outerWayIds);
+                roadsOuter.refs.AddRange(roadInfo.refs);
+                foreach (var pair in roadInfo.nodes) roadsOuter.nodes.Add(pair.Key, pair.Value);
             }
             LineGraph answer = new LineGraph();
             Dictionary<long, GraphNode> graphNodes = new Dictionary<long, GraphNode>();
-            foreach (var way in roads.refs)
+            foreach (var way in roadsOuter.refs)
             {
                 long? prev = null;
                 foreach (var nodeRef in way)
                 {
-                    long? v = roads.nodes.ContainsKey(nodeRef) ? nodeRef : (long?)null;
+                    long? v = roadsOuter.nodes.ContainsKey(nodeRef) ? nodeRef : (long?)null;
                     if (v != null && !graphNodes.ContainsKey(v.Value))
                     {
-                        var newNode = new GraphNode(roads.nodes[v.Value]);
+                        var newNode = new GraphNode(roadsOuter.nodes[v.Value]);
+                        graphNodes[nodeRef] = newNode;
+                        answer.nodes.Add(newNode);
+                    }
+                    if (prev != null && v != null)
+                    {
+                        graphNodes[prev.Value].nextConnections.Add(graphNodes[v.Value]);
+                        graphNodes[v.Value].prevConnections.Add(graphNodes[prev.Value]);
+                    }
+                    prev = v;
+                }
+            }
+            foreach (var way in roadsInner.refs)
+            {
+                long? prev = null;
+                foreach (var nodeRef in way)
+                {
+                    long? v = roadsInner.nodes.ContainsKey(nodeRef) ? nodeRef : (long?)null;
+                    if (v != null && !graphNodes.ContainsKey(v.Value))
+                    {
+                        var newNode = new GraphNode(roadsInner.nodes[v.Value]);
+                        newNode.isHole = true;
                         graphNodes[nodeRef] = newNode;
                         answer.nodes.Add(newNode);
                     }
