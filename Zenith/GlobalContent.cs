@@ -17,6 +17,7 @@ namespace Zenith
         public static SpriteFont ArialBold;
         public static Texture2D Road;
         public static Texture2D Beach;
+        public static Texture2D BeachFlipped;
 
         public static void Init(ContentManager content)
         {
@@ -27,6 +28,7 @@ namespace Zenith
             ArialBold = content.Load<SpriteFont>("Fonts/ArialBold");
             Road = content.Load<Texture2D>("Images/Road");
             Beach = content.Load<Texture2D>("Images/Beach");
+            BeachFlipped = content.Load<Texture2D>("Images/BeachFlipped");
         }
     }
 }

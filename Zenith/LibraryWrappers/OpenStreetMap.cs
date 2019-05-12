@@ -68,12 +68,20 @@ namespace Zenith.LibraryWrappers
             return new BasicVertexBuffer(graphicsDevice, Tesselate(graphicsDevice, sector, contours, Pallete.OCEAN_BLUE), PrimitiveType.TriangleList);
         }
 
-        internal static BasicVertexBuffer GetCoast2(GraphicsDevice graphicsDevice, BlobCollection blobs)
+        internal static BasicVertexBuffer GetLakesBorder(GraphicsDevice graphicsDevice, BlobCollection blobs, Sector sector)
         {
-            double widthInFeet = 10.7 * 4; // extra thick
+            double widthInFeet = 10.7 * 50; // extra thick
             double circumEarth = 24901 * 5280;
             double width = widthInFeet / circumEarth * 2 * Math.PI;
-            return blobs.GetBeachFast().ConstructAsRoads(graphicsDevice, width, GlobalContent.Beach, Microsoft.Xna.Framework.Color.White);
+            return blobs.GetLakesFast().ConstructAsRoads(graphicsDevice, width, GlobalContent.Beach, Microsoft.Xna.Framework.Color.White);
+        }
+
+        internal static BasicVertexBuffer GetCoastBorder(GraphicsDevice graphicsDevice, BlobCollection blobs)
+        {
+            double widthInFeet = 10.7 * 50; // extra thick
+            double circumEarth = 24901 * 5280;
+            double width = widthInFeet / circumEarth * 2 * Math.PI;
+            return blobs.GetBeachFast().ConstructAsRoads(graphicsDevice, width, GlobalContent.BeachFlipped, Microsoft.Xna.Framework.Color.White);
         }
 
         static Bitmap landImage = null;
