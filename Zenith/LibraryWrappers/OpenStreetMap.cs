@@ -43,7 +43,7 @@ namespace Zenith.LibraryWrappers
                     graphicsDevice.Clear(Pallete.GRASS_GREEN);
                 }
             }
-            List<List<ContourVertex>> contours = graph.ToContours();
+            List<List<ContourVertex>> contours = graph.ToContours().Where(x => !x.First().Equals(x.Last())).ToList(); // wait, why is this necessary?
             var outline = TrimLines(sector, contours);
             outline = CloseLines(sector, outline);
             return new BasicVertexBuffer(graphicsDevice, Tesselate(graphicsDevice, sector, outline, Pallete.GRASS_GREEN), PrimitiveType.TriangleList);
