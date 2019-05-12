@@ -50,11 +50,12 @@ namespace Zenith.ZGeom
                 {
                     Vector2d v1 = node.pos;
                     Vector2d v2 = c.pos;
-                    Vector2d w = (v2 - v1).RotateCW90().Normalized() * width / 2; // points right
-                    Vector2d topLeft = v2 - w;
-                    Vector2d topRight = v2 + w;
-                    Vector2d bottomLeft = v1 - w;
-                    Vector2d bottomRight = v1 + w;
+                    Vector2d w1 = node.GetW(c, width);
+                    Vector2d w2 = c.GetW(node, width);
+                    Vector2d topLeft = v2 - w2;
+                    Vector2d topRight = v2 + w2;
+                    Vector2d bottomLeft = v1 - w1;
+                    Vector2d bottomRight = v1 + w1;
                     int i = vertices.Count;
                     vertices.Add(new VertexPositionTexture(new Vector3(topLeft, -10f), new Vector2(0, 0)));
                     vertices.Add(new VertexPositionTexture(new Vector3(topRight, -10f), new Vector2(1, 0)));
@@ -157,6 +158,43 @@ namespace Zenith.ZGeom
             public GraphNode(Vector2d pos)
             {
                 this.pos = pos;
+            }
+
+            internal Vector2d GetW(GraphNode target, double width)
+            {
+                GraphNode prev = prevConnections.Count == 1 ? prevConnections[0] : null;
+                GraphNode next = nextConnections.Count == 1 ? nextConnections[0] : null;
+                Vector2d w; // points right
+                if (next != null && prev != null)
+                {
+                    Vector2d w1 = (next.pos - pos).RotateCW90().Normalized() * width / 2;
+                    Vector2d w2 = (pos - prev.pos).RotateCW90().Normalized() * width / 2;
+                    w1.Y *= Math.Cos(pos.Y);
+                    w2.Y *= Math.Cos(pos.Y);
+                    w = (w1 + w2).Normalized() * width / 2;
+                }
+                else if (next != null)
+                {
+                    w = (next.pos - pos).RotateCW90().Normalized() * width / 2;
+                }
+                else if (prev != null)
+                {
+                    w = (pos - prev.pos).RotateCW90().Normalized() * width / 2;
+                }
+                else
+                {
+                    if (nextConnections.Contains(target))
+                    {
+                        w = (target.pos - pos).RotateCW90().Normalized() * width / 2;
+                    }
+                    else
+                    {
+                        w = -(target.pos - pos).RotateCW90().Normalized() * width / 2;
+                    }
+                }
+                // adjust width based on longLat
+                w.Y *= Math.Cos(pos.Y);
+                return w;
             }
         }
     }
