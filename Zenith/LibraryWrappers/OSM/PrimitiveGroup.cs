@@ -46,7 +46,7 @@ namespace Zenith.LibraryWrappers.OSM
                 }
                 else if (b == 34)
                 {
-                    OSM.SkipBytes(stream);
+                    obj.relations.Add(Relation.Read(stream));
                     if (stream.Position > end) throw new NotImplementedException();
                     if (stream.Position == end) return obj;
                     b = stream.ReadByte();

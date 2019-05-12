@@ -22,7 +22,7 @@ namespace Zenith.LibraryWrappers.OSM
         public byte[] zlib_data; // 26
 
         // parsed stuff
-        PrimitiveBlock pBlock;
+        public PrimitiveBlock pBlock;
 
         internal RoadInfoVector GetVectors(string key, string value)
         {
@@ -49,6 +49,39 @@ namespace Zenith.LibraryWrappers.OSM
                 foreach (var way in pGroup.ways)
                 {
                     if (way.keys.Contains(highwayIndex) && (valueIndex == null || way.vals.Contains(valueIndex.Value)))
+                    {
+                        info.refs.Add(way.refs);
+                    }
+                }
+            }
+            return info;
+        }
+
+        internal RoadInfoVector GetVectors(List<long> ids)
+        {
+            HashSet<long> idHash = new HashSet<long>();
+            foreach (var id in ids) idHash.Add(id);
+            if (type != "OSMData") return new RoadInfoVector();
+            RoadInfoVector info = new RoadInfoVector();
+            List<VertexPositionColor> roads = new List<VertexPositionColor>();
+            foreach (var pGroup in pBlock.primitivegroup)
+            {
+                foreach (var d in pGroup.dense)
+                {
+                    if (d.id.Count != d.lat.Count || d.lat.Count != d.lon.Count) throw new NotImplementedException();
+                    for (int i = 0; i < d.id.Count; i++)
+                    {
+                        double longitude = .000000001 * (pBlock.lon_offset + (pBlock.granularity * d.lon[i]));
+                        double latitude = .000000001 * (pBlock.lat_offset + (pBlock.granularity * d.lat[i]));
+                        info.nodes[d.id[i]] = new Vector2d(longitude * Math.PI / 180, latitude * Math.PI / 180);
+                    }
+                }
+            }
+            foreach (var pGroup in pBlock.primitivegroup)
+            {
+                foreach (var way in pGroup.ways)
+                {
+                    if (idHash.Contains(way.id))
                     {
                         info.refs.Add(way.refs);
                     }

@@ -71,6 +71,12 @@ namespace Zenith.ZGeom
             return new BasicVertexBuffer(graphicsDevice, indices, vertices, texture, PrimitiveType.TriangleList);
         }
 
+        internal LineGraph Combine(LineGraph x)
+        {
+            nodes.AddRange(x.nodes);
+            return this;
+        }
+
         internal List<List<ContourVertex>> ToContours()
         {
             List<List<ContourVertex>> contours = new List<List<ContourVertex>>();
@@ -95,7 +101,7 @@ namespace Zenith.ZGeom
                 }
             }
             // now find the loops
-            foreach(var node in nodes)
+            foreach (var node in nodes)
             {
                 List<ContourVertex> contour = new List<ContourVertex>();
                 GraphNode next = node;
