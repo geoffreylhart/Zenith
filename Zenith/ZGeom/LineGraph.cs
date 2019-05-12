@@ -80,20 +80,22 @@ namespace Zenith.ZGeom
         internal List<List<ContourVertex>> ToContours()
         {
             List<List<ContourVertex>> contours = new List<List<ContourVertex>>();
-            List<GraphNode> starts = nodes.Where(x => x.prevConnections.Count == 0).ToList();
+            List<GraphNode> starts = nodes.Where(x => x.prevConnections.Count == 0 && x.nextConnections.Count == 1).ToList();
             HashSet<GraphNode> visited = new HashSet<GraphNode>();
             foreach (var start in starts)
             {
                 List<ContourVertex> contour = new List<ContourVertex>();
                 GraphNode next = start;
-                while (true)
+                GraphNode prev = null;
+                while (next != null)
                 {
                     ContourVertex vertex = new ContourVertex();
                     vertex.Position = new Vec3 { X = (float)next.pos.X, Y = (float)next.pos.Y, Z = 0 };
                     contour.Add(vertex);
                     visited.Add(next);
-                    if (next.nextConnections.Count == 0) break;
-                    next = next.nextConnections.Single();
+                    GraphNode nextnext = GetNext(prev, next);
+                    prev = next;
+                    next = nextnext;
                 }
                 if (contour.Count > 0)
                 {
@@ -105,6 +107,7 @@ namespace Zenith.ZGeom
             {
                 List<ContourVertex> contour = new List<ContourVertex>();
                 GraphNode next = node;
+                GraphNode prev = null;
                 while (!visited.Contains(next))
                 {
                     ContourVertex vertex = new ContourVertex();
@@ -112,7 +115,9 @@ namespace Zenith.ZGeom
                     vertex.Position = new Vec3 { X = (float)next.pos.X, Y = (float)next.pos.Y, Z = 0 };
                     contour.Add(vertex);
                     visited.Add(next);
-                    next = next.nextConnections.Single();
+                    GraphNode nextnext = GetNext(prev, next);
+                    prev = next;
+                    next = nextnext;
                 }
                 if (contour.Count > 0)
                 {
@@ -121,6 +126,25 @@ namespace Zenith.ZGeom
                 }
             }
             return contours;
+        }
+
+        private GraphNode GetNext(GraphNode prev, GraphNode node)
+        {
+            // note: sometimes our connections are going the opposite direction that we expect
+            // this is thanks to multipolyons sharing edges with the coastline, as an example (it can only travel the correct direction for one thing)
+            int totalCount = node.prevConnections.Count + node.nextConnections.Count;
+            if (totalCount == 1 && prev == null)
+            {
+                if (node.prevConnections.Count == 1) return node.prevConnections[0];
+                return node.nextConnections[0];
+            }
+            if (totalCount == 1) return null;
+            if (totalCount != 2) throw new NotImplementedException();
+            List<GraphNode> combined = new List<GraphNode>();
+            combined.AddRange(node.prevConnections);
+            combined.AddRange(node.nextConnections);
+            if (prev == null) return combined[1];
+            return combined.Where(x => x != prev).Single();
         }
 
         internal class GraphNode
