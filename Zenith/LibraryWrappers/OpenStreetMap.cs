@@ -40,7 +40,19 @@ namespace Zenith.LibraryWrappers
             {
                 if (PixelIsLand(sector))
                 {
-                    graphicsDevice.Clear(Pallete.GRASS_GREEN);
+                    List<VertexPositionColor> vertices = new List<VertexPositionColor>();
+                    var topLeft = sector.TopLeftCorner;
+                    var topRight = sector.TopRightCorner;
+                    var bottomLeft = sector.BottomLeftCorner;
+                    var bottomRight = sector.BottomRightCorner;
+                    // TODO: everything is backwards, sadly
+                    vertices.Add(new VertexPositionColor(new Vector3((float)topLeft.X, (float)topLeft.Y, -10f), Pallete.GRASS_GREEN));
+                    vertices.Add(new VertexPositionColor(new Vector3((float)bottomRight.X, (float)bottomRight.Y, -10f), Pallete.GRASS_GREEN));
+                    vertices.Add(new VertexPositionColor(new Vector3((float)topRight.X, (float)topRight.Y, -10f), Pallete.GRASS_GREEN));
+                    vertices.Add(new VertexPositionColor(new Vector3((float)topLeft.X, (float)topLeft.Y, -10f), Pallete.GRASS_GREEN));
+                    vertices.Add(new VertexPositionColor(new Vector3((float)bottomLeft.X, (float)bottomLeft.Y, -10f), Pallete.GRASS_GREEN));
+                    vertices.Add(new VertexPositionColor(new Vector3((float)bottomRight.X, (float)bottomRight.Y, -10f), Pallete.GRASS_GREEN));
+                    return new BasicVertexBuffer(graphicsDevice, vertices, PrimitiveType.TriangleList);
                 }
             }
             List<List<ContourVertex>> contours = graph.ToContours().Where(x => !x.First().Equals(x.Last())).ToList(); // wait, why is this necessary?
