@@ -18,6 +18,7 @@ namespace Zenith
         public static Texture2D Road;
         public static Texture2D Beach;
         public static Texture2D BeachFlipped;
+        public static Texture2D Tree;
 
         public static void Init(ContentManager content)
         {
@@ -29,6 +30,7 @@ namespace Zenith
             Road = content.Load<Texture2D>("Images/Road");
             Beach = content.Load<Texture2D>("Images/Beach");
             BeachFlipped = content.Load<Texture2D>("Images/BeachFlipped");
+            Tree = content.Load<Texture2D>("Images/Tree");
         }
     }
 }

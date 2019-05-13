@@ -72,6 +72,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 buffer.Add(graphicsDevice, OpenStreetMap.GetLakes(graphicsDevice, blobs, sector), sector);
                 buffer.Add(graphicsDevice, OpenStreetMap.GetLakesBorder(graphicsDevice, blobs, sector), sector);
                 buffer.Add(graphicsDevice, OpenStreetMap.GetRoads(graphicsDevice, blobs), sector);
+                buffer.Add(graphicsDevice, OpenStreetMap.GetTrees(graphicsDevice, blobs, sector), sector);
                 return buffer;
             }
             else

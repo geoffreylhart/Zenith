@@ -61,6 +61,15 @@ namespace Zenith.LibraryWrappers
             return new BasicVertexBuffer(graphicsDevice, Tesselate(graphicsDevice, sector, outline, Pallete.GRASS_GREEN), PrimitiveType.TriangleList);
         }
 
+        internal static BasicVertexBuffer GetTrees(GraphicsDevice graphicsDevice, BlobCollection blobs, Sector sector)
+        {
+            PointCollection points = new PointCollection(sector, (int)(sector.SurfaceAreaPortion * 3.04e9)); // 3 trillion trees on earth
+            double widthInFeet = 10.7 * 20; // extra thick
+            double circumEarth = 24901 * 5280;
+            double width = widthInFeet / circumEarth * 2 * Math.PI;
+            return points.Construct(graphicsDevice, width, GlobalContent.Tree, sector);
+        }
+
         internal static BasicVertexBuffer GetLakes(GraphicsDevice graphicsDevice, BlobCollection blobs, Sector sector)
         {
             LineGraph graph = blobs.GetLakesFast();

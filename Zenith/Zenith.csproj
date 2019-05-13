@@ -86,6 +86,7 @@
     <Compile Include="LibraryWrappers\OSM\Way2.cs" />
     <Compile Include="ZGeom\IGeom.cs" />
     <Compile Include="ZGeom\LineGraph.cs" />
+    <Compile Include="ZGeom\PointCollection.cs" />
     <Compile Include="ZGraphics\BasicVertexBuffer.cs" />
     <Compile Include="ZGraphics\GraphicsBasic.cs" />
     <Compile Include="Helpers\GraphicsDeviceHelper.cs" />

@@ -27,6 +27,17 @@ namespace Zenith.ZGraphics
             }
         }
 
+        public BasicVertexBuffer(GraphicsDevice graphicsDevice, List<VertexPositionTexture> vertices, Texture2D texture, PrimitiveType primitiveType)
+        {
+            if (vertices.Count > 0)
+            {
+                this.vertices = new VertexBuffer(graphicsDevice, VertexPositionTexture.VertexDeclaration, vertices.Count, BufferUsage.WriteOnly);
+                this.vertices.SetData(vertices.ToArray());
+                this.texture = texture;
+                this.primitiveType = primitiveType;
+            }
+        }
+
         public BasicVertexBuffer(GraphicsDevice graphicsDevice, List<int> indices, List<VertexPositionColor> vertices, PrimitiveType primitiveType)
         {
             if (vertices.Count > 0)
