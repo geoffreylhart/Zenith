@@ -173,8 +173,14 @@ namespace Zenith.ZGeom
 
             internal Vector2d GetW(GraphNode target, double width)
             {
+                // TODO: do all of this better
                 GraphNode prev = prevConnections.Count == 1 ? prevConnections[0] : null;
                 GraphNode next = nextConnections.Count == 1 ? nextConnections[0] : null;
+                if (prevConnections.Count + nextConnections.Count > 2)
+                {
+                    prev = null;
+                    next = null;
+                }
                 Vector2d w; // points right
                 if (next != null && prev != null)
                 {
