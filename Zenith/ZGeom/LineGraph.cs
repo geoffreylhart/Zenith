@@ -58,15 +58,24 @@ namespace Zenith.ZGeom
                     Vector2d bottomRight = v1 + w1;
                     int i = vertices.Count;
                     vertices.Add(new VertexPositionTexture(new Vector3(topLeft, -10f), new Vector2(0, 0)));
+                    vertices.Add(new VertexPositionTexture(new Vector3(v2, -9f), new Vector2(0.5f, 0))); // mid
                     vertices.Add(new VertexPositionTexture(new Vector3(topRight, -10f), new Vector2(1, 0)));
-                    vertices.Add(new VertexPositionTexture(new Vector3(bottomRight, -10f), new Vector2(1, 1)));
                     vertices.Add(new VertexPositionTexture(new Vector3(bottomLeft, -10f), new Vector2(0, 1)));
+                    vertices.Add(new VertexPositionTexture(new Vector3(v1, -9f), new Vector2(0.5f, 1)));
+                    vertices.Add(new VertexPositionTexture(new Vector3(bottomRight, -10f), new Vector2(1, 1)));
+                    // TODO: why was flipping opposite that I expect correct?
                     indices.Add(i);
-                    indices.Add(i + 2); // TODO: why was flipping opposite that I expect correct?
+                    indices.Add(i + 4);
                     indices.Add(i + 1);
                     indices.Add(i);
                     indices.Add(i + 3);
+                    indices.Add(i + 4);
+                    indices.Add(i + 1);
+                    indices.Add(i + 5);
                     indices.Add(i + 2);
+                    indices.Add(i + 1);
+                    indices.Add(i + 4);
+                    indices.Add(i + 5);
                 }
             }
             return new BasicVertexBuffer(graphicsDevice, indices, vertices, texture, PrimitiveType.TriangleList);
@@ -153,6 +162,8 @@ namespace Zenith.ZGeom
             internal Vector2d pos;
             internal List<GraphNode> nextConnections = new List<GraphNode>();
             internal List<GraphNode> prevConnections = new List<GraphNode>();
+            internal List<Dictionary<string, string>> nextProps = new List<Dictionary<string, string>>(); // TODO: is this really the best way to pass on the key/values?
+            internal List<Dictionary<string, string>> prevProps = new List<Dictionary<string, string>>();
             internal bool isHole = false; // TODO: get rid of this
 
             public GraphNode(Vector2d pos)

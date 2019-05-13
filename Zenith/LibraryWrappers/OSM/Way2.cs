@@ -55,5 +55,15 @@ namespace Zenith.LibraryWrappers.OSM
             }
             throw new NotImplementedException();
         }
+
+        public Dictionary<string, string> keyValues = new Dictionary<string, string>();
+
+        internal void InitKeyValues(StringTable stringtable)
+        {
+            for(int i = 0; i < keys.Count; i++)
+            {
+                keyValues[stringtable.vals[keys[i]]] = stringtable.vals[vals[i]];
+            }
+        }
     }
 }

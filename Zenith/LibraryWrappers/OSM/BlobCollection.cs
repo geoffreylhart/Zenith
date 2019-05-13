@@ -35,15 +35,21 @@ namespace Zenith.LibraryWrappers.OSM
             foreach (var blob in blobs)
             {
                 var roadInfo = blob.GetVectors(key, value);
-                roads.refs.AddRange(roadInfo.refs);
+                roads.ways.AddRange(roadInfo.ways);
                 foreach (var pair in roadInfo.nodes) roads.nodes.Add(pair.Key, pair.Value);
             }
             LineGraph answer = new LineGraph();
             Dictionary<long, GraphNode> graphNodes = new Dictionary<long, GraphNode>();
-            foreach (var way in roads.refs)
+            foreach (var way in roads.ways)
             {
+                if (way.keyValues.ContainsKey("highway"))
+                {
+                    if (way.keyValues["highway"] == "footway") continue; // TODO: move this logic
+                    if (way.keyValues["highway"] == "cycleway") continue; // TODO: move this logic
+                    if (way.keyValues["highway"] == "service") continue; // TODO: move this logic
+                }
                 long? prev = null;
-                foreach (var nodeRef in way)
+                foreach (var nodeRef in way.refs)
                 {
                     long? v = roads.nodes.ContainsKey(nodeRef) ? nodeRef : (long?)null;
                     if (v != null && !graphNodes.ContainsKey(v.Value))
@@ -55,7 +61,9 @@ namespace Zenith.LibraryWrappers.OSM
                     if (prev != null && v != null)
                     {
                         graphNodes[prev.Value].nextConnections.Add(graphNodes[v.Value]);
+                        graphNodes[prev.Value].nextProps.Add(way.keyValues);
                         graphNodes[v.Value].prevConnections.Add(graphNodes[prev.Value]);
+                        graphNodes[v.Value].prevProps.Add(way.keyValues);
                     }
                     prev = v;
                 }
@@ -117,22 +125,22 @@ namespace Zenith.LibraryWrappers.OSM
             foreach (var blob in blobs)
             {
                 var roadInfo = blob.GetVectors(innerWayIds);
-                roadsInner.refs.AddRange(roadInfo.refs);
+                roadsInner.ways.AddRange(roadInfo.ways);
                 foreach (var pair in roadInfo.nodes) roadsInner.nodes.Add(pair.Key, pair.Value);
             }
             RoadInfoVector roadsOuter = new RoadInfoVector();
             foreach (var blob in blobs)
             {
                 var roadInfo = blob.GetVectors(outerWayIds);
-                roadsOuter.refs.AddRange(roadInfo.refs);
+                roadsOuter.ways.AddRange(roadInfo.ways);
                 foreach (var pair in roadInfo.nodes) roadsOuter.nodes.Add(pair.Key, pair.Value);
             }
             LineGraph answer = new LineGraph();
             Dictionary<long, GraphNode> graphNodes = new Dictionary<long, GraphNode>();
-            foreach (var way in roadsOuter.refs)
+            foreach (var way in roadsOuter.ways)
             {
                 long? prev = null;
-                foreach (var nodeRef in way)
+                foreach (var nodeRef in way.refs)
                 {
                     long? v = roadsOuter.nodes.ContainsKey(nodeRef) ? nodeRef : (long?)null;
                     if (v != null && !graphNodes.ContainsKey(v.Value))
@@ -149,10 +157,10 @@ namespace Zenith.LibraryWrappers.OSM
                     prev = v;
                 }
             }
-            foreach (var way in roadsInner.refs)
+            foreach (var way in roadsInner.ways)
             {
                 long? prev = null;
-                foreach (var nodeRef in way)
+                foreach (var nodeRef in way.refs)
                 {
                     long? v = roadsInner.nodes.ContainsKey(nodeRef) ? nodeRef : (long?)null;
                     if (v != null && !graphNodes.ContainsKey(v.Value))

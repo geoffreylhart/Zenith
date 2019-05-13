@@ -50,7 +50,8 @@ namespace Zenith.LibraryWrappers.OSM
                 {
                     if (way.keys.Contains(highwayIndex) && (valueIndex == null || way.vals.Contains(valueIndex.Value)))
                     {
-                        info.refs.Add(way.refs);
+                        way.InitKeyValues(pBlock.stringtable);
+                        info.ways.Add(way);
                     }
                 }
             }
@@ -83,7 +84,7 @@ namespace Zenith.LibraryWrappers.OSM
                 {
                     if (idHash.Contains(way.id))
                     {
-                        info.refs.Add(way.refs);
+                        info.ways.Add(way);
                     }
                 }
             }
@@ -112,7 +113,7 @@ namespace Zenith.LibraryWrappers.OSM
         internal class RoadInfoVector
         {
             public Dictionary<long, Vector2d> nodes = new Dictionary<long, Vector2d>();
-            public List<List<long>> refs = new List<List<long>>();
+            public List<RawWay> ways = new List<RawWay>();
         }
     }
 }
