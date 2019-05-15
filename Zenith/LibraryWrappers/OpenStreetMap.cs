@@ -33,7 +33,7 @@ namespace Zenith.LibraryWrappers
             return blobs.GetRoadsFast().ConstructAsRoads(graphicsDevice, width, GlobalContent.Road, Microsoft.Xna.Framework.Color.White);
         }
 
-        internal static BasicVertexBuffer GetCoast(GraphicsDevice graphicsDevice, BlobCollection blobs, Sector sector)
+        private static List<VertexPositionColor> GetCoastVertices(GraphicsDevice graphicsDevice, BlobCollection blobs, Sector sector)
         {
             LineGraph graph = blobs.GetBeachFast();
             if (graph.nodes.Count == 0)
@@ -52,22 +52,29 @@ namespace Zenith.LibraryWrappers
                     vertices.Add(new VertexPositionColor(new Vector3((float)topLeft.X, (float)topLeft.Y, -10f), Pallete.GRASS_GREEN));
                     vertices.Add(new VertexPositionColor(new Vector3((float)bottomLeft.X, (float)bottomLeft.Y, -10f), Pallete.GRASS_GREEN));
                     vertices.Add(new VertexPositionColor(new Vector3((float)bottomRight.X, (float)bottomRight.Y, -10f), Pallete.GRASS_GREEN));
-                    return new BasicVertexBuffer(graphicsDevice, vertices, PrimitiveType.TriangleList);
+                    return vertices;
                 }
             }
             List<List<ContourVertex>> contours = graph.ToContours().Where(x => !x.First().Equals(x.Last())).ToList(); // wait, why is this necessary?
             var outline = TrimLines(sector, contours);
             outline = CloseLines(sector, outline);
-            return new BasicVertexBuffer(graphicsDevice, Tesselate(graphicsDevice, sector, outline, Pallete.GRASS_GREEN), PrimitiveType.TriangleList);
+            return Tesselate(graphicsDevice, sector, outline, Pallete.GRASS_GREEN);
+        }
+
+        internal static BasicVertexBuffer GetCoast(GraphicsDevice graphicsDevice, BlobCollection blobs, Sector sector)
+        {
+            return new BasicVertexBuffer(graphicsDevice, GetCoastVertices(graphicsDevice, blobs, sector), PrimitiveType.TriangleList);
         }
 
         internal static BasicVertexBuffer GetTrees(GraphicsDevice graphicsDevice, BlobCollection blobs, Sector sector)
         {
-            PointCollection points = new PointCollection(sector, (int)(sector.SurfaceAreaPortion * 3.04e9)); // 3 trillion trees on earth
+            PointCollection points = new PointCollection(sector, (int)(sector.SurfaceAreaPortion * 3.04e9 * 20)); // 3 trillion trees on earth
             double widthInFeet = 10.7 * 20; // extra thick
             double circumEarth = 24901 * 5280;
             double width = widthInFeet / circumEarth * 2 * Math.PI;
-            return points.Construct(graphicsDevice, width, GlobalContent.Tree, sector);
+            var coastTriangles = GetCoastVertices(graphicsDevice, blobs, sector);
+            var roads = blobs.GetRoadsFast();
+            return points.KeepWithin(coastTriangles).RemoveNear(roads, width).Construct(graphicsDevice, width, GlobalContent.Tree, sector);
         }
 
         internal static BasicVertexBuffer GetLakes(GraphicsDevice graphicsDevice, BlobCollection blobs, Sector sector)

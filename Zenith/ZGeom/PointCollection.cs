@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using GeoAPI.Geometries;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using NetTopologySuite.Geometries;
 using Zenith.ZGraphics;
 using Zenith.ZMath;
 
@@ -60,6 +62,66 @@ namespace Zenith.ZGeom
                 indices.Add(i + 2);
             }
             return new BasicVertexBuffer(graphicsDevice, indices, vertices, texture, PrimitiveType.TriangleList);
+        }
+
+        internal PointCollection KeepWithin(List<VertexPositionColor> coastTriangles)
+        {
+            IGeometry collection = null;
+            // TODO: why didn't our first attempt work??
+            //IGeometry[] triangles = new IGeometry[coastTriangles.Count / 3];
+            for (int i = 0; i < coastTriangles.Count / 3; i++)
+            {
+                Coordinate[] coords = new Coordinate[] { new Coordinate(coastTriangles[i * 3].Position.X, coastTriangles[i * 3].Position.Y),
+                    new Coordinate(coastTriangles[i * 3 + 1].Position.X, coastTriangles[i * 3 + 1].Position.Y),
+                    new Coordinate(coastTriangles[i * 3 + 2].Position.X, coastTriangles[i * 3 + 2].Position.Y),
+                    new Coordinate(coastTriangles[i * 3].Position.X, coastTriangles[i * 3].Position.Y)
+                };
+                //triangles[i] = new Polygon(new LinearRing(coords));
+                if (collection == null)
+                {
+                    collection = new Polygon(new LinearRing(coords));
+                }
+                else
+                {
+                    collection = collection.Union(new Polygon(new LinearRing(coords)));
+                }
+            }
+            //IGeometry collection = new GeometryCollection(triangles);
+            List<Vector2d> newpoints = new List<Vector2d>();
+            foreach (var x in points)
+            {
+                if (collection.Covers(new NetTopologySuite.Geometries.Point(x.X, x.Y)))
+                {
+                    newpoints.Add(x);
+                }
+            }
+            points = newpoints;
+            return this;
+        }
+
+        internal PointCollection RemoveNear(LineGraph roads, double minDis)
+        {
+            if (roads.nodes.Count == 0) return this;
+            List<LineString> lineStrings = new List<LineString>();
+            foreach (var node in roads.nodes)
+            {
+                foreach (var next in node.nextConnections)
+                {
+                    Coordinate[] coords = new Coordinate[] { new Coordinate(node.pos.X, node.pos.Y), new Coordinate(next.pos.X, next.pos.Y) };
+                    lineStrings.Add(new LineString(coords));
+                }
+            }
+            IGeometry collection = new MultiLineString(lineStrings.ToArray());
+            List<Vector2d> newpoints = new List<Vector2d>();
+            foreach (var x in points)
+            {
+                if (collection.Distance(new NetTopologySuite.Geometries.Point(x.X, x.Y)) > minDis)
+                {
+                    newpoints.Add(x);
+                }
+            }
+            points = newpoints;
+            return this;
         }
     }
 }
