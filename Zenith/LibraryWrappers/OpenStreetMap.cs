@@ -73,8 +73,11 @@ namespace Zenith.LibraryWrappers
             double circumEarth = 24901 * 5280;
             double width = widthInFeet / circumEarth * 2 * Math.PI;
             var coastTriangles = GetCoastVertices(graphicsDevice, blobs, sector);
+            LineGraph graph = blobs.GetLakesFast();
+            List<List<ContourVertex>> contours = graph.ToContours();
+            var lakeTriangles = Tesselate(graphicsDevice, sector, contours, Pallete.OCEAN_BLUE);
             var roads = blobs.GetRoadsFast();
-            return points.KeepWithin(coastTriangles).RemoveNear(roads, width).Construct(graphicsDevice, width, GlobalContent.Tree, sector);
+            return points.KeepWithin(coastTriangles).ExcludeWithin(lakeTriangles).RemoveNear(roads, width).Construct(graphicsDevice, width, GlobalContent.Tree, sector);
         }
 
         internal static BasicVertexBuffer GetLakes(GraphicsDevice graphicsDevice, BlobCollection blobs, Sector sector)

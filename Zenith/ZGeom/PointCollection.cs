@@ -7,6 +7,7 @@ using GeoAPI.Geometries;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using NetTopologySuite.Geometries;
+using NetTopologySuite.Index.Strtree;
 using Zenith.ZGraphics;
 using Zenith.ZMath;
 
@@ -66,9 +67,7 @@ namespace Zenith.ZGeom
 
         internal PointCollection KeepWithin(List<VertexPositionColor> coastTriangles)
         {
-            IGeometry collection = null;
-            // TODO: why didn't our first attempt work??
-            //IGeometry[] triangles = new IGeometry[coastTriangles.Count / 3];
+            var rtree = new STRtree<Polygon>();
             for (int i = 0; i < coastTriangles.Count / 3; i++)
             {
                 Coordinate[] coords = new Coordinate[] { new Coordinate(coastTriangles[i * 3].Position.X, coastTriangles[i * 3].Position.Y),
@@ -76,24 +75,55 @@ namespace Zenith.ZGeom
                     new Coordinate(coastTriangles[i * 3 + 2].Position.X, coastTriangles[i * 3 + 2].Position.Y),
                     new Coordinate(coastTriangles[i * 3].Position.X, coastTriangles[i * 3].Position.Y)
                 };
-                //triangles[i] = new Polygon(new LinearRing(coords));
-                if (collection == null)
-                {
-                    collection = new Polygon(new LinearRing(coords));
-                }
-                else
-                {
-                    collection = collection.Union(new Polygon(new LinearRing(coords)));
-                }
+                var polygon = new Polygon(new LinearRing(coords));
+                rtree.Insert(polygon.EnvelopeInternal, polygon);
             }
-            //IGeometry collection = new GeometryCollection(triangles);
+            rtree.Build();
             List<Vector2d> newpoints = new List<Vector2d>();
             foreach (var x in points)
             {
-                if (collection.Covers(new NetTopologySuite.Geometries.Point(x.X, x.Y)))
+                bool contains = false;
+                foreach (var p in rtree.Query(new Envelope(x.X, x.X, x.Y, x.Y)))
                 {
-                    newpoints.Add(x);
+                    if (p.Covers(new NetTopologySuite.Geometries.Point(x.X, x.Y)))
+                    {
+                        contains = true;
+                        break;
+                    }
                 }
+                if (contains) newpoints.Add(x);
+            }
+            points = newpoints;
+            return this;
+        }
+
+        internal PointCollection ExcludeWithin(List<VertexPositionColor> lakeTriangles)
+        {
+            var rtree = new STRtree<Polygon>();
+            for (int i = 0; i < lakeTriangles.Count / 3; i++)
+            {
+                Coordinate[] coords = new Coordinate[] { new Coordinate(lakeTriangles[i * 3].Position.X, lakeTriangles[i * 3].Position.Y),
+                    new Coordinate(lakeTriangles[i * 3 + 1].Position.X, lakeTriangles[i * 3 + 1].Position.Y),
+                    new Coordinate(lakeTriangles[i * 3 + 2].Position.X, lakeTriangles[i * 3 + 2].Position.Y),
+                    new Coordinate(lakeTriangles[i * 3].Position.X, lakeTriangles[i * 3].Position.Y)
+                };
+                var polygon = new Polygon(new LinearRing(coords));
+                rtree.Insert(polygon.EnvelopeInternal, polygon);
+            }
+            rtree.Build();
+            List<Vector2d> newpoints = new List<Vector2d>();
+            foreach (var x in points)
+            {
+                bool contains = false;
+                foreach (var p in rtree.Query(new Envelope(x.X, x.X, x.Y, x.Y)))
+                {
+                    if (p.Covers(new NetTopologySuite.Geometries.Point(x.X, x.Y)))
+                    {
+                        contains = true;
+                        break;
+                    }
+                }
+                if (!contains) newpoints.Add(x);
             }
             points = newpoints;
             return this;
@@ -102,20 +132,30 @@ namespace Zenith.ZGeom
         internal PointCollection RemoveNear(LineGraph roads, double minDis)
         {
             if (roads.nodes.Count == 0) return this;
-            List<LineString> lineStrings = new List<LineString>();
+            var rtree = new STRtree<LineString>();
             foreach (var node in roads.nodes)
             {
                 foreach (var next in node.nextConnections)
                 {
                     Coordinate[] coords = new Coordinate[] { new Coordinate(node.pos.X, node.pos.Y), new Coordinate(next.pos.X, next.pos.Y) };
-                    lineStrings.Add(new LineString(coords));
+                    LineString ls = new LineString(coords);
+                    rtree.Insert(ls.EnvelopeInternal, ls);
                 }
             }
-            IGeometry collection = new MultiLineString(lineStrings.ToArray());
+            rtree.Build();
             List<Vector2d> newpoints = new List<Vector2d>();
             foreach (var x in points)
             {
-                if (collection.Distance(new NetTopologySuite.Geometries.Point(x.X, x.Y)) > minDis)
+                bool isNear = false;
+                foreach (var ls in rtree.Query(new Envelope(x.X - minDis, x.X + minDis, x.Y - minDis, x.Y + minDis)))
+                {
+                    if (ls.IsWithinDistance(new NetTopologySuite.Geometries.Point(x.X, x.Y), minDis))
+                    {
+                        isNear = true;
+                        break;
+                    }
+                }
+                if (!isNear)
                 {
                     newpoints.Add(x);
                 }
