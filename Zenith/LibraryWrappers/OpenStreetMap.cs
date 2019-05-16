@@ -68,7 +68,7 @@ namespace Zenith.LibraryWrappers
 
         internal static BasicVertexBuffer GetTrees(GraphicsDevice graphicsDevice, BlobCollection blobs, Sector sector)
         {
-            PointCollection points = new PointCollection(sector, (int)(sector.SurfaceAreaPortion * 3.04e9 * 20)); // 3 trillion trees on earth
+            PointCollection points = new PointCollection(sector, (int)(sector.SurfaceAreaPortion * 3.04e9 * 100)); // 3 trillion trees on earth
             double widthInFeet = 10.7 * 20; // extra thick
             double circumEarth = 24901 * 5280;
             double width = widthInFeet / circumEarth * 2 * Math.PI;
@@ -77,6 +77,8 @@ namespace Zenith.LibraryWrappers
             List<List<ContourVertex>> contours = graph.ToContours();
             var lakeTriangles = Tesselate(graphicsDevice, sector, contours, Pallete.OCEAN_BLUE);
             var roads = blobs.GetRoadsFast();
+            roads.Combine(blobs.GetLakesFast());
+            roads.Combine(blobs.GetBeachFast());
             return points.KeepWithin(coastTriangles).ExcludeWithin(lakeTriangles).RemoveNear(roads, width).Construct(graphicsDevice, width, GlobalContent.Tree, sector);
         }
 
