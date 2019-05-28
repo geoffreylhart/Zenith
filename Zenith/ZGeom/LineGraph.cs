@@ -98,10 +98,11 @@ namespace Zenith.ZGeom
                     contour.Add(next);
                     visited.Add(next);
                     GraphNode nextnext = GetNext(prev, next);
+                    if (nextnext == null) break;
                     prev = next;
                     next = nextnext;
                 }
-                if (contour.Count > 0)
+                if (contour.Count > 2)
                 {
                     contour.Add(contour[0]); // close it?
                     // found a loop
@@ -167,6 +168,7 @@ namespace Zenith.ZGeom
                     contour.Add(vertex);
                     visited.Add(next);
                     GraphNode nextnext = GetNext(prev, next);
+                    if (nextnext == null) break;
                     prev = next;
                     next = nextnext;
                 }
@@ -190,12 +192,14 @@ namespace Zenith.ZGeom
                 return node.nextConnections[0];
             }
             if (totalCount == 1) return null;
-            if (totalCount != 2) throw new NotImplementedException();
+            if (totalCount != 2) return null;
             List<GraphNode> combined = new List<GraphNode>();
             combined.AddRange(node.prevConnections);
             combined.AddRange(node.nextConnections);
             if (prev == null) return combined[1];
-            return combined.Where(x => x != prev).Single();
+            combined = combined.Where(x => x != prev).ToList();
+            if (combined.Count != 1) return null;
+            return combined.Single();
         }
 
         internal class GraphNode
