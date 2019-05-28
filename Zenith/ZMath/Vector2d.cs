@@ -10,6 +10,12 @@ namespace Zenith.ZMath
     public class Vector2d
     {
         public double X, Y;
+
+        public double Length()
+        {
+            return Math.Sqrt(X * X + Y * Y);
+        }
+
         public Vector2d(double x, double y)
         {
             this.X = x;

@@ -62,7 +62,7 @@ namespace Zenith.ZGeom
                 indices.Add(i + 3);
                 indices.Add(i + 2);
             }
-            return new BasicVertexBuffer(graphicsDevice, indices, vertices, texture, PrimitiveType.TriangleList);
+            return new BasicVertexBuffer(graphicsDevice, indices, vertices, texture, false, PrimitiveType.TriangleList);
         }
 
         internal PointCollection KeepWithin(List<VertexPositionColor> coastTriangles)

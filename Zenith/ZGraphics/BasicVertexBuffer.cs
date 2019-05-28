@@ -15,6 +15,7 @@ namespace Zenith.ZGraphics
         private PrimitiveType primitiveType;
         private GraphicsDevice graphicsDevice;
         private Texture2D texture;
+        private bool textureWrap;
         private PrimitiveType triangleList;
 
         public BasicVertexBuffer(GraphicsDevice graphicsDevice, List<VertexPositionColor> vertices, PrimitiveType primitiveType)
@@ -27,13 +28,14 @@ namespace Zenith.ZGraphics
             }
         }
 
-        public BasicVertexBuffer(GraphicsDevice graphicsDevice, List<VertexPositionTexture> vertices, Texture2D texture, PrimitiveType primitiveType)
+        public BasicVertexBuffer(GraphicsDevice graphicsDevice, List<VertexPositionTexture> vertices, Texture2D texture, bool textureWrap, PrimitiveType primitiveType)
         {
             if (vertices.Count > 0)
             {
                 this.vertices = new VertexBuffer(graphicsDevice, VertexPositionTexture.VertexDeclaration, vertices.Count, BufferUsage.WriteOnly);
                 this.vertices.SetData(vertices.ToArray());
                 this.texture = texture;
+                this.textureWrap = textureWrap;
                 this.primitiveType = primitiveType;
             }
         }
@@ -50,7 +52,7 @@ namespace Zenith.ZGraphics
             }
         }
 
-        public BasicVertexBuffer(GraphicsDevice graphicsDevice, List<int> indices, List<VertexPositionTexture> vertices, Texture2D texture, PrimitiveType primitiveType)
+        public BasicVertexBuffer(GraphicsDevice graphicsDevice, List<int> indices, List<VertexPositionTexture> vertices, Texture2D texture, bool textureWrap, PrimitiveType primitiveType)
         {
             if (vertices.Count > 0)
             {
@@ -59,6 +61,7 @@ namespace Zenith.ZGraphics
                 this.indices = new IndexBuffer(graphicsDevice, IndexElementSize.ThirtyTwoBits, indices.Count, BufferUsage.WriteOnly);
                 this.indices.SetData(indices.ToArray());
                 this.texture = texture;
+                this.textureWrap = textureWrap;
                 this.primitiveType = primitiveType;
             }
         }
@@ -79,6 +82,14 @@ namespace Zenith.ZGraphics
             }
             else
             {
+                if (textureWrap)
+                {
+                    graphicsDevice.SamplerStates[0] = SamplerState.PointWrap;
+                }
+                else
+                {
+                    graphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
+                }
                 basicEffect.Texture = texture;
                 basicEffect.TextureEnabled = true;
             }
