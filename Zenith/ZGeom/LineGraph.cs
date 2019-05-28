@@ -1,6 +1,8 @@
-﻿using LibTessDotNet;
+﻿using GeoAPI.Geometries;
+using LibTessDotNet;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using NetTopologySuite.Geometries;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -79,6 +81,44 @@ namespace Zenith.ZGeom
                 }
             }
             return new BasicVertexBuffer(graphicsDevice, indices, vertices, texture, PrimitiveType.TriangleList);
+        }
+
+        internal LineGraph ForceDirection(bool ccw)
+        {
+            // copy pasted from contour generation code
+            HashSet<GraphNode> visited = new HashSet<GraphNode>();
+            foreach (var node in nodes)
+            {
+                List<GraphNode> contour = new List<GraphNode>();
+                GraphNode next = node;
+                GraphNode prev = null;
+                while (!visited.Contains(next))
+                {
+                    contour.Add(next);
+                    visited.Add(next);
+                    GraphNode nextnext = GetNext(prev, next);
+                    prev = next;
+                    next = nextnext;
+                }
+                if (contour.Count > 0)
+                {
+                    contour.Add(contour[0]); // close it?
+                    // found a loop
+                    var coords = contour.Select(x => new Coordinate(x.pos.X, x.pos.Y)).ToArray();
+                    var ring = new LinearRing(coords);
+                    if (ring.IsCCW != ccw)
+                    {
+                        for (int i = 0; i < contour.Count - 1; i++)
+                        {
+                            GraphNode before = contour[(i - 1 + contour.Count - 1) % (contour.Count - 1)];
+                            GraphNode after = contour[i + 1];
+                            contour[i].nextConnections = new List<GraphNode>() { before };
+                            contour[i].prevConnections = new List<GraphNode>() { after };
+                        }
+                    }
+                }
+            }
+            return this;
         }
 
         internal LineGraph Combine(LineGraph x)

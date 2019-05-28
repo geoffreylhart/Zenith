@@ -78,7 +78,7 @@ namespace Zenith.LibraryWrappers.OSM
         internal LineGraph GetLakesFast()
         {
             // TODO: handles those multipolygon lakes
-            return GetFast("natural", "water").Combine(GetLakeMulti());
+            return GetFast("natural", "water").ForceDirection(true).Combine(GetLakeMulti());
         }
 
         private LineGraph GetLakeMulti()
@@ -135,7 +135,7 @@ namespace Zenith.LibraryWrappers.OSM
                 roadsOuter.ways.AddRange(roadInfo.ways);
                 foreach (var pair in roadInfo.nodes) roadsOuter.nodes.Add(pair.Key, pair.Value);
             }
-            LineGraph answer = new LineGraph();
+            LineGraph answerOuter = new LineGraph();
             Dictionary<long, GraphNode> graphNodes = new Dictionary<long, GraphNode>();
             foreach (var way in roadsOuter.ways)
             {
@@ -147,7 +147,7 @@ namespace Zenith.LibraryWrappers.OSM
                     {
                         var newNode = new GraphNode(roadsOuter.nodes[v.Value]);
                         graphNodes[nodeRef] = newNode;
-                        answer.nodes.Add(newNode);
+                        answerOuter.nodes.Add(newNode);
                     }
                     if (prev != null && v != null)
                     {
@@ -157,6 +157,7 @@ namespace Zenith.LibraryWrappers.OSM
                     prev = v;
                 }
             }
+            LineGraph answerInner = new LineGraph();
             foreach (var way in roadsInner.ways)
             {
                 long? prev = null;
@@ -168,7 +169,7 @@ namespace Zenith.LibraryWrappers.OSM
                         var newNode = new GraphNode(roadsInner.nodes[v.Value]);
                         newNode.isHole = true;
                         graphNodes[nodeRef] = newNode;
-                        answer.nodes.Add(newNode);
+                        answerInner.nodes.Add(newNode);
                     }
                     if (prev != null && v != null)
                     {
@@ -178,7 +179,7 @@ namespace Zenith.LibraryWrappers.OSM
                     prev = v;
                 }
             }
-            return answer;
+            return answerOuter.ForceDirection(true).Combine(answerInner.ForceDirection(false));
         }
     }
 }
