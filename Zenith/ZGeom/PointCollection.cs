@@ -41,7 +41,7 @@ namespace Zenith.ZGeom
 
             List<int> indices = new List<int>();
             List<VertexPositionTexture> vertices = new List<VertexPositionTexture>();
-            foreach (var point in points)
+            foreach (var point in points.OrderBy(x => -x.Y))
             {
                 Vector2d w = new Vector2d(width / 2, 0);
                 Vector2d h = new Vector2d(0, width / 2);
@@ -51,10 +51,10 @@ namespace Zenith.ZGeom
                 Vector2d bottomLeft = point - w + h;
                 Vector2d bottomRight = point + w + h;
                 int i = vertices.Count;
-                vertices.Add(new VertexPositionTexture(new Vector3(topLeft, -10f), new Vector2(0, 0)));
-                vertices.Add(new VertexPositionTexture(new Vector3(topRight, -10f), new Vector2(1, 0)));
-                vertices.Add(new VertexPositionTexture(new Vector3(bottomLeft, -10f), new Vector2(0, 1)));
-                vertices.Add(new VertexPositionTexture(new Vector3(bottomRight, -10f), new Vector2(1, 1)));
+                vertices.Add(new VertexPositionTexture(new Vector3(topLeft, -10f), new Vector2(0, 1)));
+                vertices.Add(new VertexPositionTexture(new Vector3(topRight, -10f), new Vector2(1, 1)));
+                vertices.Add(new VertexPositionTexture(new Vector3(bottomLeft, -10f), new Vector2(0, 0)));
+                vertices.Add(new VertexPositionTexture(new Vector3(bottomRight, -10f), new Vector2(1, 0)));
                 indices.Add(i);
                 indices.Add(i + 1);
                 indices.Add(i + 3);
