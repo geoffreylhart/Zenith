@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -65,14 +66,24 @@ namespace Zenith.EditorGameComponents.FlatComponents
             if (sector.zoom >= 10)
             {
                 VectorTileBuffer buffer = new VectorTileBuffer();
-
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
                 BlobCollection blobs = OSMReader.GetAllBlobs(sector);
+                Console.WriteLine($"{sector} blobs loaded in {sw.Elapsed.TotalSeconds} seconds.");
+                sw.Restart();
                 buffer.Add(graphicsDevice, OSMBufferGenerator.GetCoast(graphicsDevice, blobs, sector), sector);
                 buffer.Add(graphicsDevice, OSMBufferGenerator.GetCoastBorder(graphicsDevice, blobs), sector);
+                Console.WriteLine($"{sector} coast loaded in {sw.Elapsed.TotalSeconds} seconds.");
+                sw.Restart();
                 buffer.Add(graphicsDevice, OSMBufferGenerator.GetLakes(graphicsDevice, blobs, sector), sector);
-                buffer.Add(graphicsDevice, OSMBufferGenerator.GetLakesBorder(graphicsDevice, blobs, sector), sector);
+                //buffer.Add(graphicsDevice, OSMBufferGenerator.GetLakesBorder(graphicsDevice, blobs, sector), sector);
+                Console.WriteLine($"{sector} lakes loaded in {sw.Elapsed.TotalSeconds} seconds.");
+                sw.Restart();
                 buffer.Add(graphicsDevice, OSMBufferGenerator.GetRoads(graphicsDevice, blobs), sector);
-                buffer.Add(graphicsDevice, OSMBufferGenerator.GetTrees(graphicsDevice, blobs, sector), sector);
+                Console.WriteLine($"{sector} roads loaded in {sw.Elapsed.TotalSeconds} seconds.");
+                sw.Restart();
+                //buffer.Add(graphicsDevice, OSMBufferGenerator.GetTrees(graphicsDevice, blobs, sector), sector);
+                Console.WriteLine($"{sector} trees loaded in {sw.Elapsed.TotalSeconds} seconds.");
                 return buffer;
             }
             else

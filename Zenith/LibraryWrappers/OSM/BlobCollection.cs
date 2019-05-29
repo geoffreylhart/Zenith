@@ -77,8 +77,12 @@ namespace Zenith.LibraryWrappers.OSM
 
         internal LineGraph GetLakesFast()
         {
-            // TODO: handles those multipolygon lakes
-            return GetFast("natural", "water").ForceDirection(true).Combine(GetLakeMulti());
+            return GetFast("natural", "water").ForceDirection(true);
+        }
+
+        internal LineGraph GetMultiLakesFast()
+        {
+            return GetLakeMulti();
         }
 
         private LineGraph GetLakeMulti()

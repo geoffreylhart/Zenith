@@ -68,25 +68,26 @@ namespace Zenith.LibraryWrappers
 
         internal static BasicVertexBuffer GetTrees(GraphicsDevice graphicsDevice, BlobCollection blobs, Sector sector)
         {
-            PointCollection points = new PointCollection(sector, (int)(sector.SurfaceAreaPortion * 3.04e9 * 10)); // 3 trillion trees on earth
+            PointCollection points = new PointCollection(sector, (int)(sector.SurfaceAreaPortion * 3.04e9 * 100)); // 3 trillion trees on earth
             double widthInFeet = 10.7 * 20; // extra thick
             double circumEarth = 24901 * 5280;
             double width = widthInFeet / circumEarth * 2 * Math.PI;
             var coastTriangles = GetCoastVertices(graphicsDevice, blobs, sector);
-            LineGraph graph = blobs.GetLakesFast();
-            List<List<ContourVertex>> contours = graph.ToContours();
-            var lakeTriangles = Tesselate(graphicsDevice, sector, contours, Pallete.OCEAN_BLUE);
+            var lakeTriangles = Tesselate(graphicsDevice, sector, blobs.GetLakesFast().ToContours(), Pallete.OCEAN_BLUE);
+            var lakeTriangles2 = Tesselate(graphicsDevice, sector, blobs.GetMultiLakesFast().ToContours(), Pallete.OCEAN_BLUE);
             var roads = blobs.GetRoadsFast();
             roads.Combine(blobs.GetLakesFast());
+            roads.Combine(blobs.GetMultiLakesFast());
             roads.Combine(blobs.GetBeachFast());
-            return points.KeepWithin(coastTriangles).ExcludeWithin(lakeTriangles).RemoveNear(roads, width).Construct(graphicsDevice, width, GlobalContent.Tree, sector);
+            return points.KeepWithin(coastTriangles).ExcludeWithin(lakeTriangles).ExcludeWithin(lakeTriangles2).RemoveNear(roads, width).Construct(graphicsDevice, width, GlobalContent.Tree, sector);
         }
 
         internal static BasicVertexBuffer GetLakes(GraphicsDevice graphicsDevice, BlobCollection blobs, Sector sector)
         {
-            LineGraph graph = blobs.GetLakesFast();
-            List<List<ContourVertex>> contours = graph.ToContours();
-            return new BasicVertexBuffer(graphicsDevice, Tesselate(graphicsDevice, sector, contours, Pallete.OCEAN_BLUE), PrimitiveType.TriangleList);
+            // TODO: somehow multipolygon lakes are getting mixed with regular lakes and cause the tesselator to vomit. think of a work around for this
+            var vertices = Tesselate(graphicsDevice, sector, blobs.GetLakesFast().ToContours(), Pallete.OCEAN_BLUE);
+            vertices.AddRange(Tesselate(graphicsDevice, sector, blobs.GetMultiLakesFast().ToContours(), Pallete.OCEAN_BLUE));
+            return new BasicVertexBuffer(graphicsDevice, vertices, PrimitiveType.TriangleList);
         }
 
         internal static BasicVertexBuffer GetLakesBorder(GraphicsDevice graphicsDevice, BlobCollection blobs, Sector sector)
