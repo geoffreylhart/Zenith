@@ -49,7 +49,7 @@
     <Compile Include="EditorGameComponents\BlenderAxis.cs" />
     <Compile Include="EditorGameComponents\CityMarker.cs" />
     <Compile Include="EditorGameComponents\ComponentManager.cs" />
-    <Compile Include="EditorGameComponents\FlatComponents\OpenStreetMaps.cs" />
+    <Compile Include="EditorGameComponents\FlatComponents\OSMSectorLoader.cs" />
     <Compile Include="EditorGameComponents\FlatComponents\SectorLoader.cs" />
     <Compile Include="EditorGameComponents\PlanetComponent.cs" />
     <Compile Include="EditorGameComponents\UIComponents\Button.cs" />
@@ -68,7 +68,7 @@
     <Compile Include="EditorGameComponents\UITemp.cs" />
     <Compile Include="Game1.cs" />
     <Compile Include="GlobalContent.cs" />
-    <Compile Include="LibraryWrappers\OpenStreetMap.cs" />
+    <Compile Include="LibraryWrappers\OSMBufferGenerator.cs" />
     <Compile Include="LibraryWrappers\OSM\Blob.cs" />
     <Compile Include="LibraryWrappers\OSM\BlobCollection.cs" />
     <Compile Include="LibraryWrappers\OSM\ChangeSet.cs" />
@@ -77,7 +77,7 @@
     <Compile Include="LibraryWrappers\OSM\HeaderBlock.cs" />
     <Compile Include="LibraryWrappers\OSM\Info.cs" />
     <Compile Include="LibraryWrappers\OSM\Node.cs" />
-    <Compile Include="LibraryWrappers\OSM\OSM.cs" />
+    <Compile Include="LibraryWrappers\OSM\OSMReader.cs" />
     <Compile Include="LibraryWrappers\OSM\OSMPaths.cs" />
     <Compile Include="LibraryWrappers\OSM\PrimitiveBlock.cs" />
     <Compile Include="LibraryWrappers\OSM\PrimitiveGroup.cs" />

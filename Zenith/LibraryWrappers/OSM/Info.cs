@@ -19,47 +19,47 @@ namespace Zenith.LibraryWrappers.OSM
         internal static Info Read(Stream stream)
         {
             Info obj = new Info();
-            long lengthInBytes = OSM.ReadVarInt(stream);
+            long lengthInBytes = OSMReader.ReadVarInt(stream);
             long end = stream.Position + lengthInBytes;
             int b = stream.ReadByte();
             if (b == 8)
             {
-                obj.version = (int)OSM.ReadVarInt(stream);
+                obj.version = (int)OSMReader.ReadVarInt(stream);
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();
             }
             if (b == 16)
             {
-                obj.timestamp = (int)OSM.ReadVarInt(stream);
+                obj.timestamp = (int)OSMReader.ReadVarInt(stream);
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();
             }
             if (b == 24)
             {
-                obj.changeset = OSM.ReadVarInt(stream);
+                obj.changeset = OSMReader.ReadVarInt(stream);
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();
             }
             if (b == 32)
             {
-                obj.uid = (int)OSM.ReadVarInt(stream);
+                obj.uid = (int)OSMReader.ReadVarInt(stream);
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();
             }
             if (b == 40)
             {
-                obj.user_sid = (int)OSM.ReadVarInt(stream);
+                obj.user_sid = (int)OSMReader.ReadVarInt(stream);
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();
             }
             if (b == 48)
             {
-                obj.visible = OSM.ReadVarInt(stream) == 1;
+                obj.visible = OSMReader.ReadVarInt(stream) == 1;
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();

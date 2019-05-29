@@ -20,22 +20,22 @@ namespace Zenith.LibraryWrappers.OSM
         internal static Relation Read(Stream stream)
         {
             Relation obj = new Relation();
-            long lengthInBytes = OSM.ReadVarInt(stream);
+            long lengthInBytes = OSMReader.ReadVarInt(stream);
             long end = stream.Position + lengthInBytes;
             int b = stream.ReadByte();
             if (b != 8) throw new NotImplementedException();
-            obj.id = OSM.ReadVarInt(stream);
+            obj.id = OSMReader.ReadVarInt(stream);
             b = stream.ReadByte();
             if (b == 18)
             {
-                obj.keys = OSM.ReadPackedVarInts(stream).ConvertAll(x => (int)x).ToList();
+                obj.keys = OSMReader.ReadPackedVarInts(stream).ConvertAll(x => (int)x).ToList();
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();
             }
             if (b == 26)
             {
-                obj.vals = OSM.ReadPackedVarInts(stream).ConvertAll(x => (int)x).ToList();
+                obj.vals = OSMReader.ReadPackedVarInts(stream).ConvertAll(x => (int)x).ToList();
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();
@@ -43,28 +43,28 @@ namespace Zenith.LibraryWrappers.OSM
             if (b == 34)
             {
                 //obj.info = Info.Read(stream);
-                OSM.SkipBytes(stream);
+                OSMReader.SkipBytes(stream);
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();
             }
             if (b == 66)
             {
-                obj.roles_sid = OSM.ReadPackedVarInts(stream).ConvertAll(x => (int)x).ToList();
+                obj.roles_sid = OSMReader.ReadPackedVarInts(stream).ConvertAll(x => (int)x).ToList();
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();
             }
             if (b == 74)
             {
-                obj.memids = OSM.ReadPackedDeltaCodedVarInts(stream);
+                obj.memids = OSMReader.ReadPackedDeltaCodedVarInts(stream);
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();
             }
             if (b == 82)
             {
-                obj.types = OSM.ReadPackedVarInts(stream).ConvertAll(x => (int)x).ToList();
+                obj.types = OSMReader.ReadPackedVarInts(stream).ConvertAll(x => (int)x).ToList();
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();

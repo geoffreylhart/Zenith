@@ -18,14 +18,14 @@ namespace Zenith.LibraryWrappers.OSM
         internal static PrimitiveGroup Read(Stream stream)
         {
             PrimitiveGroup obj = new PrimitiveGroup();
-            long lengthInBytes = OSM.ReadVarInt(stream);
+            long lengthInBytes = OSMReader.ReadVarInt(stream);
             long end = stream.Position + lengthInBytes;
             int b = stream.ReadByte();
             while (b == 10 || b == 18 || b == 26 || b == 34 || b == 42)
             {
                 if (b == 10)
                 {
-                    OSM.SkipBytes(stream);
+                    OSMReader.SkipBytes(stream);
                     if (stream.Position > end) throw new NotImplementedException();
                     if (stream.Position == end) return obj;
                     b = stream.ReadByte();
@@ -53,7 +53,7 @@ namespace Zenith.LibraryWrappers.OSM
                 }
                 else if (b == 42)
                 {
-                    OSM.SkipBytes(stream);
+                    OSMReader.SkipBytes(stream);
                     if (stream.Position > end) throw new NotImplementedException();
                     if (stream.Position == end) return obj;
                     b = stream.ReadByte();

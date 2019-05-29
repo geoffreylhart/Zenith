@@ -14,7 +14,7 @@ using Zenith.ZMath;
 
 namespace Zenith.EditorGameComponents.FlatComponents
 {
-    class OpenStreetMaps : SectorLoader
+    class OSMSectorLoader : SectorLoader
     {
         private static string mapFolder = @"..\..\..\..\LocalCache\OpenStreetMaps\Renders\";
 
@@ -66,13 +66,13 @@ namespace Zenith.EditorGameComponents.FlatComponents
             {
                 VectorTileBuffer buffer = new VectorTileBuffer();
 
-                BlobCollection blobs = OSM.GetAllBlobs(sector);
-                buffer.Add(graphicsDevice, OpenStreetMap.GetCoast(graphicsDevice, blobs, sector), sector);
-                buffer.Add(graphicsDevice, OpenStreetMap.GetCoastBorder(graphicsDevice, blobs), sector);
-                buffer.Add(graphicsDevice, OpenStreetMap.GetLakes(graphicsDevice, blobs, sector), sector);
-                buffer.Add(graphicsDevice, OpenStreetMap.GetLakesBorder(graphicsDevice, blobs, sector), sector);
-                buffer.Add(graphicsDevice, OpenStreetMap.GetRoads(graphicsDevice, blobs), sector);
-                buffer.Add(graphicsDevice, OpenStreetMap.GetTrees(graphicsDevice, blobs, sector), sector);
+                BlobCollection blobs = OSMReader.GetAllBlobs(sector);
+                buffer.Add(graphicsDevice, OSMBufferGenerator.GetCoast(graphicsDevice, blobs, sector), sector);
+                buffer.Add(graphicsDevice, OSMBufferGenerator.GetCoastBorder(graphicsDevice, blobs), sector);
+                buffer.Add(graphicsDevice, OSMBufferGenerator.GetLakes(graphicsDevice, blobs, sector), sector);
+                buffer.Add(graphicsDevice, OSMBufferGenerator.GetLakesBorder(graphicsDevice, blobs, sector), sector);
+                buffer.Add(graphicsDevice, OSMBufferGenerator.GetRoads(graphicsDevice, blobs), sector);
+                buffer.Add(graphicsDevice, OSMBufferGenerator.GetTrees(graphicsDevice, blobs, sector), sector);
                 return buffer;
             }
             else

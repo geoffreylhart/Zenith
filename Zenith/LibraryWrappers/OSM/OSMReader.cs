@@ -16,9 +16,8 @@ using static Zenith.ZGeom.LineGraph;
 
 namespace Zenith.LibraryWrappers.OSM
 {
-    class OSM
+    class OSMReader
     {
-
         internal static BlobCollection GetAllBlobs(Sector sector)
         {
             List<Blob> blobs = new List<Blob>();

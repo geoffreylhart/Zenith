@@ -18,32 +18,32 @@ namespace Zenith.LibraryWrappers.OSM
         internal static DenseNodes Read(Stream stream)
         {
             DenseNodes obj = new DenseNodes();
-            long lengthInBytes = OSM.ReadVarInt(stream);
+            long lengthInBytes = OSMReader.ReadVarInt(stream);
             long end = stream.Position + lengthInBytes;
             int b = stream.ReadByte();
             if (b == 10)
             {
-                obj.id = OSM.ReadPackedDeltaCodedVarInts(stream);
+                obj.id = OSMReader.ReadPackedDeltaCodedVarInts(stream);
                 b = stream.ReadByte();
             }
             if (b == 42)
             {
                 //obj.denseinfo = DenseInfo.Read(stream);
-                OSM.SkipBytes(stream);
+                OSMReader.SkipBytes(stream);
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();
             }
             if (b == 66)
             {
-                obj.lat = OSM.ReadPackedDeltaCodedVarInts(stream);
+                obj.lat = OSMReader.ReadPackedDeltaCodedVarInts(stream);
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();
             }
             if (b == 74)
             {
-                obj.lon = OSM.ReadPackedDeltaCodedVarInts(stream);
+                obj.lon = OSMReader.ReadPackedDeltaCodedVarInts(stream);
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();
@@ -51,7 +51,7 @@ namespace Zenith.LibraryWrappers.OSM
             if (b == 82)
             {
                 //obj.keys_vals = OSM.ReadPackedVarInts(stream).ConvertAll(x => (int)x).ToList();
-                OSM.SkipBytes(stream);
+                OSMReader.SkipBytes(stream);
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();
@@ -62,44 +62,44 @@ namespace Zenith.LibraryWrappers.OSM
         internal static DenseNodes ReadNodeStart(MemoryStream stream)
         {
             DenseNodes obj = new DenseNodes();
-            long lengthInBytes = OSM.ReadVarInt(stream);
+            long lengthInBytes = OSMReader.ReadVarInt(stream);
             long end = stream.Position + lengthInBytes;
             int b = stream.ReadByte();
             if (b == 10)
             {
                 obj.id = new List<long>();
-                long length = OSM.ReadVarInt(stream);
+                long length = OSMReader.ReadVarInt(stream);
                 if (length > 0)
                 {
-                    obj.id.Add(OSM.ReadSignedVarInt(stream));
+                    obj.id.Add(OSMReader.ReadSignedVarInt(stream));
                 }
                 stream.Seek(end, SeekOrigin.Begin);
                 return obj;
             }
             if (b == 42)
             {
-                OSM.SkipBytes(stream);
+                OSMReader.SkipBytes(stream);
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();
             }
             if (b == 66)
             {
-                OSM.SkipBytes(stream);
+                OSMReader.SkipBytes(stream);
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();
             }
             if (b == 74)
             {
-                OSM.SkipBytes(stream);
+                OSMReader.SkipBytes(stream);
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();
             }
             if (b == 82)
             {
-                OSM.SkipBytes(stream);
+                OSMReader.SkipBytes(stream);
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();

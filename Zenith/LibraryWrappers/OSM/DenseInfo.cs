@@ -19,47 +19,47 @@ namespace Zenith.LibraryWrappers.OSM
         internal static DenseInfo Read(Stream stream)
         {
             DenseInfo obj = new DenseInfo();
-            long lengthInBytes = OSM.ReadVarInt(stream);
+            long lengthInBytes = OSMReader.ReadVarInt(stream);
             long end = stream.Position + lengthInBytes;
             int b = stream.ReadByte();
             if (b == 10)
             {
-                obj.version = OSM.ReadPackedVarInts(stream).ConvertAll(x => (int)x).ToList();
+                obj.version = OSMReader.ReadPackedVarInts(stream).ConvertAll(x => (int)x).ToList();
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();
             }
             if (b == 18)
             {
-                obj.timestamp = OSM.ReadPackedDeltaCodedVarInts(stream);
+                obj.timestamp = OSMReader.ReadPackedDeltaCodedVarInts(stream);
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();
             }
             if (b == 26)
             {
-                obj.changeset = OSM.ReadPackedDeltaCodedVarInts(stream);
+                obj.changeset = OSMReader.ReadPackedDeltaCodedVarInts(stream);
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();
             }
             if (b == 34)
             {
-                obj.uid = OSM.ReadPackedDeltaCodedVarInts(stream).ConvertAll(x => (int)x).ToList();
+                obj.uid = OSMReader.ReadPackedDeltaCodedVarInts(stream).ConvertAll(x => (int)x).ToList();
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();
             }
             if (b == 42)
             {
-                obj.user_sid = OSM.ReadPackedDeltaCodedVarInts(stream).ConvertAll(x => (int)x).ToList();
+                obj.user_sid = OSMReader.ReadPackedDeltaCodedVarInts(stream).ConvertAll(x => (int)x).ToList();
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();
             }
             if (b == 50)
             {
-                OSM.SkipBytes(stream);
+                OSMReader.SkipBytes(stream);
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();

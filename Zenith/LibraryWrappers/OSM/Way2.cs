@@ -18,22 +18,22 @@ namespace Zenith.LibraryWrappers.OSM
         internal static RawWay Read(Stream stream)
         {
             RawWay obj = new RawWay();
-            long lengthInBytes = OSM.ReadVarInt(stream);
+            long lengthInBytes = OSMReader.ReadVarInt(stream);
             long end = stream.Position + lengthInBytes;
             int b = stream.ReadByte();
             if (b != 8) throw new NotImplementedException();
-            obj.id = OSM.ReadVarInt(stream);
+            obj.id = OSMReader.ReadVarInt(stream);
             b = stream.ReadByte();
             if (b == 18)
             {
-                obj.keys = OSM.ReadPackedVarInts(stream).ConvertAll(x => (int)x).ToList();
+                obj.keys = OSMReader.ReadPackedVarInts(stream).ConvertAll(x => (int)x).ToList();
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();
             }
             if (b == 26)
             {
-                obj.vals = OSM.ReadPackedVarInts(stream).ConvertAll(x => (int)x).ToList();
+                obj.vals = OSMReader.ReadPackedVarInts(stream).ConvertAll(x => (int)x).ToList();
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();
@@ -41,14 +41,14 @@ namespace Zenith.LibraryWrappers.OSM
             if (b == 34)
             {
                 //obj.info = Info.Read(stream);
-                OSM.SkipBytes(stream);
+                OSMReader.SkipBytes(stream);
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();
             }
             if (b == 66)
             {
-                obj.refs = OSM.ReadPackedDeltaCodedVarInts(stream);
+                obj.refs = OSMReader.ReadPackedDeltaCodedVarInts(stream);
                 if (stream.Position > end) throw new NotImplementedException();
                 if (stream.Position == end) return obj;
                 b = stream.ReadByte();

@@ -32,22 +32,22 @@ namespace Zenith.LibraryWrappers.OSM
             // NOTE: looks like those OSMSharp broken up files don't have any of these
             if (b == 136)
             {
-                obj.granularity = (int)OSM.ReadVarInt(stream);
+                obj.granularity = (int)OSMReader.ReadVarInt(stream);
                 b = stream.ReadByte();
             }
             if (b == 152)
             {
-                obj.lat_offset = OSM.ReadVarInt(stream);
+                obj.lat_offset = OSMReader.ReadVarInt(stream);
                 b = stream.ReadByte();
             }
             if (b == 160)
             {
-                obj.lon_offset = OSM.ReadVarInt(stream);
+                obj.lon_offset = OSMReader.ReadVarInt(stream);
                 b = stream.ReadByte();
             }
             if (b == 144)
             {
-                obj.date_granularity = (int)OSM.ReadVarInt(stream);
+                obj.date_granularity = (int)OSMReader.ReadVarInt(stream);
                 b = stream.ReadByte();
             }
             if (b != -1) throw new NotImplementedException();

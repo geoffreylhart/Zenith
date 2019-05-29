@@ -23,7 +23,7 @@ using static Zenith.EditorGameComponents.FlatComponents.SectorLoader;
 
 namespace Zenith.LibraryWrappers
 {
-    class OpenStreetMap
+    class OSMBufferGenerator
     {
         internal static BasicVertexBuffer GetRoads(GraphicsDevice graphicsDevice, BlobCollection blobs)
         {
