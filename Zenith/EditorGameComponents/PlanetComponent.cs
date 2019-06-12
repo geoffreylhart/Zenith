@@ -27,9 +27,9 @@ namespace Zenith.EditorGameComponents
             this.camera = camera;
             renderTarget = new RenderTarget2D(
                  GraphicsDevice,
-                 512 * 4,
-                 512 * 4,
-                 false,
+                 2560 * 4,
+                 1440 * 4,
+                 true,
                  GraphicsDevice.PresentationParameters.BackBufferFormat,
                  DepthFormat.Depth24);
         }
