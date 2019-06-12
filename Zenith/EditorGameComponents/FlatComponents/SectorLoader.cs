@@ -18,28 +18,28 @@ namespace Zenith.EditorGameComponents.FlatComponents
     abstract class SectorLoader : IFlatComponent, IEditorGameComponent
     {
         private static int MAX_ZOOM = 19;
-        Dictionary<Sector, IGraphicsBuffer> loadedMaps = new Dictionary<Sector, IGraphicsBuffer>();
-        HashSet<Sector> toLoad = new HashSet<Sector>();
-        Sector previewSquare = null;
+        Dictionary<MercatorSector, IGraphicsBuffer> loadedMaps = new Dictionary<MercatorSector, IGraphicsBuffer>();
+        HashSet<MercatorSector> toLoad = new HashSet<MercatorSector>();
+        MercatorSector previewSquare = null;
 
         public void Draw(RenderTarget2D renderTarget, double minX, double maxX, double minY, double maxY, double cameraZoom)
         {
             // autoload stuff
             // TODO: move to update step?
             int zoomLevel = (int)(Math.Log((maxX - minX) / (2 * Math.PI)) / Math.Log(0.5));
-            Sector bottomLeft = GetSector(minX, minY, zoomLevel);
-            Sector bottomRight = GetSector(maxX, minY, zoomLevel);
-            Sector topLeft = GetSector(minX, maxY, zoomLevel);
-            Sector topRight = GetSector(maxX, maxY, zoomLevel);
-            List<Sector> containedSectors = new List<Sector>();
+            MercatorSector bottomLeft = GetSector(minX, minY, zoomLevel);
+            MercatorSector bottomRight = GetSector(maxX, minY, zoomLevel);
+            MercatorSector topLeft = GetSector(minX, maxY, zoomLevel);
+            MercatorSector topRight = GetSector(maxX, maxY, zoomLevel);
+            List<MercatorSector> containedSectors = new List<MercatorSector>();
             for (int i = bottomLeft.x; i <= bottomRight.x; i++)
             {
                 for (int j = bottomLeft.y; j <= topLeft.y; j++)
                 {
-                    containedSectors.Add(new Sector(i % (1 << bottomLeft.zoom), j % (1 << bottomLeft.zoom), bottomLeft.zoom));
+                    containedSectors.Add(new MercatorSector(i % (1 << bottomLeft.zoom), j % (1 << bottomLeft.zoom), bottomLeft.zoom));
                 }
             }
-            List<Sector> unload = new List<Sector>();
+            List<MercatorSector> unload = new List<MercatorSector>();
             foreach (var pair in loadedMaps)
             {
                 if (!containedSectors.Contains(pair.Key))
@@ -66,8 +66,8 @@ namespace Zenith.EditorGameComponents.FlatComponents
                     loadedMaps[l] = GetGraphicsBuffer(renderTarget.GraphicsDevice, l);
                 }
             }
-            toLoad = new HashSet<Sector>();
-            List<Sector> sorted = loadedMaps.Keys.ToList();
+            toLoad = new HashSet<MercatorSector>();
+            List<MercatorSector> sorted = loadedMaps.Keys.ToList();
             sorted.Sort((x, y) => x.zoom.CompareTo(y.zoom));
             foreach (var sector in sorted)
             {
@@ -96,9 +96,9 @@ namespace Zenith.EditorGameComponents.FlatComponents
             }
         }
 
-        public abstract bool CacheExists(Sector sector);
-        public abstract bool DoAutoLoad(Sector sector); // safe to autoload? (fast/already cached)
-        public abstract bool AllowUnload(Sector sector); // allowed to unload? (cached)
+        public abstract bool CacheExists(MercatorSector sector);
+        public abstract bool DoAutoLoad(MercatorSector sector); // safe to autoload? (fast/already cached)
+        public abstract bool AllowUnload(MercatorSector sector); // allowed to unload? (cached)
 
         public void Update(double mouseX, double mouseY, double cameraZoom)
         {
@@ -118,7 +118,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
             return Math.Min((int)cameraZoom, MAX_ZOOM); // google only accepts integer zoom
         }
 
-        private Sector GetSector(double mouseX, double mouseY, double cameraZoom)
+        private MercatorSector GetSector(double mouseX, double mouseY, double cameraZoom)
         {
             int zoom = GetRoundedZoom(cameraZoom);
             double zoomPortion = Math.Pow(0.5, zoom);
@@ -126,10 +126,10 @@ namespace Zenith.EditorGameComponents.FlatComponents
             int y = (int)(ToY(mouseY) / (zoomPortion));
             y = Math.Max(y, 0);
             y = Math.Min(y, (1 << zoom) - 1);
-            return new Sector(x, y, zoom);
+            return new MercatorSector(x, y, zoom);
         }
 
-        public abstract IEnumerable<Sector> EnumerateCachedSectors();
+        public abstract IEnumerable<MercatorSector> EnumerateCachedSectors();
 
         private void LoadAllCached(GraphicsDevice graphicsDevice)
         {
@@ -141,12 +141,12 @@ namespace Zenith.EditorGameComponents.FlatComponents
 
         private void AddImage(double mouseX, double mouseY, double cameraZoom)
         {
-            Sector squareCenter = GetSector(mouseX, mouseY, cameraZoom);
+            MercatorSector squareCenter = GetSector(mouseX, mouseY, cameraZoom);
             if (squareCenter == null) return;
             toLoad.Add(squareCenter);
         }
 
-        public abstract IGraphicsBuffer GetGraphicsBuffer(GraphicsDevice graphicsDevice, Sector sector);
+        public abstract IGraphicsBuffer GetGraphicsBuffer(GraphicsDevice graphicsDevice, MercatorSector sector);
 
         private static double ToLat(double y)
         {

@@ -18,7 +18,7 @@ namespace Zenith.LibraryWrappers.OSM
 {
     class OSMReader
     {
-        internal static BlobCollection GetAllBlobs(Sector sector)
+        internal static BlobCollection GetAllBlobs(MercatorSector sector)
         {
             List<Blob> blobs = new List<Blob>();
             string path = OSMPaths.GetSectorPath(sector);

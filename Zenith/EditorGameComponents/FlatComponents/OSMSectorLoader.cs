@@ -19,24 +19,24 @@ namespace Zenith.EditorGameComponents.FlatComponents
     {
         private static string mapFolder = @"..\..\..\..\LocalCache\OpenStreetMaps\Renders\";
 
-        public override bool CacheExists(Sector sector)
+        public override bool CacheExists(MercatorSector sector)
         {
             String fileName = sector.ToString() + ".PNG";
             String filePath = mapFolder + fileName;
             return File.Exists(filePath);
         }
 
-        public override bool DoAutoLoad(Sector sector)
+        public override bool DoAutoLoad(MercatorSector sector)
         {
             return sector.zoom <= 7 || sector.zoom == 10;
         }
 
-        public override bool AllowUnload(Sector sector)
+        public override bool AllowUnload(MercatorSector sector)
         {
             return sector.zoom <= 7;
         }
 
-        public override IEnumerable<Sector> EnumerateCachedSectors()
+        public override IEnumerable<MercatorSector> EnumerateCachedSectors()
         {
             foreach (var file in Directory.EnumerateFiles(mapFolder))
             {
@@ -47,12 +47,12 @@ namespace Zenith.EditorGameComponents.FlatComponents
                     int x = int.Parse(split[0].Split('=')[1]);
                     int y = int.Parse(split[1].Split('=')[1]);
                     int zoom = int.Parse(split[2].Split('=', '.')[1]);
-                    yield return new Sector(x, y, zoom);
+                    yield return new MercatorSector(x, y, zoom);
                 }
             }
         }
 
-        public override IGraphicsBuffer GetGraphicsBuffer(GraphicsDevice graphicsDevice, Sector sector)
+        public override IGraphicsBuffer GetGraphicsBuffer(GraphicsDevice graphicsDevice, MercatorSector sector)
         {
             String fileName = sector.ToString() + ".PNG";
             if (File.Exists(mapFolder + fileName))
@@ -90,7 +90,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
             {
                 // combination image
                 Texture2D rendered = new RenderTarget2D(graphicsDevice, 512, 512, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
-                List<Sector> roadSectors = sector.GetChildrenAtLevel(sector.zoom + 1);
+                List<MercatorSector> roadSectors = sector.GetChildrenAtLevel(sector.zoom + 1);
                 Texture2D[] textures = new Texture2D[roadSectors.Count];
                 for (int i = 0; i < roadSectors.Count; i++)
                 {

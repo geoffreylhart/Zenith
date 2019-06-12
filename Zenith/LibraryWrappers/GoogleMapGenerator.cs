@@ -26,7 +26,7 @@ namespace Zenith
 
         // latitude and longitude given in degrees
         // Google api doesn't like longitude outside of -180 and 180 or latitude outside of -90 and 90
-        internal static Texture2D GetMap(GraphicsDevice graphicsDevice, Sector sector, MapStyle mapStyle)
+        internal static Texture2D GetMap(GraphicsDevice graphicsDevice, MercatorSector sector, MapStyle mapStyle)
         {
             var data = GetMapHQWithoutLogo(sector, mapStyle);
             return Texture2D.FromStream(graphicsDevice, data);
@@ -91,7 +91,7 @@ namespace Zenith
         }
 
         private static int HQ_AMOUNT = 0; // zoom level
-        private static Stream GetMapHQWithoutLogo(Sector sector, MapStyle mapStyle)
+        private static Stream GetMapHQWithoutLogo(MercatorSector sector, MapStyle mapStyle)
         {
             int pow = 1 << HQ_AMOUNT;
             using (var bitmap = new Bitmap(512 * pow, 512 * pow))

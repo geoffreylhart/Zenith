@@ -87,6 +87,7 @@
     <Compile Include="ZGeom\IGeom.cs" />
     <Compile Include="ZGeom\LineGraph.cs" />
     <Compile Include="ZGeom\PointCollection.cs" />
+    <Compile Include="ZGeom\ZCoords.cs" />
     <Compile Include="ZGraphics\BasicVertexBuffer.cs" />
     <Compile Include="ZGraphics\GraphicsBasic.cs" />
     <Compile Include="Helpers\GraphicsDeviceHelper.cs" />
@@ -114,9 +115,10 @@
     <Compile Include="ZGraphics\GraphicsBuffers\VectorTileBuffer.cs" />
     <Compile Include="ZGraphics\Pallete.cs" />
     <Compile Include="ZGraphics\SpriteBatchBasic.cs" />
+    <Compile Include="ZMath\ISector.cs" />
     <Compile Include="ZMath\Line3.cs" />
     <Compile Include="ZMath\LongLat.cs" />
-    <Compile Include="ZMath\Sector.cs" />
+    <Compile Include="ZMath\MercatorSector.cs" />
     <Compile Include="ZMath\Vector2d.cs" />
     <Compile Include="ZMath\Vector3d.cs" />
     <Compile Include="MathHelpers\Vector3Helper.cs" />

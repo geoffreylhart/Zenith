@@ -33,7 +33,7 @@ namespace Zenith.LibraryWrappers
             return blobs.GetRoadsFast().ConstructAsRoads(graphicsDevice, width, GlobalContent.Road, Microsoft.Xna.Framework.Color.White);
         }
 
-        private static List<VertexPositionColor> GetCoastVertices(GraphicsDevice graphicsDevice, BlobCollection blobs, Sector sector)
+        private static List<VertexPositionColor> GetCoastVertices(GraphicsDevice graphicsDevice, BlobCollection blobs, MercatorSector sector)
         {
             LineGraph graph = blobs.GetBeachFast();
             if (graph.nodes.Count == 0)
@@ -61,12 +61,12 @@ namespace Zenith.LibraryWrappers
             return Tesselate(graphicsDevice, sector, outline, Pallete.GRASS_GREEN);
         }
 
-        internal static BasicVertexBuffer GetCoast(GraphicsDevice graphicsDevice, BlobCollection blobs, Sector sector)
+        internal static BasicVertexBuffer GetCoast(GraphicsDevice graphicsDevice, BlobCollection blobs, MercatorSector sector)
         {
             return new BasicVertexBuffer(graphicsDevice, GetCoastVertices(graphicsDevice, blobs, sector), PrimitiveType.TriangleList);
         }
 
-        internal static BasicVertexBuffer GetTrees(GraphicsDevice graphicsDevice, BlobCollection blobs, Sector sector)
+        internal static BasicVertexBuffer GetTrees(GraphicsDevice graphicsDevice, BlobCollection blobs, MercatorSector sector)
         {
             PointCollection points = new PointCollection(sector, (int)(sector.SurfaceAreaPortion * 3.04e9 * 100)); // 3 trillion trees on earth
             double widthInFeet = 10.7 * 20; // extra thick
@@ -82,7 +82,7 @@ namespace Zenith.LibraryWrappers
             return points.KeepWithin(coastTriangles).ExcludeWithin(lakeTriangles).ExcludeWithin(lakeTriangles2).RemoveNear(roads, width).Construct(graphicsDevice, width, GlobalContent.Tree, sector);
         }
 
-        internal static BasicVertexBuffer GetLakes(GraphicsDevice graphicsDevice, BlobCollection blobs, Sector sector)
+        internal static BasicVertexBuffer GetLakes(GraphicsDevice graphicsDevice, BlobCollection blobs, MercatorSector sector)
         {
             // TODO: somehow multipolygon lakes are getting mixed with regular lakes and cause the tesselator to vomit. think of a work around for this
             var vertices = Tesselate(graphicsDevice, sector, blobs.GetLakesFast().ToContours(), Pallete.OCEAN_BLUE);
@@ -90,7 +90,7 @@ namespace Zenith.LibraryWrappers
             return new BasicVertexBuffer(graphicsDevice, vertices, PrimitiveType.TriangleList);
         }
 
-        internal static BasicVertexBuffer GetLakesBorder(GraphicsDevice graphicsDevice, BlobCollection blobs, Sector sector)
+        internal static BasicVertexBuffer GetLakesBorder(GraphicsDevice graphicsDevice, BlobCollection blobs, MercatorSector sector)
         {
             double widthInFeet = 10.7 * 50; // extra thick
             double circumEarth = 24901 * 5280;
@@ -107,7 +107,7 @@ namespace Zenith.LibraryWrappers
         }
 
         static Bitmap landImage = null;
-        private static bool PixelIsLand(Sector sector)
+        private static bool PixelIsLand(MercatorSector sector)
         {
             if (landImage == null)
             {
@@ -119,7 +119,7 @@ namespace Zenith.LibraryWrappers
 
         // cut off the lines hanging outside of the sector
         // we call this before closing lines to prevent any possible confusion on how lines should connect
-        private static List<List<ContourVertex>> TrimLines(Sector sector, List<List<ContourVertex>> contours)
+        private static List<List<ContourVertex>> TrimLines(MercatorSector sector, List<List<ContourVertex>> contours)
         {
             List<List<ContourVertex>> answer = new List<List<ContourVertex>>();
             foreach (var contour in contours)
@@ -161,7 +161,7 @@ namespace Zenith.LibraryWrappers
         }
 
         // currently doesn't expect loops
-        private static List<List<ContourVertex>> CloseLines(Sector sector, List<List<ContourVertex>> contours)
+        private static List<List<ContourVertex>> CloseLines(MercatorSector sector, List<List<ContourVertex>> contours)
         {
             // TODO: did I accidentally properly do the winding rule thing?
             foreach (var contour in contours) contour.Reverse(); // TODO: get rid of hack
@@ -214,7 +214,7 @@ namespace Zenith.LibraryWrappers
             return closed;
         }
 
-        private static void AddEdgeConnection(List<ContourVertex> loop, Sector sector, ContourVertex edgeStart, ContourVertex edgeEnd)
+        private static void AddEdgeConnection(List<ContourVertex> loop, MercatorSector sector, ContourVertex edgeStart, ContourVertex edgeEnd)
         {
             List<ContourVertex> vertices = new List<ContourVertex>();
             vertices.Add(edgeStart);
@@ -241,20 +241,20 @@ namespace Zenith.LibraryWrappers
         }
 
         // very special sort
-        private static double AngleOf(int index, Sector sector, List<List<ContourVertex>> contours)
+        private static double AngleOf(int index, MercatorSector sector, List<List<ContourVertex>> contours)
         {
             var line = contours[index % contours.Count];
             ContourVertex vertex = line[index / contours.Count == 0 ? 0 : line.Count - 1];
             return AngleOf(sector, vertex);
         }
-        private static double AngleOf(Sector sector, ContourVertex vertex)
+        private static double AngleOf(MercatorSector sector, ContourVertex vertex)
         {
             double x = vertex.Position.X - sector.Longitude;
             double y = vertex.Position.Y - sector.Latitude;
             return Math.Atan2(y, x);
         }
 
-        private static void DrawLines(GraphicsDevice graphicsDevice, Sector sector, List<List<LibTessDotNet.ContourVertex>> contours)
+        private static void DrawLines(GraphicsDevice graphicsDevice, MercatorSector sector, List<List<LibTessDotNet.ContourVertex>> contours)
         {
             if (contours.Count == 0) return;
             List<VertexPositionColor> lines = new List<VertexPositionColor>();
@@ -287,14 +287,14 @@ namespace Zenith.LibraryWrappers
             }
         }
 
-        private static void DrawDebugLines(GraphicsDevice graphicsDevice, Sector sector, List<List<LibTessDotNet.ContourVertex>> contours)
+        private static void DrawDebugLines(GraphicsDevice graphicsDevice, MercatorSector sector, List<List<LibTessDotNet.ContourVertex>> contours)
         {
 
         }
 
         // manually implement triangulation algorithm
         // library takes like 8 seconds
-        private static List<VertexPositionColor> Tesselate(GraphicsDevice graphicsDevice, Sector sector, List<List<LibTessDotNet.ContourVertex>> contours, Microsoft.Xna.Framework.Color color)
+        private static List<VertexPositionColor> Tesselate(GraphicsDevice graphicsDevice, MercatorSector sector, List<List<LibTessDotNet.ContourVertex>> contours, Microsoft.Xna.Framework.Color color)
         {
             Polygon polygon = new Polygon();
             foreach (var contour in contours)
@@ -332,10 +332,10 @@ namespace Zenith.LibraryWrappers
         // if we break it up into quadrants using the same library, maybe it'll only take (4+1+1/16...) roughly 5.33 minutes?
         // actually took 8.673 mins (went from 450MB to 455MB)
         // estimated time to segment the whole 43.1 GB planet? 12/28/2018 = 8.673 * 43.1 / 8.05 * 47.7833 = 36.98 hours
-        private static void BreakupFile(string filePath, Sector sector, int targetZoom)
+        private static void BreakupFile(string filePath, MercatorSector sector, int targetZoom)
         {
             if (sector.zoom == targetZoom) return;
-            List<Sector> quadrants = sector.GetChildrenAtLevel(sector.zoom + 1);
+            List<MercatorSector> quadrants = sector.GetChildrenAtLevel(sector.zoom + 1);
             foreach (var quadrant in quadrants)
             {
                 // TODO: this isn't actually restartable. It'll start redoing completed dissected files because it thinks it hasn't been done yet (ex: a zoom3 was turned into all zoom10s)
@@ -394,7 +394,7 @@ namespace Zenith.LibraryWrappers
         {
             RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 1024, 1024, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
             graphicsDevice.SetRenderTarget(newTarget);
-            List<Sector> sectorsToCheck = new Sector(0, 0, 0).GetChildrenAtLevel(10);
+            List<MercatorSector> sectorsToCheck = new MercatorSector(0, 0, 0).GetChildrenAtLevel(10);
             foreach (var s in sectorsToCheck)
             {
                 GraphicsBasic.DrawScreenRect(graphicsDevice, s.x, s.y, 1, 1, ContainsCoast(s) ? Microsoft.Xna.Framework.Color.Gray : Microsoft.Xna.Framework.Color.White);
@@ -406,7 +406,7 @@ namespace Zenith.LibraryWrappers
             }
         }
 
-        private static bool ContainsCoast(Sector s)
+        private static bool ContainsCoast(MercatorSector s)
         {
             var source = new PBFOsmStreamSource(new FileInfo(OSMPaths.GetSectorPath(s)).OpenRead());
             foreach (var element in source)

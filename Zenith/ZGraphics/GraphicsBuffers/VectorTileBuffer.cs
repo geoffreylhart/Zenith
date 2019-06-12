@@ -18,7 +18,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         {
         }
 
-        public VectorTileBuffer(GraphicsDevice graphicsDevice, List<VertexPositionColor> vectors, Sector sector)
+        public VectorTileBuffer(GraphicsDevice graphicsDevice, List<VertexPositionColor> vectors, MercatorSector sector)
         {
         }
 
@@ -47,7 +47,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             return newTarget;
         }
 
-        internal void Add(GraphicsDevice graphicsDevice, BasicVertexBuffer buffer, Sector sector)
+        internal void Add(GraphicsDevice graphicsDevice, BasicVertexBuffer buffer, MercatorSector sector)
         {
             buffers.Add(buffer);
         }

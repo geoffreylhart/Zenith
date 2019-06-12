@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Zenith.ZMath
 {
-    public class Sector
+    public class MercatorSector : ISector
     {
         public int x; // measured 0,1,2,3 from -pi to pi (opposite left to opposite right of prime meridian)
 
@@ -44,7 +44,7 @@ namespace Zenith.ZMath
         public int y; // measured 0,1,2,3 from -pi/2 (south pole) to pi/2 (north pole)
         public int zoom; // the globe is partitioned into 2^zoom vertical and horizontal sections
 
-        public Sector(int x, int y, int zoom)
+        public MercatorSector(int x, int y, int zoom)
         {
             this.x = x;
             this.y = y;
@@ -79,7 +79,7 @@ namespace Zenith.ZMath
             return $"X={x},Y={y},Zoom={zoom}";
         }
 
-        public bool ContainsSector(Sector sector)
+        public bool ContainsSector(MercatorSector sector)
         {
             if (sector.zoom < zoom) return false;
             if ((sector.x >> (sector.zoom - zoom)) != x) return false;
@@ -87,9 +87,9 @@ namespace Zenith.ZMath
             return true;
         }
 
-        internal List<Sector> GetChildrenAtLevel(int z)
+        internal List<MercatorSector> GetChildrenAtLevel(int z)
         {
-            List<Sector> answer = new List<Sector>();
+            List<MercatorSector> answer = new List<MercatorSector>();
             if (z > zoom)
             {
                 int diffPow = 1 << (z - zoom);
@@ -97,7 +97,7 @@ namespace Zenith.ZMath
                 {
                     for (int j = 0; j < diffPow; j++)
                     {
-                        answer.Add(new Sector(x * diffPow + i, y * diffPow + j, z));
+                        answer.Add(new MercatorSector(x * diffPow + i, y * diffPow + j, z));
                     }
                 }
             }
@@ -105,24 +105,24 @@ namespace Zenith.ZMath
         }
 
         // TODO: all of these assume a zoom lower than current right now
-        internal int GetRelativeXOf(Sector s)
+        internal int GetRelativeXOf(MercatorSector s)
         {
             int diff = s.zoom - zoom;
             return s.x - x * (1 << diff);
         }
 
-        internal int GetRelativeYOf(Sector s)
+        internal int GetRelativeYOf(MercatorSector s)
         {
             int diff = s.zoom - zoom;
             return s.y - y * (1 << diff);
         }
 
-        internal IEnumerable<Sector> GetAllParents()
+        internal IEnumerable<MercatorSector> GetAllParents()
         {
-            List<Sector> answer = new List<Sector>();
+            List<MercatorSector> answer = new List<MercatorSector>();
             for (int i = 1; i <= zoom; i++)
             {
-                answer.Add(new Sector(x >> i, y >> i, zoom - i));
+                answer.Add(new MercatorSector(x >> i, y >> i, zoom - i));
             }
             return answer;
         }
@@ -187,7 +187,7 @@ namespace Zenith.ZMath
 
         public override bool Equals(object obj)
         {
-            Sector that = (Sector)obj;
+            MercatorSector that = (MercatorSector)obj;
             if (this.x != that.x) return false;
             if (this.y != that.y) return false;
             if (this.zoom != that.zoom) return false;
