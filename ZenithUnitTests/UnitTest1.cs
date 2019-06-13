@@ -4,6 +4,7 @@ using Zenith.EditorGameComponents;
 using Zenith.MathHelpers;
 using Zenith.ZGeom;
 using Zenith.ZMath;
+using static Zenith.ZMath.CubeSector;
 
 namespace ZenithUnitTests
 {
@@ -29,12 +30,44 @@ namespace ZenithUnitTests
         [TestMethod]
         public void TestCubeFaces()
         {
-            var front = new CubeSector(CubeSector.CubeSectorFace.FRONT, 0, 0, 0);
+            // do basic front ones
+            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(Math.PI / 4, 0), true, 1);
+            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(Math.PI / 8, 0), true, 0.5);
+            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(0, 0), true, 0);
+            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(-Math.PI / 8, 0), true, -0.5);
+            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(-Math.PI / 4, 0), true, -1);
+            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(0, Math.PI / 4), false, 1);
+            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(0, Math.PI / 8), false, 0.5);
+            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(0, 0), false, 0);
+            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(0, -Math.PI / 8), false, -0.5);
+            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(0, -Math.PI / 4), false, -1);
+            // do the same up top, sure
+            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(Math.PI / 2, Math.PI / 4), true, 1);
+            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(Math.PI / 2, 3 * Math.PI / 8), true, 0.5);
+            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(0, Math.PI / 2), true, 0);
+            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(-Math.PI / 2, 3 * Math.PI / 8), true, -0.5);
+            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(-Math.PI / 2, Math.PI / 4), true, -1);
+            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(-Math.PI, Math.PI / 4), false, 1);
+            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(-Math.PI, 3 * Math.PI / 8), false, 0.5);
+            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(0, Math.PI / 2), false, 0);
+            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(0, 3 * Math.PI / 8), false, -0.5);
+            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(0, Math.PI / 4), false, -1);
+        }
+
+        private void DoCubeFaceTest(CubeSectorFace face, LongLat longLat, bool doXNotY, double expectedAnswer)
+        {
+            var front = new CubeSector(face, 0, 0, 0);
             Vector3d normal = front.sectorFace.GetFaceNormal();
             Vector3d up = front.sectorFace.GetFaceUpDirection();
             Vector3d right = front.sectorFace.GetFaceRightDirection();
-            var longLat = new LongLat(Math.PI / 4, 0).ToSphereVector(); // rightmost of the front cubeface
-            AssertIsClose(front.GetRel(normal, right, longLat), 1);
+            if (doXNotY)
+            {
+                AssertIsClose(front.GetRel(normal, right, longLat.ToSphereVector()), expectedAnswer);
+            }
+            else
+            {
+                AssertIsClose(front.GetRel(normal, up, longLat.ToSphereVector()), expectedAnswer);
+            }
         }
     }
 }
