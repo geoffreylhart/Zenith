@@ -115,6 +115,7 @@
     <Compile Include="ZGraphics\GraphicsBuffers\VectorTileBuffer.cs" />
     <Compile Include="ZGraphics\Pallete.cs" />
     <Compile Include="ZGraphics\SpriteBatchBasic.cs" />
+    <Compile Include="ZMath\CubeSector.cs" />
     <Compile Include="ZMath\ISector.cs" />
     <Compile Include="ZMath\Line3.cs" />
     <Compile Include="ZMath\LongLat.cs" />

@@ -8,7 +8,12 @@ namespace Zenith.ZMath
 {
     public class MercatorSector : ISector
     {
-        public int x; // measured 0,1,2,3 from -pi to pi (opposite left to opposite right of prime meridian)
+        public int X { get => x; set => x = value; } // measured 0,1,2,3 based on ZCoords config
+        public int Y { get => y; set => y = value; } // measured 0,1,2,3 based on ZCoords config
+        public int Zoom { get => zoom; set => zoom = value; }
+        private int x; // measured 0,1,2,3 from -pi to pi (opposite left to opposite right of prime meridian)
+        private int y; // measured 0,1,2,3 from -pi/2 (south pole) to pi/2 (north pole)
+        private int zoom; // each face is partitioned into 2^zoom vertical and horizontal sections
 
         internal double MinDistanceFrom(LongLat longLat)
         {
@@ -40,9 +45,6 @@ namespace Zenith.ZMath
                 }
             }
         }
-
-        public int y; // measured 0,1,2,3 from -pi/2 (south pole) to pi/2 (north pole)
-        public int zoom; // the globe is partitioned into 2^zoom vertical and horizontal sections
 
         public MercatorSector(int x, int y, int zoom)
         {
@@ -87,9 +89,9 @@ namespace Zenith.ZMath
             return true;
         }
 
-        internal List<MercatorSector> GetChildrenAtLevel(int z)
+        public List<ISector> GetChildrenAtLevel(int z)
         {
-            List<MercatorSector> answer = new List<MercatorSector>();
+            List<ISector> answer = new List<ISector>();
             if (z > zoom)
             {
                 int diffPow = 1 << (z - zoom);
@@ -105,21 +107,21 @@ namespace Zenith.ZMath
         }
 
         // TODO: all of these assume a zoom lower than current right now
-        internal int GetRelativeXOf(MercatorSector s)
+        public int GetRelativeXOf(ISector s)
         {
-            int diff = s.zoom - zoom;
-            return s.x - x * (1 << diff);
+            int diff = s.Zoom - Zoom;
+            return s.X - X * (1 << diff);
         }
 
-        internal int GetRelativeYOf(MercatorSector s)
+        public int GetRelativeYOf(ISector s)
         {
-            int diff = s.zoom - zoom;
-            return s.y - y * (1 << diff);
+            int diff = s.Zoom - Zoom;
+            return s.Y - Y * (1 << diff);
         }
 
-        internal IEnumerable<MercatorSector> GetAllParents()
+        public List<ISector> GetAllParents()
         {
-            List<MercatorSector> answer = new List<MercatorSector>();
+            List<ISector> answer = new List<ISector>();
             for (int i = 1; i <= zoom; i++)
             {
                 answer.Add(new MercatorSector(x >> i, y >> i, zoom - i));
@@ -127,7 +129,7 @@ namespace Zenith.ZMath
             return answer;
         }
 
-        internal bool ContainsLongLat(LongLat longLat)
+        public bool ContainsLongLat(LongLat longLat)
         {
             if (longLat.X < LeftLongitude || longLat.X > RightLongitude) return false;
             if (longLat.Y < BottomLatitude || longLat.Y > TopLatitude) return false;
@@ -137,7 +139,7 @@ namespace Zenith.ZMath
         // do we treat these as straight lines or arc lines?
         // I guess lets do straight lines
         // let's return them in order of intersection
-        internal LongLat[] GetIntersections(LongLat start, LongLat end)
+        public LongLat[] GetIntersections(LongLat start, LongLat end)
         {
             List<LongLat> answer = new List<LongLat>();
             answer.AddRange(GetIntersections(start, end, TopLeftCorner, TopRightCorner));

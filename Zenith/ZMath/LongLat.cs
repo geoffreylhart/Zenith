@@ -8,11 +8,11 @@ namespace Zenith.ZMath
 {
     public class LongLat : Vector2d
     {
-        public LongLat(double x, double y) : base(x, y)
+        public LongLat(double x, double y) : base(x, y) // x goes from -pi to pi and y goes from -pi/2 to pi/2
         {
         }
 
-        internal SphereVector ToSphereVector()
+        public SphereVector ToSphereVector()
         {
             double dz = Math.Sin(Y);
             double dxy = Math.Cos(Y); // the radius of the horizontal ring section, always positive

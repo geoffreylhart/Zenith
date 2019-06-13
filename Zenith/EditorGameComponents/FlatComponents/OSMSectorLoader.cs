@@ -28,12 +28,12 @@ namespace Zenith.EditorGameComponents.FlatComponents
 
         public override bool DoAutoLoad(MercatorSector sector)
         {
-            return sector.zoom <= 7 || sector.zoom == 10;
+            return sector.Zoom <= 7 || sector.Zoom == 10;
         }
 
         public override bool AllowUnload(MercatorSector sector)
         {
-            return sector.zoom <= 7;
+            return sector.Zoom <= 7;
         }
 
         public override IEnumerable<MercatorSector> EnumerateCachedSectors()
@@ -52,7 +52,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
             }
         }
 
-        public override IGraphicsBuffer GetGraphicsBuffer(GraphicsDevice graphicsDevice, MercatorSector sector)
+        public override IGraphicsBuffer GetGraphicsBuffer(GraphicsDevice graphicsDevice, ISector sector)
         {
             String fileName = sector.ToString() + ".PNG";
             if (File.Exists(mapFolder + fileName))
@@ -63,7 +63,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 }
             }
             // otherwise, build it
-            if (sector.zoom >= 10)
+            if (sector.Zoom >= 10)
             {
                 VectorTileBuffer buffer = new VectorTileBuffer();
                 Stopwatch sw = new Stopwatch();
@@ -90,7 +90,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
             {
                 // combination image
                 Texture2D rendered = new RenderTarget2D(graphicsDevice, 512, 512, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
-                List<MercatorSector> roadSectors = sector.GetChildrenAtLevel(sector.zoom + 1);
+                List<ISector> roadSectors = sector.GetChildrenAtLevel(sector.Zoom + 1);
                 Texture2D[] textures = new Texture2D[roadSectors.Count];
                 for (int i = 0; i < roadSectors.Count; i++)
                 {
@@ -102,8 +102,8 @@ namespace Zenith.EditorGameComponents.FlatComponents
                     for (int i = 0; i < roadSectors.Count; i++)
                     {
                         int size, x, y;
-                        int subd = 1 << (roadSectors[i].zoom - sector.zoom);
-                        size = 512 >> (roadSectors[i].zoom - sector.zoom);
+                        int subd = 1 << (roadSectors[i].Zoom - sector.Zoom);
+                        size = 512 >> (roadSectors[i].Zoom - sector.Zoom);
                         x = sector.GetRelativeXOf(roadSectors[i]) * size;
                         y = (subd - 1 - sector.GetRelativeYOf(roadSectors[i])) * size;
                         if (textures[i] != null)
@@ -116,7 +116,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 {
                     if (textures[i] != null) textures[i].Dispose();
                 }
-                if (sector.zoom <= 7)
+                if (sector.Zoom <= 7)
                 {
                     using (var writer = File.OpenWrite(mapFolder + fileName))
                     {

@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Zenith.EditorGameComponents;
 using Zenith.MathHelpers;
+using Zenith.ZGeom;
 using Zenith.ZMath;
 
 namespace ZenithUnitTests
@@ -22,6 +23,18 @@ namespace ZenithUnitTests
         private void AssertIsClose(double a, double b)
         {
             Assert.IsTrue(Math.Abs(a - b) < 0.001);
+        }
+
+        // make sure our cube coordinates turn out as expected
+        [TestMethod]
+        public void TestCubeFaces()
+        {
+            var front = new CubeSector(CubeSector.CubeSectorFace.FRONT, 0, 0, 0);
+            Vector3d normal = front.sectorFace.GetFaceNormal();
+            Vector3d up = front.sectorFace.GetFaceUpDirection();
+            Vector3d right = front.sectorFace.GetFaceRightDirection();
+            var longLat = new LongLat(Math.PI / 4, 0).ToSphereVector(); // rightmost of the front cubeface
+            AssertIsClose(front.GetRel(normal, right, longLat), 1);
         }
     }
 }

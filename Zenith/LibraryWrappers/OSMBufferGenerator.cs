@@ -33,7 +33,7 @@ namespace Zenith.LibraryWrappers
             return blobs.GetRoadsFast().ConstructAsRoads(graphicsDevice, width, GlobalContent.Road, Microsoft.Xna.Framework.Color.White);
         }
 
-        private static List<VertexPositionColor> GetCoastVertices(GraphicsDevice graphicsDevice, BlobCollection blobs, MercatorSector sector)
+        private static List<VertexPositionColor> GetCoastVertices(GraphicsDevice graphicsDevice, BlobCollection blobs, ISector sector)
         {
             LineGraph graph = blobs.GetBeachFast();
             if (graph.nodes.Count == 0)
@@ -61,12 +61,12 @@ namespace Zenith.LibraryWrappers
             return Tesselate(graphicsDevice, sector, outline, Pallete.GRASS_GREEN);
         }
 
-        internal static BasicVertexBuffer GetCoast(GraphicsDevice graphicsDevice, BlobCollection blobs, MercatorSector sector)
+        internal static BasicVertexBuffer GetCoast(GraphicsDevice graphicsDevice, BlobCollection blobs, ISector sector)
         {
             return new BasicVertexBuffer(graphicsDevice, GetCoastVertices(graphicsDevice, blobs, sector), PrimitiveType.TriangleList);
         }
 
-        internal static BasicVertexBuffer GetTrees(GraphicsDevice graphicsDevice, BlobCollection blobs, MercatorSector sector)
+        internal static BasicVertexBuffer GetTrees(GraphicsDevice graphicsDevice, BlobCollection blobs, ISector sector)
         {
             PointCollection points = new PointCollection(sector, (int)(sector.SurfaceAreaPortion * 3.04e9 * 100)); // 3 trillion trees on earth
             double widthInFeet = 10.7 * 20; // extra thick
@@ -82,7 +82,7 @@ namespace Zenith.LibraryWrappers
             return points.KeepWithin(coastTriangles).ExcludeWithin(lakeTriangles).ExcludeWithin(lakeTriangles2).RemoveNear(roads, width).Construct(graphicsDevice, width, GlobalContent.Tree, sector);
         }
 
-        internal static BasicVertexBuffer GetLakes(GraphicsDevice graphicsDevice, BlobCollection blobs, MercatorSector sector)
+        internal static BasicVertexBuffer GetLakes(GraphicsDevice graphicsDevice, BlobCollection blobs, ISector sector)
         {
             // TODO: somehow multipolygon lakes are getting mixed with regular lakes and cause the tesselator to vomit. think of a work around for this
             var vertices = Tesselate(graphicsDevice, sector, blobs.GetLakesFast().ToContours(), Pallete.OCEAN_BLUE);
@@ -107,19 +107,19 @@ namespace Zenith.LibraryWrappers
         }
 
         static Bitmap landImage = null;
-        private static bool PixelIsLand(MercatorSector sector)
+        private static bool PixelIsLand(ISector sector)
         {
             if (landImage == null)
             {
                 string mapFile = @"..\..\..\..\LocalCache\OpenStreetMaps\Renders\Coastline.PNG";
                 landImage = new Bitmap(mapFile);
             }
-            return landImage.GetPixel(sector.x, sector.y) == System.Drawing.Color.FromArgb(255, 0, 255, 0);
+            return landImage.GetPixel(sector.X, sector.Y) == System.Drawing.Color.FromArgb(255, 0, 255, 0);
         }
 
         // cut off the lines hanging outside of the sector
         // we call this before closing lines to prevent any possible confusion on how lines should connect
-        private static List<List<ContourVertex>> TrimLines(MercatorSector sector, List<List<ContourVertex>> contours)
+        private static List<List<ContourVertex>> TrimLines(ISector sector, List<List<ContourVertex>> contours)
         {
             List<List<ContourVertex>> answer = new List<List<ContourVertex>>();
             foreach (var contour in contours)
@@ -161,7 +161,7 @@ namespace Zenith.LibraryWrappers
         }
 
         // currently doesn't expect loops
-        private static List<List<ContourVertex>> CloseLines(MercatorSector sector, List<List<ContourVertex>> contours)
+        private static List<List<ContourVertex>> CloseLines(ISector sector, List<List<ContourVertex>> contours)
         {
             // TODO: did I accidentally properly do the winding rule thing?
             foreach (var contour in contours) contour.Reverse(); // TODO: get rid of hack
@@ -214,7 +214,7 @@ namespace Zenith.LibraryWrappers
             return closed;
         }
 
-        private static void AddEdgeConnection(List<ContourVertex> loop, MercatorSector sector, ContourVertex edgeStart, ContourVertex edgeEnd)
+        private static void AddEdgeConnection(List<ContourVertex> loop, ISector sector, ContourVertex edgeStart, ContourVertex edgeEnd)
         {
             List<ContourVertex> vertices = new List<ContourVertex>();
             vertices.Add(edgeStart);
@@ -241,13 +241,13 @@ namespace Zenith.LibraryWrappers
         }
 
         // very special sort
-        private static double AngleOf(int index, MercatorSector sector, List<List<ContourVertex>> contours)
+        private static double AngleOf(int index, ISector sector, List<List<ContourVertex>> contours)
         {
             var line = contours[index % contours.Count];
             ContourVertex vertex = line[index / contours.Count == 0 ? 0 : line.Count - 1];
             return AngleOf(sector, vertex);
         }
-        private static double AngleOf(MercatorSector sector, ContourVertex vertex)
+        private static double AngleOf(ISector sector, ContourVertex vertex)
         {
             double x = vertex.Position.X - sector.Longitude;
             double y = vertex.Position.Y - sector.Latitude;
@@ -294,7 +294,7 @@ namespace Zenith.LibraryWrappers
 
         // manually implement triangulation algorithm
         // library takes like 8 seconds
-        private static List<VertexPositionColor> Tesselate(GraphicsDevice graphicsDevice, MercatorSector sector, List<List<LibTessDotNet.ContourVertex>> contours, Microsoft.Xna.Framework.Color color)
+        private static List<VertexPositionColor> Tesselate(GraphicsDevice graphicsDevice, ISector sector, List<List<LibTessDotNet.ContourVertex>> contours, Microsoft.Xna.Framework.Color color)
         {
             Polygon polygon = new Polygon();
             foreach (var contour in contours)
@@ -328,19 +328,27 @@ namespace Zenith.LibraryWrappers
             return triangles;
         }
 
+        // breakup that whole osm planet
+        public static void SegmentOSMPlanet()
+        {
+            foreach (var sector in ZCoords.GetTopmostOSMSectors())
+            {
+                BreakupFile(OSMPaths.GetPlanetPath(), sector, ZCoords.GetHighestOSMZoom());
+            }
+        }
+
         // est: since going from 6 to 10 took 1 minute, we might expect doing all 256 would take 256 minutes
         // if we break it up into quadrants using the same library, maybe it'll only take (4+1+1/16...) roughly 5.33 minutes?
         // actually took 8.673 mins (went from 450MB to 455MB)
         // estimated time to segment the whole 43.1 GB planet? 12/28/2018 = 8.673 * 43.1 / 8.05 * 47.7833 = 36.98 hours
-        private static void BreakupFile(string filePath, MercatorSector sector, int targetZoom)
+        private static void BreakupFile(string filePath, ISector sector, int targetZoom)
         {
-            if (sector.zoom == targetZoom) return;
-            List<MercatorSector> quadrants = sector.GetChildrenAtLevel(sector.zoom + 1);
+            if (sector.Zoom == targetZoom) return;
+            List<ISector> quadrants = sector.GetChildrenAtLevel(sector.Zoom + 1);
             foreach (var quadrant in quadrants)
             {
                 // TODO: this isn't actually restartable. It'll start redoing completed dissected files because it thinks it hasn't been done yet (ex: a zoom3 was turned into all zoom10s)
-                String quadrantPath = @"..\..\..\..\LocalCache\OpenStreetMaps\" + quadrant.GetAllParents().Where(x => x.zoom == 5).Single().ToString() + "\\" + quadrant.ToString() + ".osm.pbf";
-                //String quadrantPathGz = @"..\..\..\..\LocalCache\OpenStreetMaps\" + quadrant.ToString() + ".osm.pbf.gz";
+                String quadrantPath = OSMPaths.GetSectorPath(quadrant);
                 if (!File.Exists(quadrantPath))
                 {
                     var fInfo = new FileInfo(filePath);
@@ -348,8 +356,7 @@ namespace Zenith.LibraryWrappers
                     {
                         using (var source = new PBFOsmStreamSource(fileInfoStream))
                         {
-                            var filtered = source.FilterBox((float)(quadrant.LeftLongitude * 180 / Math.PI), (float)(quadrant.TopLatitude * 180 / Math.PI),
-                                (float)(quadrant.RightLongitude * 180 / Math.PI), (float)(quadrant.BottomLatitude * 180 / Math.PI), true); // left, top, right, bottom
+                            var filtered = source.FilterNodes(x => x.Longitude.HasValue && x.Latitude.HasValue && quadrant.ContainsLongLat(new LongLat(x.Longitude.Value, x.Latitude.Value)));
                             using (var stream = new FileInfo(quadrantPath).Open(FileMode.Create, FileAccess.ReadWrite))
                             {
                                 var target = new PBFOsmStreamTarget(stream, true);
@@ -359,18 +366,11 @@ namespace Zenith.LibraryWrappers
                         }
                     }
                 }
-                // compression on big files: 2.49GB/8.82GB
-                //if (!File.Exists(quadrantPathGz) && new FileInfo(quadrantPath).Length > 1024 && quadrant.zoom == targetZoom) // Note: doesn't apply to root (aka the planet osm)
-                //{
-                //    Compress(quadrantPath, quadrantPathGz);
-                //    File.Delete(quadrantPath);
-                //}
-                //BreakupFile(quadrantPath, quadrant, targetZoom);
             }
-            if (sector.zoom > 0) File.Delete(filePath);
+            if (sector.Zoom > 0) File.Delete(filePath);
             foreach (var quadrant in quadrants)
             {
-                String quadrantPath = @"..\..\..\..\LocalCache\OpenStreetMaps\" + quadrant.GetAllParents().Where(x => x.zoom == 5).Single().ToString() + "\\" + quadrant.ToString() + ".osm.pbf";
+                String quadrantPath = OSMPaths.GetSectorPath(quadrant);
                 BreakupFile(quadrantPath, quadrant, targetZoom);
             }
         }
@@ -394,10 +394,14 @@ namespace Zenith.LibraryWrappers
         {
             RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 1024, 1024, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
             graphicsDevice.SetRenderTarget(newTarget);
-            List<MercatorSector> sectorsToCheck = new MercatorSector(0, 0, 0).GetChildrenAtLevel(10);
+            List<ISector> sectorsToCheck = new List<ISector>();
+            foreach (var sector in ZCoords.GetTopmostOSMSectors())
+            {
+                sectorsToCheck.AddRange(sector.GetChildrenAtLevel(ZCoords.GetHighestOSMZoom()));
+            }
             foreach (var s in sectorsToCheck)
             {
-                GraphicsBasic.DrawScreenRect(graphicsDevice, s.x, s.y, 1, 1, ContainsCoast(s) ? Microsoft.Xna.Framework.Color.Gray : Microsoft.Xna.Framework.Color.White);
+                GraphicsBasic.DrawScreenRect(graphicsDevice, s.X, s.Y, 1, 1, ContainsCoast(s) ? Microsoft.Xna.Framework.Color.Gray : Microsoft.Xna.Framework.Color.White);
             }
             string mapFile = @"..\..\..\..\LocalCache\OpenStreetMaps\Renders\Coastline.PNG";
             using (var writer = File.OpenWrite(mapFile))
@@ -406,7 +410,7 @@ namespace Zenith.LibraryWrappers
             }
         }
 
-        private static bool ContainsCoast(MercatorSector s)
+        private static bool ContainsCoast(ISector s)
         {
             var source = new PBFOsmStreamSource(new FileInfo(OSMPaths.GetSectorPath(s)).OpenRead());
             foreach (var element in source)

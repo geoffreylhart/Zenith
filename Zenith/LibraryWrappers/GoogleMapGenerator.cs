@@ -103,8 +103,8 @@ namespace Zenith
                     {
                         for (int y = 0; y < pow * 2; y++)
                         {
-                            double offx = Math.Pow(0.5, sector.zoom) / pow * (x - pow / 2.0 + 0.5);
-                            double offy = Math.Pow(0.5, sector.zoom) / (pow * 2) * (y - pow + 1);
+                            double offx = Math.Pow(0.5, sector.Zoom) / pow * (x - pow / 2.0 + 0.5);
+                            double offy = Math.Pow(0.5, sector.Zoom) / (pow * 2) * (y - pow + 1);
                             double thisLong = sector.Longitude * 180 / Math.PI + offx * 360;
                             double thisLat = ToLat(ToY(sector.Latitude) - offy) * 180 / Math.PI;
                             // google doesn't support longitude outside the rang -180 to 180
@@ -116,7 +116,7 @@ namespace Zenith
                             {
                                 thisLong -= 360;
                             }
-                            var ms = GetMapPlainly(thisLong, thisLat, sector.zoom + HQ_AMOUNT, mapStyle);
+                            var ms = GetMapPlainly(thisLong, thisLat, sector.Zoom + HQ_AMOUNT, mapStyle);
                             var img = System.Drawing.Image.FromStream(ms);
                             canvas.DrawImage(img, 512 * x, y * 512 / 2);
                         }

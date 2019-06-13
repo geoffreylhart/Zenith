@@ -47,7 +47,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             return newTarget;
         }
 
-        internal void Add(GraphicsDevice graphicsDevice, BasicVertexBuffer buffer, MercatorSector sector)
+        internal void Add(GraphicsDevice graphicsDevice, BasicVertexBuffer buffer, ISector sector)
         {
             buffers.Add(buffer);
         }

@@ -15,9 +15,9 @@ namespace Zenith.ZGraphics.GraphicsBuffers
     {
         VertexIndiceBuffer buffer;
 
-        public ImageTileBuffer(GraphicsDevice graphicsDevice, Texture2D rendered, MercatorSector sector)
+        public ImageTileBuffer(GraphicsDevice graphicsDevice, Texture2D rendered, ISector sector)
         {
-            buffer = SphereBuilder.MapMercatorToCylindrical(graphicsDevice, 2, Math.Pow(0.5, sector.zoom), sector.Latitude, sector.Longitude);
+            buffer = SphereBuilder.MapMercatorToCylindrical(graphicsDevice, 2, Math.Pow(0.5, sector.Zoom), sector.Latitude, sector.Longitude);
             buffer.texture = rendered;
         }
 

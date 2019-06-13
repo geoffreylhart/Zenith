@@ -32,11 +32,11 @@ namespace Zenith.EditorGameComponents.FlatComponents
             MercatorSector topLeft = GetSector(minX, maxY, zoomLevel);
             MercatorSector topRight = GetSector(maxX, maxY, zoomLevel);
             List<MercatorSector> containedSectors = new List<MercatorSector>();
-            for (int i = bottomLeft.x; i <= bottomRight.x; i++)
+            for (int i = bottomLeft.X; i <= bottomRight.X; i++)
             {
-                for (int j = bottomLeft.y; j <= topLeft.y; j++)
+                for (int j = bottomLeft.Y; j <= topLeft.Y; j++)
                 {
-                    containedSectors.Add(new MercatorSector(i % (1 << bottomLeft.zoom), j % (1 << bottomLeft.zoom), bottomLeft.zoom));
+                    containedSectors.Add(new MercatorSector(i % (1 << bottomLeft.Zoom), j % (1 << bottomLeft.Zoom), bottomLeft.Zoom));
                 }
             }
             List<MercatorSector> unload = new List<MercatorSector>();
@@ -68,7 +68,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
             }
             toLoad = new HashSet<MercatorSector>();
             List<MercatorSector> sorted = loadedMaps.Keys.ToList();
-            sorted.Sort((x, y) => x.zoom.CompareTo(y.zoom));
+            sorted.Sort((x, y) => x.Zoom.CompareTo(y.Zoom));
             foreach (var sector in sorted)
             {
                 IGraphicsBuffer buffer = loadedMaps[sector];
@@ -146,7 +146,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
             toLoad.Add(squareCenter);
         }
 
-        public abstract IGraphicsBuffer GetGraphicsBuffer(GraphicsDevice graphicsDevice, MercatorSector sector);
+        public abstract IGraphicsBuffer GetGraphicsBuffer(GraphicsDevice graphicsDevice, ISector sector);
 
         private static double ToLat(double y)
         {

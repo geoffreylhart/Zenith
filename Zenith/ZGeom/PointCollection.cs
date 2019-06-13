@@ -17,16 +17,16 @@ namespace Zenith.ZGeom
     {
         List<Vector2d> points = new List<Vector2d>();
 
-        public PointCollection(MercatorSector sector, int num)
+        public PointCollection(ISector sector, int num)
         {
-            Random random = new Random((sector.x * 31 + sector.y) * 31 + sector.zoom);
+            Random random = new Random((sector.X * 31 + sector.Y) * 31 + sector.Zoom);
             for (int i = 0; i < num; i++)
             {
                 points.Add(RandomPoint(sector, random));
             }
         }
 
-        private Vector2d RandomPoint(MercatorSector sector, Random random)
+        private Vector2d RandomPoint(ISector sector, Random random)
         {
             double randX = random.NextDouble();
             double randY = random.NextDouble();
@@ -35,9 +35,9 @@ namespace Zenith.ZGeom
             return new Vector2d(topLeft.X * (1 - randX) + bottomRight.X * randX, topLeft.Y * (1 - randY) + bottomRight.Y * randY);
         }
 
-        internal BasicVertexBuffer Construct(GraphicsDevice graphicsDevice, double width, Texture2D texture, MercatorSector sector)
+        internal BasicVertexBuffer Construct(GraphicsDevice graphicsDevice, double width, Texture2D texture, ISector sector)
         {
-            Random random = new Random((sector.x * 31 + sector.y) * 31 + sector.zoom);
+            Random random = new Random((sector.X * 31 + sector.Y) * 31 + sector.Zoom);
 
             List<int> indices = new List<int>();
             List<VertexPositionTexture> vertices = new List<VertexPositionTexture>();
