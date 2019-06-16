@@ -9,6 +9,9 @@ using Zenith.ZMath;
 
 namespace Zenith.ZMath
 {
+    // note: I believe I've decided to go against normal cube-mapping
+    // instead of mapping a cube to a sphere as if it's been blown out, I evenly distribute the angles of my longitudes/latitudes like they are in other projections
+    // this means pixels will have the same area around the equator, meridian, etc.
     public class CubeSector : ISector
     {
         public CubeSectorFace sectorFace;
@@ -88,10 +91,10 @@ namespace Zenith.ZMath
             Vector3d up = sectorFace.GetFaceUpDirection();
             Vector3d right = sectorFace.GetFaceRightDirection();
             Vector3d normal = sectorFace.GetFaceNormal();
-            double relX = GetRel(normal, right, longLat3d);
-            if (relX > 1 || relX < -1) return false;
-            double relY = GetRel(normal, up, longLat3d);
-            if (relY > 1 || relY < -1) return false;
+            double relX = (GetRel(normal, right, longLat3d) + 1) / 2 * (1 << Zoom);
+            double relY = (GetRel(normal, up, longLat3d) + 1) / 2 * (1 << Zoom);
+            if (relX > X + 1 || relX < X) return false;
+            if (relY > Y + 1 || relY < Y) return false;
             // TODO: actual subsectors
             return true;
         }

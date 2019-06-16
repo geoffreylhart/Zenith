@@ -329,29 +329,20 @@ namespace Zenith.LibraryWrappers
         }
 
         // breakup that whole osm planet
+        static int CURRENT_BREAKUP_STEP = 0;
+        static int READ_BREAKUP_STEP = 0; // easy way to allow continuation
         public static void SegmentOSMPlanet()
         {
-            foreach (var sector in ZCoords.GetTopmostOSMSectors())
+            READ_BREAKUP_STEP = int.Parse(File.ReadAllText(OSMPaths.GetPlanetStepPath())); // file should contain the number of physical breakups that were finished
+            List<ISector> quadrants = ZCoords.GetTopmostOSMSectors();
+            if (READ_BREAKUP_STEP <= CURRENT_BREAKUP_STEP)
             {
-                BreakupFile(OSMPaths.GetPlanetPath(), sector, ZCoords.GetHighestOSMZoom());
-            }
-        }
-
-        // est: since going from 6 to 10 took 1 minute, we might expect doing all 256 would take 256 minutes
-        // if we break it up into quadrants using the same library, maybe it'll only take (4+1+1/16...) roughly 5.33 minutes?
-        // actually took 8.673 mins (went from 450MB to 455MB)
-        // estimated time to segment the whole 43.1 GB planet? 12/28/2018 = 8.673 * 43.1 / 8.05 * 47.7833 = 36.98 hours
-        private static void BreakupFile(string filePath, ISector sector, int targetZoom)
-        {
-            if (sector.Zoom == targetZoom) return;
-            List<ISector> quadrants = sector.GetChildrenAtLevel(sector.Zoom + 1);
-            foreach (var quadrant in quadrants)
-            {
-                // TODO: this isn't actually restartable. It'll start redoing completed dissected files because it thinks it hasn't been done yet (ex: a zoom3 was turned into all zoom10s)
-                String quadrantPath = OSMPaths.GetSectorPath(quadrant);
-                if (!File.Exists(quadrantPath))
+                foreach (var quadrant in quadrants)
                 {
-                    var fInfo = new FileInfo(filePath);
+                    String quadrantPath = OSMPaths.GetSectorPath(quadrant);
+                    if (File.Exists(quadrantPath)) File.Delete(quadrantPath); // we're assuming it's corrupted
+                    if (!Directory.Exists(Path.GetDirectoryName(quadrantPath))) Directory.CreateDirectory(Path.GetDirectoryName(quadrantPath));
+                    var fInfo = new FileInfo(OSMPaths.GetPlanetPath());
                     using (var fileInfoStream = fInfo.OpenRead())
                     {
                         using (var source = new PBFOsmStreamSource(fileInfoStream))
@@ -367,7 +358,53 @@ namespace Zenith.LibraryWrappers
                     }
                 }
             }
-            if (sector.Zoom > 0) File.Delete(filePath);
+            BreakupStepDone();
+            foreach (var quadrant in quadrants)
+            {
+                String quadrantPath = OSMPaths.GetSectorPath(quadrant);
+                BreakupFile(quadrantPath, quadrant, ZCoords.GetHighestOSMZoom());
+            }
+        }
+
+        private static void BreakupStepDone()
+        {
+            CURRENT_BREAKUP_STEP++;
+            File.WriteAllText(OSMPaths.GetPlanetStepPath(), CURRENT_BREAKUP_STEP.ToString());
+        }
+
+        // est: since going from 6 to 10 took 1 minute, we might expect doing all 256 would take 256 minutes
+        // if we break it up into quadrants using the same library, maybe it'll only take (4+1+1/16...) roughly 5.33 minutes?
+        // actually took 8.673 mins (went from 450MB to 455MB)
+        // estimated time to segment the whole 43.1 GB planet? 12/28/2018 = 8.673 * 43.1 / 8.05 * 47.7833 = 36.98 hours
+        private static void BreakupFile(string filePath, ISector sector, int targetZoom)
+        {
+            if (sector.Zoom == targetZoom) return;
+            List<ISector> quadrants = sector.GetChildrenAtLevel(sector.Zoom + 1);
+            if (READ_BREAKUP_STEP <= CURRENT_BREAKUP_STEP)
+            {
+                foreach (var quadrant in quadrants)
+                {
+                    String quadrantPath = OSMPaths.GetSectorPath(quadrant);
+                    if (File.Exists(quadrantPath)) File.Delete(quadrantPath); // we're assuming it's corrupted
+                    if (!Directory.Exists(Path.GetDirectoryName(quadrantPath))) Directory.CreateDirectory(Path.GetDirectoryName(quadrantPath));
+                    var fInfo = new FileInfo(filePath);
+                    using (var fileInfoStream = fInfo.OpenRead())
+                    {
+                        using (var source = new PBFOsmStreamSource(fileInfoStream))
+                        {
+                            var filtered = source.FilterNodes(x => x.Longitude.HasValue && x.Latitude.HasValue && quadrant.ContainsLongLat(new LongLat(x.Longitude.Value, x.Latitude.Value)));
+                            using (var stream = new FileInfo(quadrantPath).Open(FileMode.Create, FileAccess.ReadWrite))
+                            {
+                                var target = new PBFOsmStreamTarget(stream, true);
+                                target.RegisterSource(filtered);
+                                target.Pull();
+                            }
+                        }
+                    }
+                }
+                if (sector.Zoom > 0) File.Delete(filePath);
+            }
+            BreakupStepDone();
             foreach (var quadrant in quadrants)
             {
                 String quadrantPath = OSMPaths.GetSectorPath(quadrant);
