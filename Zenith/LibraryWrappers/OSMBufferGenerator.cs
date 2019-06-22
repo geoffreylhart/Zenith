@@ -329,7 +329,7 @@ namespace Zenith.LibraryWrappers
         }
 
         // breakup that whole osm planet
-        static int CURRENT_BREAKUP_STEP = 0;
+        static int CURRENT_BREAKUP_STEP = 0; // out of 131,071 steps
         static int READ_BREAKUP_STEP = 0; // easy way to allow continuation
         public static void SegmentOSMPlanet()
         {
@@ -353,6 +353,7 @@ namespace Zenith.LibraryWrappers
                                 var target = new PBFOsmStreamTarget(stream, true);
                                 target.RegisterSource(filtered);
                                 target.Pull();
+                                target.Close();
                             }
                         }
                     }
@@ -398,6 +399,7 @@ namespace Zenith.LibraryWrappers
                                 var target = new PBFOsmStreamTarget(stream, true);
                                 target.RegisterSource(filtered);
                                 target.Pull();
+                                target.Close();
                             }
                         }
                     }
