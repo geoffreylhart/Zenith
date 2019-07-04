@@ -330,7 +330,7 @@ namespace Zenith.LibraryWrappers
 
         // breakup that whole osm planet
         static int CURRENT_BREAKUP_STEP = 0; // out of 131,071 steps
-        static int READ_BREAKUP_STEP = 0; // easy way to allow continuation
+        static int READ_BREAKUP_STEP = 0; // easy way to allow continuation, should usually equal (#filesThatArenttoplevel)/3
         public static void SegmentOSMPlanet()
         {
             READ_BREAKUP_STEP = int.Parse(File.ReadAllText(OSMPaths.GetPlanetStepPath())); // file should contain the number of physical breakups that were finished
@@ -370,7 +370,10 @@ namespace Zenith.LibraryWrappers
         private static void BreakupStepDone()
         {
             CURRENT_BREAKUP_STEP++;
-            File.WriteAllText(OSMPaths.GetPlanetStepPath(), CURRENT_BREAKUP_STEP.ToString());
+            if (READ_BREAKUP_STEP <= CURRENT_BREAKUP_STEP)
+            {
+                File.WriteAllText(OSMPaths.GetPlanetStepPath(), CURRENT_BREAKUP_STEP.ToString());
+            }
         }
 
         // est: since going from 6 to 10 took 1 minute, we might expect doing all 256 would take 256 minutes
