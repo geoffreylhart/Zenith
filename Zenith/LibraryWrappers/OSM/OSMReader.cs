@@ -31,7 +31,7 @@ namespace Zenith.LibraryWrappers.OSM
                     blobs.Add(blob);
                 }
             }
-            var collection =  new BlobCollection(blobs);
+            var collection =  new BlobCollection(blobs, sector);
             collection.Init();
             return collection;
         }

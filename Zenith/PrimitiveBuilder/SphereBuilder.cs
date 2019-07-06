@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Zenith.MathHelpers;
+using Zenith.ZMath;
 
 namespace Zenith.PrimitiveBuilder
 {
@@ -163,36 +164,25 @@ namespace Zenith.PrimitiveBuilder
             return indices;
         }
 
-        // now let's make the sphere make sense for working with - don't call ToY or ToLat ever, and rings will be evenly spaced (they already were)
-        internal static VertexIndiceBuffer MakeSphereSeg(GraphicsDevice graphicsDevice, double diameter, double portion, double lat, double longi)
-        {
-            LongLatHelper.NormalizeLongLatRadians(ref longi, ref lat);
-            double minLat = Math.Max(lat - portion * Math.PI, -Math.PI / 2);
-            double maxLat = Math.Min(lat + portion * Math.PI, Math.PI / 2);
-            double minLong = longi - Math.PI * portion;
-            double maxLong = longi + Math.PI * portion;
-            return MakeSphereSegExplicit(graphicsDevice, diameter, minLong, minLat, maxLong, maxLat);
-        }
-
-        internal static VertexIndiceBuffer MakeSphereSegExplicit(GraphicsDevice graphicsDevice, double diameter, double minLong, double minLat, double maxLong, double maxLat)
+        internal static VertexIndiceBuffer MakeSphereSegExplicit(GraphicsDevice graphicsDevice, ISector root, double diameter, double minX, double minY, double maxX, double maxY)
         {
             VertexIndiceBuffer buffer = new VertexIndiceBuffer();
             List<VertexPositionNormalTexture> vertices = new List<VertexPositionNormalTexture>();
 
             double radius = diameter / 2;
-            int verticalSegments = Math.Max((int)((maxLat - minLat) * 50), 1);
-            int horizontalSegments = Math.Max((int)((maxLong - minLong) * 50), 1);
+            int verticalSegments = Math.Max((int)((maxY - minY) * 50), 1);
+            int horizontalSegments = Math.Max((int)((maxX - minX) * 50), 1);
             for (int i = 0; i <= verticalSegments; i++)
             {
-                double latitude = (minLat + (maxLat - minLat) * i / (double)verticalSegments);
+                double y = (minY + (maxY - minY) * i / (double)verticalSegments);
                 for (int j = 0; j <= horizontalSegments; j++)
                 {
-                    double longitude = (minLong + (maxLong - minLong) * j / (double)horizontalSegments);
+                    double x = (minX + (maxX - minX) * j / (double)horizontalSegments);
 
                     double tx = j / (double)horizontalSegments;
                     double ty = i / (double)verticalSegments;
                     // stole this equation
-                    Vector3 normal = Vector3Helper.UnitSphere(longitude, latitude);
+                    Vector3 normal = root.ProjectToSphereCoordinates(new Vector2d(x, y)).ToVector3();
                     Vector3 position = normal * (float)radius; // switched dy and dz here to align the poles from how we had them
                     Vector2 texturepos = new Vector2((float)tx, (float)ty);
                     vertices.Add(new VertexPositionNormalTexture(position, normal, texturepos));

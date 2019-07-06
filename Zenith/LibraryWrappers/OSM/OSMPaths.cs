@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,13 +19,13 @@ namespace Zenith.LibraryWrappers.OSM
                 var parent5 = sector.GetChildrenAtLevel(sector.Zoom + 1)[0].GetAllParents().Where(x => x.Zoom == 5);
                 if (parent.Count() != 0)
                 {
-                    return @"..\..\..\..\LocalCache\OpenStreetMaps\" + parent5.Single().ToString() + "\\" + parent.Single().ToString() + ".osm.pbf";
+                    return Path.Combine(GetOpenStreetMapsRoot(), parent5.Single().ToString(), parent.Single().ToString() + ".osm.pbf");
                 }
                 if (parent5.Count() != 0)
                 {
-                    return @"..\..\..\..\LocalCache\OpenStreetMaps\" + parent5.Single().ToString() + "\\" + sector.ToString() + ".osm.pbf";
+                    return Path.Combine(GetOpenStreetMapsRoot(), parent5.Single().ToString(), sector.ToString() + ".osm.pbf");
                 }
-                return @"..\..\..\..\LocalCache\OpenStreetMaps\" + sector.ToString() + ".osm.pbf";
+                return Path.Combine(GetOpenStreetMapsRoot(), sector.ToString() + ".osm.pbf");
             }
             if (sector is CubeSector)
             {
@@ -32,15 +33,25 @@ namespace Zenith.LibraryWrappers.OSM
                 var parent4 = sector.GetChildrenAtLevel(sector.Zoom + 1)[0].GetAllParents().Where(x => x.Zoom == 4);
                 if (parent.Count() != 0)
                 {
-                    return @"..\..\..\..\LocalCache\OpenStreetMaps\" + ((CubeSector)sector).sectorFace.GetFaceAcronym() + "Face\\" + parent4.Single().ToString() + "\\" + parent.Single().ToString() + ".osm.pbf";
+                    return Path.Combine(GetOpenStreetMapsRoot(), ((CubeSector)sector).sectorFace.GetFaceAcronym() + "Face", parent4.Single().ToString(), parent.Single().ToString() + ".osm.pbf");
                 }
                 if (parent4.Count() != 0)
                 {
-                    return @"..\..\..\..\LocalCache\OpenStreetMaps\" + ((CubeSector)sector).sectorFace.GetFaceAcronym() + "Face\\" + parent4.Single().ToString() + "\\" + sector.ToString() + ".osm.pbf";
+                    return Path.Combine(GetOpenStreetMapsRoot(), ((CubeSector)sector).sectorFace.GetFaceAcronym() + "Face", parent4.Single().ToString(), sector.ToString() + ".osm.pbf");
                 }
-                return @"..\..\..\..\LocalCache\OpenStreetMaps\" + ((CubeSector)sector).sectorFace.GetFaceAcronym() + "Face\\" + sector.ToString() + ".osm.pbf";
+                return Path.Combine(GetOpenStreetMapsRoot(), ((CubeSector)sector).sectorFace.GetFaceAcronym() + "Face", sector.ToString() + ".osm.pbf");
             }
             throw new NotImplementedException();
+        }
+
+        public static string GetOpenStreetMapsRoot()
+        {
+            return @"..\..\..\..\LocalCache\OpenStreetMapsOld";
+        }
+
+        public static string GetRenderRoot()
+        {
+            return Path.Combine(GetOpenStreetMapsRoot(), "Renders");
         }
 
         public static string GetPlanetPath()
@@ -50,7 +61,20 @@ namespace Zenith.LibraryWrappers.OSM
 
         public static string GetPlanetStepPath()
         {
-            return @"..\..\..\..\LocalCache\OpenStreetMaps\planet-step.txt";
+            return Path.Combine(GetOpenStreetMapsRoot(), "planet-step.txt");
+        }
+
+        internal static string GetCoastlineImagePath(ISector sector)
+        {
+            if (sector is MercatorSector)
+            {
+                return Path.Combine(GetRenderRoot(), "Coastline.PNG");
+            }
+            if (sector is CubeSector)
+            {
+                return Path.Combine(GetRenderRoot(), $"Coastline{((CubeSector)sector).sectorFace.GetFaceAcronym()}.PNG");
+            }
+            throw new NotImplementedException();
         }
     }
 }

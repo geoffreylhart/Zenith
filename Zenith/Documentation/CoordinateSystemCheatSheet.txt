@@ -24,3 +24,5 @@ Amazingly it looks like Monogame has the same handedness as Blender?? Based on o
 ACCORDING TO MY OWN COMMENTS, you have to draw triangles clockwise to make them visible (counter-clockwise triangles are culled (it's a default setting somewhere))
 
 For our cache of images, indices will span 0,1,2,3... from the min -lat to the max
+
+Texture coordinates (I think) are supposed to have 0,0 in the top left corner

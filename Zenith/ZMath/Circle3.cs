@@ -45,7 +45,7 @@ namespace Zenith.ZMath
         }
 
         // not evenly spaced
-        private List<Vector3d> MakeLongLats(int x) // x = sections
+        private List<Vector3d> MakeVector3ds(int x) // x = sections
         {
             List<Vector3d> longLats = new List<Vector3d>();
             Random rand = new Random();
@@ -56,7 +56,7 @@ namespace Zenith.ZMath
             {
                 double angle = 2 * Math.PI * i / x;
                 Vector3d pos = (Math.Sin(angle) * randP + Math.Cos(angle) * perp3) * radius + center;// random point on the circle
-                longLats.Add(ToLatLong(pos));
+                longLats.Add(pos);
             }
             return longLats;
         }
@@ -110,14 +110,15 @@ namespace Zenith.ZMath
             return maxLong;
         }
 
-        internal double MinLat()
+        // TODO: maybe don't rely on this
+        internal double Min(Func<Vector3d, double> f)
         {
-            return MakeLongLats(10).Min(x => x.Y);
+            return MakeVector3ds(10).Min(f);
         }
 
-        internal double MaxLat()
+        internal double Max(Func<Vector3d, double> f)
         {
-            return MakeLongLats(10).Max(x => x.Y);
+            return MakeVector3ds(10).Max(f);
         }
 
         internal Vector3d[] GetIntersection(Plane plane)

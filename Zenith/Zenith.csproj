@@ -44,7 +44,6 @@
   <ItemGroup>
     <Compile Include="AdvancedGeometryDataStructures\EditableMesh.cs" />
     <Compile Include="Configuration.cs" />
-    <Compile Include="EditorGameComponents\FlatComponents\GeometryEditor.cs" />
     <Compile Include="EditorGameComponents\FlatComponents\I2DComponent.cs" />
     <Compile Include="EditorGameComponents\BlenderAxis.cs" />
     <Compile Include="EditorGameComponents\CityMarker.cs" />
@@ -63,7 +62,6 @@
     <Compile Include="EditorGameComponents\DebugConsole.cs" />
     <Compile Include="EditorGameComponents\EditorCamera.cs" />
     <Compile Include="EditorGameComponents\IEditorGameComponent.cs" />
-    <Compile Include="EditorGameComponents\MultiResMesh.cs" />
     <Compile Include="EditorGameComponents\SphericalGeometryEditor.cs" />
     <Compile Include="EditorGameComponents\UITemp.cs" />
     <Compile Include="Game1.cs" />
@@ -116,9 +114,12 @@
     <Compile Include="ZGraphics\Pallete.cs" />
     <Compile Include="ZGraphics\SpriteBatchBasic.cs" />
     <Compile Include="ZMath\CubeSector.cs" />
+    <Compile Include="ZMath\CubeSectorManager.cs" />
     <Compile Include="ZMath\ISector.cs" />
+    <Compile Include="ZMath\ISectorManager.cs" />
     <Compile Include="ZMath\Line3.cs" />
     <Compile Include="ZMath\LongLat.cs" />
+    <Compile Include="ZMath\MeractorSectorManager.cs" />
     <Compile Include="ZMath\MercatorSector.cs" />
     <Compile Include="ZMath\Vector2d.cs" />
     <Compile Include="ZMath\Vector3d.cs" />

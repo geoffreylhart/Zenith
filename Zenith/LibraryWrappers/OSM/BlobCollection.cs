@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Zenith.ZGeom;
+using Zenith.ZMath;
 using static Zenith.LibraryWrappers.OSM.Blob;
 using static Zenith.ZGeom.LineGraph;
 
@@ -13,10 +14,12 @@ namespace Zenith.LibraryWrappers.OSM
     class BlobCollection
     {
         private List<Blob> blobs;
+        private ISector sector;
 
-        public BlobCollection(List<Blob> blobs)
+        public BlobCollection(List<Blob> blobs, ISector sector)
         {
             this.blobs = blobs;
+            this.sector = sector;
         }
 
         internal void Init()
@@ -26,15 +29,15 @@ namespace Zenith.LibraryWrappers.OSM
 
         internal LineGraph GetRoadsFast()
         {
-            return GetFast("highway", null);
+            return GetFast("highway", null, sector);
         }
 
-        internal LineGraph GetFast(string key, string value)
+        internal LineGraph GetFast(string key, string value, ISector sector)
         {
             RoadInfoVector roads = new RoadInfoVector();
             foreach (var blob in blobs)
             {
-                var roadInfo = blob.GetVectors(key, value);
+                var roadInfo = blob.GetVectors(key, value, sector);
                 roads.ways.AddRange(roadInfo.ways);
                 foreach (var pair in roadInfo.nodes) roads.nodes.Add(pair.Key, pair.Value);
             }
@@ -72,12 +75,12 @@ namespace Zenith.LibraryWrappers.OSM
         }
         internal LineGraph GetBeachFast()
         {
-            return GetFast("natural", "coastline");
+            return GetFast("natural", "coastline", sector);
         }
 
         internal LineGraph GetLakesFast()
         {
-            return GetFast("natural", "water").ForceDirection(true);
+            return GetFast("natural", "water", sector).ForceDirection(true);
         }
 
         internal LineGraph GetMultiLakesFast()
@@ -128,14 +131,14 @@ namespace Zenith.LibraryWrappers.OSM
             RoadInfoVector roadsInner = new RoadInfoVector();
             foreach (var blob in blobs)
             {
-                var roadInfo = blob.GetVectors(innerWayIds);
+                var roadInfo = blob.GetVectors(innerWayIds, sector);
                 roadsInner.ways.AddRange(roadInfo.ways);
                 foreach (var pair in roadInfo.nodes) roadsInner.nodes.Add(pair.Key, pair.Value);
             }
             RoadInfoVector roadsOuter = new RoadInfoVector();
             foreach (var blob in blobs)
             {
-                var roadInfo = blob.GetVectors(outerWayIds);
+                var roadInfo = blob.GetVectors(outerWayIds, sector);
                 roadsOuter.ways.AddRange(roadInfo.ways);
                 foreach (var pair in roadInfo.nodes) roadsOuter.nodes.Add(pair.Key, pair.Value);
             }

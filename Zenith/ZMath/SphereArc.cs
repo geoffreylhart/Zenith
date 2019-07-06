@@ -30,13 +30,13 @@ namespace Zenith.ZMath
         }
 
         // not evenly spaced
-        private List<Vector3d> MakeLongLats(int x) // x = sections
+        private List<Vector3d> MakeVector3ds(int x) // x = sections
         {
             if (!shortPath) throw new NotImplementedException();
             List<Vector3d> longLats = new List<Vector3d>();
             for (int i = 0; i <= x; i++)
             {
-                longLats.Add(ToLatLong((((start - intersection.center) * i + (stop - intersection.center) * (x - i)) / x).Normalized() * intersection.radius + intersection.center));
+                longLats.Add((((start - intersection.center) * i + (stop - intersection.center) * (x - i)) / x).Normalized() * intersection.radius + intersection.center);
             }
             return longLats;
         }
@@ -84,21 +84,22 @@ namespace Zenith.ZMath
         {
             Plane seamPlane = new Plane(new Vector3d(0, 0, 0), new Vector3d(1, 0, 0));
             Vector3d[] intersections = intersection.GetIntersection(seamPlane);
-            foreach(var v in intersections)
+            foreach (var v in intersections)
             {
                 if (v.Y > 0 && this.InArc(v)) return true;
             }
             return false;
         }
 
-        internal double MinLat()
+        // TODO: maybe don't rely on this
+        internal double Min(Func<Vector3d, double> f)
         {
-            return MakeLongLats(10).Min(x => x.Y);
+            return MakeVector3ds(10).Min(f);
         }
 
-        internal double MaxLat()
+        internal double Max(Func<Vector3d, double> f)
         {
-            return MakeLongLats(10).Max(x => x.Y);
+            return MakeVector3ds(10).Max(f);
         }
     }
 }

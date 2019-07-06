@@ -28,11 +28,12 @@ namespace Zenith.ZGeom
 
         private Vector2d RandomPoint(ISector sector, Random random)
         {
-            double randX = random.NextDouble();
-            double randY = random.NextDouble();
-            var topLeft = sector.TopLeftCorner;
-            var bottomRight = sector.BottomRightCorner;
-            return new Vector2d(topLeft.X * (1 - randX) + bottomRight.X * randX, topLeft.Y * (1 - randY) + bottomRight.Y * randY);
+            throw new NotImplementedException();
+            //double randX = random.NextDouble();
+            //double randY = random.NextDouble();
+            //var topLeft = sector.TopLeftCorner;
+            //var bottomRight = sector.BottomRightCorner;
+            //return new Vector2d(topLeft.X * (1 - randX) + bottomRight.X * randX, topLeft.Y * (1 - randY) + bottomRight.Y * randY);
         }
 
         internal BasicVertexBuffer Construct(GraphicsDevice graphicsDevice, double width, Texture2D texture, ISector sector)

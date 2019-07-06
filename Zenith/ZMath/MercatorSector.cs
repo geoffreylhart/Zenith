@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Xna.Framework;
+using Zenith.MathHelpers;
 
 namespace Zenith.ZMath
 {
@@ -199,6 +201,62 @@ namespace Zenith.ZMath
         public override int GetHashCode()
         {
             return (x * 31 + y) * 31 + zoom;
+        }
+
+        public List<ISector> GetSectorsInRange(double minX, double maxX, double minY, double maxY, int zoom)
+        {
+            if (minX > 1) return new List<ISector>();
+            if (maxX < 0) return new List<ISector>();
+            if (minY > 1) return new List<ISector>();
+            if (maxY < 0) return new List<ISector>();
+            if (zoom < this.zoom) throw new NotImplementedException();
+            int powDiff = 1 << (zoom - this.zoom);
+            int minXR = (int)Math.Floor(Math.Max(Math.Min(minX, 1), 0) * powDiff + this.x * powDiff);
+            int maxXR = (int)Math.Ceiling(Math.Max(Math.Min(maxX, 1), 0) * powDiff + this.x * powDiff);
+            int minYR = (int)Math.Floor(Math.Max(Math.Min(minY, 1), 0) * powDiff + this.y * powDiff);
+            int maxYR = (int)Math.Ceiling(Math.Max(Math.Min(maxY, 1), 0) * powDiff + this.y * powDiff);
+            List<ISector> containedSectors = new List<ISector>();
+            for (int i = minXR; i < maxXR; i++)
+            {
+                for (int j = minYR; j < maxYR; j++)
+                {
+                    containedSectors.Add(new MercatorSector(i, j, zoom));
+                }
+            }
+            return containedSectors;
+        }
+
+        public Vector2d ProjectToLocalCoordinates(Vector3d v)
+        {
+            LongLat longLat = new SphereVector(v).ToLongLat();
+            double localX = (longLat.X + Math.PI) / (ZoomPortion * 2 * Math.PI) - x;
+            double localY = ToY(longLat.Y) / ZoomPortion - y;
+            return new Vector2d(localX, localY);
+        }
+
+        public Vector3d ProjectToSphereCoordinates(Vector2d v)
+        {
+            double longitude = (x + v.X) * (ZoomPortion * 2 * Math.PI) - Math.PI;
+            double latitude = ToLat((y + v.Y) * (ZoomPortion));
+            return new LongLat(longitude, latitude).ToSphereVector();
+        }
+
+        public ISector GetSectorAt(double x, double y, int zoom)
+        {
+            if (x > 1) return null;
+            if (x < 0) return null;
+            if (y > 1) return null;
+            if (y < 0) return null;
+            if (zoom < this.zoom) throw new NotImplementedException();
+            int powDiff = 1 << (zoom - this.zoom);
+            int xr = (int)Math.Floor(Math.Max(Math.Min(x, 1), 0) * powDiff + this.x * powDiff);
+            int yr = (int)Math.Floor(Math.Max(Math.Min(y, 1), 0) * powDiff + this.y * powDiff);
+            return new MercatorSector(xr, yr, zoom);
+        }
+
+        public ISector GetRoot()
+        {
+            return new MercatorSector(0, 0, 0);
         }
     }
 }

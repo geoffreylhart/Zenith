@@ -41,10 +41,10 @@ namespace Zenith.LibraryWrappers
                 if (PixelIsLand(sector))
                 {
                     List<VertexPositionColor> vertices = new List<VertexPositionColor>();
-                    var topLeft = sector.TopLeftCorner;
-                    var topRight = sector.TopRightCorner;
-                    var bottomLeft = sector.BottomLeftCorner;
-                    var bottomRight = sector.BottomRightCorner;
+                    Vector2d topLeft = new Vector2d(sector.X * sector.ZoomPortion, sector.Y * sector.ZoomPortion);
+                    Vector2d topRight = new Vector2d((sector.X + 1) * sector.ZoomPortion, sector.Y * sector.ZoomPortion);
+                    Vector2d bottomLeft = new Vector2d(sector.X * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion);
+                    Vector2d bottomRight = new Vector2d((sector.X + 1) * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion);
                     // TODO: everything is backwards, sadly
                     vertices.Add(new VertexPositionColor(new Vector3((float)topLeft.X, (float)topLeft.Y, -10f), Pallete.GRASS_GREEN));
                     vertices.Add(new VertexPositionColor(new Vector3((float)bottomRight.X, (float)bottomRight.Y, -10f), Pallete.GRASS_GREEN));
@@ -111,7 +111,7 @@ namespace Zenith.LibraryWrappers
         {
             if (landImage == null)
             {
-                string mapFile = @"..\..\..\..\LocalCache\OpenStreetMaps\Renders\Coastline.PNG";
+                string mapFile = OSMPaths.GetCoastlineImagePath(sector);
                 landImage = new Bitmap(mapFile);
             }
             return landImage.GetPixel(sector.X, sector.Y) == System.Drawing.Color.FromArgb(255, 0, 255, 0);
@@ -219,10 +219,10 @@ namespace Zenith.LibraryWrappers
             List<ContourVertex> vertices = new List<ContourVertex>();
             vertices.Add(edgeStart);
             vertices.Add(edgeEnd);
-            vertices.Add(ToVertex(sector.TopLeftCorner));
-            vertices.Add(ToVertex(sector.TopRightCorner));
-            vertices.Add(ToVertex(sector.BottomLeftCorner));
-            vertices.Add(ToVertex(sector.BottomRightCorner));
+            vertices.Add(ToVertex(new Vector2d(sector.X * sector.ZoomPortion, sector.Y * sector.ZoomPortion)));
+            vertices.Add(ToVertex(new Vector2d((sector.X + 1) * sector.ZoomPortion, sector.Y * sector.ZoomPortion)));
+            vertices.Add(ToVertex(new Vector2d(sector.X * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion)));
+            vertices.Add(ToVertex(new Vector2d((sector.X + 1) * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion)));
             vertices.Sort((x, y) => AngleOf(sector, x).CompareTo(AngleOf(sector, y)));
             int start = vertices.IndexOf(edgeStart);
             int end = vertices.IndexOf(edgeEnd);
@@ -233,10 +233,10 @@ namespace Zenith.LibraryWrappers
             }
         }
 
-        private static ContourVertex ToVertex(LongLat longlat)
+        private static ContourVertex ToVertex(Vector2d v)
         {
-            ContourVertex vertex = new ContourVertex(); ;
-            vertex.Position = new Vec3() { X = (float)longlat.X, Y = (float)longlat.Y, Z = 0 };
+            ContourVertex vertex = new ContourVertex();
+            vertex.Position = new Vec3() { X = (float)v.X, Y = (float)v.Y, Z = 0 };
             return vertex;
         }
 
@@ -249,8 +249,8 @@ namespace Zenith.LibraryWrappers
         }
         private static double AngleOf(ISector sector, ContourVertex vertex)
         {
-            double x = vertex.Position.X - sector.Longitude;
-            double y = vertex.Position.Y - sector.Latitude;
+            double x = vertex.Position.X - (sector.X + 0.5) * sector.ZoomPortion;
+            double y = vertex.Position.Y - (sector.X + 0.5) * sector.ZoomPortion;
             return Math.Atan2(y, x);
         }
 
@@ -334,7 +334,7 @@ namespace Zenith.LibraryWrappers
         public static void SegmentOSMPlanet()
         {
             READ_BREAKUP_STEP = int.Parse(File.ReadAllText(OSMPaths.GetPlanetStepPath())); // file should contain the number of physical breakups that were finished
-            List<ISector> quadrants = ZCoords.GetTopmostOSMSectors();
+            List<ISector> quadrants = ZCoords.GetSectorManager().GetTopmostOSMSectors();
             if (READ_BREAKUP_STEP <= CURRENT_BREAKUP_STEP)
             {
                 foreach (var quadrant in quadrants)
@@ -363,7 +363,7 @@ namespace Zenith.LibraryWrappers
             foreach (var quadrant in quadrants)
             {
                 String quadrantPath = OSMPaths.GetSectorPath(quadrant);
-                BreakupFile(quadrantPath, quadrant, ZCoords.GetHighestOSMZoom());
+                BreakupFile(quadrantPath, quadrant, ZCoords.GetSectorManager().GetHighestOSMZoom());
             }
         }
 
@@ -380,7 +380,7 @@ namespace Zenith.LibraryWrappers
         // if we break it up into quadrants using the same library, maybe it'll only take (4+1+1/16...) roughly 5.33 minutes?
         // actually took 8.673 mins (went from 450MB to 455MB)
         // estimated time to segment the whole 43.1 GB planet? 12/28/2018 = 8.673 * 43.1 / 8.05 * 47.7833 = 36.98 hours
-        private static void BreakupFile(string filePath, ISector sector, int targetZoom)
+        public static void BreakupFile(string filePath, ISector sector, int targetZoom)
         {
             if (sector.Zoom == targetZoom) return;
             List<ISector> quadrants = sector.GetChildrenAtLevel(sector.Zoom + 1);
@@ -434,21 +434,21 @@ namespace Zenith.LibraryWrappers
         // make a lo-rez map showing where there's coast so we can flood-fill it later with land/water
         public static void SaveCoastLineMap(GraphicsDevice graphicsDevice)
         {
-            RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 1024, 1024, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
-            graphicsDevice.SetRenderTarget(newTarget);
-            List<ISector> sectorsToCheck = new List<ISector>();
-            foreach (var sector in ZCoords.GetTopmostOSMSectors())
+            foreach (var sector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
             {
-                sectorsToCheck.AddRange(sector.GetChildrenAtLevel(ZCoords.GetHighestOSMZoom()));
-            }
-            foreach (var s in sectorsToCheck)
-            {
-                GraphicsBasic.DrawScreenRect(graphicsDevice, s.X, s.Y, 1, 1, ContainsCoast(s) ? Microsoft.Xna.Framework.Color.Gray : Microsoft.Xna.Framework.Color.White);
-            }
-            string mapFile = @"..\..\..\..\LocalCache\OpenStreetMaps\Renders\Coastline.PNG";
-            using (var writer = File.OpenWrite(mapFile))
-            {
-                newTarget.SaveAsPng(writer, 1024, 1024);
+                RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 1024, 1024, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
+                graphicsDevice.SetRenderTarget(newTarget);
+                List<ISector> sectorsToCheck = new List<ISector>();
+                sectorsToCheck.AddRange(sector.GetChildrenAtLevel(ZCoords.GetSectorManager().GetHighestOSMZoom()));
+                foreach (var s in sectorsToCheck)
+                {
+                    GraphicsBasic.DrawScreenRect(graphicsDevice, s.X, s.Y, 1, 1, ContainsCoast(s) ? Microsoft.Xna.Framework.Color.Gray : Microsoft.Xna.Framework.Color.White);
+                }
+                string mapFile = OSMPaths.GetCoastlineImagePath(sector);
+                using (var writer = File.OpenWrite(mapFile))
+                {
+                    newTarget.SaveAsPng(writer, 1024, 1024);
+                }
             }
         }
 

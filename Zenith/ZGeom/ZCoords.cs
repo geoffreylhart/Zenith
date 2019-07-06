@@ -12,24 +12,9 @@ namespace Zenith.ZGeom
     // class to document all coordinate stuff in the form of code, instead of just writing it down
     public static class ZCoords
     {
-        internal static List<ISector> GetTopmostOSMSectors()
+        public static ISectorManager GetSectorManager()
         {
-            // note: for MercatorSector, would've been return new MercatorSector(0,0,0)
-            List<ISector> sectors = new List<ISector>();
-            sectors.Add(new CubeSector(CubeSector.CubeSectorFace.FRONT, 0, 0, 0));
-            sectors.Add(new CubeSector(CubeSector.CubeSectorFace.BACK, 0, 0, 0));
-            sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 0, 0, 0));
-            sectors.Add(new CubeSector(CubeSector.CubeSectorFace.RIGHT, 0, 0, 0));
-            sectors.Add(new CubeSector(CubeSector.CubeSectorFace.TOP, 0, 0, 0));
-            sectors.Add(new CubeSector(CubeSector.CubeSectorFace.BOTTOM, 0, 0, 0));
-            return sectors;
-        }
-
-        internal static int GetHighestOSMZoom()
-        {
-            // note: same for would've been 10 for MercatorSector
-            // at 8 for CubeSector, we expect 50% more filespace spent on images
-            return 8;
+            return new MercatorSectorManager();
         }
 
         public static string GetFaceAcronym(this CubeSectorFace sectorFace)
@@ -48,6 +33,26 @@ namespace Zenith.ZGeom
                     return "TO";
                 case CubeSectorFace.BOTTOM:
                     return "BO";
+            }
+            throw new NotImplementedException();
+        }
+
+        public static CubeSectorFace FromFaceAcronym(string s)
+        {
+            switch (s)
+            {
+                case "FR":
+                    return CubeSectorFace.FRONT;
+                case "BA":
+                    return CubeSectorFace.BACK;
+                case "LE":
+                    return CubeSectorFace.LEFT;
+                case "RI":
+                    return CubeSectorFace.RIGHT;
+                case "TO":
+                    return CubeSectorFace.TOP;
+                case "BO":
+                    return CubeSectorFace.BOTTOM;
             }
             throw new NotImplementedException();
         }

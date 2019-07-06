@@ -24,7 +24,7 @@ namespace Zenith.LibraryWrappers.OSM
         // parsed stuff
         public PrimitiveBlock pBlock;
 
-        internal RoadInfoVector GetVectors(string key, string value)
+        internal RoadInfoVector GetVectors(string key, string value, ISector sector)
         {
             if (type != "OSMData") return new RoadInfoVector();
             RoadInfoVector info = new RoadInfoVector();
@@ -40,7 +40,7 @@ namespace Zenith.LibraryWrappers.OSM
                     {
                         double longitude = .000000001 * (pBlock.lon_offset + (pBlock.granularity * d.lon[i]));
                         double latitude = .000000001 * (pBlock.lat_offset + (pBlock.granularity * d.lat[i]));
-                        info.nodes[d.id[i]] = new Vector2d(longitude * Math.PI / 180, latitude * Math.PI / 180);
+                        info.nodes[d.id[i]] = sector.GetRoot().ProjectToLocalCoordinates(new LongLat(longitude * Math.PI / 180, latitude * Math.PI / 180).ToSphereVector());
                     }
                 }
             }
@@ -58,7 +58,7 @@ namespace Zenith.LibraryWrappers.OSM
             return info;
         }
 
-        internal RoadInfoVector GetVectors(List<long> ids)
+        internal RoadInfoVector GetVectors(List<long> ids, ISector sector)
         {
             HashSet<long> idHash = new HashSet<long>();
             foreach (var id in ids) idHash.Add(id);
@@ -74,7 +74,7 @@ namespace Zenith.LibraryWrappers.OSM
                     {
                         double longitude = .000000001 * (pBlock.lon_offset + (pBlock.granularity * d.lon[i]));
                         double latitude = .000000001 * (pBlock.lat_offset + (pBlock.granularity * d.lat[i]));
-                        info.nodes[d.id[i]] = new Vector2d(longitude * Math.PI / 180, latitude * Math.PI / 180);
+                        info.nodes[d.id[i]] = sector.GetRoot().ProjectToLocalCoordinates(new LongLat(longitude * Math.PI / 180, latitude * Math.PI / 180).ToSphereVector());
                     }
                 }
             }

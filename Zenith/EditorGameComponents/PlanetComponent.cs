@@ -10,6 +10,7 @@ using Zenith.EditorGameComponents.FlatComponents;
 using Zenith.EditorGameComponents.UIComponents;
 using Zenith.MathHelpers;
 using Zenith.PrimitiveBuilder;
+using Zenith.ZGeom;
 using Zenith.ZGraphics;
 using Zenith.ZMath;
 
@@ -40,20 +41,23 @@ namespace Zenith.EditorGameComponents
             var basicEffect3 = this.GetDefaultEffect();
             camera.ApplyMatrices(basicEffect3);
             basicEffect3.TextureEnabled = true;
-            LongLatBounds bounds = GetLongLatBounds();
-            VertexIndiceBuffer sphere = SphereBuilder.MakeSphereSegExplicit(GraphicsDevice, 2, bounds.minLong, bounds.minLat, bounds.maxLong, bounds.maxLat);
-            Texture2D renderToTexture = GetTexture(bounds);
-            basicEffect3.Texture = renderToTexture;
-            GraphicsDevice.SetRenderTarget(Game1.renderTarget);
-            foreach (EffectPass pass in basicEffect3.CurrentTechnique.Passes)
+            foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
             {
-                pass.Apply();
-                GraphicsDevice.Indices = sphere.indices;
-                GraphicsDevice.SetVertexBuffer(sphere.vertices);
-                GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, sphere.indices.IndexCount / 3);
+                SectorBounds bounds = GetSectorBounds(rootSector);
+                VertexIndiceBuffer sphere = SphereBuilder.MakeSphereSegExplicit(GraphicsDevice, rootSector, 2, bounds.minX, bounds.minY, bounds.maxX, bounds.maxY);
+                Texture2D renderToTexture = GetTexture(bounds, rootSector);
+                basicEffect3.Texture = renderToTexture;
+                GraphicsDevice.SetRenderTarget(Game1.renderTarget);
+                foreach (EffectPass pass in basicEffect3.CurrentTechnique.Passes)
+                {
+                    pass.Apply();
+                    GraphicsDevice.Indices = sphere.indices;
+                    GraphicsDevice.SetVertexBuffer(sphere.vertices);
+                    GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, sphere.indices.IndexCount / 3);
+                }
+                sphere.vertices.Dispose();
+                sphere.indices.Dispose();
             }
-            sphere.vertices.Dispose();
-            sphere.indices.Dispose();
             GraphicsDevice.SetRenderTarget(null);
         }
 
@@ -93,7 +97,7 @@ namespace Zenith.EditorGameComponents
             basicEffect.AmbientLightColor = new Vector3(0.2f, 0.2f, 0.2f);
             return basicEffect;
         }
-        private Texture2D GetTexture(LongLatBounds bounds)
+        private Texture2D GetTexture(SectorBounds bounds, ISector rootSector)
         {
             // Set the render target
             GraphicsDevice.SetRenderTarget(renderTarget);
@@ -106,11 +110,11 @@ namespace Zenith.EditorGameComponents
             bf.World = Matrix.Identity;
             //bf.World *= Matrix.CreateTranslation((float)marker.X, (float)marker.Y, (float)marker.Z);
             bf.View = Matrix.CreateLookAt(new Vector3(0.0f, 0.0f, 1.0f), Vector3.Zero, Vector3.Up);
-            bf.Projection = Matrix.CreateOrthographicOffCenter((float)bounds.minLong, (float)bounds.maxLong, (float)bounds.maxLat, (float)bounds.minLat, 1, 1000);
+            bf.Projection = Matrix.CreateOrthographicOffCenter((float)bounds.minX, (float)bounds.maxX, (float)bounds.maxY, (float)bounds.minY, 1, 1000);
 
             foreach (var layer in flatComponents)
             {
-                layer.Draw(renderTarget, bounds.minLong, bounds.maxLong, bounds.minLat, bounds.maxLat, camera.cameraZoom);
+                layer.Draw(renderTarget, rootSector, bounds.minX, bounds.maxX, bounds.minY, bounds.maxY, camera.cameraZoom);
             }
 
             // Drop the render target
@@ -118,7 +122,7 @@ namespace Zenith.EditorGameComponents
             return renderTarget;
         }
 
-        private LongLatBounds GetLongLatBounds()
+        private SectorBounds GetSectorBounds(ISector rootSector)
         {
             // apparently we don't want to call this after changing our render target
             double w = GraphicsDevice.Viewport.Width;
@@ -133,7 +137,7 @@ namespace Zenith.EditorGameComponents
             if (rightArc != null) arcs.Add(rightArc);
             if (bottomArc != null) arcs.Add(bottomArc);
             Circle3 visible = camera.GetUnitSphereVisibleCircle();
-            double minLong, maxLong, minLat, maxLat;
+            double minX, maxX, minY, maxY;
             if (arcs.Count > 0)
             {
                 int cnt = arcs.Count;
@@ -149,31 +153,31 @@ namespace Zenith.EditorGameComponents
                         arcs.Add(new SphereArc(visible, close1, close2, true));
                     }
                 }
-                minLong = arcs.Min(x => x.MinLong());
-                maxLong = arcs.Max(x => x.MaxLong());
-                minLat = arcs.Min(x => x.MinLat());
-                maxLat = arcs.Max(x => x.MaxLat());
+                minX = arcs.Min(x => x.Min(y => rootSector.ProjectToLocalCoordinates(y).X));
+                maxX = arcs.Max(x => x.Max(y => rootSector.ProjectToLocalCoordinates(y).X));
+                minY = arcs.Min(x => x.Min(y => rootSector.ProjectToLocalCoordinates(y).Y));
+                maxY = arcs.Max(x => x.Max(y => rootSector.ProjectToLocalCoordinates(y).Y));
             }
             else
             {
-                minLong = visible.MinLong();
-                maxLong = visible.MaxLong();
-                minLat = visible.MinLat();
-                maxLat = visible.MaxLat();
+                minX = visible.Min(x => rootSector.ProjectToLocalCoordinates(x).X);
+                maxX = visible.Max(x => rootSector.ProjectToLocalCoordinates(x).X);
+                minY = visible.Min(x => rootSector.ProjectToLocalCoordinates(x).Y);
+                maxY = visible.Max(x => rootSector.ProjectToLocalCoordinates(x).Y);
             }
-            if (camera.IsUnitSpherePointVisible(new Vector3d(0, 0, 1)))
-            {
-                maxLat = Math.PI / 2;
-                minLong = -Math.PI;
-                maxLong = Math.PI;
-            }
-            if (camera.IsUnitSpherePointVisible(new Vector3d(0, 0, -1)))
-            {
-                minLat = -Math.PI / 2;
-                minLong = -Math.PI;
-                maxLong = Math.PI;
-            }
-            return new LongLatBounds(minLong, maxLong, minLat, maxLat);
+            //if (camera.IsUnitSpherePointVisible(new Vector3d(0, 0, 1)))
+            //{
+            //    maxY = Math.PI / 2;
+            //    minX = -Math.PI;
+            //    maxX = Math.PI;
+            //}
+            //if (camera.IsUnitSpherePointVisible(new Vector3d(0, 0, -1)))
+            //{
+            //    minY = -Math.PI / 2;
+            //    minX = -Math.PI;
+            //    maxX = Math.PI;
+            //}
+            return new SectorBounds(minX, maxX, minY, maxY);
         }
 
         public List<string> GetDebugInfo()
@@ -191,19 +195,19 @@ namespace Zenith.EditorGameComponents
             return flatComponents.Where(x => x is IEditorGameComponent).Cast<IEditorGameComponent>().ToList();
         }
 
-        class LongLatBounds
+        class SectorBounds
         {
-            public double minLong;
-            public double maxLong;
-            public double minLat;
-            public double maxLat;
+            public double minX;
+            public double maxX;
+            public double minY;
+            public double maxY;
 
-            public LongLatBounds(double minLong, double maxLong, double minLat, double maxLat)
+            public SectorBounds(double minX, double maxX, double minY, double maxY)
             {
-                this.minLong = minLong;
-                this.maxLong = maxLong;
-                this.minLat = minLat;
-                this.maxLat = maxLat;
+                this.minX = minX;
+                this.maxX = maxX;
+                this.minY = minY;
+                this.maxY = maxY;
             }
         }
     }

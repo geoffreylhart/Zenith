@@ -29,6 +29,8 @@ namespace Zenith.ZMath
 
         public LongLat BottomRightCorner => throw new NotImplementedException();
 
+        public double ZoomPortion { get { return Math.Pow(0.5, zoom); } }
+
         public double Longitude => throw new NotImplementedException();
 
         public double Latitude => throw new NotImplementedException();
@@ -123,6 +125,92 @@ namespace Zenith.ZMath
         public enum CubeSectorFace
         {
             FRONT, BACK, LEFT, RIGHT, TOP, BOTTOM
+        }
+
+        public override bool Equals(object obj)
+        {
+            CubeSector that = (CubeSector)obj;
+            if (this.x != that.x) return false;
+            if (this.y != that.y) return false;
+            if (this.zoom != that.zoom) return false;
+            if (this.sectorFace != that.sectorFace) return false;
+            return true;
+        }
+
+        public override int GetHashCode()
+        {
+            return ((x * 31 + y) * 31 + zoom) * 31 + (int)sectorFace;
+        }
+
+        public List<ISector> GetSectorsInRange(double minX, double maxX, double minY, double maxY, int zoom)
+        {
+            if (minX > 1) return new List<ISector>();
+            if (maxX < 0) return new List<ISector>();
+            if (minY > 1) return new List<ISector>();
+            if (maxY < 0) return new List<ISector>();
+            if (zoom > this.zoom) throw new NotImplementedException();
+            int powDiff = 1 << (zoom - this.zoom);
+            int minXR = (int)Math.Floor(Math.Max(Math.Min(minX, 1), 0) * powDiff + this.x * powDiff);
+            int maxXR = (int)Math.Ceiling(Math.Max(Math.Min(maxX, 1), 0) * powDiff + this.x * powDiff);
+            int minYR = (int)Math.Floor(Math.Max(Math.Min(minY, 1), 0) * powDiff + this.y * powDiff);
+            int maxYR = (int)Math.Ceiling(Math.Max(Math.Min(maxY, 1), 0) * powDiff + this.y * powDiff);
+            List<ISector> containedSectors = new List<ISector>();
+            for (int i = minXR; i < maxXR; i++)
+            {
+                for (int j = minYR; j < maxYR; j++)
+                {
+                    containedSectors.Add(new CubeSector(this.sectorFace, i, j, zoom));
+                }
+            }
+            return containedSectors;
+        }
+
+        public Vector2d ProjectToLocalCoordinates(Vector3d v)
+        {
+            Vector3d up = sectorFace.GetFaceUpDirection();
+            Vector3d right = sectorFace.GetFaceRightDirection();
+            Vector3d normal = sectorFace.GetFaceNormal();
+            double relX = (GetRel(normal, right, v) + 1) / 2 * (1 << Zoom);
+            double relY = (GetRel(normal, up, v) + 1) / 2 * (1 << Zoom);
+            return new Vector2d(relX - X, relY - Y);
+        }
+
+        public Vector3d ProjectToSphereCoordinates(Vector2d v)
+        {
+            Vector3d up = sectorFace.GetFaceUpDirection();
+            Vector3d right = sectorFace.GetFaceRightDirection();
+            Vector3d normal = sectorFace.GetFaceNormal();
+            return RotatePortion(RotatePortion(normal, right, v.X - 0.5), up, v.Y - 0.5);
+        }
+
+        private Vector3d RotatePortion(Vector3d from, Vector3d to, double x)
+        {
+            from = from.Normalized();
+            to = to.Normalized();
+            var cross = from.Cross(to);
+            var crossAngle = Math.Asin(cross.Length());
+            var newCrossAngle = crossAngle * x;
+            // newAxis needs to be 90 from "from" and point towards "to"
+            var newAxis = cross.Cross(from).Normalized();
+            return from * Math.Cos(newCrossAngle) + newAxis * Math.Sin(newCrossAngle);
+        }
+
+        public ISector GetSectorAt(double x, double y, int zoom)
+        {
+            if (x > 1) return null;
+            if (x < 0) return null;
+            if (y > 1) return null;
+            if (y < 0) return null;
+            if (zoom < this.zoom) throw new NotImplementedException();
+            int powDiff = 1 << (zoom - this.zoom);
+            int xr = (int)Math.Floor(Math.Max(Math.Min(x, 1), 0) * powDiff + this.x * powDiff);
+            int yr = (int)Math.Floor(Math.Max(Math.Min(y, 1), 0) * powDiff + this.y * powDiff);
+            return new CubeSector(this.sectorFace, xr, yr, zoom);
+        }
+
+        public ISector GetRoot()
+        {
+            return new CubeSector(sectorFace, 0, 0, 0);
         }
     }
 }

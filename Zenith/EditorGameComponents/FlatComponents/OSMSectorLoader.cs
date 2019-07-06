@@ -9,6 +9,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Zenith.LibraryWrappers;
 using Zenith.LibraryWrappers.OSM;
+using Zenith.ZGeom;
 using Zenith.ZGraphics;
 using Zenith.ZGraphics.GraphicsBuffers;
 using Zenith.ZMath;
@@ -17,37 +18,32 @@ namespace Zenith.EditorGameComponents.FlatComponents
 {
     class OSMSectorLoader : SectorLoader
     {
-        private static string mapFolder = @"..\..\..\..\LocalCache\OpenStreetMaps\Renders\";
-
-        public override bool CacheExists(MercatorSector sector)
+        public override bool CacheExists(ISector sector)
         {
             String fileName = sector.ToString() + ".PNG";
-            String filePath = mapFolder + fileName;
+            String filePath = Path.Combine(OSMPaths.GetRenderRoot(), fileName);
             return File.Exists(filePath);
         }
 
-        public override bool DoAutoLoad(MercatorSector sector)
+        public override bool DoAutoLoad(ISector sector)
         {
             return sector.Zoom <= 7 || sector.Zoom == 10;
         }
 
-        public override bool AllowUnload(MercatorSector sector)
+        public override bool AllowUnload(ISector sector)
         {
             return sector.Zoom <= 7;
         }
 
-        public override IEnumerable<MercatorSector> EnumerateCachedSectors()
+        public override IEnumerable<ISector> EnumerateCachedSectors()
         {
-            foreach (var file in Directory.EnumerateFiles(mapFolder))
+            var manager = ZCoords.GetSectorManager();
+            foreach (var file in Directory.EnumerateFiles(OSMPaths.GetRenderRoot()))
             {
                 String filename = Path.GetFileName(file);
-                if (filename.StartsWith("X"))
+                if (!filename.StartsWith("Coast"))
                 {
-                    String[] split = filename.Split(',');
-                    int x = int.Parse(split[0].Split('=')[1]);
-                    int y = int.Parse(split[1].Split('=')[1]);
-                    int zoom = int.Parse(split[2].Split('=', '.')[1]);
-                    yield return new MercatorSector(x, y, zoom);
+                    yield return manager.FromString(filename.Split('.')[0]);
                 }
             }
         }
@@ -55,15 +51,15 @@ namespace Zenith.EditorGameComponents.FlatComponents
         public override IGraphicsBuffer GetGraphicsBuffer(GraphicsDevice graphicsDevice, ISector sector)
         {
             String fileName = sector.ToString() + ".PNG";
-            if (File.Exists(mapFolder + fileName))
+            if (File.Exists(Path.Combine(OSMPaths.GetRenderRoot(), fileName)))
             {
-                using (var reader = File.OpenRead(mapFolder + fileName))
+                using (var reader = File.OpenRead(Path.Combine(OSMPaths.GetRenderRoot(), fileName)))
                 {
                     return new ImageTileBuffer(graphicsDevice, Texture2D.FromStream(graphicsDevice, reader), sector);
                 }
             }
             // otherwise, build it
-            if (sector.Zoom >= 10)
+            if (sector.Zoom >= ZCoords.GetSectorManager().GetHighestOSMZoom())
             {
                 VectorTileBuffer buffer = new VectorTileBuffer();
                 Stopwatch sw = new Stopwatch();
@@ -118,7 +114,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 }
                 if (sector.Zoom <= 7)
                 {
-                    using (var writer = File.OpenWrite(mapFolder + fileName))
+                    using (var writer = File.OpenWrite(Path.Combine(OSMPaths.GetRenderRoot(), fileName)))
                     {
                         rendered.SaveAsPng(writer, rendered.Width, rendered.Height);
                     }
