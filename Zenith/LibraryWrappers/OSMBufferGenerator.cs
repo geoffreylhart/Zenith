@@ -434,9 +434,11 @@ namespace Zenith.LibraryWrappers
         // make a lo-rez map showing where there's coast so we can flood-fill it later with land/water
         public static void SaveCoastLineMap(GraphicsDevice graphicsDevice)
         {
-            foreach (var sector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
+            var manager = ZCoords.GetSectorManager();
+            int imageSize = 1 << manager.GetHighestOSMZoom();
+            foreach (var sector in manager.GetTopmostOSMSectors())
             {
-                RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 1024, 1024, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
+                RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, imageSize, imageSize, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
                 graphicsDevice.SetRenderTarget(newTarget);
                 List<ISector> sectorsToCheck = new List<ISector>();
                 sectorsToCheck.AddRange(sector.GetChildrenAtLevel(ZCoords.GetSectorManager().GetHighestOSMZoom()));
@@ -447,7 +449,7 @@ namespace Zenith.LibraryWrappers
                 string mapFile = OSMPaths.GetCoastlineImagePath(sector);
                 using (var writer = File.OpenWrite(mapFile))
                 {
-                    newTarget.SaveAsPng(writer, 1024, 1024);
+                    newTarget.SaveAsPng(writer, imageSize, imageSize);
                 }
             }
         }

@@ -46,7 +46,7 @@ namespace Zenith.LibraryWrappers.OSM
 
         public static string GetOpenStreetMapsRoot()
         {
-            return @"..\..\..\..\LocalCache\OpenStreetMapsOld";
+            return @"..\..\..\..\LocalCache\OpenStreetMaps";
         }
 
         public static string GetRenderRoot()

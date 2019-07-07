@@ -103,13 +103,15 @@ namespace Zenith.ZMath
 
         // return the portion x is betweeen from and to (negative values allowed)
         // portion is angular portion (as opposed to sin or w/e)
+        // we're changing this to require from and to to be right angles now...
         public double GetRel(Vector3d from, Vector3d to, Vector3d x)
         {
             from = from.Normalized();
             to = to.Normalized();
-            Plane plane = new Plane(new Vector3d(0, 0, 0), from.Cross(to)); // doesn't matter if the normal is negative or positive
-            var projected = plane.Project(x).Normalized();
-            return Math.Asin(projected.Cross(from).Dot(to.Cross(from))) / (Math.PI / 4);
+            x = x.Normalized();
+            double xComp = x.Dot(from);
+            double yComp = x.Dot(to);
+            return Math.Atan2(yComp, xComp) / (Math.PI / 4);
         }
 
         public override string ToString()

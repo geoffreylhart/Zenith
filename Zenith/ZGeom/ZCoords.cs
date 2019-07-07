@@ -14,7 +14,7 @@ namespace Zenith.ZGeom
     {
         public static ISectorManager GetSectorManager()
         {
-            return new MercatorSectorManager();
+            return new CubeSectorManager();
         }
 
         public static string GetFaceAcronym(this CubeSectorFace sectorFace)

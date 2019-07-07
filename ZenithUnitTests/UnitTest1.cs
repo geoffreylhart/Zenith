@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Zenith.EditorGameComponents;
 using Zenith.MathHelpers;
@@ -52,6 +54,10 @@ namespace ZenithUnitTests
             DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(0, Math.PI / 2), false, 0);
             DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(0, 3 * Math.PI / 8), false, -0.5);
             DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(0, Math.PI / 4), false, -1);
+            // check for values outside 1 and -1
+            DoCubeFaceTest(CubeSectorFace.LEFT, new LongLat(Math.PI / 8, 0), true, 2.5);
+            DoCubeFaceTest(CubeSectorFace.RIGHT, new LongLat(Math.PI / 8, 0), true, -1.5);
+            DoCubeFaceTest(CubeSectorFace.BACK, new LongLat(Math.PI / 8, 0), true, -3.5);
         }
 
         private void DoCubeFaceTest(CubeSectorFace face, LongLat longLat, bool doXNotY, double expectedAnswer)
@@ -67,6 +73,35 @@ namespace ZenithUnitTests
             else
             {
                 AssertIsClose(front.GetRel(normal, up, longLat.ToSphereVector()), expectedAnswer);
+            }
+        }
+
+        [TestMethod]
+        public void TestSectorPointCoverage()
+        {
+            Random r = new Random();
+            foreach (var manager in new ISectorManager[] { new MercatorSectorManager(), new CubeSectorManager() })
+            {
+                var sectors = new List<ISector>();
+                foreach (var root in manager.GetTopmostOSMSectors())
+                {
+                    sectors.AddRange(root.GetChildrenAtLevel(3));
+                }
+                for (int i = 0; i < 1000; i++)
+                {
+                    LongLat longLat;
+                    if (manager is MercatorSectorManager)
+                    {
+                        // mercator can't show poles
+                        longLat = new LongLat(r.NextDouble() * 2 * Math.PI - Math.PI, (r.NextDouble() - 0.5) * 85.051129 * 2 * Math.PI / 180);
+                    }
+                    else
+                    {
+                        longLat = new LongLat(r.NextDouble() * 2 * Math.PI - Math.PI, r.NextDouble() * Math.PI - Math.PI / 2);
+                    }
+                    var sectorsThatCover = sectors.Where(x => x.ContainsLongLat(longLat)).ToList();
+                    Assert.AreEqual(sectorsThatCover.Count, 1);
+                }
             }
         }
     }
