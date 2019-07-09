@@ -333,7 +333,7 @@ namespace Zenith.LibraryWrappers
         static int READ_BREAKUP_STEP = 0; // easy way to allow continuation, should usually equal (#filesThatArenttoplevel)/3
         public static void SegmentOSMPlanet()
         {
-            READ_BREAKUP_STEP = int.Parse(File.ReadAllText(OSMPaths.GetPlanetStepPath())); // file should contain the number of physical breakups that were finished
+            READ_BREAKUP_STEP = int.Parse(File.ReadAllText(OSMPaths.GetPlanetStepPath()).Split(',')[0]); // file should contain the number of physical breakups that were finished
             List<ISector> quadrants = ZCoords.GetSectorManager().GetTopmostOSMSectors();
             if (READ_BREAKUP_STEP <= CURRENT_BREAKUP_STEP)
             {
@@ -347,7 +347,7 @@ namespace Zenith.LibraryWrappers
                     {
                         using (var source = new PBFOsmStreamSource(fileInfoStream))
                         {
-                            var filtered = source.FilterNodes(x => x.Longitude.HasValue && x.Latitude.HasValue && quadrant.ContainsLongLat(new LongLat(x.Longitude.Value, x.Latitude.Value)));
+                            var filtered = source.FilterNodes(x => x.Longitude.HasValue && x.Latitude.HasValue && quadrant.ContainsLongLat(new LongLat(x.Longitude.Value * Math.PI / 180, x.Latitude.Value * Math.PI / 180)), true);
                             using (var stream = new FileInfo(quadrantPath).Open(FileMode.Create, FileAccess.ReadWrite))
                             {
                                 var target = new PBFOsmStreamTarget(stream, true);
@@ -372,7 +372,7 @@ namespace Zenith.LibraryWrappers
             CURRENT_BREAKUP_STEP++;
             if (READ_BREAKUP_STEP <= CURRENT_BREAKUP_STEP)
             {
-                File.WriteAllText(OSMPaths.GetPlanetStepPath(), CURRENT_BREAKUP_STEP.ToString());
+                File.WriteAllText(OSMPaths.GetPlanetStepPath(), CURRENT_BREAKUP_STEP + ", " + (CURRENT_BREAKUP_STEP / 131071.0 * 100) + "%");
             }
         }
 
@@ -396,7 +396,7 @@ namespace Zenith.LibraryWrappers
                     {
                         using (var source = new PBFOsmStreamSource(fileInfoStream))
                         {
-                            var filtered = source.FilterNodes(x => x.Longitude.HasValue && x.Latitude.HasValue && quadrant.ContainsLongLat(new LongLat(x.Longitude.Value, x.Latitude.Value)));
+                            var filtered = source.FilterNodes(x => x.Longitude.HasValue && x.Latitude.HasValue && quadrant.ContainsLongLat(new LongLat(x.Longitude.Value * Math.PI / 180, x.Latitude.Value * Math.PI / 180)), true);
                             using (var stream = new FileInfo(quadrantPath).Open(FileMode.Create, FileAccess.ReadWrite))
                             {
                                 var target = new PBFOsmStreamTarget(stream, true);
@@ -407,7 +407,7 @@ namespace Zenith.LibraryWrappers
                         }
                     }
                 }
-                if (sector.Zoom > 0) File.Delete(filePath);
+                if (Path.GetFileName(filePath).ToLower() != Path.GetFileName(OSMPaths.GetPlanetPath()).ToLower()) File.Delete(filePath);
             }
             BreakupStepDone();
             foreach (var quadrant in quadrants)
@@ -444,7 +444,14 @@ namespace Zenith.LibraryWrappers
                 sectorsToCheck.AddRange(sector.GetChildrenAtLevel(ZCoords.GetSectorManager().GetHighestOSMZoom()));
                 foreach (var s in sectorsToCheck)
                 {
-                    GraphicsBasic.DrawScreenRect(graphicsDevice, s.X, s.Y, 1, 1, ContainsCoast(s) ? Microsoft.Xna.Framework.Color.Gray : Microsoft.Xna.Framework.Color.White);
+                    if (File.Exists(OSMPaths.GetSectorPath(s)))
+                    {
+                        GraphicsBasic.DrawScreenRect(graphicsDevice, s.X, s.Y, 1, 1, ContainsCoast(s) ? Microsoft.Xna.Framework.Color.Gray : Microsoft.Xna.Framework.Color.White);
+                    }
+                    else
+                    {
+                        GraphicsBasic.DrawScreenRect(graphicsDevice, s.X, s.Y, 1, 1, Microsoft.Xna.Framework.Color.Red);
+                    }
                 }
                 string mapFile = OSMPaths.GetCoastlineImagePath(sector);
                 using (var writer = File.OpenWrite(mapFile))
