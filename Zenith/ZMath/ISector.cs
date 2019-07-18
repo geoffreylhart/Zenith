@@ -21,7 +21,6 @@ namespace Zenith.ZMath
         bool ContainsLongLat(LongLat longLat);
         int GetRelativeXOf(ISector sector);
         int GetRelativeYOf(ISector sector);
-        LongLat[] GetIntersections(LongLat ll1, LongLat ll2);
 
         // all coordinates given between 0 - 1
         List<ISector> GetSectorsInRange(double minX, double maxX, double minY, double maxY, int zoom);
@@ -30,5 +29,6 @@ namespace Zenith.ZMath
         Vector3d ProjectToSphereCoordinates(Vector2d v);
         ISector GetSectorAt(double x, double y, int zoom);
         ISector GetRoot();
+        bool ContainsRootCoord(Vector2d v);
     }
 }

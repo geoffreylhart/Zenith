@@ -101,6 +101,13 @@ namespace Zenith.ZMath
             return true;
         }
 
+        public bool ContainsRootCoord(Vector2d v)
+        {
+            if (v.X < x * ZoomPortion || v.X > (x + 1) * ZoomPortion) return false;
+            if (v.Y < y * ZoomPortion || v.Y > (y + 1) * ZoomPortion) return false;
+            return true;
+        }
+
         // return the portion x is betweeen from and to (negative values allowed)
         // portion is angular portion (as opposed to sin or w/e)
         // we're changing this to require from and to to be right angles now...

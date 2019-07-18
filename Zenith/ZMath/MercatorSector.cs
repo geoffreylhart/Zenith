@@ -138,44 +138,12 @@ namespace Zenith.ZMath
             return true;
         }
 
-        // do we treat these as straight lines or arc lines?
-        // I guess lets do straight lines
-        // let's return them in order of intersection
-        public LongLat[] GetIntersections(LongLat start, LongLat end)
+        public bool ContainsRootCoord(Vector2d v)
         {
-            List<LongLat> answer = new List<LongLat>();
-            answer.AddRange(GetIntersections(start, end, TopLeftCorner, TopRightCorner));
-            answer.AddRange(GetIntersections(start, end, TopRightCorner, BottomRightCorner));
-            answer.AddRange(GetIntersections(start, end, BottomRightCorner, BottomLeftCorner));
-            answer.AddRange(GetIntersections(start, end, BottomLeftCorner, TopLeftCorner));
-            answer.Sort((x, y) => (Math.Pow(x.X - start.X, 2) * Math.Pow(x.Y - start.Y, 2)).CompareTo(Math.Pow(y.X - start.X, 2) * Math.Pow(y.Y - start.Y, 2)));
-            return answer.ToArray();
+            if (v.X < x * ZoomPortion || v.X > (x + 1) * ZoomPortion) return false;
+            if (v.Y < y * ZoomPortion || v.Y > (y + 1) * ZoomPortion) return false;
+            return true;
         }
-
-        private LongLat[] GetIntersections(LongLat A, LongLat B, LongLat C, LongLat D)
-        {
-            LongLat CmP = new LongLat(C.X - A.X, C.Y - A.Y);
-            LongLat r = new LongLat(B.X - A.X, B.Y - A.Y);
-            LongLat s = new LongLat(D.X - C.X, D.Y - C.Y);
-
-            double CmPxr = CmP.X * r.Y - CmP.Y * r.X;
-            double CmPxs = CmP.X * s.Y - CmP.Y * s.X;
-            double rxs = r.X * s.Y - r.Y * s.X;
-
-            double rxsr = 1f / rxs;
-            double t = CmPxs * rxsr;
-            double u = CmPxr * rxsr;
-
-            if ((t >= 0) && (t <= 1) && (u >= 0) && (u <= 1))
-            {
-                return new[] { new LongLat(A.X * (1 - t) + B.X * t, A.Y * (1 - t) + B.Y * t) };
-            }
-            else
-            {
-                return new LongLat[0];
-            }
-        }
-
 
         private static double ToLat(double y)
         {

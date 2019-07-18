@@ -45,13 +45,13 @@ namespace Zenith.LibraryWrappers
                     Vector2d topRight = new Vector2d((sector.X + 1) * sector.ZoomPortion, sector.Y * sector.ZoomPortion);
                     Vector2d bottomLeft = new Vector2d(sector.X * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion);
                     Vector2d bottomRight = new Vector2d((sector.X + 1) * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion);
-                    // TODO: everything is backwards, sadly
+                    // TODO: everything is backwards, sadly (or not, did we magically fix this?)
                     vertices.Add(new VertexPositionColor(new Vector3((float)topLeft.X, (float)topLeft.Y, -10f), Pallete.GRASS_GREEN));
-                    vertices.Add(new VertexPositionColor(new Vector3((float)bottomRight.X, (float)bottomRight.Y, -10f), Pallete.GRASS_GREEN));
                     vertices.Add(new VertexPositionColor(new Vector3((float)topRight.X, (float)topRight.Y, -10f), Pallete.GRASS_GREEN));
-                    vertices.Add(new VertexPositionColor(new Vector3((float)topLeft.X, (float)topLeft.Y, -10f), Pallete.GRASS_GREEN));
-                    vertices.Add(new VertexPositionColor(new Vector3((float)bottomLeft.X, (float)bottomLeft.Y, -10f), Pallete.GRASS_GREEN));
                     vertices.Add(new VertexPositionColor(new Vector3((float)bottomRight.X, (float)bottomRight.Y, -10f), Pallete.GRASS_GREEN));
+                    vertices.Add(new VertexPositionColor(new Vector3((float)topLeft.X, (float)topLeft.Y, -10f), Pallete.GRASS_GREEN));
+                    vertices.Add(new VertexPositionColor(new Vector3((float)bottomRight.X, (float)bottomRight.Y, -10f), Pallete.GRASS_GREEN));
+                    vertices.Add(new VertexPositionColor(new Vector3((float)bottomLeft.X, (float)bottomLeft.Y, -10f), Pallete.GRASS_GREEN));
                     return vertices;
                 }
             }
@@ -106,15 +106,15 @@ namespace Zenith.LibraryWrappers
             return blobs.GetBeachFast().ConstructAsRoads(graphicsDevice, width, GlobalContent.BeachFlipped, Microsoft.Xna.Framework.Color.White);
         }
 
-        static Bitmap landImage = null;
+        static Dictionary<ISector, Bitmap> landImages = new Dictionary<ISector, Bitmap>();
         private static bool PixelIsLand(ISector sector)
         {
-            if (landImage == null)
+            if (!landImages.ContainsKey(sector.GetRoot())) // 
             {
                 string mapFile = OSMPaths.GetCoastlineImagePath(sector);
-                landImage = new Bitmap(mapFile);
+                landImages[sector.GetRoot()] = new Bitmap(mapFile);
             }
-            return landImage.GetPixel(sector.X, sector.Y) == System.Drawing.Color.FromArgb(255, 0, 255, 0);
+            return landImages[sector.GetRoot()].GetPixel(sector.X, sector.Y) == System.Drawing.Color.FromArgb(255, 0, 255, 0);
         }
 
         // cut off the lines hanging outside of the sector
@@ -125,14 +125,14 @@ namespace Zenith.LibraryWrappers
             foreach (var contour in contours)
             {
                 List<ContourVertex> currLine = new List<ContourVertex>();
-                bool lastPointInside = sector.ContainsLongLat(new LongLat(contour[0].Position.X, contour[0].Position.Y));
+                bool lastPointInside = sector.ContainsRootCoord(new Vector2d(contour[0].Position.X, contour[0].Position.Y));
                 if (lastPointInside) currLine.Add(contour[0]);
                 for (int i = 1; i < contour.Count; i++) // iterate through lines
                 {
-                    LongLat ll1 = new LongLat(contour[i - 1].Position.X, contour[i - 1].Position.Y);
-                    LongLat ll2 = new LongLat(contour[i].Position.X, contour[i].Position.Y);
-                    bool isInside = sector.ContainsLongLat(ll2);
-                    LongLat[] intersections = sector.GetIntersections(ll1, ll2);
+                    Vector2d v1 = new Vector2d(contour[i - 1].Position.X, contour[i - 1].Position.Y);
+                    Vector2d v2 = new Vector2d(contour[i].Position.X, contour[i].Position.Y);
+                    bool isInside = sector.ContainsRootCoord(v2);
+                    Vector2d[] intersections = GetIntersections(sector, v1, v2);
                     if (lastPointInside && intersections.Length == 0)
                     {
                         currLine.Add(contour[i]);
@@ -158,6 +158,48 @@ namespace Zenith.LibraryWrappers
                 if (currLine.Count > 0) answer.Add(currLine);
             }
             return answer;
+        }
+
+        // do we treat these as straight lines or arc lines?
+        // I guess lets do straight lines
+        // let's return them in order of intersection
+        private static Vector2d[] GetIntersections(ISector sector, Vector2d start, Vector2d end)
+        {
+            Vector2d topLeft = new Vector2d(sector.X * sector.ZoomPortion, sector.Y * sector.ZoomPortion);
+            Vector2d topRight = new Vector2d((sector.X + 1) * sector.ZoomPortion, sector.Y * sector.ZoomPortion);
+            Vector2d bottomLeft = new Vector2d(sector.X * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion);
+            Vector2d bottomRight = new Vector2d((sector.X + 1) * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion);
+            List<Vector2d> answer = new List<Vector2d>();
+            answer.AddRange(GetIntersections(start, end, topLeft, topRight));
+            answer.AddRange(GetIntersections(start, end, topRight, bottomRight));
+            answer.AddRange(GetIntersections(start, end, bottomRight, bottomLeft));
+            answer.AddRange(GetIntersections(start, end, bottomLeft, topLeft));
+            answer.Sort((x, y) => (Math.Pow(x.X - start.X, 2) * Math.Pow(x.Y - start.Y, 2)).CompareTo(Math.Pow(y.X - start.X, 2) * Math.Pow(y.Y - start.Y, 2)));
+            return answer.ToArray();
+        }
+
+        private static Vector2d[] GetIntersections(Vector2d A, Vector2d B, Vector2d C, Vector2d D)
+        {
+            Vector2d CmP = new Vector2d(C.X - A.X, C.Y - A.Y);
+            Vector2d r = new Vector2d(B.X - A.X, B.Y - A.Y);
+            Vector2d s = new Vector2d(D.X - C.X, D.Y - C.Y);
+
+            double CmPxr = CmP.X * r.Y - CmP.Y * r.X;
+            double CmPxs = CmP.X * s.Y - CmP.Y * s.X;
+            double rxs = r.X * s.Y - r.Y * s.X;
+
+            double rxsr = 1f / rxs;
+            double t = CmPxs * rxsr;
+            double u = CmPxr * rxsr;
+
+            if ((t >= 0) && (t <= 1) && (u >= 0) && (u <= 1))
+            {
+                return new[] { new Vector2d(A.X * (1 - t) + B.X * t, A.Y * (1 - t) + B.Y * t) };
+            }
+            else
+            {
+                return new Vector2d[0];
+            }
         }
 
         // currently doesn't expect loops
@@ -250,7 +292,7 @@ namespace Zenith.LibraryWrappers
         private static double AngleOf(ISector sector, ContourVertex vertex)
         {
             double x = vertex.Position.X - (sector.X + 0.5) * sector.ZoomPortion;
-            double y = vertex.Position.Y - (sector.X + 0.5) * sector.ZoomPortion;
+            double y = vertex.Position.Y - (sector.Y + 0.5) * sector.ZoomPortion;
             return Math.Atan2(y, x);
         }
 
