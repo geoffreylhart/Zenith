@@ -33,31 +33,31 @@ namespace ZenithUnitTests
         public void TestCubeFaces()
         {
             // do basic front ones
-            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(Math.PI / 4, 0), true, 1);
-            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(Math.PI / 8, 0), true, 0.5);
+            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(Math.PI / 4, 0), true, 0.5);
+            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(Math.PI / 8, 0), true, 0.25);
             DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(0, 0), true, 0);
-            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(-Math.PI / 8, 0), true, -0.5);
-            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(-Math.PI / 4, 0), true, -1);
-            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(0, Math.PI / 4), false, 1);
-            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(0, Math.PI / 8), false, 0.5);
+            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(-Math.PI / 8, 0), true, -0.25);
+            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(-Math.PI / 4, 0), true, -0.5);
+            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(0, Math.PI / 4), false, 0.5);
+            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(0, Math.PI / 8), false, 0.25);
             DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(0, 0), false, 0);
-            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(0, -Math.PI / 8), false, -0.5);
-            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(0, -Math.PI / 4), false, -1);
+            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(0, -Math.PI / 8), false, -0.25);
+            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(0, -Math.PI / 4), false, -0.5);
             // do the same up top, sure
-            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(Math.PI / 2, Math.PI / 4), true, 1);
-            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(Math.PI / 2, 3 * Math.PI / 8), true, 0.5);
+            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(Math.PI / 2, Math.PI / 4), true, 0.5);
+            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(Math.PI / 2, 3 * Math.PI / 8), true, 0.25);
             DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(0, Math.PI / 2), true, 0);
-            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(-Math.PI / 2, 3 * Math.PI / 8), true, -0.5);
-            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(-Math.PI / 2, Math.PI / 4), true, -1);
-            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(-Math.PI, Math.PI / 4), false, 1);
-            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(-Math.PI, 3 * Math.PI / 8), false, 0.5);
+            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(-Math.PI / 2, 3 * Math.PI / 8), true, -0.25);
+            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(-Math.PI / 2, Math.PI / 4), true, -0.5);
+            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(-Math.PI, Math.PI / 4), false, 0.5);
+            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(-Math.PI, 3 * Math.PI / 8), false, 0.25);
             DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(0, Math.PI / 2), false, 0);
-            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(0, 3 * Math.PI / 8), false, -0.5);
-            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(0, Math.PI / 4), false, -1);
+            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(0, 3 * Math.PI / 8), false, -0.25);
+            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(0, Math.PI / 4), false, -0.5);
             // check for values outside 1 and -1
-            DoCubeFaceTest(CubeSectorFace.LEFT, new LongLat(Math.PI / 8, 0), true, 2.5);
-            DoCubeFaceTest(CubeSectorFace.RIGHT, new LongLat(Math.PI / 8, 0), true, -1.5);
-            DoCubeFaceTest(CubeSectorFace.BACK, new LongLat(Math.PI / 8, 0), true, -3.5);
+            DoCubeFaceTest(CubeSectorFace.LEFT, new LongLat(Math.PI / 8, 0), true, 1.25);
+            DoCubeFaceTest(CubeSectorFace.RIGHT, new LongLat(Math.PI / 8, 0), true, -0.75);
+            DoCubeFaceTest(CubeSectorFace.BACK, new LongLat(Math.PI / 8, 0), true, -1.75);
         }
 
         private void DoCubeFaceTest(CubeSectorFace face, LongLat longLat, bool doXNotY, double expectedAnswer)

@@ -20,24 +20,35 @@ namespace Zenith.EditorGameComponents
     {
         private double aspectRatio = 1;
         private EditorCamera camera;
-        private RenderTarget2D renderTarget;
+        private Dictionary<ISector, RenderTarget2D> renderTargets = new Dictionary<ISector, RenderTarget2D>();
         private List<IFlatComponent> flatComponents = new List<IFlatComponent>();
 
         public PlanetComponent(Game game, EditorCamera camera) : base(game)
         {
             this.camera = camera;
-            renderTarget = new RenderTarget2D(
-                 GraphicsDevice,
-                 2560 * 4,
-                 1440 * 4,
-                 true,
-                 GraphicsDevice.PresentationParameters.BackBufferFormat,
-                 DepthFormat.Depth24);
+            int rootNum = ZCoords.GetSectorManager().GetTopmostOSMSectors().Count;
+            foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
+            {
+                RenderTarget2D renderTarget = new RenderTarget2D(
+                     GraphicsDevice,
+                     2560 * 4 / rootNum,
+                     1440 * 4 / rootNum,
+                     true,
+                     GraphicsDevice.PresentationParameters.BackBufferFormat,
+                     DepthFormat.Depth24);
+                renderTargets[rootSector] = renderTarget;
+            }
         }
 
         public override void Draw(GameTime gameTime)
         {
             aspectRatio = GraphicsDevice.Viewport.AspectRatio;
+            foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
+            {
+                SectorBounds bounds = GetSectorBounds(rootSector);
+                Texture2D renderToTexture = GetTexture(bounds, rootSector);
+            }
+            GraphicsDevice.SetRenderTarget(Game1.renderTarget);
             var basicEffect3 = this.GetDefaultEffect();
             camera.ApplyMatrices(basicEffect3);
             basicEffect3.TextureEnabled = true;
@@ -45,9 +56,7 @@ namespace Zenith.EditorGameComponents
             {
                 SectorBounds bounds = GetSectorBounds(rootSector);
                 VertexIndiceBuffer sphere = SphereBuilder.MakeSphereSegExplicit(GraphicsDevice, rootSector, 2, bounds.minX, bounds.minY, bounds.maxX, bounds.maxY);
-                Texture2D renderToTexture = GetTexture(bounds, rootSector);
-                basicEffect3.Texture = renderToTexture;
-                GraphicsDevice.SetRenderTarget(Game1.renderTarget);
+                basicEffect3.Texture = renderTargets[rootSector];
                 foreach (EffectPass pass in basicEffect3.CurrentTechnique.Passes)
                 {
                     pass.Apply();
@@ -99,13 +108,14 @@ namespace Zenith.EditorGameComponents
         }
         private Texture2D GetTexture(SectorBounds bounds, ISector rootSector)
         {
+            RenderTarget2D renderTarget = renderTargets[rootSector];
             // Set the render target
             GraphicsDevice.SetRenderTarget(renderTarget);
 
             GraphicsDevice.DepthStencilState = new DepthStencilState() { DepthBufferEnable = true };
 
             // Draw the scene
-            GraphicsDevice.Clear(Pallete.OCEAN_BLUE);
+            GraphicsDevice.Clear(new[] { Color.Red, Color.Blue, Color.Yellow, Color.Green, Color.White, Color.Orange }[ZCoords.GetSectorManager().GetTopmostOSMSectors().IndexOf(rootSector)]);
             BasicEffect bf = new BasicEffect(GraphicsDevice);
             bf.World = Matrix.Identity;
             //bf.World *= Matrix.CreateTranslation((float)marker.X, (float)marker.Y, (float)marker.Z);
@@ -165,19 +175,22 @@ namespace Zenith.EditorGameComponents
                 minY = visible.Min(x => rootSector.ProjectToLocalCoordinates(x).Y);
                 maxY = visible.Max(x => rootSector.ProjectToLocalCoordinates(x).Y);
             }
-            //if (camera.IsUnitSpherePointVisible(new Vector3d(0, 0, 1)))
-            //{
-            //    maxY = Math.PI / 2;
-            //    minX = -Math.PI;
-            //    maxX = Math.PI;
-            //}
-            //if (camera.IsUnitSpherePointVisible(new Vector3d(0, 0, -1)))
-            //{
-            //    minY = -Math.PI / 2;
-            //    minX = -Math.PI;
-            //    maxX = Math.PI;
-            //}
-            return new SectorBounds(minX, maxX, minY, maxY);
+            if (rootSector is MercatorSector)
+            {
+                if (camera.IsUnitSpherePointVisible(new Vector3d(0, 0, 1)))
+                {
+                    maxY = 1;
+                    minX = 0;
+                    maxX = 1;
+                }
+                if (camera.IsUnitSpherePointVisible(new Vector3d(0, 0, -1)))
+                {
+                    minY = 0;
+                    minX = 0;
+                    maxX = 1;
+                }
+            }
+            return new SectorBounds(Math.Max(minX, 0), Math.Min(maxX, 1), Math.Max(minY, 0), Math.Min(maxY, 1));
         }
 
         public List<string> GetDebugInfo()

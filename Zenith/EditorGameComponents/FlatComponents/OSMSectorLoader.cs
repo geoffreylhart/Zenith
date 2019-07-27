@@ -27,12 +27,12 @@ namespace Zenith.EditorGameComponents.FlatComponents
 
         public override bool DoAutoLoad(ISector sector)
         {
-            return sector.Zoom <= 7 || sector.Zoom == 10;
+            return sector.Zoom == ZCoords.GetSectorManager().GetHighestOSMZoom();
         }
 
         public override bool AllowUnload(ISector sector)
         {
-            return sector.Zoom <= 7;
+            return sector.Zoom <= ZCoords.GetSectorManager().GetHighestOSMZoom() - 3;
         }
 
         public override IEnumerable<ISector> EnumerateCachedSectors()

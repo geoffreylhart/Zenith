@@ -93,8 +93,8 @@ namespace Zenith.ZMath
             Vector3d up = sectorFace.GetFaceUpDirection();
             Vector3d right = sectorFace.GetFaceRightDirection();
             Vector3d normal = sectorFace.GetFaceNormal();
-            double relX = (GetRel(normal, right, longLat3d) + 1) / 2 * (1 << Zoom);
-            double relY = (GetRel(normal, up, longLat3d) + 1) / 2 * (1 << Zoom);
+            double relX = (GetRel(normal, right, longLat3d) + 0.5) * (1 << Zoom);
+            double relY = (GetRel(normal, up, longLat3d) + 0.5) * (1 << Zoom);
             if (relX > X + 1 || relX < X) return false;
             if (relY > Y + 1 || relY < Y) return false;
             // TODO: actual subsectors
@@ -118,7 +118,7 @@ namespace Zenith.ZMath
             x = x.Normalized();
             double xComp = x.Dot(from);
             double yComp = x.Dot(to);
-            return Math.Atan2(yComp, xComp) / (Math.PI / 4);
+            return Math.Atan2(yComp, xComp) / (Math.PI / 2);
         }
 
         public override string ToString()
@@ -157,7 +157,7 @@ namespace Zenith.ZMath
             if (maxX < 0) return new List<ISector>();
             if (minY > 1) return new List<ISector>();
             if (maxY < 0) return new List<ISector>();
-            if (zoom > this.zoom) throw new NotImplementedException();
+            if (zoom < this.zoom) throw new NotImplementedException();
             int powDiff = 1 << (zoom - this.zoom);
             int minXR = (int)Math.Floor(Math.Max(Math.Min(minX, 1), 0) * powDiff + this.x * powDiff);
             int maxXR = (int)Math.Ceiling(Math.Max(Math.Min(maxX, 1), 0) * powDiff + this.x * powDiff);
@@ -179,8 +179,8 @@ namespace Zenith.ZMath
             Vector3d up = sectorFace.GetFaceUpDirection();
             Vector3d right = sectorFace.GetFaceRightDirection();
             Vector3d normal = sectorFace.GetFaceNormal();
-            double relX = (GetRel(normal, right, v) + 1) / 2 * (1 << Zoom);
-            double relY = (GetRel(normal, up, v) + 1) / 2 * (1 << Zoom);
+            double relX = (GetRel(normal, right, v) + 0.5) * (1 << Zoom);
+            double relY = (GetRel(normal, up, v) + 0.5) * (1 << Zoom);
             return new Vector2d(relX - X, relY - Y);
         }
 
@@ -189,19 +189,20 @@ namespace Zenith.ZMath
             Vector3d up = sectorFace.GetFaceUpDirection();
             Vector3d right = sectorFace.GetFaceRightDirection();
             Vector3d normal = sectorFace.GetFaceNormal();
-            return RotatePortion(RotatePortion(normal, right, v.X - 0.5), up, v.Y - 0.5);
+            // lets just do the opposite of ProjectToLocalCoordinates
+            double relX = ((v.X + X) / (1 << Zoom) - 0.5); // remember, this is the portion of the angle we're from normal to right
+            double relY = ((v.Y + Y) / (1 << Zoom) - 0.5); // remember, this is the portion of the angle we're from normal to up
+            Vector3d newup = RotatePortion(up, -normal, relY);
+            Vector3d newright = RotatePortion(right, -normal, relX);
+            return newright.Cross(newup).Normalized(); // similar to the logic for doing a plane intersection
         }
 
+        // we're changing this to require from and to to be right angles now...
         private Vector3d RotatePortion(Vector3d from, Vector3d to, double x)
         {
             from = from.Normalized();
             to = to.Normalized();
-            var cross = from.Cross(to);
-            var crossAngle = Math.Asin(cross.Length());
-            var newCrossAngle = crossAngle * x;
-            // newAxis needs to be 90 from "from" and point towards "to"
-            var newAxis = cross.Cross(from).Normalized();
-            return from * Math.Cos(newCrossAngle) + newAxis * Math.Sin(newCrossAngle);
+            return from * Math.Cos(x * Math.PI / 2) + to * Math.Sin(x * Math.PI / 2);
         }
 
         public ISector GetSectorAt(double x, double y, int zoom)
