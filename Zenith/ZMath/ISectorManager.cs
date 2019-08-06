@@ -12,5 +12,6 @@ namespace Zenith.ZMath
 
         int GetHighestOSMZoom();
         ISector FromString(string s);
+        int GetHighestCacheZoom();
     }
 }

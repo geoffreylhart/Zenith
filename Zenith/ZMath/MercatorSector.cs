@@ -14,39 +14,8 @@ namespace Zenith.ZMath
         public int Y { get => y; set => y = value; } // measured 0,1,2,3 based on ZCoords config
         public int Zoom { get => zoom; set => zoom = value; }
         private int x; // measured 0,1,2,3 from -pi to pi (opposite left to opposite right of prime meridian)
-        private int y; // measured 0,1,2,3 from -pi/2 (south pole) to pi/2 (north pole)
+        private int y; // measured 0,1,2,3 from pi/2 (north pole) to -pi/2 (south pole)
         private int zoom; // each face is partitioned into 2^zoom vertical and horizontal sections
-
-        internal double MinDistanceFrom(LongLat longLat)
-        {
-            if (longLat.X >= LeftLongitude && longLat.X <= RightLongitude)
-            {
-                if (longLat.Y >= BottomLatitude && longLat.Y <= TopLatitude)
-                {
-                    return 0;
-                }
-                else
-                {
-                    return Math.Min(Math.Abs(TopLatitude - longLat.Y), Math.Abs(BottomLatitude - longLat.Y));
-                }
-            }
-            else
-            {
-                if (longLat.Y >= BottomLatitude && longLat.Y <= TopLatitude)
-                {
-                    return Math.Min(Math.Abs(LeftLongitude - longLat.X), Math.Abs(RightLongitude - longLat.X));
-                }
-                else
-                {
-                    SphereVector asSphereVec = longLat.ToSphereVector();
-                    double dis = TopLeftCorner.ToSphereVector().Distance(asSphereVec);
-                    dis = Math.Min(dis, TopRightCorner.ToSphereVector().Distance(asSphereVec));
-                    dis = Math.Min(dis, BottomLeftCorner.ToSphereVector().Distance(asSphereVec));
-                    dis = Math.Min(dis, BottomRightCorner.ToSphereVector().Distance(asSphereVec));
-                    return dis;
-                }
-            }
-        }
 
         public MercatorSector(int x, int y, int zoom)
         {
@@ -56,16 +25,18 @@ namespace Zenith.ZMath
         }
 
         public double ZoomPortion { get { return Math.Pow(0.5, zoom); } }
-        public double Longitude { get { return (x + 0.5) * (ZoomPortion * 2 * Math.PI) - Math.PI; } }
-        public double LeftLongitude { get { return x * (ZoomPortion * 2 * Math.PI) - Math.PI; } }
-        public double RightLongitude { get { return (x + 1) * (ZoomPortion * 2 * Math.PI) - Math.PI; } }
-        public double Latitude { get { return ToLat((y + 0.5) * (ZoomPortion)); } }
-        public double TopLatitude { get { return ToLat((y + 1) * (ZoomPortion)); } }
-        public double BottomLatitude { get { return ToLat(y * (ZoomPortion)); } }
-        public LongLat TopLeftCorner { get { return new LongLat(LeftLongitude, TopLatitude); } }
-        public LongLat TopRightCorner { get { return new LongLat(RightLongitude, TopLatitude); } }
-        public LongLat BottomLeftCorner { get { return new LongLat(LeftLongitude, BottomLatitude); } }
-        public LongLat BottomRightCorner { get { return new LongLat(RightLongitude, BottomLatitude); } }
+        public double Longitude { get { return GetLongLat(0.5, 0.5).X; } }
+        public double LeftLongitude { get { return GetLongLat(0, 0).X; } }
+        public double RightLongitude { get { return GetLongLat(1, 1).X; } }
+        public double Latitude { get { return GetLongLat(0.5, 0.5).Y; } }
+        public double TopLatitude { get { return GetLongLat(0, 0).Y; } }
+        public double BottomLatitude { get { return GetLongLat(1, 1).Y; } }
+
+        // from local coordinates
+        private LongLat GetLongLat(double x, double y)
+        {
+            return ((SphereVector)ProjectToSphereCoordinates(new Vector2d(x, y))).ToLongLat();
+        }
 
         public double SurfaceAreaPortion // where 1 is the whole sphere
         {
@@ -147,14 +118,14 @@ namespace Zenith.ZMath
 
         private static double ToLat(double y)
         {
-            return 2 * Math.Atan(Math.Pow(Math.E, (y - 0.5) * 2 * Math.PI)) - Math.PI / 2;
+            return 2 * Math.Atan(Math.Pow(Math.E, (0.5 - y) * 2 * Math.PI)) - Math.PI / 2;
         }
 
-        // takes -pi/2 to pi/2, I assume, goes from -infinity to infinity??
-        // goes from 0 to 1 in the cutoff range of 85.051129 degrees
+        // takes -pi/2 to pi/2, I assume, goes from infinity to -infinity??
+        // goes from 1 to 0 in the cutoff range of 85.051129 degrees
         private static double ToY(double lat)
         {
-            return Math.Log(Math.Tan(lat / 2 + Math.PI / 4)) / (Math.PI * 2) + 0.5;
+            return Math.Log(Math.Tan(-lat / 2 + Math.PI / 4)) / (Math.PI * 2) + 0.5;
         }
 
         public override bool Equals(object obj)

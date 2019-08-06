@@ -45,7 +45,6 @@ namespace Zenith.LibraryWrappers
                     Vector2d topRight = new Vector2d((sector.X + 1) * sector.ZoomPortion, sector.Y * sector.ZoomPortion);
                     Vector2d bottomLeft = new Vector2d(sector.X * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion);
                     Vector2d bottomRight = new Vector2d((sector.X + 1) * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion);
-                    // TODO: everything is backwards, sadly (or not, did we magically fix this?)
                     vertices.Add(new VertexPositionColor(new Vector3((float)topLeft.X, (float)topLeft.Y, -10f), Pallete.GRASS_GREEN));
                     vertices.Add(new VertexPositionColor(new Vector3((float)topRight.X, (float)topRight.Y, -10f), Pallete.GRASS_GREEN));
                     vertices.Add(new VertexPositionColor(new Vector3((float)bottomRight.X, (float)bottomRight.Y, -10f), Pallete.GRASS_GREEN));
@@ -208,6 +207,7 @@ namespace Zenith.LibraryWrappers
             // TODO: did I accidentally properly do the winding rule thing?
             foreach (var contour in contours) contour.Reverse(); // TODO: get rid of hack
             var indices = Enumerable.Range(0, contours.Count * 2).ToList();
+            // sorts them going what direction??
             indices.Sort((x, y) => AngleOf(x, sector, contours).CompareTo(AngleOf(y, sector, contours)));
             int[] lookup = new int[contours.Count * 2];
             for (int i = 0; i < contours.Count * 2; i++) lookup[indices[i]] = i;
@@ -293,7 +293,7 @@ namespace Zenith.LibraryWrappers
         {
             double x = vertex.Position.X - (sector.X + 0.5) * sector.ZoomPortion;
             double y = vertex.Position.Y - (sector.Y + 0.5) * sector.ZoomPortion;
-            return Math.Atan2(y, x);
+            return Math.Atan2(-y, x);
         }
 
         private static void DrawLines(GraphicsDevice graphicsDevice, MercatorSector sector, List<List<LibTessDotNet.ContourVertex>> contours)

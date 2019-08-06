@@ -38,22 +38,22 @@ namespace ZenithUnitTests
             DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(0, 0), true, 0);
             DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(-Math.PI / 8, 0), true, -0.25);
             DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(-Math.PI / 4, 0), true, -0.5);
-            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(0, Math.PI / 4), false, 0.5);
-            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(0, Math.PI / 8), false, 0.25);
+            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(0, Math.PI / 4), false, -0.5);
+            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(0, Math.PI / 8), false, -0.25);
             DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(0, 0), false, 0);
-            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(0, -Math.PI / 8), false, -0.25);
-            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(0, -Math.PI / 4), false, -0.5);
+            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(0, -Math.PI / 8), false, 0.25);
+            DoCubeFaceTest(CubeSectorFace.FRONT, new LongLat(0, -Math.PI / 4), false, 0.5);
             // do the same up top, sure
             DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(Math.PI / 2, Math.PI / 4), true, 0.5);
             DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(Math.PI / 2, 3 * Math.PI / 8), true, 0.25);
             DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(0, Math.PI / 2), true, 0);
             DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(-Math.PI / 2, 3 * Math.PI / 8), true, -0.25);
             DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(-Math.PI / 2, Math.PI / 4), true, -0.5);
-            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(-Math.PI, Math.PI / 4), false, 0.5);
-            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(-Math.PI, 3 * Math.PI / 8), false, 0.25);
+            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(-Math.PI, Math.PI / 4), false, -0.5);
+            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(-Math.PI, 3 * Math.PI / 8), false, -0.25);
             DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(0, Math.PI / 2), false, 0);
-            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(0, 3 * Math.PI / 8), false, -0.25);
-            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(0, Math.PI / 4), false, -0.5);
+            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(0, 3 * Math.PI / 8), false, 0.25);
+            DoCubeFaceTest(CubeSectorFace.TOP, new LongLat(0, Math.PI / 4), false, 0.5);
             // check for values outside 1 and -1
             DoCubeFaceTest(CubeSectorFace.LEFT, new LongLat(Math.PI / 8, 0), true, 1.25);
             DoCubeFaceTest(CubeSectorFace.RIGHT, new LongLat(Math.PI / 8, 0), true, -0.75);
@@ -64,7 +64,7 @@ namespace ZenithUnitTests
         {
             var front = new CubeSector(face, 0, 0, 0);
             Vector3d normal = front.sectorFace.GetFaceNormal();
-            Vector3d up = front.sectorFace.GetFaceUpDirection();
+            Vector3d down = front.sectorFace.GetFaceDownDirection();
             Vector3d right = front.sectorFace.GetFaceRightDirection();
             if (doXNotY)
             {
@@ -72,7 +72,7 @@ namespace ZenithUnitTests
             }
             else
             {
-                AssertIsClose(front.GetRel(normal, up, longLat.ToSphereVector()), expectedAnswer);
+                AssertIsClose(front.GetRel(normal, down, longLat.ToSphereVector()), expectedAnswer);
             }
         }
 

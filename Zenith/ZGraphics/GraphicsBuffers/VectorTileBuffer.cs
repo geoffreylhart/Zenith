@@ -13,13 +13,11 @@ namespace Zenith.ZGraphics.GraphicsBuffers
     class VectorTileBuffer : IGraphicsBuffer
     {
         List<BasicVertexBuffer> buffers = new List<BasicVertexBuffer>();
+        private ISector sector;
 
-        public VectorTileBuffer()
+        public VectorTileBuffer(ISector sector)
         {
-        }
-
-        public VectorTileBuffer(GraphicsDevice graphicsDevice, List<VertexPositionColor> vectors, MercatorSector sector)
-        {
+            this.sector = sector;
         }
 
         public void Dispose()
@@ -43,7 +41,9 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         {
             RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 512, 512, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
             graphicsDevice.SetRenderTarget(newTarget);
-            Draw(newTarget, 0, 512, 0, 512, 0);
+            Vector2d topLeft = new Vector2d(sector.X * sector.ZoomPortion, sector.Y * sector.ZoomPortion);
+            Vector2d bottomRight = new Vector2d((sector.X + 1) * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion);
+            Draw(newTarget, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0);
             return newTarget;
         }
 

@@ -28,5 +28,10 @@ namespace Zenith.ZMath
             int zoom = int.Parse(split[2].Split('=')[1]);
             return new MercatorSector(x, y, zoom);
         }
+
+        public int GetHighestCacheZoom()
+        {
+            return 7;
+        }
     }
 }

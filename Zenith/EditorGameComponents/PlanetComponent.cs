@@ -115,7 +115,8 @@ namespace Zenith.EditorGameComponents
             GraphicsDevice.DepthStencilState = new DepthStencilState() { DepthBufferEnable = true };
 
             // Draw the scene
-            GraphicsDevice.Clear(new[] { Color.Red, Color.Blue, Color.Yellow, Color.Green, Color.White, Color.Orange }[ZCoords.GetSectorManager().GetTopmostOSMSectors().IndexOf(rootSector)]);
+            //GraphicsDevice.Clear(new[] { Color.Red, Color.Blue, Color.Yellow, Color.Green, Color.White, Color.Orange }[ZCoords.GetSectorManager().GetTopmostOSMSectors().IndexOf(rootSector)]);
+            GraphicsDevice.Clear(Pallete.OCEAN_BLUE);
             BasicEffect bf = new BasicEffect(GraphicsDevice);
             bf.World = Matrix.Identity;
             //bf.World *= Matrix.CreateTranslation((float)marker.X, (float)marker.Y, (float)marker.Z);
@@ -179,13 +180,13 @@ namespace Zenith.EditorGameComponents
             {
                 if (camera.IsUnitSpherePointVisible(new Vector3d(0, 0, 1)))
                 {
-                    maxY = 1;
+                    minY = 0;
                     minX = 0;
                     maxX = 1;
                 }
                 if (camera.IsUnitSpherePointVisible(new Vector3d(0, 0, -1)))
                 {
-                    minY = 0;
+                    maxY = 1;
                     minX = 0;
                     maxX = 1;
                 }

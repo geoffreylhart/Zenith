@@ -36,5 +36,10 @@ namespace Zenith.ZMath
             int zoom = int.Parse(split[3].Split('=', '.')[1]);
             return new CubeSector(sectorFace, x, y, zoom);
         }
+
+        public int GetHighestCacheZoom()
+        {
+            return 5;
+        }
     }
 }

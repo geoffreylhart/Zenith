@@ -61,7 +61,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
             // otherwise, build it
             if (sector.Zoom >= ZCoords.GetSectorManager().GetHighestOSMZoom())
             {
-                VectorTileBuffer buffer = new VectorTileBuffer();
+                VectorTileBuffer buffer = new VectorTileBuffer(sector);
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
                 BlobCollection blobs = OSMReader.GetAllBlobs(sector);
@@ -98,10 +98,9 @@ namespace Zenith.EditorGameComponents.FlatComponents
                     for (int i = 0; i < roadSectors.Count; i++)
                     {
                         int size, x, y;
-                        int subd = 1 << (roadSectors[i].Zoom - sector.Zoom);
                         size = 512 >> (roadSectors[i].Zoom - sector.Zoom);
                         x = sector.GetRelativeXOf(roadSectors[i]) * size;
-                        y = (subd - 1 - sector.GetRelativeYOf(roadSectors[i])) * size;
+                        y = sector.GetRelativeYOf(roadSectors[i]) * size;
                         if (textures[i] != null)
                         {
                             GraphicsBasic.DrawSpriteRect(graphicsDevice, x, y, size, size, textures[i], BlendState.AlphaBlend, Color.White);
@@ -112,7 +111,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 {
                     if (textures[i] != null) textures[i].Dispose();
                 }
-                if (sector.Zoom <= 7)
+                if (sector.Zoom <= ZCoords.GetSectorManager().GetHighestCacheZoom())
                 {
                     using (var writer = File.OpenWrite(Path.Combine(OSMPaths.GetRenderRoot(), fileName)))
                     {

@@ -26,3 +26,6 @@ ACCORDING TO MY OWN COMMENTS, you have to draw triangles clockwise to make them 
 For our cache of images, indices will span 0,1,2,3... from the min -lat to the max
 
 Texture coordinates (I think) are supposed to have 0,0 in the top left corner
+
+Preferred quad triangulation method:
+Topleft, topright, bottomright, topleft, bottomright, bottomleft

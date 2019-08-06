@@ -19,15 +19,15 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         {
             buffer = new VertexIndiceBuffer();
             List<VertexPositionNormalTexture> vertices = new List<VertexPositionNormalTexture>();
+            // TODO: are all of these names wrong everywhere? the topleft etc?
             Vector2d topLeft = new Vector2d(sector.X * sector.ZoomPortion, sector.Y * sector.ZoomPortion);
             Vector2d topRight = new Vector2d((sector.X + 1) * sector.ZoomPortion, sector.Y * sector.ZoomPortion);
             Vector2d bottomLeft = new Vector2d(sector.X * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion);
             Vector2d bottomRight = new Vector2d((sector.X + 1) * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion);
-            // TODO: everything is upside down, sadly
-            vertices.Add(new VertexPositionNormalTexture(new Vector3((float)topLeft.X, (float)topLeft.Y, -10f), new Vector3(0, 0, 1), new Vector2(0, 1)));
-            vertices.Add(new VertexPositionNormalTexture(new Vector3((float)topRight.X, (float)topRight.Y, -10f), new Vector3(0, 0, 1), new Vector2(1, 1)));
-            vertices.Add(new VertexPositionNormalTexture(new Vector3((float)bottomLeft.X, (float)bottomLeft.Y, -10f), new Vector3(0, 0, 1), new Vector2(0, 0)));
-            vertices.Add(new VertexPositionNormalTexture(new Vector3((float)bottomRight.X, (float)bottomRight.Y, -10f), new Vector3(0, 0, 1), new Vector2(1, 0)));
+            vertices.Add(new VertexPositionNormalTexture(new Vector3((float)topLeft.X, (float)topLeft.Y, -10f), new Vector3(0, 0, 1), new Vector2(0, 0)));
+            vertices.Add(new VertexPositionNormalTexture(new Vector3((float)topRight.X, (float)topRight.Y, -10f), new Vector3(0, 0, 1), new Vector2(1, 0)));
+            vertices.Add(new VertexPositionNormalTexture(new Vector3((float)bottomLeft.X, (float)bottomLeft.Y, -10f), new Vector3(0, 0, 1), new Vector2(0, 1)));
+            vertices.Add(new VertexPositionNormalTexture(new Vector3((float)bottomRight.X, (float)bottomRight.Y, -10f), new Vector3(0, 0, 1), new Vector2(1, 1)));
             List<int> indices = new List<int>() { 0, 1, 3, 0, 3, 2 };
             buffer.vertices = new VertexBuffer(graphicsDevice, VertexPositionNormalTexture.VertexDeclaration, vertices.Count, BufferUsage.WriteOnly);
             buffer.vertices.SetData(vertices.ToArray());

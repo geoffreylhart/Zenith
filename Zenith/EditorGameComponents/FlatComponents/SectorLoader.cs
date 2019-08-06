@@ -27,7 +27,15 @@ namespace Zenith.EditorGameComponents.FlatComponents
         {
             // autoload stuff
             // TODO: move to update step?
-            int zoomLevel = Math.Max((int)(Math.Log(maxX - minX) / Math.Log(0.5)), 0);
+            int zoomLevel;
+            if(rootSector is MercatorSector)
+            {
+                zoomLevel = Math.Max((int)(Math.Log(maxX - minX) / Math.Log(0.5)), 0);
+            }
+            else
+            {
+                zoomLevel = Math.Max((int)(Math.Log(maxX - minX) / Math.Log(0.5)-3), 0);
+            }
             List<ISector> containedSectors = rootSector.GetSectorsInRange(minX, maxX, minY, maxY, zoomLevel);
             List<ISector> unload = new List<ISector>();
             foreach (var pair in loadedMaps)

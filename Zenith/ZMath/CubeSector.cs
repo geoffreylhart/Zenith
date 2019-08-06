@@ -90,11 +90,11 @@ namespace Zenith.ZMath
         public bool ContainsLongLat(LongLat longLat)
         {
             Vector3d longLat3d = longLat.ToSphereVector();
-            Vector3d up = sectorFace.GetFaceUpDirection();
+            Vector3d down = sectorFace.GetFaceDownDirection();
             Vector3d right = sectorFace.GetFaceRightDirection();
             Vector3d normal = sectorFace.GetFaceNormal();
             double relX = (GetRel(normal, right, longLat3d) + 0.5) * (1 << Zoom);
-            double relY = (GetRel(normal, up, longLat3d) + 0.5) * (1 << Zoom);
+            double relY = (GetRel(normal, down, longLat3d) + 0.5) * (1 << Zoom);
             if (relX > X + 1 || relX < X) return false;
             if (relY > Y + 1 || relY < Y) return false;
             // TODO: actual subsectors
@@ -176,25 +176,25 @@ namespace Zenith.ZMath
 
         public Vector2d ProjectToLocalCoordinates(Vector3d v)
         {
-            Vector3d up = sectorFace.GetFaceUpDirection();
+            Vector3d down = sectorFace.GetFaceDownDirection();
             Vector3d right = sectorFace.GetFaceRightDirection();
             Vector3d normal = sectorFace.GetFaceNormal();
             double relX = (GetRel(normal, right, v) + 0.5) * (1 << Zoom);
-            double relY = (GetRel(normal, up, v) + 0.5) * (1 << Zoom);
+            double relY = (GetRel(normal, down, v) + 0.5) * (1 << Zoom);
             return new Vector2d(relX - X, relY - Y);
         }
 
         public Vector3d ProjectToSphereCoordinates(Vector2d v)
         {
-            Vector3d up = sectorFace.GetFaceUpDirection();
+            Vector3d down = sectorFace.GetFaceDownDirection();
             Vector3d right = sectorFace.GetFaceRightDirection();
             Vector3d normal = sectorFace.GetFaceNormal();
             // lets just do the opposite of ProjectToLocalCoordinates
             double relX = ((v.X + X) / (1 << Zoom) - 0.5); // remember, this is the portion of the angle we're from normal to right
             double relY = ((v.Y + Y) / (1 << Zoom) - 0.5); // remember, this is the portion of the angle we're from normal to up
-            Vector3d newup = RotatePortion(up, -normal, relY);
-            Vector3d newright = RotatePortion(right, -normal, relX);
-            return newright.Cross(newup).Normalized(); // similar to the logic for doing a plane intersection
+            Vector3d newDown = RotatePortion(down, -normal, relY);
+            Vector3d newRight = RotatePortion(right, -normal, relX);
+            return newDown.Cross(newRight).Normalized(); // similar to the logic for doing a plane intersection
         }
 
         // we're changing this to require from and to to be right angles now...
