@@ -67,7 +67,7 @@ namespace Zenith.LibraryWrappers
 
         internal static BasicVertexBuffer GetTrees(GraphicsDevice graphicsDevice, BlobCollection blobs, ISector sector)
         {
-            PointCollection points = new PointCollection(sector, (int)(sector.SurfaceAreaPortion * 3.04e9 * 100)); // 3 trillion trees on earth
+            PointCollection points = new PointCollection(sector, 100000); // 3 trillion trees on earth (eh, just guess)
             double widthInFeet = 10.7 * 20; // extra thick
             double circumEarth = 24901 * 5280;
             double width = widthInFeet / circumEarth * 2 * Math.PI;
@@ -89,7 +89,7 @@ namespace Zenith.LibraryWrappers
             return new BasicVertexBuffer(graphicsDevice, vertices, PrimitiveType.TriangleList);
         }
 
-        internal static BasicVertexBuffer GetLakesBorder(GraphicsDevice graphicsDevice, BlobCollection blobs, MercatorSector sector)
+        internal static BasicVertexBuffer GetLakesBorder(GraphicsDevice graphicsDevice, BlobCollection blobs, ISector sector)
         {
             double widthInFeet = 10.7 * 50; // extra thick
             double circumEarth = 24901 * 5280;

@@ -72,13 +72,13 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 Console.WriteLine($"{sector} coast loaded in {sw.Elapsed.TotalSeconds} seconds.");
                 sw.Restart();
                 buffer.Add(graphicsDevice, OSMBufferGenerator.GetLakes(graphicsDevice, blobs, sector), sector);
-                //buffer.Add(graphicsDevice, OSMBufferGenerator.GetLakesBorder(graphicsDevice, blobs, sector), sector);
+                buffer.Add(graphicsDevice, OSMBufferGenerator.GetLakesBorder(graphicsDevice, blobs, sector), sector);
                 Console.WriteLine($"{sector} lakes loaded in {sw.Elapsed.TotalSeconds} seconds.");
                 sw.Restart();
                 buffer.Add(graphicsDevice, OSMBufferGenerator.GetRoads(graphicsDevice, blobs), sector);
                 Console.WriteLine($"{sector} roads loaded in {sw.Elapsed.TotalSeconds} seconds.");
                 sw.Restart();
-                //buffer.Add(graphicsDevice, OSMBufferGenerator.GetTrees(graphicsDevice, blobs, sector), sector);
+                buffer.Add(graphicsDevice, OSMBufferGenerator.GetTrees(graphicsDevice, blobs, sector), sector);
                 Console.WriteLine($"{sector} trees loaded in {sw.Elapsed.TotalSeconds} seconds.");
                 return buffer;
             }
