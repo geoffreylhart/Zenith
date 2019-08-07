@@ -60,13 +60,14 @@ namespace Zenith.ZGeom
                     Vector2d bottomRight = v1 + w1;
                     int i = vertices.Count;
                     double texLength = (v2 - v1).Length() / width;
-                    vertices.Add(new VertexPositionTexture(new Vector3(topLeft, -10f), new Vector2(0, 0)));
+                    vertices.Add(new VertexPositionTexture(new Vector3(topLeft, -10f), new Vector2(1, 0)));
                     vertices.Add(new VertexPositionTexture(new Vector3(v2, -9f), new Vector2(0.5f, 0))); // mid
-                    vertices.Add(new VertexPositionTexture(new Vector3(topRight, -10f), new Vector2(1, 0)));
-                    vertices.Add(new VertexPositionTexture(new Vector3(bottomLeft, -10f), new Vector2(0, (float)texLength)));
+                    vertices.Add(new VertexPositionTexture(new Vector3(topRight, -10f), new Vector2(0, 0)));
+                    vertices.Add(new VertexPositionTexture(new Vector3(bottomLeft, -10f), new Vector2(1, (float)texLength)));
                     vertices.Add(new VertexPositionTexture(new Vector3(v1, -9f), new Vector2(0.5f, (float)texLength)));
-                    vertices.Add(new VertexPositionTexture(new Vector3(bottomRight, -10f), new Vector2(1, (float)texLength)));
+                    vertices.Add(new VertexPositionTexture(new Vector3(bottomRight, -10f), new Vector2(0, (float)texLength)));
                     // TODO: why was flipping opposite that I expect correct?
+                    // TODO: redo all of this in light of our new coordinate stuff
                     indices.Add(i);
                     indices.Add(i + 4);
                     indices.Add(i + 1);
@@ -86,6 +87,7 @@ namespace Zenith.ZGeom
 
         internal LineGraph ForceDirection(bool ccw)
         {
+            ccw = !ccw; // TODO: fix this to not be hacky
             // copy pasted from contour generation code
             HashSet<GraphNode> visited = new HashSet<GraphNode>();
             foreach (var node in nodes)
