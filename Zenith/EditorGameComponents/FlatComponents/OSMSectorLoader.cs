@@ -61,7 +61,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
             // otherwise, build it
             if (sector.Zoom >= ZCoords.GetSectorManager().GetHighestOSMZoom())
             {
-                VectorTileBuffer buffer = new VectorTileBuffer(sector);
+                VectorTileBuffer buffer = new VectorTileBuffer(graphicsDevice, sector);
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
                 BlobCollection blobs = OSMReader.GetAllBlobs(sector);

@@ -39,7 +39,7 @@ namespace Zenith.ZMath
 
         public int GetHighestCacheZoom()
         {
-            return 5;
+            return 7;
         }
     }
 }
