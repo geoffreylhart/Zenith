@@ -61,26 +61,33 @@ namespace Zenith.EditorGameComponents.FlatComponents
             // otherwise, build it
             if (sector.Zoom >= ZCoords.GetSectorManager().GetHighestOSMZoom())
             {
-                VectorTileBuffer buffer = new VectorTileBuffer(graphicsDevice, sector);
-                Stopwatch sw = new Stopwatch();
-                sw.Start();
-                BlobCollection blobs = OSMReader.GetAllBlobs(sector);
-                Console.WriteLine($"{sector} blobs loaded in {sw.Elapsed.TotalSeconds} seconds.");
-                sw.Restart();
-                buffer.Add(graphicsDevice, OSMBufferGenerator.GetCoast(graphicsDevice, blobs, sector), sector);
-                buffer.Add(graphicsDevice, OSMBufferGenerator.GetCoastBorder(graphicsDevice, blobs), sector);
-                Console.WriteLine($"{sector} coast loaded in {sw.Elapsed.TotalSeconds} seconds.");
-                sw.Restart();
-                buffer.Add(graphicsDevice, OSMBufferGenerator.GetLakes(graphicsDevice, blobs, sector), sector);
-                buffer.Add(graphicsDevice, OSMBufferGenerator.GetLakesBorder(graphicsDevice, blobs, sector), sector);
-                Console.WriteLine($"{sector} lakes loaded in {sw.Elapsed.TotalSeconds} seconds.");
-                sw.Restart();
-                buffer.Add(graphicsDevice, OSMBufferGenerator.GetRoads(graphicsDevice, blobs), sector);
-                Console.WriteLine($"{sector} roads loaded in {sw.Elapsed.TotalSeconds} seconds.");
-                sw.Restart();
-                buffer.Add(graphicsDevice, OSMBufferGenerator.GetTrees(graphicsDevice, blobs, sector), sector);
-                Console.WriteLine($"{sector} trees loaded in {sw.Elapsed.TotalSeconds} seconds.");
-                return buffer;
+                try
+                {
+                    VectorTileBuffer buffer = new VectorTileBuffer(graphicsDevice, sector);
+                    Stopwatch sw = new Stopwatch();
+                    sw.Start();
+                    BlobCollection blobs = OSMReader.GetAllBlobs(sector);
+                    Console.WriteLine($"{sector} blobs loaded in {sw.Elapsed.TotalSeconds} seconds.");
+                    sw.Restart();
+                    buffer.Add(graphicsDevice, OSMBufferGenerator.GetCoast(graphicsDevice, blobs, sector), sector);
+                    buffer.Add(graphicsDevice, OSMBufferGenerator.GetCoastBorder(graphicsDevice, blobs), sector);
+                    Console.WriteLine($"{sector} coast loaded in {sw.Elapsed.TotalSeconds} seconds.");
+                    sw.Restart();
+                    buffer.Add(graphicsDevice, OSMBufferGenerator.GetLakes(graphicsDevice, blobs, sector), sector);
+                    buffer.Add(graphicsDevice, OSMBufferGenerator.GetLakesBorder(graphicsDevice, blobs, sector), sector);
+                    Console.WriteLine($"{sector} lakes loaded in {sw.Elapsed.TotalSeconds} seconds.");
+                    sw.Restart();
+                    buffer.Add(graphicsDevice, OSMBufferGenerator.GetRoads(graphicsDevice, blobs), sector);
+                    Console.WriteLine($"{sector} roads loaded in {sw.Elapsed.TotalSeconds} seconds.");
+                    sw.Restart();
+                    buffer.Add(graphicsDevice, OSMBufferGenerator.GetTrees(graphicsDevice, blobs, sector), sector);
+                    Console.WriteLine($"{sector} trees loaded in {sw.Elapsed.TotalSeconds} seconds.");
+                    return buffer;
+                }
+                catch (Exception ex)
+                {
+                    return new ImageTileBuffer(graphicsDevice, GlobalContent.Error, sector);
+                }
             }
             else
             {

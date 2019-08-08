@@ -26,13 +26,12 @@ namespace Zenith.EditorGameComponents
         public PlanetComponent(Game game, EditorCamera camera) : base(game)
         {
             this.camera = camera;
-            int rootNum = ZCoords.GetSectorManager().GetTopmostOSMSectors().Count;
             foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
             {
                 RenderTarget2D renderTarget = new RenderTarget2D(
                      GraphicsDevice,
-                     2560 * 4 / rootNum,
-                     1440 * 4 / rootNum,
+                     2560 * 4,
+                     1440 * 4,
                      true,
                      GraphicsDevice.PresentationParameters.BackBufferFormat,
                      DepthFormat.Depth24);

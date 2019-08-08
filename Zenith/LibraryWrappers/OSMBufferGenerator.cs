@@ -94,7 +94,7 @@ namespace Zenith.LibraryWrappers
             double widthInFeet = 10.7 * 50; // extra thick
             double circumEarth = 24901 * 5280;
             double width = widthInFeet / circumEarth * 2 * Math.PI;
-            return blobs.GetLakesFast().ConstructAsRoads(graphicsDevice, width, GlobalContent.Beach, Microsoft.Xna.Framework.Color.White);
+            return blobs.GetLakesFast().Combine(blobs.GetMultiLakesFast()).ConstructAsRoads(graphicsDevice, width, GlobalContent.Beach, Microsoft.Xna.Framework.Color.White);
         }
 
         internal static BasicVertexBuffer GetCoastBorder(GraphicsDevice graphicsDevice, BlobCollection blobs)
@@ -124,33 +124,33 @@ namespace Zenith.LibraryWrappers
             foreach (var contour in contours)
             {
                 List<ContourVertex> currLine = new List<ContourVertex>();
-                bool lastPointInside = sector.ContainsRootCoord(new Vector2d(contour[0].Position.X, contour[0].Position.Y));
-                if (lastPointInside) currLine.Add(contour[0]);
+                if (sector.ContainsRootCoord(new Vector2d(contour[0].Position.X, contour[0].Position.Y))) currLine.Add(contour[0]);
                 for (int i = 1; i < contour.Count; i++) // iterate through lines
                 {
                     Vector2d v1 = new Vector2d(contour[i - 1].Position.X, contour[i - 1].Position.Y);
                     Vector2d v2 = new Vector2d(contour[i].Position.X, contour[i].Position.Y);
-                    bool isInside = sector.ContainsRootCoord(v2);
+                    bool isInside1 = sector.ContainsRootCoord(v1);
+                    bool isInside2 = sector.ContainsRootCoord(v2);
                     Vector2d[] intersections = GetIntersections(sector, v1, v2);
-                    if (lastPointInside && intersections.Length == 0)
+                    if (isInside2 && intersections.Length == 0)
                     {
                         currLine.Add(contour[i]);
                     }
                     if (intersections.Length >= 1)
                     {
-                        foreach (var intersection in intersections)
+                        for (int j = 0; j < intersections.Length; j++)
                         {
-                            currLine.Add(new ContourVertex() { Position = new Vec3() { X = (float)intersections[0].X, Y = (float)intersections[0].Y, Z = 0 } });
-                            if (lastPointInside)
+                            var intersection = intersections[j];
+                            currLine.Add(new ContourVertex() { Position = new Vec3() { X = (float)intersection.X, Y = (float)intersection.Y, Z = 0 } });
+                            if (((isInside1 ? 0 : 1) + j) % 2 == 0)
                             {
                                 answer.Add(currLine);
                                 currLine = new List<ContourVertex>();
                             }
-                            else
-                            {
-                                currLine.Add(contour[i]);
-                            }
-                            lastPointInside = !lastPointInside;
+                        }
+                        if (isInside2)
+                        {
+                            currLine.Add(contour[i]);
                         }
                     }
                 }
@@ -296,10 +296,10 @@ namespace Zenith.LibraryWrappers
             return Math.Atan2(-y, x);
         }
 
-        private static void DrawLines(GraphicsDevice graphicsDevice, MercatorSector sector, List<List<LibTessDotNet.ContourVertex>> contours)
+        private static List<VertexPositionColor> DrawLines(GraphicsDevice graphicsDevice, ISector sector, List<List<LibTessDotNet.ContourVertex>> contours)
         {
-            if (contours.Count == 0) return;
             List<VertexPositionColor> lines = new List<VertexPositionColor>();
+            if (contours.Count == 0) return lines;
             float z = -10f;
             for (int j = 0; j < contours.Count; j++)
             {
@@ -312,21 +312,36 @@ namespace Zenith.LibraryWrappers
                     double percent2 = (i + 1) / (double)(contour.Count - 1); // fade from color to white
                     Microsoft.Xna.Framework.Color newColor = new Microsoft.Xna.Framework.Color((byte)(color.R * percent2 + fadeTo.R * (1 - percent2)), (byte)(color.G * percent2 + fadeTo.G * (1 - percent2)), (byte)(color.B * percent2 + fadeTo.B * (1 - percent2)));
                     Microsoft.Xna.Framework.Color newColor2 = new Microsoft.Xna.Framework.Color((byte)(color.R * percent2 + fadeTo.R * (1 - percent2)), (byte)(color.G * percent2 + fadeTo.G * (1 - percent2)), (byte)(color.B * percent2 + fadeTo.B * (1 - percent2)));
-                    lines.Add(new VertexPositionColor(new Vector3(contour[i - 1].Position.X, contour[i - 1].Position.Y, z), newColor));
-                    lines.Add(new VertexPositionColor(new Vector3(contour[i].Position.X, contour[i].Position.Y, z), newColor2));
+                    Vector2d pos1 = new Vector2d(contour[i - 1].Position.X, contour[i - 1].Position.Y);
+                    Vector2d pos2 = new Vector2d(contour[i].Position.X, contour[i].Position.Y);
+                    Vector2d off1, off2;
+                    if (true)
+                    {
+                        off1 = (pos2 - pos1).RotateCW90().Normalized() * -0.00001;
+                    }
+                    else
+                    {
+                        Vector2d pos0 = new Vector2d(contour[i - 2].Position.X, contour[i - 2].Position.Y);
+                        off1 = (pos2 - pos0).RotateCW90().Normalized() * -0.00001;
+                    }
+                    if (true)
+                    {
+                        off2 = (pos2 - pos1).RotateCW90().Normalized() * -0.00001;
+                    }
+                    else
+                    {
+                        Vector2d pos3 = new Vector2d(contour[i + 1].Position.X, contour[i + 1].Position.Y);
+                        off2 = (pos3 - pos1).RotateCW90().Normalized() * -0.00001;
+                    }
+                    lines.Add(new VertexPositionColor(new Vector3(pos2 - off2, z), newColor2));
+                    lines.Add(new VertexPositionColor(new Vector3(pos2 + off2, z), newColor2));
+                    lines.Add(new VertexPositionColor(new Vector3(pos1 + off1, z), newColor));
+                    lines.Add(new VertexPositionColor(new Vector3(pos2 - off2, z), newColor2));
+                    lines.Add(new VertexPositionColor(new Vector3(pos1 + off1, z), newColor));
+                    lines.Add(new VertexPositionColor(new Vector3(pos1 - off1, z), newColor));
                 }
             }
-            VertexBuffer landVertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, lines.Count, BufferUsage.WriteOnly);
-            landVertexBuffer.SetData(lines.ToArray());
-            graphicsDevice.SetVertexBuffer(landVertexBuffer);
-            var basicEffect = new BasicEffect(graphicsDevice);
-            basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)sector.LeftLongitude, (float)sector.RightLongitude, (float)sector.BottomLatitude, (float)sector.TopLatitude, 1, 1000); // TODO: figure out if flip was appropriate
-            basicEffect.VertexColorEnabled = true;
-            foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-                graphicsDevice.DrawPrimitives(PrimitiveType.LineList, 0, landVertexBuffer.VertexCount / 2);
-            }
+            return lines;
         }
 
         private static void DrawDebugLines(GraphicsDevice graphicsDevice, MercatorSector sector, List<List<LibTessDotNet.ContourVertex>> contours)
