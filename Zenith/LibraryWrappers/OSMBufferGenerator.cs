@@ -54,7 +54,7 @@ namespace Zenith.LibraryWrappers
                     return vertices;
                 }
             }
-            List<List<ContourVertex>> contours = graph.ToContours().Where(x => !x.First().Equals(x.Last())).ToList(); // wait, why is this necessary?
+            List<List<ContourVertex>> contours = graph.ToContours();
             var outline = TrimLines(sector, contours);
             outline = CloseLines(sector, outline);
             return Tesselate(graphicsDevice, sector, outline, Pallete.GRASS_GREEN);
@@ -118,12 +118,16 @@ namespace Zenith.LibraryWrappers
 
         // cut off the lines hanging outside of the sector
         // we call this before closing lines to prevent any possible confusion on how lines should connect
+        // TODO: this currently breaks aparts closed loops
         private static List<List<ContourVertex>> TrimLines(ISector sector, List<List<ContourVertex>> contours)
         {
             List<List<ContourVertex>> answer = new List<List<ContourVertex>>();
             foreach (var contour in contours)
             {
+                bool isLoop = contour.First().Equals(contour.Last());
                 List<ContourVertex> currLine = new List<ContourVertex>();
+                var firstLine = currLine;
+                var lastLine = currLine;
                 if (sector.ContainsRootCoord(new Vector2d(contour[0].Position.X, contour[0].Position.Y))) currLine.Add(contour[0]);
                 for (int i = 1; i < contour.Count; i++) // iterate through lines
                 {
@@ -135,6 +139,7 @@ namespace Zenith.LibraryWrappers
                     if (isInside2 && intersections.Length == 0)
                     {
                         currLine.Add(contour[i]);
+                        lastLine = currLine;
                     }
                     if (intersections.Length >= 1)
                     {
@@ -142,6 +147,7 @@ namespace Zenith.LibraryWrappers
                         {
                             var intersection = intersections[j];
                             currLine.Add(new ContourVertex() { Position = new Vec3() { X = (float)intersection.X, Y = (float)intersection.Y, Z = 0 } });
+                            lastLine = currLine;
                             if (((isInside1 ? 0 : 1) + j) % 2 == 0)
                             {
                                 answer.Add(currLine);
@@ -151,7 +157,16 @@ namespace Zenith.LibraryWrappers
                         if (isInside2)
                         {
                             currLine.Add(contour[i]);
+                            lastLine = currLine;
                         }
+                    }
+                }
+                if (isLoop && firstLine != lastLine && firstLine.Count > 0 && lastLine.Count > 0)
+                {
+                    answer.Remove(firstLine);
+                    for (int i = 1; i < firstLine.Count; i++) // don't add the first duplicate
+                    {
+                        lastLine.Add(firstLine[i]);
                     }
                 }
                 if (currLine.Count > 0) answer.Add(currLine);
@@ -204,6 +219,8 @@ namespace Zenith.LibraryWrappers
         // currently doesn't expect loops
         private static List<List<ContourVertex>> CloseLines(ISector sector, List<List<ContourVertex>> contours)
         {
+            var loops = contours.Where(x => x.First().Equals(x.Last())).ToList();
+            contours = contours.Where(x => !x.First().Equals(x.Last())).ToList();
             // TODO: did I accidentally properly do the winding rule thing?
             foreach (var contour in contours) contour.Reverse(); // TODO: get rid of hack
             var indices = Enumerable.Range(0, contours.Count * 2).ToList();
@@ -253,6 +270,7 @@ namespace Zenith.LibraryWrappers
                     closed.Add(newLoop);
                 }
             }
+            closed.AddRange(loops);
             return closed;
         }
 
