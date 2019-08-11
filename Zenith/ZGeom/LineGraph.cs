@@ -120,6 +120,16 @@ namespace Zenith.ZGeom
                             contour[i].prevConnections = new List<GraphNode>() { after };
                         }
                     }
+                    else
+                    {
+                        for (int i = 0; i < contour.Count - 1; i++)
+                        {
+                            GraphNode before = contour[(i - 1 + contour.Count - 1) % (contour.Count - 1)];
+                            GraphNode after = contour[i + 1];
+                            contour[i].nextConnections = new List<GraphNode>() { after };
+                            contour[i].prevConnections = new List<GraphNode>() { before };
+                        }
+                    }
                 }
             }
             return this;

@@ -32,7 +32,7 @@ namespace Zenith.LibraryWrappers.OSM
             return GetFast("highway", null, sector);
         }
 
-        internal LineGraph GetFast(string key, string value, ISector sector)
+        internal LineGraph GetFast(string key, string value, ISector sector, bool mergeWays = true)
         {
             RoadInfoVector roads = new RoadInfoVector();
             foreach (var blob in blobs)
@@ -45,6 +45,7 @@ namespace Zenith.LibraryWrappers.OSM
             Dictionary<long, GraphNode> graphNodes = new Dictionary<long, GraphNode>();
             foreach (var way in roads.ways)
             {
+                if (!mergeWays) graphNodes = new Dictionary<long, GraphNode>();
                 if (way.keyValues.ContainsKey("highway"))
                 {
                     if (way.keyValues["highway"] == "footway") continue; // TODO: move this logic
@@ -52,6 +53,10 @@ namespace Zenith.LibraryWrappers.OSM
                     if (way.keyValues["highway"] == "service") continue; // TODO: move this logic
                 }
                 long? prev = null;
+                // I think I have an idea of whats happened
+                // we were expecting simple closed shapes
+                // instead we get road like graphs
+                // and so when we debug the paths, it probably doesnt know what route to take
                 foreach (var nodeRef in way.refs)
                 {
                     long? v = roads.nodes.ContainsKey(nodeRef) ? nodeRef : (long?)null;
@@ -80,7 +85,7 @@ namespace Zenith.LibraryWrappers.OSM
 
         internal LineGraph GetLakesFast()
         {
-            return GetFast("natural", "water", sector).ForceDirection(true);
+            return GetFast("natural", "water", sector, false);
         }
 
         internal LineGraph GetMultiLakesFast()
@@ -88,6 +93,8 @@ namespace Zenith.LibraryWrappers.OSM
             return GetLakeMulti();
         }
 
+        // TODO: still issue with relation 2194649, mostly in that its components go off the sector
+        // TODO: DEFINITELY need to factor this stuff out in some way to make a unit test
         private LineGraph GetLakeMulti()
         {
             List<long> innerWayIds = new List<long>();
@@ -158,8 +165,17 @@ namespace Zenith.LibraryWrappers.OSM
                     }
                     if (prev != null && v != null)
                     {
-                        graphNodes[prev.Value].nextConnections.Add(graphNodes[v.Value]);
-                        graphNodes[v.Value].prevConnections.Add(graphNodes[prev.Value]);
+                        if (graphNodes[prev.Value].nextConnections.Contains(graphNodes[v.Value])) // do they already connect?
+                        {
+                            // if so, undo it (merging polygons, basically)
+                            graphNodes[prev.Value].nextConnections.Remove(graphNodes[v.Value]);
+                            graphNodes[v.Value].prevConnections.Remove(graphNodes[prev.Value]);
+                        }
+                        else
+                        {
+                            graphNodes[prev.Value].nextConnections.Add(graphNodes[v.Value]);
+                            graphNodes[v.Value].prevConnections.Add(graphNodes[prev.Value]);
+                        }
                     }
                     prev = v;
                 }
@@ -180,8 +196,17 @@ namespace Zenith.LibraryWrappers.OSM
                     }
                     if (prev != null && v != null)
                     {
-                        graphNodes[prev.Value].nextConnections.Add(graphNodes[v.Value]);
-                        graphNodes[v.Value].prevConnections.Add(graphNodes[prev.Value]);
+                        if (graphNodes[prev.Value].nextConnections.Contains(graphNodes[v.Value])) // do they already connect?
+                        {
+                            // if so, undo it (merging polygons, basically)
+                            graphNodes[prev.Value].nextConnections.Remove(graphNodes[v.Value]);
+                            graphNodes[v.Value].prevConnections.Remove(graphNodes[prev.Value]);
+                        }
+                        else
+                        {
+                            graphNodes[prev.Value].nextConnections.Add(graphNodes[v.Value]);
+                            graphNodes[v.Value].prevConnections.Add(graphNodes[prev.Value]);
+                        }
                     }
                     prev = v;
                 }

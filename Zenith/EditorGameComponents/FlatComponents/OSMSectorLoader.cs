@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -110,7 +111,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                         y = sector.GetRelativeYOf(roadSectors[i]) * size;
                         if (textures[i] != null)
                         {
-                            GraphicsBasic.DrawSpriteRect(graphicsDevice, x, y, size, size, textures[i], BlendState.AlphaBlend, Color.White);
+                            GraphicsBasic.DrawSpriteRect(graphicsDevice, x, y, size, size, textures[i], BlendState.AlphaBlend, Microsoft.Xna.Framework.Color.White);
                         }
                     }
                 }
@@ -120,12 +121,24 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 }
                 if (sector.Zoom <= ZCoords.GetSectorManager().GetHighestCacheZoom())
                 {
-                    using (var writer = File.OpenWrite(Path.Combine(OSMPaths.GetRenderRoot(), fileName)))
-                    {
-                        rendered.SaveAsPng(writer, rendered.Width, rendered.Height);
-                    }
+                    SuperSave(rendered, Path.Combine(OSMPaths.GetRenderRoot(), fileName));
                 }
                 return new ImageTileBuffer(graphicsDevice, rendered, sector);
+            }
+        }
+
+        // keep trying to save the texture until it doesn't mess up
+        private void SuperSave(Texture2D texture, string path)
+        {
+            while (true)
+            {
+                using (var writer = File.OpenWrite(path))
+                {
+                    texture.SaveAsPng(writer, texture.Width, texture.Height);
+                }
+
+                Bitmap map = new Bitmap(path);
+                if (map.GetPixel(0, map.Height - 1) != System.Drawing.Color.FromArgb(255, 255, 255, 255)) break;
             }
         }
     }

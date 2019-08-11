@@ -18,6 +18,7 @@ namespace Zenith
         public static Texture2D Road;
         public static Texture2D Beach;
         public static Texture2D BeachFlipped;
+        public static Texture2D CWArrows;
         public static Texture2D Error;
         public static Texture2D Tree;
 
@@ -31,6 +32,7 @@ namespace Zenith
             Road = content.Load<Texture2D>("Images/Road");
             Beach = content.Load<Texture2D>("Images/Beach");
             BeachFlipped = content.Load<Texture2D>("Images/BeachFlipped");
+            CWArrows = content.Load<Texture2D>("Images/CWArrows");
             Error = content.Load<Texture2D>("Images/Error");
             Tree = content.Load<Texture2D>("Images/Tree");
         }

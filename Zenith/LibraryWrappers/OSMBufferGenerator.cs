@@ -328,28 +328,28 @@ namespace Zenith.LibraryWrappers
                 {
                     double percent = i / (double)(contour.Count - 1); // fade from color to white
                     double percent2 = (i + 1) / (double)(contour.Count - 1); // fade from color to white
-                    Microsoft.Xna.Framework.Color newColor = new Microsoft.Xna.Framework.Color((byte)(color.R * percent2 + fadeTo.R * (1 - percent2)), (byte)(color.G * percent2 + fadeTo.G * (1 - percent2)), (byte)(color.B * percent2 + fadeTo.B * (1 - percent2)));
-                    Microsoft.Xna.Framework.Color newColor2 = new Microsoft.Xna.Framework.Color((byte)(color.R * percent2 + fadeTo.R * (1 - percent2)), (byte)(color.G * percent2 + fadeTo.G * (1 - percent2)), (byte)(color.B * percent2 + fadeTo.B * (1 - percent2)));
+                    Microsoft.Xna.Framework.Color newColor = new Microsoft.Xna.Framework.Color(DoThing(color.R, fadeTo.R, percent), DoThing(color.G, fadeTo.G, percent), DoThing(color.B, fadeTo.B, percent));
+                    Microsoft.Xna.Framework.Color newColor2 = new Microsoft.Xna.Framework.Color(DoThing(color.R, fadeTo.R, percent2), DoThing(color.G, fadeTo.G, percent2), DoThing(color.B, fadeTo.B, percent2));
                     Vector2d pos1 = new Vector2d(contour[i - 1].Position.X, contour[i - 1].Position.Y);
                     Vector2d pos2 = new Vector2d(contour[i].Position.X, contour[i].Position.Y);
                     Vector2d off1, off2;
                     if (true)
                     {
-                        off1 = (pos2 - pos1).RotateCW90().Normalized() * -0.00001;
+                        off1 = (pos2 - pos1).RotateCW90().Normalized() * -0.000001;
                     }
                     else
                     {
                         Vector2d pos0 = new Vector2d(contour[i - 2].Position.X, contour[i - 2].Position.Y);
-                        off1 = (pos2 - pos0).RotateCW90().Normalized() * -0.00001;
+                        off1 = (pos2 - pos0).RotateCW90().Normalized() * -0.000001;
                     }
                     if (true)
                     {
-                        off2 = (pos2 - pos1).RotateCW90().Normalized() * -0.00001;
+                        off2 = (pos2 - pos1).RotateCW90().Normalized() * -0.000001;
                     }
                     else
                     {
                         Vector2d pos3 = new Vector2d(contour[i + 1].Position.X, contour[i + 1].Position.Y);
-                        off2 = (pos3 - pos1).RotateCW90().Normalized() * -0.00001;
+                        off2 = (pos3 - pos1).RotateCW90().Normalized() * -0.000001;
                     }
                     lines.Add(new VertexPositionColor(new Vector3(pos2 - off2, z), newColor2));
                     lines.Add(new VertexPositionColor(new Vector3(pos2 + off2, z), newColor2));
@@ -360,6 +360,11 @@ namespace Zenith.LibraryWrappers
                 }
             }
             return lines;
+        }
+
+        private static float DoThing(byte r1, byte r2, double percent)
+        {
+            return (float)((r1 * percent + r2 * (1 - percent)) / 255.0);
         }
 
         private static void DrawDebugLines(GraphicsDevice graphicsDevice, MercatorSector sector, List<List<LibTessDotNet.ContourVertex>> contours)
