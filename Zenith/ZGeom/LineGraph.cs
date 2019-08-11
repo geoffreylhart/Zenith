@@ -214,6 +214,24 @@ namespace Zenith.ZGeom
             return combined.Single();
         }
 
+        // just connect all closest pairs of points, sure
+        // were doing this to put off proper closing of partially loaded multilakes
+        internal LineGraph ClosePolygonNaively()
+        {
+            List<GraphNode> ends = nodes.Where(x => x.nextConnections.Count + x.prevConnections.Count == 1).ToList();
+            if (ends.Count % 2 == 1) throw new NotImplementedException();
+            while (ends.Count > 0)
+            {
+                GraphNode node1 = ends[0];
+                GraphNode node2 = ends.OrderBy(x => (x.pos - node1.pos).Length()).ToList()[1];
+                ends.Remove(node1);
+                ends.Remove(node2);
+                node1.nextConnections.Add(node2);
+                node2.prevConnections.Add(node1);
+            }
+            return this;
+        }
+
         internal class GraphNode
         {
             internal Vector2d pos;

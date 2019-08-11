@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using GeoAPI.Geometries;
+using NetTopologySuite.Geometries;
 using Zenith.ZGeom;
 using Zenith.ZMath;
 using static Zenith.LibraryWrappers.OSM.Blob;
@@ -85,7 +87,7 @@ namespace Zenith.LibraryWrappers.OSM
 
         internal LineGraph GetLakesFast()
         {
-            return GetFast("natural", "water", sector, false);
+            return GetFast("natural", "water", sector, false).ForceDirection(true);
         }
 
         internal LineGraph GetMultiLakesFast()
@@ -97,8 +99,9 @@ namespace Zenith.LibraryWrappers.OSM
         // TODO: DEFINITELY need to factor this stuff out in some way to make a unit test
         private LineGraph GetLakeMulti()
         {
-            List<long> innerWayIds = new List<long>();
-            List<long> outerWayIds = new List<long>();
+            LineGraph finalAnswer = new LineGraph();
+            List<List<long>> inners = new List<List<long>>();
+            List<List<long>> outers = new List<List<long>>();
             foreach (var blob in blobs)
             {
                 if (blob.type != "OSMData") continue;
@@ -113,6 +116,8 @@ namespace Zenith.LibraryWrappers.OSM
                 {
                     foreach (var relation in pGroup.relations)
                     {
+                        List<long> innerWayIds = new List<long>();
+                        List<long> outerWayIds = new List<long>();
                         bool isNaturalWater = false;
                         bool isTypeMultipolygon = false;
                         for (int i = 0; i < relation.keys.Count; i++)
@@ -131,37 +136,56 @@ namespace Zenith.LibraryWrappers.OSM
                                     if (relation.roles_sid[i] == outerIndex) outerWayIds.Add(relation.memids[i]);
                                 }
                             }
+                            inners.Add(innerWayIds);
+                            outers.Add(outerWayIds);
                         }
                     }
                 }
             }
-            RoadInfoVector roadsInner = new RoadInfoVector();
+            List<long> allwayIds = new List<long>();
+            for (int i = 0; i < inners.Count; i++)
+            {
+                allwayIds.AddRange(inners[i]);
+                allwayIds.AddRange(outers[i]);
+            }
+            RoadInfoVector roads = new RoadInfoVector();
             foreach (var blob in blobs)
             {
-                var roadInfo = blob.GetVectors(innerWayIds, sector);
-                roadsInner.ways.AddRange(roadInfo.ways);
-                foreach (var pair in roadInfo.nodes) roadsInner.nodes.Add(pair.Key, pair.Value);
+                var roadInfo = blob.GetVectors(allwayIds, sector);
+                roads.ways.AddRange(roadInfo.ways);
+                foreach (var pair in roadInfo.nodes) roads.nodes.Add(pair.Key, pair.Value);
             }
-            RoadInfoVector roadsOuter = new RoadInfoVector();
-            foreach (var blob in blobs)
+            for (int i = 0; i < inners.Count; i++)
             {
-                var roadInfo = blob.GetVectors(outerWayIds, sector);
-                roadsOuter.ways.AddRange(roadInfo.ways);
-                foreach (var pair in roadInfo.nodes) roadsOuter.nodes.Add(pair.Key, pair.Value);
+                finalAnswer = finalAnswer.Combine(MakeThatMultiLake(inners[i], outers[i], roads));
             }
-            LineGraph answerOuter = new LineGraph();
+            return finalAnswer;
+        }
+
+        private LineGraph MakeThatMultiLake(List<long> innerWayIds, List<long> outerWayIds, RoadInfoVector roads)
+        {
+            LineGraph inner = MakeThatPolygon(innerWayIds, true, roads);
+            LineGraph outer = MakeThatPolygon(outerWayIds, false, roads);
+            return inner.ForceDirection(false).Combine(outer.ForceDirection(true));
+        }
+
+        private LineGraph MakeThatPolygon(List<long> wayIds, bool isHole, RoadInfoVector roads)
+        {
+            LineGraph answer = new LineGraph();
             Dictionary<long, GraphNode> graphNodes = new Dictionary<long, GraphNode>();
-            foreach (var way in roadsOuter.ways)
+            foreach (var way in roads.ways)
             {
+                if (!wayIds.Contains(way.id)) continue;
                 long? prev = null;
                 foreach (var nodeRef in way.refs)
                 {
-                    long? v = roadsOuter.nodes.ContainsKey(nodeRef) ? nodeRef : (long?)null;
+                    long? v = roads.nodes.ContainsKey(nodeRef) ? nodeRef : (long?)null;
                     if (v != null && !graphNodes.ContainsKey(v.Value))
                     {
-                        var newNode = new GraphNode(roadsOuter.nodes[v.Value]);
+                        var newNode = new GraphNode(roads.nodes[v.Value]);
+                        newNode.isHole = isHole;
                         graphNodes[nodeRef] = newNode;
-                        answerOuter.nodes.Add(newNode);
+                        answer.nodes.Add(newNode);
                     }
                     if (prev != null && v != null)
                     {
@@ -180,38 +204,7 @@ namespace Zenith.LibraryWrappers.OSM
                     prev = v;
                 }
             }
-            LineGraph answerInner = new LineGraph();
-            foreach (var way in roadsInner.ways)
-            {
-                long? prev = null;
-                foreach (var nodeRef in way.refs)
-                {
-                    long? v = roadsInner.nodes.ContainsKey(nodeRef) ? nodeRef : (long?)null;
-                    if (v != null && !graphNodes.ContainsKey(v.Value))
-                    {
-                        var newNode = new GraphNode(roadsInner.nodes[v.Value]);
-                        newNode.isHole = true;
-                        graphNodes[nodeRef] = newNode;
-                        answerInner.nodes.Add(newNode);
-                    }
-                    if (prev != null && v != null)
-                    {
-                        if (graphNodes[prev.Value].nextConnections.Contains(graphNodes[v.Value])) // do they already connect?
-                        {
-                            // if so, undo it (merging polygons, basically)
-                            graphNodes[prev.Value].nextConnections.Remove(graphNodes[v.Value]);
-                            graphNodes[v.Value].prevConnections.Remove(graphNodes[prev.Value]);
-                        }
-                        else
-                        {
-                            graphNodes[prev.Value].nextConnections.Add(graphNodes[v.Value]);
-                            graphNodes[v.Value].prevConnections.Add(graphNodes[prev.Value]);
-                        }
-                    }
-                    prev = v;
-                }
-            }
-            return answerOuter.ForceDirection(true).Combine(answerInner.ForceDirection(false));
+            return answer.ClosePolygonNaively();
         }
     }
 }
