@@ -13,7 +13,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
 {
     // TODO: think if this belongs somewhere else or divied up, we're definitely compromising here
     // we're using this class to handle the flow from OSM source to texture
-    class ProceduralTileBuffer : IGraphicsBuffer
+    public class ProceduralTileBuffer : IGraphicsBuffer
     {
         private ISector sector;
         // cache for loaded lines

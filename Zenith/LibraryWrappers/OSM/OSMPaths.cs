@@ -77,9 +77,15 @@ namespace Zenith.LibraryWrappers.OSM
             throw new NotImplementedException();
         }
 
+        public static string GetLocalCacheRoot()
+        {
+            string currDirectory = Directory.GetCurrentDirectory();
+            return Path.Combine(currDirectory.Substring(0, currDirectory.IndexOf("Zenith")), @"Zenith\Zenith\LocalCache");
+        }
+
         public static string GetOpenStreetMapsRoot()
         {
-            return @"..\..\..\..\LocalCache\OpenStreetMaps";
+            return Path.Combine(GetLocalCacheRoot(), "OpenStreetMaps");
         }
 
         public static string GetRenderRoot()
@@ -89,7 +95,7 @@ namespace Zenith.LibraryWrappers.OSM
 
         public static string GetPlanetPath()
         {
-            return @"..\..\..\..\LocalCache\planet-latest.osm.pbf";
+            return Path.Combine(GetLocalCacheRoot(), "planet-latest.osm.pbf");
         }
 
         public static string GetPlanetStepPath()
