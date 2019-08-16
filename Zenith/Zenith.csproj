@@ -110,6 +110,7 @@
     <Compile Include="ZGraphics\GraphicsBuffers\GraphicsBuffer.cs" />
     <Compile Include="ZGraphics\GraphicsBuffers\IGraphicsBuffer.cs" />
     <Compile Include="ZGraphics\GraphicsBuffers\ImageTileBuffer.cs" />
+    <Compile Include="ZGraphics\GraphicsBuffers\ProceduralTileBuffer.cs" />
     <Compile Include="ZGraphics\GraphicsBuffers\VectorTileBuffer.cs" />
     <Compile Include="ZGraphics\Pallete.cs" />
     <Compile Include="ZGraphics\SpriteBatchBasic.cs" />

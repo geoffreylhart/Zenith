@@ -18,14 +18,9 @@ namespace ZenithUnitTests
         {
             Plane plane = new Plane(new Vector3d(-0.5 + 5, -0.5 - 5, 20), new Vector3d(1, 1, 0));
             double distance = plane.GetDistanceFromPoint(new Vector3d(0, 0, 0));
-            AssertIsClose(distance, 0.5 * Math.Sqrt(2));
+            ZAssert.AssertIsClose(distance, 0.5 * Math.Sqrt(2));
             Circle3 intersection = plane.GetUnitSphereIntersection();
-            AssertIsClose(intersection.radius, 0.5 * Math.Sqrt(2));
-        }
-
-        private void AssertIsClose(double a, double b)
-        {
-            Assert.IsTrue(Math.Abs(a - b) < 0.001);
+            ZAssert.AssertIsClose(intersection.radius, 0.5 * Math.Sqrt(2));
         }
 
         // make sure our cube coordinates turn out as expected
@@ -68,11 +63,11 @@ namespace ZenithUnitTests
             Vector3d right = front.sectorFace.GetFaceRightDirection();
             if (doXNotY)
             {
-                AssertIsClose(front.GetRel(normal, right, longLat.ToSphereVector()), expectedAnswer);
+                ZAssert.AssertIsClose(front.GetRel(normal, right, longLat.ToSphereVector()), expectedAnswer);
             }
             else
             {
-                AssertIsClose(front.GetRel(normal, down, longLat.ToSphereVector()), expectedAnswer);
+                ZAssert.AssertIsClose(front.GetRel(normal, down, longLat.ToSphereVector()), expectedAnswer);
             }
         }
 

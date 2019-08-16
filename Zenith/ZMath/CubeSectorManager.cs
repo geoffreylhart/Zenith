@@ -39,7 +39,8 @@ namespace Zenith.ZMath
 
         public int GetHighestCacheZoom()
         {
-            return 8;
+            // TODO: when this equals 8, we never load the vector buffer
+            return 7;
         }
     }
 }

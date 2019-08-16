@@ -49,45 +49,23 @@ namespace Zenith.EditorGameComponents.FlatComponents
 
         public override IGraphicsBuffer GetGraphicsBuffer(GraphicsDevice graphicsDevice, ISector sector)
         {
-            try
+            if (File.Exists(OSMPaths.GetSectorImagePath(sector)))
             {
-                if (File.Exists(OSMPaths.GetSectorImagePath(sector)))
+                if (!Directory.Exists(Path.GetDirectoryName(OSMPaths.GetSectorImagePath(sector)))) Directory.CreateDirectory(Path.GetDirectoryName(OSMPaths.GetSectorImagePath(sector)));
+                using (var reader = File.OpenRead(OSMPaths.GetSectorImagePath(sector)))
                 {
-                    if (!Directory.Exists(Path.GetDirectoryName(OSMPaths.GetSectorImagePath(sector)))) Directory.CreateDirectory(Path.GetDirectoryName(OSMPaths.GetSectorImagePath(sector)));
-                    using (var reader = File.OpenRead(OSMPaths.GetSectorImagePath(sector)))
-                    {
-                        return new ImageTileBuffer(graphicsDevice, Texture2D.FromStream(graphicsDevice, reader), sector);
-                    }
+                    return new ImageTileBuffer(graphicsDevice, Texture2D.FromStream(graphicsDevice, reader), sector);
                 }
-            }
-            catch (Exception ex)
-            {
-                // image must've been corrupt
             }
             // otherwise, build it
             if (sector.Zoom >= ZCoords.GetSectorManager().GetHighestOSMZoom())
             {
                 try
                 {
-                    VectorTileBuffer buffer = new VectorTileBuffer(graphicsDevice, sector);
-                    Stopwatch sw = new Stopwatch();
-                    sw.Start();
-                    BlobCollection blobs = OSMReader.GetAllBlobs(sector);
-                    Console.WriteLine($"{sector} blobs loaded in {sw.Elapsed.TotalSeconds} seconds.");
-                    sw.Restart();
-                    buffer.Add(graphicsDevice, OSMBufferGenerator.GetCoast(graphicsDevice, blobs, sector), sector);
-                    buffer.Add(graphicsDevice, OSMBufferGenerator.GetCoastBorder(graphicsDevice, blobs), sector);
-                    Console.WriteLine($"{sector} coast loaded in {sw.Elapsed.TotalSeconds} seconds.");
-                    sw.Restart();
-                    buffer.Add(graphicsDevice, OSMBufferGenerator.GetLakes(graphicsDevice, blobs, sector), sector);
-                    buffer.Add(graphicsDevice, OSMBufferGenerator.GetLakesBorder(graphicsDevice, blobs, sector), sector);
-                    Console.WriteLine($"{sector} lakes loaded in {sw.Elapsed.TotalSeconds} seconds.");
-                    sw.Restart();
-                    buffer.Add(graphicsDevice, OSMBufferGenerator.GetRoads(graphicsDevice, blobs), sector);
-                    Console.WriteLine($"{sector} roads loaded in {sw.Elapsed.TotalSeconds} seconds.");
-                    sw.Restart();
-                    //buffer.Add(graphicsDevice, OSMBufferGenerator.GetTrees(graphicsDevice, blobs, sector), sector);
-                    Console.WriteLine($"{sector} trees loaded in {sw.Elapsed.TotalSeconds} seconds.");
+                    ProceduralTileBuffer buffer = new ProceduralTileBuffer(sector);
+                    buffer.LoadLinesFromFile();
+                    buffer.GenerateVertices();
+                    buffer.GenerateBuffers(graphicsDevice);
                     if (sector.Zoom <= ZCoords.GetSectorManager().GetHighestCacheZoom())
                     {
                         SuperSave(buffer.GetImage(graphicsDevice), OSMPaths.GetSectorImagePath(sector));

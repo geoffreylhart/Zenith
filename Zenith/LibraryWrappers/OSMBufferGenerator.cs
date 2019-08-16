@@ -25,17 +25,8 @@ namespace Zenith.LibraryWrappers
 {
     class OSMBufferGenerator
     {
-        internal static BasicVertexBuffer GetRoads(GraphicsDevice graphicsDevice, BlobCollection blobs)
+        public static List<VertexPositionColor> GetCoastVertices(LineGraph graph, ISector sector)
         {
-            double widthInFeet = 10.7 * 4; // extra thick
-            double circumEarth = 24901 * 5280;
-            double width = widthInFeet / circumEarth * 2 * Math.PI;
-            return blobs.GetRoadsFast().ConstructAsRoads(graphicsDevice, width, GlobalContent.Road, Microsoft.Xna.Framework.Color.White);
-        }
-
-        private static List<VertexPositionColor> GetCoastVertices(GraphicsDevice graphicsDevice, BlobCollection blobs, ISector sector)
-        {
-            LineGraph graph = blobs.GetBeachFast();
             if (graph.nodes.Count == 0)
             {
                 if (PixelIsLand(sector))
@@ -58,51 +49,6 @@ namespace Zenith.LibraryWrappers
             var outline = TrimLines(sector, contours);
             outline = CloseLines(sector, outline);
             return Tesselate(outline, Pallete.GRASS_GREEN);
-        }
-
-        internal static BasicVertexBuffer GetCoast(GraphicsDevice graphicsDevice, BlobCollection blobs, ISector sector)
-        {
-            return new BasicVertexBuffer(graphicsDevice, GetCoastVertices(graphicsDevice, blobs, sector), PrimitiveType.TriangleList);
-        }
-
-        internal static BasicVertexBuffer GetTrees(GraphicsDevice graphicsDevice, BlobCollection blobs, ISector sector)
-        {
-            PointCollection points = new PointCollection(sector, 100000); // 3 trillion trees on earth (eh, just guess)
-            double widthInFeet = 10.7 * 20; // extra thick
-            double circumEarth = 24901 * 5280;
-            double width = widthInFeet / circumEarth * 2 * Math.PI;
-            var coastTriangles = GetCoastVertices(graphicsDevice, blobs, sector);
-            var lakeTriangles = Tesselate(blobs.GetLakesFast().ToContours(), Pallete.OCEAN_BLUE);
-            var lakeTriangles2 = Tesselate(blobs.GetMultiLakesFast().ToContours(), Pallete.OCEAN_BLUE);
-            var roads = blobs.GetRoadsFast();
-            roads.Combine(blobs.GetLakesFast());
-            roads.Combine(blobs.GetMultiLakesFast());
-            roads.Combine(blobs.GetBeachFast());
-            return points.KeepWithin(coastTriangles).ExcludeWithin(lakeTriangles).ExcludeWithin(lakeTriangles2).RemoveNear(roads, width).Construct(graphicsDevice, width, GlobalContent.Tree, sector);
-        }
-
-        internal static BasicVertexBuffer GetLakes(GraphicsDevice graphicsDevice, BlobCollection blobs, ISector sector)
-        {
-            // TODO: somehow multipolygon lakes are getting mixed with regular lakes and cause the tesselator to vomit. think of a work around for this
-            var vertices = Tesselate(blobs.GetLakesFast().ToContours(), Pallete.OCEAN_BLUE);
-            vertices.AddRange(Tesselate(blobs.GetMultiLakesFast().ToContours(), Pallete.OCEAN_BLUE));
-            return new BasicVertexBuffer(graphicsDevice, vertices, PrimitiveType.TriangleList);
-        }
-
-        internal static BasicVertexBuffer GetLakesBorder(GraphicsDevice graphicsDevice, BlobCollection blobs, ISector sector)
-        {
-            double widthInFeet = 10.7 * 50; // extra thick
-            double circumEarth = 24901 * 5280;
-            double width = widthInFeet / circumEarth * 2 * Math.PI;
-            return blobs.GetLakesFast().Combine(blobs.GetMultiLakesFast()).ConstructAsRoads(graphicsDevice, width, GlobalContent.Beach, Microsoft.Xna.Framework.Color.White);
-        }
-
-        internal static BasicVertexBuffer GetCoastBorder(GraphicsDevice graphicsDevice, BlobCollection blobs)
-        {
-            double widthInFeet = 10.7 * 50; // extra thick
-            double circumEarth = 24901 * 5280;
-            double width = widthInFeet / circumEarth * 2 * Math.PI;
-            return blobs.GetBeachFast().ConstructAsRoads(graphicsDevice, width, GlobalContent.BeachFlipped, Microsoft.Xna.Framework.Color.White);
         }
 
         static Dictionary<ISector, Bitmap> landImages = new Dictionary<ISector, Bitmap>();
@@ -374,7 +320,7 @@ namespace Zenith.LibraryWrappers
 
         // manually implement triangulation algorithm
         // library takes like 8 seconds
-        private static List<VertexPositionColor> Tesselate(List<List<ContourVertex>> contours, Microsoft.Xna.Framework.Color color)
+        public static List<VertexPositionColor> Tesselate(List<List<ContourVertex>> contours, Microsoft.Xna.Framework.Color color)
         {
             // sometimes this seems to get stuck in an infinite loop?
             var task = Task.Run(() =>

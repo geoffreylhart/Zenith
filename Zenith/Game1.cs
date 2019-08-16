@@ -72,8 +72,6 @@ namespace Zenith
             // TODO: just change the ordering to fix this? apparantly setting a render target clears the backbuffer due to Xbox stuff
             GraphicsDevice.PresentationParameters.RenderTargetUsage = RenderTargetUsage.PreserveContents;
 
-            new OSMSectorLoader().LoadAll(GraphicsDevice);
-
             base.Initialize();
         }
 
