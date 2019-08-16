@@ -57,7 +57,7 @@ namespace Zenith.LibraryWrappers
             List<List<ContourVertex>> contours = graph.ToContours();
             var outline = TrimLines(sector, contours);
             outline = CloseLines(sector, outline);
-            return Tesselate(graphicsDevice, sector, outline, Pallete.GRASS_GREEN);
+            return Tesselate(outline, Pallete.GRASS_GREEN);
         }
 
         internal static BasicVertexBuffer GetCoast(GraphicsDevice graphicsDevice, BlobCollection blobs, ISector sector)
@@ -72,8 +72,8 @@ namespace Zenith.LibraryWrappers
             double circumEarth = 24901 * 5280;
             double width = widthInFeet / circumEarth * 2 * Math.PI;
             var coastTriangles = GetCoastVertices(graphicsDevice, blobs, sector);
-            var lakeTriangles = Tesselate(graphicsDevice, sector, blobs.GetLakesFast().ToContours(), Pallete.OCEAN_BLUE);
-            var lakeTriangles2 = Tesselate(graphicsDevice, sector, blobs.GetMultiLakesFast().ToContours(), Pallete.OCEAN_BLUE);
+            var lakeTriangles = Tesselate(blobs.GetLakesFast().ToContours(), Pallete.OCEAN_BLUE);
+            var lakeTriangles2 = Tesselate(blobs.GetMultiLakesFast().ToContours(), Pallete.OCEAN_BLUE);
             var roads = blobs.GetRoadsFast();
             roads.Combine(blobs.GetLakesFast());
             roads.Combine(blobs.GetMultiLakesFast());
@@ -84,8 +84,8 @@ namespace Zenith.LibraryWrappers
         internal static BasicVertexBuffer GetLakes(GraphicsDevice graphicsDevice, BlobCollection blobs, ISector sector)
         {
             // TODO: somehow multipolygon lakes are getting mixed with regular lakes and cause the tesselator to vomit. think of a work around for this
-            var vertices = Tesselate(graphicsDevice, sector, blobs.GetLakesFast().ToContours(), Pallete.OCEAN_BLUE);
-            vertices.AddRange(Tesselate(graphicsDevice, sector, blobs.GetMultiLakesFast().ToContours(), Pallete.OCEAN_BLUE));
+            var vertices = Tesselate(blobs.GetLakesFast().ToContours(), Pallete.OCEAN_BLUE);
+            vertices.AddRange(Tesselate(blobs.GetMultiLakesFast().ToContours(), Pallete.OCEAN_BLUE));
             return new BasicVertexBuffer(graphicsDevice, vertices, PrimitiveType.TriangleList);
         }
 
@@ -374,38 +374,58 @@ namespace Zenith.LibraryWrappers
 
         // manually implement triangulation algorithm
         // library takes like 8 seconds
-        private static List<VertexPositionColor> Tesselate(GraphicsDevice graphicsDevice, ISector sector, List<List<LibTessDotNet.ContourVertex>> contours, Microsoft.Xna.Framework.Color color)
+        private static List<VertexPositionColor> Tesselate(List<List<ContourVertex>> contours, Microsoft.Xna.Framework.Color color)
         {
-            Polygon polygon = new Polygon();
-            foreach (var contour in contours)
+            // sometimes this seems to get stuck in an infinite loop?
+            var task = Task.Run(() =>
             {
-                if (contour.Count > 2)
+                try
                 {
-                    bool isHole = contour[0].Data != null && ((bool)contour[0].Data);
-                    List<Vertex> blah = new List<Vertex>();
-                    foreach (var v in contour)
+                    Polygon polygon = new Polygon();
+                    foreach (var contour in contours)
                     {
-                        blah.Add(new Vertex(v.Position.X, v.Position.Y));
+                        if (contour.Count > 2)
+                        {
+                            bool isHole = contour[0].Data != null && ((bool)contour[0].Data);
+                            List<Vertex> blah = new List<Vertex>();
+                            foreach (var v in contour)
+                            {
+                                blah.Add(new Vertex(v.Position.X, v.Position.Y));
+                            }
+                            polygon.AddContour(blah, 0, isHole);
+                        }
                     }
-                    polygon.AddContour(blah, 0, isHole);
+                    List<VertexPositionColor> triangles = new List<VertexPositionColor>();
+                    if (contours.Count == 0) return triangles;
+                    float z = -10f;
+                    var mesh = polygon.Triangulate();
+                    foreach (var triangle in mesh.Triangles)
+                    {
+                        for (int j = 0; j < 3; j++)
+                        {
+                            var pos = triangle.GetVertex(j);
+                            var pos2 = triangle.GetVertex((j + 1) % 3);
+                            // TODO: why 1-y?
+                            triangles.Add(new VertexPositionColor(new Vector3((float)pos.X, (float)pos.Y, z), color));
+                            //triangles.Add(new VertexPositionColor(new Vector3((float)pos2.X, (float)pos2.Y, z), Color.Green));
+                        }
+                    }
+                    return triangles;
                 }
-            }
-            List<VertexPositionColor> triangles = new List<VertexPositionColor>();
-            if (contours.Count == 0) return triangles;
-            float z = -10f;
-            var mesh = polygon.Triangulate();
-            foreach (var triangle in mesh.Triangles)
-            {
-                for (int j = 0; j < 3; j++)
+                catch (Exception ex)
                 {
-                    var pos = triangle.GetVertex(j);
-                    var pos2 = triangle.GetVertex((j + 1) % 3);
-                    // TODO: why 1-y?
-                    triangles.Add(new VertexPositionColor(new Vector3((float)pos.X, (float)pos.Y, z), color));
-                    //triangles.Add(new VertexPositionColor(new Vector3((float)pos2.X, (float)pos2.Y, z), Color.Green));
+                    return null;
                 }
+            });
+            if (task.Wait(TimeSpan.FromMinutes(2)))
+            {
+                if (task.Result == null) throw new NotImplementedException();
+                return task.Result;
             }
-            return triangles;
+            else
+            {
+                throw new NotImplementedException();
+            }
         }
 
         // breakup that whole osm planet

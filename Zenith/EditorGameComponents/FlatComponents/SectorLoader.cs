@@ -28,13 +28,13 @@ namespace Zenith.EditorGameComponents.FlatComponents
             // autoload stuff
             // TODO: move to update step?
             int zoomLevel;
-            if(rootSector is MercatorSector)
+            if (rootSector is MercatorSector)
             {
                 zoomLevel = Math.Max((int)(Math.Log(maxX - minX) / Math.Log(0.5)), 0);
             }
             else
             {
-                zoomLevel = Math.Max((int)(Math.Log(maxX - minX) / Math.Log(0.5)-3), 0);
+                zoomLevel = Math.Max((int)(Math.Log(maxX - minX) / Math.Log(0.5) - 3), 0);
             }
             List<ISector> containedSectors = rootSector.GetSectorsInRange(minX, maxX, minY, maxY, zoomLevel);
             List<ISector> unload = new List<ISector>();
@@ -140,6 +140,14 @@ namespace Zenith.EditorGameComponents.FlatComponents
             //{
             //    imageLayers[sector.zoom].Add(sector);
             //}
+        }
+
+        public void LoadAll(GraphicsDevice graphicsDevice)
+        {
+            foreach (var sector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
+            {
+                GetGraphicsBuffer(graphicsDevice, sector);
+            }
         }
 
         private void AddImage(double mouseX, double mouseY, double cameraZoom)

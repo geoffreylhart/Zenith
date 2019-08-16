@@ -21,9 +21,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
     {
         public override bool CacheExists(ISector sector)
         {
-            String fileName = sector.ToString() + ".PNG";
-            String filePath = Path.Combine(OSMPaths.GetRenderRoot(), fileName);
-            return File.Exists(filePath);
+            return File.Exists(OSMPaths.GetSectorImagePath(sector));
         }
 
         public override bool DoAutoLoad(ISector sector)
@@ -39,7 +37,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
         public override IEnumerable<ISector> EnumerateCachedSectors()
         {
             var manager = ZCoords.GetSectorManager();
-            foreach (var file in Directory.EnumerateFiles(OSMPaths.GetRenderRoot()))
+            foreach (var file in Directory.EnumerateFiles(OSMPaths.GetRenderRoot(), "*", SearchOption.AllDirectories))
             {
                 String filename = Path.GetFileName(file);
                 if (!filename.StartsWith("Coast"))
@@ -51,13 +49,20 @@ namespace Zenith.EditorGameComponents.FlatComponents
 
         public override IGraphicsBuffer GetGraphicsBuffer(GraphicsDevice graphicsDevice, ISector sector)
         {
-            String fileName = sector.ToString() + ".PNG";
-            if (File.Exists(Path.Combine(OSMPaths.GetRenderRoot(), fileName)))
+            try
             {
-                using (var reader = File.OpenRead(Path.Combine(OSMPaths.GetRenderRoot(), fileName)))
+                if (File.Exists(OSMPaths.GetSectorImagePath(sector)))
                 {
-                    return new ImageTileBuffer(graphicsDevice, Texture2D.FromStream(graphicsDevice, reader), sector);
+                    if (!Directory.Exists(Path.GetDirectoryName(OSMPaths.GetSectorImagePath(sector)))) Directory.CreateDirectory(Path.GetDirectoryName(OSMPaths.GetSectorImagePath(sector)));
+                    using (var reader = File.OpenRead(OSMPaths.GetSectorImagePath(sector)))
+                    {
+                        return new ImageTileBuffer(graphicsDevice, Texture2D.FromStream(graphicsDevice, reader), sector);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                // image must've been corrupt
             }
             // otherwise, build it
             if (sector.Zoom >= ZCoords.GetSectorManager().GetHighestOSMZoom())
@@ -81,12 +86,20 @@ namespace Zenith.EditorGameComponents.FlatComponents
                     buffer.Add(graphicsDevice, OSMBufferGenerator.GetRoads(graphicsDevice, blobs), sector);
                     Console.WriteLine($"{sector} roads loaded in {sw.Elapsed.TotalSeconds} seconds.");
                     sw.Restart();
-                    buffer.Add(graphicsDevice, OSMBufferGenerator.GetTrees(graphicsDevice, blobs, sector), sector);
+                    //buffer.Add(graphicsDevice, OSMBufferGenerator.GetTrees(graphicsDevice, blobs, sector), sector);
                     Console.WriteLine($"{sector} trees loaded in {sw.Elapsed.TotalSeconds} seconds.");
+                    if (sector.Zoom <= ZCoords.GetSectorManager().GetHighestCacheZoom())
+                    {
+                        SuperSave(buffer.GetImage(graphicsDevice), OSMPaths.GetSectorImagePath(sector));
+                    }
                     return buffer;
                 }
                 catch (Exception ex)
                 {
+                    if (sector.Zoom <= ZCoords.GetSectorManager().GetHighestCacheZoom())
+                    {
+                        SuperSave(GlobalContent.Error, OSMPaths.GetSectorImagePath(sector));
+                    }
                     return new ImageTileBuffer(graphicsDevice, GlobalContent.Error, sector);
                 }
             }
@@ -98,7 +111,16 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 Texture2D[] textures = new Texture2D[roadSectors.Count];
                 for (int i = 0; i < roadSectors.Count; i++)
                 {
-                    textures[i] = GetGraphicsBuffer(graphicsDevice, roadSectors[i]).GetImage(graphicsDevice);
+                    IGraphicsBuffer buffer = null;
+                    try
+                    {
+                        buffer = GetGraphicsBuffer(graphicsDevice, roadSectors[i]);
+                        textures[i] = buffer.GetImage(graphicsDevice);
+                    }
+                    finally
+                    {
+                        if (buffer != null && !(buffer is ImageTileBuffer)) buffer.Dispose();
+                    }
                 }
                 if (textures.Any(x => x != null))
                 {
@@ -117,11 +139,11 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 }
                 for (int i = 0; i < textures.Length; i++)
                 {
-                    if (textures[i] != null) textures[i].Dispose();
+                    if (textures[i] != null && textures[i] != GlobalContent.Error) textures[i].Dispose();
                 }
                 if (sector.Zoom <= ZCoords.GetSectorManager().GetHighestCacheZoom())
                 {
-                    SuperSave(rendered, Path.Combine(OSMPaths.GetRenderRoot(), fileName));
+                    SuperSave(rendered, OSMPaths.GetSectorImagePath(sector));
                 }
                 return new ImageTileBuffer(graphicsDevice, rendered, sector);
             }
@@ -130,16 +152,23 @@ namespace Zenith.EditorGameComponents.FlatComponents
         // keep trying to save the texture until it doesn't mess up
         private void SuperSave(Texture2D texture, string path)
         {
-            while (true)
+            if (!Directory.Exists(Path.GetDirectoryName(path))) Directory.CreateDirectory(Path.GetDirectoryName(path));
+            for (int i = 0; i < 3; i++)
             {
-                using (var writer = File.OpenWrite(path))
+                try
                 {
-                    texture.SaveAsPng(writer, texture.Width, texture.Height);
+                    using (var writer = File.OpenWrite(path))
+                    {
+                        texture.SaveAsPng(writer, texture.Width, texture.Height);
+                        return;
+                    }
                 }
+                catch (Exception ex)
+                {
 
-                Bitmap map = new Bitmap(path);
-                if (map.GetPixel(0, map.Height - 1) != System.Drawing.Color.FromArgb(255, 255, 255, 255)) break;
+                }
             }
+            Console.WriteLine("texture was unsaved");
         }
     }
 }

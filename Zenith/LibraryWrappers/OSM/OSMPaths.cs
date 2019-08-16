@@ -44,6 +44,39 @@ namespace Zenith.LibraryWrappers.OSM
             throw new NotImplementedException();
         }
 
+        public static string GetSectorImagePath(ISector sector)
+        {
+            if (sector is MercatorSector)
+            {
+                var parent = sector.GetChildrenAtLevel(sector.Zoom + 1)[0].GetAllParents().Where(x => x.Zoom == 10);
+                var parent5 = sector.GetChildrenAtLevel(sector.Zoom + 1)[0].GetAllParents().Where(x => x.Zoom == 5);
+                if (parent.Count() != 0)
+                {
+                    return Path.Combine(GetRenderRoot(), parent5.Single().ToString(), parent.Single().ToString() + ".PNG");
+                }
+                if (parent5.Count() != 0)
+                {
+                    return Path.Combine(GetRenderRoot(), parent5.Single().ToString(), sector.ToString() + ".PNG");
+                }
+                return Path.Combine(GetRenderRoot(), sector.ToString() + ".PNG");
+            }
+            if (sector is CubeSector)
+            {
+                var parent = sector.GetChildrenAtLevel(sector.Zoom + 1)[0].GetAllParents().Where(x => x.Zoom == 8);
+                var parent4 = sector.GetChildrenAtLevel(sector.Zoom + 1)[0].GetAllParents().Where(x => x.Zoom == 4);
+                if (parent.Count() != 0)
+                {
+                    return Path.Combine(GetRenderRoot(), ((CubeSector)sector).sectorFace.GetFaceAcronym() + "Face", parent4.Single().ToString(), parent.Single().ToString() + ".PNG");
+                }
+                if (parent4.Count() != 0)
+                {
+                    return Path.Combine(GetRenderRoot(), ((CubeSector)sector).sectorFace.GetFaceAcronym() + "Face", parent4.Single().ToString(), sector.ToString() + ".PNG");
+                }
+                return Path.Combine(GetRenderRoot(), ((CubeSector)sector).sectorFace.GetFaceAcronym() + "Face", sector.ToString() + ".PNG");
+            }
+            throw new NotImplementedException();
+        }
+
         public static string GetOpenStreetMapsRoot()
         {
             return @"..\..\..\..\LocalCache\OpenStreetMaps";
