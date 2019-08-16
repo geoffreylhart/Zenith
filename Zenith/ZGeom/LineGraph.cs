@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 using NetTopologySuite.Geometries;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -133,6 +134,44 @@ namespace Zenith.ZGeom
                 }
             }
             return this;
+        }
+
+        internal void WriteToStream(Stream stream)
+        {
+            var writer = new BinaryWriter(stream);
+            Dictionary<GraphNode, int> indices = new Dictionary<GraphNode, int>();
+            for (int i = 0; i < nodes.Count; i++) indices[nodes[i]] = i;
+            writer.Write(nodes.Count);
+            foreach (var node in nodes)
+            {
+                writer.Write(node.isHole);
+                writer.Write(node.nextConnections.Count);
+                foreach (var c in node.nextConnections) writer.Write(indices[c]);
+                writer.Write(node.nextProps.Count);
+                foreach (var prop in node.nextProps)
+                {
+                    writer.Write(prop.Count);
+                    foreach (var pair in prop)
+                    {
+                        writer.Write(pair.Key);
+                        writer.Write(pair.Value);
+                    }
+                }
+                writer.Write(node.pos.X);
+                writer.Write(node.pos.Y);
+                writer.Write(node.prevConnections.Count);
+                foreach (var c in node.prevConnections) writer.Write(indices[c]);
+                writer.Write(node.prevProps.Count);
+                foreach (var prop in node.prevProps)
+                {
+                    writer.Write(prop.Count);
+                    foreach (var pair in prop)
+                    {
+                        writer.Write(pair.Key);
+                        writer.Write(pair.Value);
+                    }
+                }
+            }
         }
 
         internal LineGraph Combine(LineGraph x)

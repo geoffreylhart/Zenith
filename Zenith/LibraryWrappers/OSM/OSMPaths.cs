@@ -9,7 +9,7 @@ using Zenith.ZMath;
 
 namespace Zenith.LibraryWrappers.OSM
 {
-    class OSMPaths
+    public class OSMPaths
     {
         public static string GetSectorPath(ISector sector)
         {

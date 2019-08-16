@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -97,6 +99,24 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         public Texture2D GetImage(GraphicsDevice graphicsDevice)
         {
             return vectorTileBuffer.GetImage(graphicsDevice);
+        }
+
+        // return a compressed stream of the preloaded vertex information
+        public byte[] GetVerticesBytes()
+        {
+            using (Stream memStream = new MemoryStream())
+            {
+                using (var deflateStream = new DeflateStream(memStream, CompressionMode.Compress))
+                {
+                    beachGraph.WriteToStream(deflateStream);
+                    lakesGraph.WriteToStream(deflateStream);
+                    multiLakesGraph.WriteToStream(deflateStream);
+                    roadGraph.WriteToStream(deflateStream);
+                    byte[] bytes = new byte[memStream.Length];
+                    memStream.Write(bytes, 0, (int)memStream.Length);
+                    return bytes;
+                }
+            }
         }
     }
 }
