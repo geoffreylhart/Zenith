@@ -80,5 +80,34 @@ namespace ZenithUnitTests
                 Assert.AreEqual(readNumD, numD);
             }
         }
+
+        [TestMethod]
+        public void TestParallelPerformance()
+        {
+            LongLat longLat = new LongLat(-87.3294527 * Math.PI / 180, 30.4668536 * Math.PI / 180);
+            CubeSector root = new CubeSector(CubeSector.CubeSectorFace.LEFT, 0, 0, 0);
+            Vector2d relativeCoord = root.ProjectToLocalCoordinates(longLat.ToSphereVector());
+            List<ISector> sectors = root.GetSectorAt(relativeCoord.X, relativeCoord.Y, 6).GetChildrenAtLevel(8);
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            foreach (var sector in sectors)
+            {
+                ProceduralTileBuffer buffer = new ProceduralTileBuffer(sector);
+                buffer.LoadLinesFromFile();
+                buffer.GenerateVertices();
+                buffer.Dispose();
+            }
+            double sequentialSecs = sw.Elapsed.TotalSeconds; // 12.155 secs
+            sw.Restart();
+            Parallel.ForEach(sectors, sector =>
+            {
+                ProceduralTileBuffer buffer = new ProceduralTileBuffer(sector);
+                buffer.LoadLinesFromFile();
+                buffer.GenerateVertices();
+                buffer.Dispose();
+            });
+            double parallelSecs = sw.Elapsed.TotalSeconds; // 8.477 secs
+            double speedMultiplier = sequentialSecs / parallelSecs; // 1.434 (seems to vary between 1.7 at highest and 1.1 at lowest, not the best multiplier but could still be worthwhile)
+        }
     }
 }
