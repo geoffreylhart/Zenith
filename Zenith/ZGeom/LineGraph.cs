@@ -6,6 +6,7 @@ using NetTopologySuite.Geometries;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -172,6 +173,48 @@ namespace Zenith.ZGeom
                     }
                 }
             }
+        }
+
+        internal LineGraph ReadFromStream(Stream stream)
+        {
+            var reader = new BinaryReader(stream);
+            int nodeCount = reader.ReadInt32();
+            for (int i = 0; i < nodeCount; i++)
+            {
+                nodes.Add(new GraphNode(null));
+            }
+            foreach (var node in nodes)
+            {
+                node.isHole = reader.ReadBoolean();
+                int nextConnectionCount = reader.ReadInt32();
+                for (int i = 0; i < nextConnectionCount; i++)
+                {
+                    node.nextConnections.Add(nodes[reader.ReadInt32()]);
+                }
+                int nextPropCount = reader.ReadInt32();
+                for (int i = 0; i < nextPropCount; i++)
+                {
+                    int pairCount = reader.ReadInt32();
+                    var dict = new Dictionary<string, string>();
+                    node.nextProps.Add(dict);
+                    for (int j = 0; j < pairCount; j++) dict.Add(reader.ReadString(), reader.ReadString());
+                }
+                node.pos = new Vector2d(reader.ReadDouble(), reader.ReadDouble());
+                int prevConnectionCount = reader.ReadInt32();
+                for (int i = 0; i < prevConnectionCount; i++)
+                {
+                    node.prevConnections.Add(nodes[reader.ReadInt32()]);
+                }
+                int prevPropCount = reader.ReadInt32();
+                for (int i = 0; i < prevPropCount; i++)
+                {
+                    int pairCount = reader.ReadInt32();
+                    var dict = new Dictionary<string, string>();
+                    node.prevProps.Add(dict);
+                    for (int j = 0; j < pairCount; j++) dict.Add(reader.ReadString(), reader.ReadString());
+                }
+            }
+            return this;
         }
 
         internal LineGraph Combine(LineGraph x)

@@ -33,6 +33,7 @@ namespace ZenithUnitTests
             double vertSecs = sw.Elapsed.TotalSeconds;
             Assert.IsTrue(loadTimeSecs < 2);
             Assert.IsTrue(vertSecs < 0.5);
+            // and the rest takes around 0.29 secs
         }
 
         [TestMethod]
@@ -47,7 +48,14 @@ namespace ZenithUnitTests
             ProceduralTileBuffer buffer = new ProceduralTileBuffer(sector);
             buffer.LoadLinesFromFile();
             buffer.GenerateVertices();
-            long verticesSize = buffer.GetVerticesBytes().Length; // is 3,272,392 bytes
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            byte[] verticesBytes = buffer.GetVerticesBytes();
+            long verticesSize = verticesBytes.Length; // is 3,292,765 bytes
+            double writeSecs = sw.Elapsed.TotalSeconds; // 1.211
+            sw.Restart();
+            buffer.SetVerticesFromBytes(verticesBytes);
+            double readSecs = sw.Elapsed.TotalSeconds; // 1.579
             // rendered image is 230,981 bytes
         }
     }

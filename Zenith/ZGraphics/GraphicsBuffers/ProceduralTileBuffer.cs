@@ -104,18 +104,49 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         // return a compressed stream of the preloaded vertex information
         public byte[] GetVerticesBytes()
         {
-            using (Stream memStream = new MemoryStream())
+            using (var memStream = new MemoryStream())
             {
-                using (var deflateStream = new DeflateStream(memStream, CompressionMode.Compress))
-                {
-                    beachGraph.WriteToStream(deflateStream);
-                    lakesGraph.WriteToStream(deflateStream);
-                    multiLakesGraph.WriteToStream(deflateStream);
-                    roadGraph.WriteToStream(deflateStream);
-                    byte[] bytes = new byte[memStream.Length];
-                    memStream.Write(bytes, 0, (int)memStream.Length);
-                    return bytes;
-                }
+                beachGraph.WriteToStream(memStream);
+                lakesGraph.WriteToStream(memStream);
+                multiLakesGraph.WriteToStream(memStream);
+                roadGraph.WriteToStream(memStream);
+                //return Deflate(memStream.ToArray(), CompressionMode.Compress)
+                return memStream.ToArray();
+            }
+        }
+
+        public void SetVerticesFromBytes(byte[] bytes)
+        {
+            //using (var memStream = new MemoryStream(Deflate(bytes, CompressionMode.Decompress)))
+            using (var memStream = new MemoryStream(bytes))
+            {
+                beachGraph = new LineGraph().ReadFromStream(memStream);
+                lakesGraph = new LineGraph().ReadFromStream(memStream);
+                multiLakesGraph = new LineGraph().ReadFromStream(memStream);
+                roadGraph = new LineGraph().ReadFromStream(memStream);
+            }
+        }
+
+        // just an example, right now
+        private static byte[] Deflate(byte[] x, CompressionMode mode)
+        {
+            using (var inStream = new MemoryStream(x))
+            using (var outStream = new MemoryStream())
+            {
+                Deflate(inStream, outStream, mode);
+                return outStream.ToArray();
+            }
+        }
+
+        private static void Deflate(Stream inStream, Stream outStream, CompressionMode mode)
+        {
+            if (mode == CompressionMode.Compress)
+            {
+                using (var deflateStream = new DeflateStream(outStream, mode)) inStream.CopyTo(deflateStream);
+            }
+            else
+            {
+                using (var deflateStream = new DeflateStream(inStream, mode)) deflateStream.CopyTo(outStream);
             }
         }
     }
