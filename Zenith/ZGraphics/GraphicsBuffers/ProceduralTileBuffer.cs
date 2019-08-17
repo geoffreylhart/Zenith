@@ -110,15 +110,13 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                 lakesGraph.WriteToStream(memStream);
                 multiLakesGraph.WriteToStream(memStream);
                 roadGraph.WriteToStream(memStream);
-                //return Deflate(memStream.ToArray(), CompressionMode.Compress)
-                return memStream.ToArray();
+                return Deflate(memStream.ToArray(), CompressionMode.Compress);
             }
         }
 
         public void SetVerticesFromBytes(byte[] bytes)
         {
-            //using (var memStream = new MemoryStream(Deflate(bytes, CompressionMode.Decompress)))
-            using (var memStream = new MemoryStream(bytes))
+            using (var memStream = new MemoryStream(Deflate(bytes, CompressionMode.Decompress)))
             {
                 beachGraph = new LineGraph().ReadFromStream(memStream);
                 lakesGraph = new LineGraph().ReadFromStream(memStream);

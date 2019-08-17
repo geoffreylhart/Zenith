@@ -11,7 +11,7 @@ using Zenith.ZMath;
 
 namespace Zenith.LibraryWrappers.OSM
 {
-    class Blob
+    public class Blob
     {
         public int length;
         public string type; // 10

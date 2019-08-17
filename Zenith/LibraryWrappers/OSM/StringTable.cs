@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Zenith.LibraryWrappers.OSM
 {
-    class StringTable
+    public class StringTable
     {
         public List<string> vals;
 

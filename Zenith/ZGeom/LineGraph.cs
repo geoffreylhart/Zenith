@@ -10,6 +10,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Zenith.LibraryWrappers.OSM;
 using Zenith.ZGraphics;
 using Zenith.ZMath;
 
@@ -139,37 +140,36 @@ namespace Zenith.ZGeom
 
         internal void WriteToStream(Stream stream)
         {
-            var writer = new BinaryWriter(stream);
             Dictionary<GraphNode, int> indices = new Dictionary<GraphNode, int>();
             for (int i = 0; i < nodes.Count; i++) indices[nodes[i]] = i;
-            writer.Write(nodes.Count);
+            OSMReader.WriteVarInt(stream, nodes.Count);
             foreach (var node in nodes)
             {
-                writer.Write(node.isHole);
-                writer.Write(node.nextConnections.Count);
-                foreach (var c in node.nextConnections) writer.Write(indices[c]);
-                writer.Write(node.nextProps.Count);
+                OSMReader.WriteVarInt(stream, node.isHole ? 1 : 0);
+                OSMReader.WriteVarInt(stream, node.nextConnections.Count);
+                foreach (var c in node.nextConnections) OSMReader.WriteVarInt(stream, indices[c]);
+                OSMReader.WriteVarInt(stream, node.nextProps.Count);
                 foreach (var prop in node.nextProps)
                 {
-                    writer.Write(prop.Count);
+                    OSMReader.WriteVarInt(stream, prop.Count);
                     foreach (var pair in prop)
                     {
-                        writer.Write(pair.Key);
-                        writer.Write(pair.Value);
+                        OSMReader.WriteString(stream, pair.Key);
+                        OSMReader.WriteString(stream, pair.Value);
                     }
                 }
-                writer.Write(node.pos.X);
-                writer.Write(node.pos.Y);
-                writer.Write(node.prevConnections.Count);
-                foreach (var c in node.prevConnections) writer.Write(indices[c]);
-                writer.Write(node.prevProps.Count);
+                OSMReader.WriteDouble(stream, node.pos.X);
+                OSMReader.WriteDouble(stream, node.pos.Y);
+                OSMReader.WriteVarInt(stream, node.prevConnections.Count);
+                foreach (var c in node.prevConnections) OSMReader.WriteVarInt(stream, indices[c]);
+                OSMReader.WriteVarInt(stream, node.prevProps.Count);
                 foreach (var prop in node.prevProps)
                 {
-                    writer.Write(prop.Count);
+                    OSMReader.WriteVarInt(stream, prop.Count);
                     foreach (var pair in prop)
                     {
-                        writer.Write(pair.Key);
-                        writer.Write(pair.Value);
+                        OSMReader.WriteString(stream, pair.Key);
+                        OSMReader.WriteString(stream, pair.Value);
                     }
                 }
             }
@@ -177,41 +177,40 @@ namespace Zenith.ZGeom
 
         internal LineGraph ReadFromStream(Stream stream)
         {
-            var reader = new BinaryReader(stream);
-            int nodeCount = reader.ReadInt32();
+            int nodeCount = (int)OSMReader.ReadVarInt(stream);
             for (int i = 0; i < nodeCount; i++)
             {
                 nodes.Add(new GraphNode(null));
             }
             foreach (var node in nodes)
             {
-                node.isHole = reader.ReadBoolean();
-                int nextConnectionCount = reader.ReadInt32();
+                node.isHole = OSMReader.ReadVarInt(stream) == 1;
+                int nextConnectionCount = (int)OSMReader.ReadVarInt(stream);
                 for (int i = 0; i < nextConnectionCount; i++)
                 {
-                    node.nextConnections.Add(nodes[reader.ReadInt32()]);
+                    node.nextConnections.Add(nodes[(int)OSMReader.ReadVarInt(stream)]);
                 }
-                int nextPropCount = reader.ReadInt32();
+                int nextPropCount = (int)OSMReader.ReadVarInt(stream);
                 for (int i = 0; i < nextPropCount; i++)
                 {
-                    int pairCount = reader.ReadInt32();
+                    int pairCount = (int)OSMReader.ReadVarInt(stream);
                     var dict = new Dictionary<string, string>();
                     node.nextProps.Add(dict);
-                    for (int j = 0; j < pairCount; j++) dict.Add(reader.ReadString(), reader.ReadString());
+                    for (int j = 0; j < pairCount; j++) dict.Add(OSMReader.ReadString(stream), OSMReader.ReadString(stream));
                 }
-                node.pos = new Vector2d(reader.ReadDouble(), reader.ReadDouble());
-                int prevConnectionCount = reader.ReadInt32();
+                node.pos = new Vector2d(OSMReader.ReadDouble(stream), OSMReader.ReadDouble(stream));
+                int prevConnectionCount = (int)OSMReader.ReadVarInt(stream);
                 for (int i = 0; i < prevConnectionCount; i++)
                 {
-                    node.prevConnections.Add(nodes[reader.ReadInt32()]);
+                    node.prevConnections.Add(nodes[(int)OSMReader.ReadVarInt(stream)]);
                 }
-                int prevPropCount = reader.ReadInt32();
+                int prevPropCount = (int)OSMReader.ReadVarInt(stream);
                 for (int i = 0; i < prevPropCount; i++)
                 {
-                    int pairCount = reader.ReadInt32();
+                    int pairCount = (int)OSMReader.ReadVarInt(stream);
                     var dict = new Dictionary<string, string>();
                     node.prevProps.Add(dict);
-                    for (int j = 0; j < pairCount; j++) dict.Add(reader.ReadString(), reader.ReadString());
+                    for (int j = 0; j < pairCount; j++) dict.Add(OSMReader.ReadString(stream), OSMReader.ReadString(stream));
                 }
             }
             return this;

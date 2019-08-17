@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Zenith.LibraryWrappers.OSM
 {
-    class DenseNodes
+    public class DenseNodes
     {
         public List<long> id = new List<long>(); // 1, packed, signed, delta coded
         public DenseInfo denseinfo; // 5

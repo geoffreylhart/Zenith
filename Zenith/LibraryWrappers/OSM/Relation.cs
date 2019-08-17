@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Zenith.LibraryWrappers.OSM
 {
-    class Relation
+    public class Relation
     {
         public long id; // 1
         public List<int> keys = new List<int>(); // 2, packed

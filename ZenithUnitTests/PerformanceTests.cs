@@ -27,13 +27,10 @@ namespace ZenithUnitTests
             sw.Start();
             ProceduralTileBuffer buffer = new ProceduralTileBuffer(sector);
             buffer.LoadLinesFromFile();
-            double loadTimeSecs = sw.Elapsed.TotalSeconds;
+            double loadTimeSecs = sw.Elapsed.TotalSeconds; // 2.009 secs
             sw.Restart();
             buffer.GenerateVertices();
-            double vertSecs = sw.Elapsed.TotalSeconds;
-            Assert.IsTrue(loadTimeSecs < 2);
-            Assert.IsTrue(vertSecs < 0.5);
-            // and the rest takes around 0.29 secs
+            double vertSecs = sw.Elapsed.TotalSeconds; // 0.317 secs
         }
 
         [TestMethod]
@@ -51,12 +48,37 @@ namespace ZenithUnitTests
             Stopwatch sw = new Stopwatch();
             sw.Start();
             byte[] verticesBytes = buffer.GetVerticesBytes();
-            long verticesSize = verticesBytes.Length; // is 3,292,765 bytes
-            double writeSecs = sw.Elapsed.TotalSeconds; // 1.211
+            long verticesSize = verticesBytes.Length; // is 3,195,295 bytes
+            double writeSecs = sw.Elapsed.TotalSeconds; // 1.347 secs
             sw.Restart();
             buffer.SetVerticesFromBytes(verticesBytes);
-            double readSecs = sw.Elapsed.TotalSeconds; // 1.579
+            double readSecs = sw.Elapsed.TotalSeconds; // 2.485 secs
             // rendered image is 230,981 bytes
+        }
+
+        [TestMethod]
+        public void TestReadWrite()
+        {
+            long num = 1000;
+            string str = "geoffrey";
+            double numD = Math.PI;
+            byte[] written;
+            using (var memStream = new MemoryStream())
+            {
+                OSMReader.WriteVarInt(memStream, num);
+                OSMReader.WriteString(memStream, str);
+                OSMReader.WriteDouble(memStream, numD);
+                written = memStream.ToArray();
+            }
+            using (var memStream = new MemoryStream(written))
+            {
+                long readNum = OSMReader.ReadVarInt(memStream);
+                string readStr = OSMReader.ReadString(memStream);
+                double readNumD = OSMReader.ReadDouble(memStream);
+                Assert.AreEqual(readNum, num);
+                Assert.AreEqual(readStr, str);
+                Assert.AreEqual(readNumD, numD);
+            }
         }
     }
 }

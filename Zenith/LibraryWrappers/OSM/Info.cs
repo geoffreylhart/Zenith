@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Zenith.LibraryWrappers.OSM
 {
-    class Info
+    public class Info
     {
         public int version = -1; // 1
         public int timestamp; // 2

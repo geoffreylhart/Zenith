@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Zenith.LibraryWrappers.OSM
 {
-    class DenseInfo
+    public class DenseInfo
     {
         public List<int> version; // 1, packed
         public List<long> timestamp; // 2, packed, signed, delta coded

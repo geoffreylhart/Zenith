@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Zenith.LibraryWrappers.OSM
 {
-    class PrimitiveBlock
+    public class PrimitiveBlock
     {
         public StringTable stringtable; // 1
         public List<PrimitiveGroup> primitivegroup = new List<PrimitiveGroup>(); // 2

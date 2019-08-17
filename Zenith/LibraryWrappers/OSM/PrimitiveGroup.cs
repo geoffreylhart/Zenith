@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Zenith.LibraryWrappers.OSM
 {
-    class PrimitiveGroup
+    public class PrimitiveGroup
     {
         public List<RawNode> nodes = new List<RawNode>(); // 1
         public List<DenseNodes> dense = new List<DenseNodes>(); // 2 (doc says it should be optional, not a list, but w/e)

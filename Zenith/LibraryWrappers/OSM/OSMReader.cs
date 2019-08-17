@@ -16,7 +16,7 @@ using static Zenith.ZGeom.LineGraph;
 
 namespace Zenith.LibraryWrappers.OSM
 {
-    class OSMReader
+    public class OSMReader
     {
         internal static BlobCollection GetAllBlobs(ISector sector)
         {
@@ -31,7 +31,7 @@ namespace Zenith.LibraryWrappers.OSM
                     blobs.Add(blob);
                 }
             }
-            var collection =  new BlobCollection(blobs, sector);
+            var collection = new BlobCollection(blobs, sector);
             collection.Init();
             return collection;
         }
@@ -107,13 +107,13 @@ namespace Zenith.LibraryWrappers.OSM
             }
         }
 
-        internal static void WriteVarInt(Stream writer, long x)
+        public static void WriteVarInt(Stream writer, long x)
         {
-            while (x > 0)
+            do
             {
                 if (x > 127)
                 {
-                    writer.WriteByte((byte)(x & 127));
+                    writer.WriteByte((byte)((x & 127) | 128));
                     x >>= 7;
                 }
                 else
@@ -122,6 +122,7 @@ namespace Zenith.LibraryWrappers.OSM
                     return;
                 }
             }
+            while (x > 0);
         }
 
         internal static List<long> ReadPackedDeltaCodedVarInts(Stream stream)
@@ -206,12 +207,26 @@ namespace Zenith.LibraryWrappers.OSM
             return bytes;
         }
 
+        public static void WriteBytes(Stream writer, byte[] x)
+        {
+            WriteVarInt(writer, x.Length);
+            writer.Write(x, 0, x.Length);
+        }
+
         public static string ReadString(Stream reader)
         {
             byte[] bytes = ReadBytes(reader);
             char[] chars = new char[bytes.LongLength];
             for (long i = 0; i < bytes.LongLength; i++) chars[i] = (char)bytes[i];
             return new string(chars);
+        }
+
+        public static void WriteString(Stream writer, string x)
+        {
+            char[] chars = x.ToCharArray();
+            byte[] bytes = new byte[chars.Length];
+            for (long i = 0; i < chars.Length; i++) bytes[i] = (byte)chars[i];
+            WriteBytes(writer, bytes);
         }
 
         public static int ReadInt32(Stream reader)
@@ -260,6 +275,18 @@ namespace Zenith.LibraryWrappers.OSM
                 }
             }
             return shapeAsVertices;
+        }
+
+        public static double ReadDouble(Stream reader)
+        {
+            BinaryReader br = new BinaryReader(reader);
+            return br.ReadDouble();
+        }
+
+        public static void WriteDouble(Stream writer, double x)
+        {
+            BinaryWriter bw = new BinaryWriter(writer);
+            bw.Write(x);
         }
 
         private static bool IsHighway(OsmGeo element)
