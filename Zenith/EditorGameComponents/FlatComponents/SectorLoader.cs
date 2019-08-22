@@ -25,23 +25,15 @@ namespace Zenith.EditorGameComponents.FlatComponents
 
         public void Draw(RenderTarget2D renderTarget, ISector rootSector, double minX, double maxX, double minY, double maxY, double cameraZoom)
         {
+            double relativeCameraZoom = cameraZoom - Math.Log(ZCoords.GetSectorManager().GetTopmostOSMSectors().Count, 4);
             // autoload stuff
             // TODO: move to update step?
-            int zoomLevel = Math.Min(Math.Max((int)cameraZoom - 4, 0), ZCoords.GetSectorManager().GetHighestOSMZoom());
+            int zoomLevel = Math.Min(Math.Max((int)(relativeCameraZoom - 3), 0), ZCoords.GetSectorManager().GetHighestOSMZoom());
             List<ISector> containedSectors = rootSector.GetSectorsInRange(minX, maxX, minY, maxY, zoomLevel);
-            List<ISector> unload = new List<ISector>();
-            foreach (var pair in loadedMaps)
+            foreach (var pair in loadedMaps.Where(x => AllowUnload(x.Key, rootSector, containedSectors)).ToList())
             {
-                if (!containedSectors.Contains(pair.Key))
-                {
-                    unload.Add(pair.Key);
-                }
-            }
-            foreach (var u in unload)
-            {
-                if (!AllowUnload(u, rootSector, containedSectors)) continue;
-                loadedMaps[u].Dispose();
-                loadedMaps.Remove(u);
+                loadedMaps[pair.Key].Dispose();
+                loadedMaps.Remove(pair.Key);
             }
             // end autoload stuff
             GraphicsDevice graphicsDevice = renderTarget.GraphicsDevice;
@@ -49,12 +41,25 @@ namespace Zenith.EditorGameComponents.FlatComponents
             {
                 if (loadedMaps.ContainsKey(toLoad)) loadedMaps[toLoad].Dispose();
                 loadedMaps[toLoad] = GetGraphicsBuffer(renderTarget.GraphicsDevice, toLoad);
+                toLoad = null;
             }
+            bool loadCache = !(relativeCameraZoom - 4 > ZCoords.GetSectorManager().GetHighestOSMZoom());
             foreach (var l in containedSectors)
             {
-                if (!loadedMaps.ContainsKey(l))
+                if (loadCache)
                 {
-                    loadedMaps[l] = GetCacheBuffer(renderTarget.GraphicsDevice, l);
+                    if (!loadedMaps.ContainsKey(l))
+                    {
+                        loadedMaps[l] = GetCacheBuffer(renderTarget.GraphicsDevice, l);
+                    }
+                }
+                else
+                {
+                    if (!loadedMaps.ContainsKey(l) || loadedMaps[l] is ImageTileBuffer)
+                    {
+                        if (loadedMaps.ContainsKey(l)) loadedMaps[l].Dispose();
+                        loadedMaps[l] = GetGraphicsBuffer(renderTarget.GraphicsDevice, l);
+                    }
                 }
             }
             List<ISector> sorted = loadedMaps.Keys.Where(x => x.GetRoot().Equals(rootSector)).ToList();
@@ -87,7 +92,8 @@ namespace Zenith.EditorGameComponents.FlatComponents
 
         private bool AllowUnload(ISector sector, ISector rootSector, List<ISector> loadingSectors)
         {
-            if (sector.GetRoot() != rootSector) return false;
+            if (loadedMaps[sector] is ProceduralTileBuffer) return false; // TODO: eventually unload these, maybe just have a queue
+            if (!sector.GetRoot().Equals(rootSector)) return false;
             foreach (var s in loadingSectors)
             {
                 if (s.Equals(sector)) return false; // very basic: don't unload sectors immediately after loading them

@@ -290,7 +290,7 @@ namespace Zenith.ZGeom
             combined.AddRange(node.prevConnections);
             combined.AddRange(node.nextConnections);
             if (prev == null) return combined[1];
-            combined = combined.Where(x => x != prev).ToList();
+            combined = combined.Where(x => !x.Equals(prev)).ToList();
             if (combined.Count != 1) return null;
             return combined.Single();
         }
