@@ -27,15 +27,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
         {
             // autoload stuff
             // TODO: move to update step?
-            int zoomLevel;
-            if (rootSector is MercatorSector)
-            {
-                zoomLevel = Math.Max((int)(Math.Log(maxX - minX) / Math.Log(0.5)), 0);
-            }
-            else
-            {
-                zoomLevel = Math.Max((int)(Math.Log(maxX - minX) / Math.Log(0.5) - 3), 0);
-            }
+            int zoomLevel = Math.Min(Math.Max((int)cameraZoom - 4, 0), ZCoords.GetSectorManager().GetHighestOSMZoom());
             List<ISector> containedSectors = rootSector.GetSectorsInRange(minX, maxX, minY, maxY, zoomLevel);
             List<ISector> unload = new List<ISector>();
             foreach (var pair in loadedMaps)
@@ -47,7 +39,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
             }
             foreach (var u in unload)
             {
-                if (!AllowUnload(u)) continue;
+                if (!AllowUnload(u, rootSector, containedSectors)) continue;
                 loadedMaps[u].Dispose();
                 loadedMaps.Remove(u);
             }
@@ -65,7 +57,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                     loadedMaps[l] = GetCacheBuffer(renderTarget.GraphicsDevice, l);
                 }
             }
-            List<ISector> sorted = loadedMaps.Keys.ToList();
+            List<ISector> sorted = loadedMaps.Keys.Where(x => x.GetRoot().Equals(rootSector)).ToList();
             sorted.Sort((x, y) => x.Zoom.CompareTo(y.Zoom));
             foreach (var sector in sorted)
             {
@@ -93,10 +85,14 @@ namespace Zenith.EditorGameComponents.FlatComponents
             }
         }
 
-        private bool AllowUnload(ISector sector)
+        private bool AllowUnload(ISector sector, ISector rootSector, List<ISector> loadingSectors)
         {
-
-            return sector.Zoom <= ZCoords.GetSectorManager().GetHighestOSMZoom() - 3;
+            if (sector.GetRoot() != rootSector) return false;
+            foreach (var s in loadingSectors)
+            {
+                if (s.Equals(sector)) return false; // very basic: don't unload sectors immediately after loading them
+            }
+            return true;
         }
 
         public void Update(double mouseX, double mouseY, double cameraZoom)

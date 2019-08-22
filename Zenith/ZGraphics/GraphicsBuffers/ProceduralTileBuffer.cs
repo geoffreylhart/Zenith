@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -36,15 +37,20 @@ namespace Zenith.ZGraphics.GraphicsBuffers
 
         public void LoadLinesFromFile()
         {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
             BlobCollection blobs = OSMReader.GetAllBlobs(sector);
             beachGraph = blobs.GetBeachFast();
             lakesGraph = blobs.GetLakesFast();
             multiLakesGraph = blobs.GetMultiLakesFast();
             roadGraph = blobs.GetRoadsFast();
+            Console.WriteLine($"File read for {sector} in {sw.Elapsed.TotalSeconds} s");
         }
 
         public void GenerateVertices()
         {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
             beachVertices = OSMBufferGenerator.GetCoastVertices(beachGraph, sector);
             // TODO: break up beach coast into vertex and buffer
             lakeVertices = OSMBufferGenerator.Tesselate(lakesGraph.ToContours(), Pallete.OCEAN_BLUE);
@@ -56,10 +62,13 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             //lakesGraph = null;
             //multiLakesGraph = null;
             //roadGraph = null;
+            Console.WriteLine($"Vertices generated for {sector} in {sw.Elapsed.TotalSeconds} s");
         }
 
         public void GenerateBuffers(GraphicsDevice graphicsDevice)
         {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
             vectorTileBuffer = new VectorTileBuffer(graphicsDevice, sector);
             vectorTileBuffer.Add(graphicsDevice, new BasicVertexBuffer(graphicsDevice, beachVertices, PrimitiveType.TriangleList), sector);
             double widthInFeet = 10.7 * 50; // extra thick
@@ -77,6 +86,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             // dereference
             beachVertices = null;
             lakeVertices = null;
+            Console.WriteLine($"Buffers generated for {sector} in {sw.Elapsed.TotalSeconds} s");
         }
 
         public void Dispose()
