@@ -19,66 +19,69 @@ namespace Zenith.EditorGameComponents.FlatComponents
 {
     class OSMSectorLoader : SectorLoader
     {
-        public override bool CacheExists(ISector sector)
+        public override IGraphicsBuffer GetCacheBuffer(GraphicsDevice graphicsDevice, ISector sector)
         {
-            return File.Exists(OSMPaths.GetSectorImagePath(sector));
-        }
-
-        public override bool DoAutoLoad(ISector sector)
-        {
-            return sector.Zoom == ZCoords.GetSectorManager().GetHighestOSMZoom();
-        }
-
-        public override bool AllowUnload(ISector sector)
-        {
-            return sector.Zoom <= ZCoords.GetSectorManager().GetHighestOSMZoom() - 3;
-        }
-
-        public override IEnumerable<ISector> EnumerateCachedSectors()
-        {
-            var manager = ZCoords.GetSectorManager();
-            foreach (var file in Directory.EnumerateFiles(OSMPaths.GetRenderRoot(), "*", SearchOption.AllDirectories))
-            {
-                String filename = Path.GetFileName(file);
-                if (!filename.StartsWith("Coast"))
-                {
-                    yield return manager.FromString(filename.Split('.')[0]);
-                }
-            }
+            return GetBuffer(graphicsDevice, sector, true);
         }
 
         public override IGraphicsBuffer GetGraphicsBuffer(GraphicsDevice graphicsDevice, ISector sector)
         {
-            if (File.Exists(OSMPaths.GetSectorImagePath(sector)))
+            return GetBuffer(graphicsDevice, sector, false);
+        }
+
+        private IGraphicsBuffer GetBuffer(GraphicsDevice graphicsDevice, ISector sector, bool cached)
+        {
+            if (sector.Zoom > ZCoords.GetSectorManager().GetHighestOSMZoom()) throw new NotImplementedException();
+            if (ZCoords.GetSectorManager().GetHighestCacheZoom() > ZCoords.GetSectorManager().GetHighestOSMZoom()) throw new NotImplementedException();
+
+            try
             {
-                if (!Directory.Exists(Path.GetDirectoryName(OSMPaths.GetSectorImagePath(sector)))) Directory.CreateDirectory(Path.GetDirectoryName(OSMPaths.GetSectorImagePath(sector)));
-                using (var reader = File.OpenRead(OSMPaths.GetSectorImagePath(sector)))
+                if (File.Exists(OSMPaths.GetSectorImagePath(sector)) && (cached || sector.Zoom != ZCoords.GetSectorManager().GetHighestOSMZoom()))
                 {
-                    return new ImageTileBuffer(graphicsDevice, Texture2D.FromStream(graphicsDevice, reader), sector);
+                    using (var reader = File.OpenRead(OSMPaths.GetSectorImagePath(sector)))
+                    {
+                        return new ImageTileBuffer(graphicsDevice, Texture2D.FromStream(graphicsDevice, reader), sector);
+                    }
                 }
             }
-            // otherwise, build it
-            if (sector.Zoom >= ZCoords.GetSectorManager().GetHighestOSMZoom())
+            catch (Exception ex)
             {
-                try
+                // sometimes the image is corrupt (or zero bytes)
+            }
+            // otherwise, build it
+            if (sector.Zoom == ZCoords.GetSectorManager().GetHighestOSMZoom())
+            {
+                if (cached)
                 {
-                    ProceduralTileBuffer buffer = new ProceduralTileBuffer(sector);
-                    buffer.LoadLinesFromFile();
-                    buffer.GenerateVertices();
-                    buffer.GenerateBuffers(graphicsDevice);
-                    if (sector.Zoom <= ZCoords.GetSectorManager().GetHighestCacheZoom())
-                    {
-                        SuperSave(buffer.GetImage(graphicsDevice), OSMPaths.GetSectorImagePath(sector));
-                    }
-                    return buffer;
-                }
-                catch (Exception ex)
-                {
+                    // TODO: somehow all of this still breaks often and is pretty slow, but at least we only have to run it once
                     if (sector.Zoom <= ZCoords.GetSectorManager().GetHighestCacheZoom())
                     {
                         SuperSave(GlobalContent.Error, OSMPaths.GetSectorImagePath(sector));
                     }
                     return new ImageTileBuffer(graphicsDevice, GlobalContent.Error, sector);
+                }
+                else
+                {
+                    try
+                    {
+                        ProceduralTileBuffer buffer = new ProceduralTileBuffer(sector);
+                        buffer.LoadLinesFromFile();
+                        buffer.GenerateVertices();
+                        buffer.GenerateBuffers(graphicsDevice);
+                        if (sector.Zoom <= ZCoords.GetSectorManager().GetHighestCacheZoom())
+                        {
+                            SuperSave(buffer.GetImage(graphicsDevice), OSMPaths.GetSectorImagePath(sector));
+                        }
+                        return buffer;
+                    }
+                    catch (Exception ex)
+                    {
+                        if (sector.Zoom <= ZCoords.GetSectorManager().GetHighestCacheZoom())
+                        {
+                            SuperSave(GlobalContent.Error, OSMPaths.GetSectorImagePath(sector));
+                        }
+                        return new ImageTileBuffer(graphicsDevice, GlobalContent.Error, sector);
+                    }
                 }
             }
             else
@@ -92,7 +95,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                     IGraphicsBuffer buffer = null;
                     try
                     {
-                        buffer = GetGraphicsBuffer(graphicsDevice, roadSectors[i]);
+                        buffer = GetBuffer(graphicsDevice, roadSectors[i], cached);
                         textures[i] = buffer.GetImage(graphicsDevice);
                     }
                     finally
@@ -128,6 +131,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
         }
 
         // keep trying to save the texture until it doesn't mess up
+        // TODO: still doesn't work??
         private void SuperSave(Texture2D texture, string path)
         {
             if (!Directory.Exists(Path.GetDirectoryName(path))) Directory.CreateDirectory(Path.GetDirectoryName(path));

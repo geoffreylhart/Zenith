@@ -20,7 +20,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
     {
         private static int MAX_ZOOM = 19;
         Dictionary<ISector, IGraphicsBuffer> loadedMaps = new Dictionary<ISector, IGraphicsBuffer>();
-        HashSet<ISector> toLoad = new HashSet<ISector>();
+        ISector toLoad = null;
         ISector previewSquare = null;
 
         public void Draw(RenderTarget2D renderTarget, ISector rootSector, double minX, double maxX, double minY, double maxY, double cameraZoom)
@@ -51,20 +51,20 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 loadedMaps[u].Dispose();
                 loadedMaps.Remove(u);
             }
-            foreach (var c in containedSectors)
-            {
-                if (DoAutoLoad(c)) toLoad.Add(c);
-            }
             // end autoload stuff
             GraphicsDevice graphicsDevice = renderTarget.GraphicsDevice;
-            foreach (var l in toLoad)
+            if (toLoad != null)
+            {
+                if (loadedMaps.ContainsKey(toLoad)) loadedMaps[toLoad].Dispose();
+                loadedMaps[toLoad] = GetGraphicsBuffer(renderTarget.GraphicsDevice, toLoad);
+            }
+            foreach (var l in containedSectors)
             {
                 if (!loadedMaps.ContainsKey(l))
                 {
-                    loadedMaps[l] = GetGraphicsBuffer(renderTarget.GraphicsDevice, l);
+                    loadedMaps[l] = GetCacheBuffer(renderTarget.GraphicsDevice, l);
                 }
             }
-            toLoad = new HashSet<ISector>();
             List<ISector> sorted = loadedMaps.Keys.ToList();
             sorted.Sort((x, y) => x.Zoom.CompareTo(y.Zoom));
             foreach (var sector in sorted)
@@ -86,17 +86,18 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 float maxLong = (float)(previewSquare.ZoomPortion * (previewSquare.X + 1));
                 float w = maxLong - minLong;
                 float h = maxLat - minLat;
-                Color color = CacheExists(previewSquare) ? Color.Green : Color.Red;
-                GraphicsBasic.DrawRect(graphicsDevice, basicEffect, minLong, minLat, w / 20, h, color);
-                GraphicsBasic.DrawRect(graphicsDevice, basicEffect, minLong, minLat, w, h / 20, color);
-                GraphicsBasic.DrawRect(graphicsDevice, basicEffect, minLong + w * 19 / 20, minLat, w / 20, h, color);
-                GraphicsBasic.DrawRect(graphicsDevice, basicEffect, minLong, minLat + h * 19 / 20, w, h / 20, color);
+                GraphicsBasic.DrawRect(graphicsDevice, basicEffect, minLong, minLat, w / 20, h, Color.Red);
+                GraphicsBasic.DrawRect(graphicsDevice, basicEffect, minLong, minLat, w, h / 20, Color.Red);
+                GraphicsBasic.DrawRect(graphicsDevice, basicEffect, minLong + w * 19 / 20, minLat, w / 20, h, Color.Red);
+                GraphicsBasic.DrawRect(graphicsDevice, basicEffect, minLong, minLat + h * 19 / 20, w, h / 20, Color.Red);
             }
         }
 
-        public abstract bool CacheExists(ISector sector);
-        public abstract bool DoAutoLoad(ISector sector); // safe to autoload? (fast/already cached)
-        public abstract bool AllowUnload(ISector sector); // allowed to unload? (cached)
+        private bool AllowUnload(ISector sector)
+        {
+
+            return sector.Zoom <= ZCoords.GetSectorManager().GetHighestOSMZoom() - 3;
+        }
 
         public void Update(double mouseX, double mouseY, double cameraZoom)
         {
@@ -132,32 +133,16 @@ namespace Zenith.EditorGameComponents.FlatComponents
             return null;
         }
 
-        public abstract IEnumerable<ISector> EnumerateCachedSectors();
-
-        private void LoadAllCached(GraphicsDevice graphicsDevice)
-        {
-            //foreach (var sector in EnumerateCachedSectors())
-            //{
-            //    imageLayers[sector.zoom].Add(sector);
-            //}
-        }
-
-        public void LoadAll(GraphicsDevice graphicsDevice)
-        {
-            foreach (var sector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
-            {
-                GetGraphicsBuffer(graphicsDevice, sector);
-            }
-        }
-
         private void AddImage(double mouseX, double mouseY, double cameraZoom)
         {
             ISector squareCenter = GetSector(mouseX, mouseY, cameraZoom);
             if (squareCenter == null) return;
-            toLoad.Add(squareCenter);
+            toLoad = squareCenter;
         }
 
         public abstract IGraphicsBuffer GetGraphicsBuffer(GraphicsDevice graphicsDevice, ISector sector);
+
+        public abstract IGraphicsBuffer GetCacheBuffer(GraphicsDevice graphicsDevice, ISector sector);
 
         public List<string> GetDebugInfo()
         {
