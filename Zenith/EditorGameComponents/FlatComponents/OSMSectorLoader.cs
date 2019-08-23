@@ -57,6 +57,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                     if (sector.Zoom <= ZCoords.GetSectorManager().GetHighestCacheZoom())
                     {
                         SuperSave(GlobalContent.Error, OSMPaths.GetSectorImagePath(sector));
+                        //RebuildImage(graphicsDevice, sector);
                     }
                     return new ImageTileBuffer(graphicsDevice, GlobalContent.Error, sector);
                 }
@@ -71,6 +72,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                         if (sector.Zoom <= ZCoords.GetSectorManager().GetHighestCacheZoom())
                         {
                             SuperSave(buffer.GetImage(graphicsDevice), OSMPaths.GetSectorImagePath(sector));
+                            RebuildImage(graphicsDevice, sector);
                         }
                         return buffer;
                     }
@@ -79,6 +81,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                         if (sector.Zoom <= ZCoords.GetSectorManager().GetHighestCacheZoom())
                         {
                             SuperSave(GlobalContent.Error, OSMPaths.GetSectorImagePath(sector));
+                            RebuildImage(graphicsDevice, sector);
                         }
                         return new ImageTileBuffer(graphicsDevice, GlobalContent.Error, sector);
                     }
@@ -86,47 +89,57 @@ namespace Zenith.EditorGameComponents.FlatComponents
             }
             else
             {
-                // combination image
-                Texture2D rendered = new RenderTarget2D(graphicsDevice, 512, 512, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
-                List<ISector> roadSectors = sector.GetChildrenAtLevel(sector.Zoom + 1);
-                Texture2D[] textures = new Texture2D[roadSectors.Count];
-                for (int i = 0; i < roadSectors.Count; i++)
+                throw new NotImplementedException();
+            }
+        }
+
+        private void RebuildImage(GraphicsDevice graphicsDevice, ISector sector)
+        {
+            // combination images
+            using (Texture2D rendered = new RenderTarget2D(graphicsDevice, 512, 512, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24))
+            {
+                int highestZoom = ZCoords.GetSectorManager().GetHighestCacheZoom();
+                foreach (var parent in sector.GetAllParents().OrderBy(x => -x.Zoom).Where(x => x.Zoom <= highestZoom))
                 {
-                    IGraphicsBuffer buffer = null;
-                    try
-                    {
-                        buffer = GetBuffer(graphicsDevice, roadSectors[i], cached);
-                        textures[i] = buffer.GetImage(graphicsDevice);
-                    }
-                    finally
-                    {
-                        if (buffer != null && !(buffer is ImageTileBuffer)) buffer.Dispose();
-                    }
-                }
-                if (textures.Any(x => x != null))
-                {
-                    graphicsDevice.SetRenderTarget((RenderTarget2D)rendered);
+                    List<ISector> roadSectors = parent.GetChildrenAtLevel(parent.Zoom == highestZoom - 1 ? ZCoords.GetSectorManager().GetHighestOSMZoom() : parent.Zoom + 1);
+                    Texture2D[] textures = new Texture2D[roadSectors.Count];
                     for (int i = 0; i < roadSectors.Count; i++)
                     {
-                        int size, x, y;
-                        size = 512 >> (roadSectors[i].Zoom - sector.Zoom);
-                        x = sector.GetRelativeXOf(roadSectors[i]) * size;
-                        y = sector.GetRelativeYOf(roadSectors[i]) * size;
-                        if (textures[i] != null)
+                        IGraphicsBuffer buffer = null;
+                        if (File.Exists(OSMPaths.GetSectorImagePath(roadSectors[i])))
                         {
-                            GraphicsBasic.DrawSpriteRect(graphicsDevice, x, y, size, size, textures[i], BlendState.AlphaBlend, Microsoft.Xna.Framework.Color.White);
+                            using (var reader = File.OpenRead(OSMPaths.GetSectorImagePath(roadSectors[i])))
+                            {
+                                buffer = new ImageTileBuffer(graphicsDevice, Texture2D.FromStream(graphicsDevice, reader), roadSectors[i]);
+                            }
+                        }
+                        else
+                        {
+                            throw new NotImplementedException();
+                        }
+                        textures[i] = buffer.GetImage(graphicsDevice);
+                    }
+                    if (textures.Any(x => x != null))
+                    {
+                        graphicsDevice.SetRenderTarget((RenderTarget2D)rendered);
+                        for (int i = 0; i < roadSectors.Count; i++)
+                        {
+                            int size, x, y;
+                            size = 512 >> (roadSectors[i].Zoom - parent.Zoom);
+                            x = parent.GetRelativeXOf(roadSectors[i]) * size;
+                            y = parent.GetRelativeYOf(roadSectors[i]) * size;
+                            if (textures[i] != null)
+                            {
+                                GraphicsBasic.DrawSpriteRect(graphicsDevice, x, y, size, size, textures[i], BlendState.AlphaBlend, Microsoft.Xna.Framework.Color.White);
+                            }
                         }
                     }
+                    for (int i = 0; i < textures.Length; i++)
+                    {
+                        if (textures[i] != null && textures[i] != GlobalContent.Error) textures[i].Dispose();
+                    }
+                    SuperSave(rendered, OSMPaths.GetSectorImagePath(parent));
                 }
-                for (int i = 0; i < textures.Length; i++)
-                {
-                    if (textures[i] != null && textures[i] != GlobalContent.Error) textures[i].Dispose();
-                }
-                if (sector.Zoom <= ZCoords.GetSectorManager().GetHighestCacheZoom())
-                {
-                    SuperSave(rendered, OSMPaths.GetSectorImagePath(sector));
-                }
-                return new ImageTileBuffer(graphicsDevice, rendered, sector);
             }
         }
 
