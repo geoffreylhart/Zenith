@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
@@ -148,22 +150,34 @@ namespace Zenith.EditorGameComponents.FlatComponents
         private void SuperSave(Texture2D texture, string path)
         {
             if (!Directory.Exists(Path.GetDirectoryName(path))) Directory.CreateDirectory(Path.GetDirectoryName(path));
-            for (int i = 0; i < 3; i++)
-            {
-                try
-                {
-                    using (var writer = File.OpenWrite(path))
-                    {
-                        texture.SaveAsPng(writer, texture.Width, texture.Height);
-                        return;
-                    }
-                }
-                catch (Exception ex)
-                {
+            // https://stackoverflow.com/questions/19248018/texture2d-saveaspng-memory-leak
+            // what I originally tested this on was the texture for LE,X=67,Y=20,Zoom=7.PNG, a 206,940 byte PNG when saved using our new method (the other one failed at 245,817)
+            Save(texture, texture.Width, texture.Height, ImageFormat.Png, path);
+        }
 
+        private static void Save(Texture2D texture, int width, int height, ImageFormat imageFormat, string filename)
+        {
+            using (Bitmap bitmap = new Bitmap(width, height, PixelFormat.Format32bppArgb))
+            {
+                byte blue;
+                IntPtr safePtr;
+                BitmapData bitmapData;
+                var rect = new System.Drawing.Rectangle(0, 0, width, height);
+                byte[] textureData = new byte[4 * width * height];
+
+                texture.GetData<byte>(textureData);
+                for (int i = 0; i < textureData.Length; i += 4)
+                {
+                    blue = textureData[i];
+                    textureData[i] = textureData[i + 2];
+                    textureData[i + 2] = blue;
                 }
+                bitmapData = bitmap.LockBits(rect, ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+                safePtr = bitmapData.Scan0;
+                Marshal.Copy(textureData, 0, safePtr, textureData.Length);
+                bitmap.UnlockBits(bitmapData);
+                bitmap.Save(filename, imageFormat);
             }
-            Console.WriteLine("texture was unsaved");
         }
     }
 }
