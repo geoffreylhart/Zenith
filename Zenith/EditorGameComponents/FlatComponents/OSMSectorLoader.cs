@@ -68,9 +68,12 @@ namespace Zenith.EditorGameComponents.FlatComponents
                     try
                     {
                         ProceduralTileBuffer buffer = new ProceduralTileBuffer(sector);
+                        Stopwatch sw = new Stopwatch();
+                        sw.Start();
                         buffer.LoadLinesFromFile();
                         buffer.GenerateVertices();
                         buffer.GenerateBuffers(graphicsDevice);
+                        Console.WriteLine($"Total load time for {sector} is {sw.Elapsed.TotalSeconds} s");
                         if (sector.Zoom <= ZCoords.GetSectorManager().GetHighestCacheZoom())
                         {
                             SuperSave(buffer.GetImage(graphicsDevice), OSMPaths.GetSectorImagePath(sector));

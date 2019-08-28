@@ -40,11 +40,20 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             Stopwatch sw = new Stopwatch();
             sw.Start();
             BlobCollection blobs = OSMReader.GetAllBlobs(sector);
+            Console.WriteLine($"Blobs read for {sector} in {sw.Elapsed.TotalSeconds} s");
+            sw.Restart();
             beachGraph = blobs.GetBeachFast();
+            Console.WriteLine($"Beach graph generated for {sector} in {sw.Elapsed.TotalSeconds} s");
+            sw.Restart();
             lakesGraph = blobs.GetLakesFast();
+            Console.WriteLine($"Lakes graph generated for {sector} in {sw.Elapsed.TotalSeconds} s");
+            sw.Restart();
             multiLakesGraph = blobs.GetMultiLakesFast();
+            Console.WriteLine($"Multilakes graph generated for {sector} in {sw.Elapsed.TotalSeconds} s");
+            sw.Restart();
             roadGraph = blobs.GetRoadsFast();
-            Console.WriteLine($"File read for {sector} in {sw.Elapsed.TotalSeconds} s");
+            Console.WriteLine($"Road graph generated for {sector} in {sw.Elapsed.TotalSeconds} s");
+            sw.Restart();
         }
 
         public void GenerateVertices()
@@ -52,17 +61,20 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             Stopwatch sw = new Stopwatch();
             sw.Start();
             beachVertices = OSMBufferGenerator.GetCoastVertices(beachGraph, sector);
+            Console.WriteLine($"Beach verticies generated for {sector} in {sw.Elapsed.TotalSeconds} s");
+            sw.Restart();
             // TODO: break up beach coast into vertex and buffer
             lakeVertices = OSMBufferGenerator.Tesselate(lakesGraph.ToContours(), Pallete.OCEAN_BLUE);
-            lakeVertices.AddRange(OSMBufferGenerator.Tesselate(multiLakesGraph.ToContours(), Pallete.OCEAN_BLUE));
+            Console.WriteLine($"Lake verticies generated for {sector} in {sw.Elapsed.TotalSeconds} s");
+            sw.Restart();
+            var multiLakeVertices = OSMBufferGenerator.Tesselate(multiLakesGraph.ToContours(), Pallete.OCEAN_BLUE);
+            Console.WriteLine($"Multilake vertices generated for {sector} in {sw.Elapsed.TotalSeconds} s");
+            sw.Restart();
+            lakeVertices.AddRange(multiLakeVertices);
+            Console.WriteLine($"Lake and multilake vertices combined for {sector} in {sw.Elapsed.TotalSeconds} s");
+            sw.Restart();
             // TODO: break up lake coasts into vertex and buffer
             // TODO: break up roads into vertex and buffer
-            // dereference
-            //beachGraph = null;
-            //lakesGraph = null;
-            //multiLakesGraph = null;
-            //roadGraph = null;
-            Console.WriteLine($"Vertices generated for {sector} in {sw.Elapsed.TotalSeconds} s");
         }
 
         public void GenerateBuffers(GraphicsDevice graphicsDevice)
@@ -71,13 +83,23 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             sw.Start();
             vectorTileBuffer = new VectorTileBuffer(graphicsDevice, sector);
             vectorTileBuffer.Add(graphicsDevice, new BasicVertexBuffer(graphicsDevice, beachVertices, PrimitiveType.TriangleList), sector);
+            Console.WriteLine($"Beach buffer generated for {sector} in {sw.Elapsed.TotalSeconds} s");
+            sw.Restart();
             double widthInFeet = 10.7 * 50; // extra thick
             double circumEarth = 24901 * 5280;
             double width = widthInFeet / circumEarth * 2 * Math.PI;
             vectorTileBuffer.Add(graphicsDevice, beachGraph.ConstructAsRoads(graphicsDevice, width, GlobalContent.BeachFlipped, Microsoft.Xna.Framework.Color.White), sector);
+            Console.WriteLine($"Beach coast buffer generated for {sector} in {sw.Elapsed.TotalSeconds} s");
+            sw.Restart();
             vectorTileBuffer.Add(graphicsDevice, new BasicVertexBuffer(graphicsDevice, lakeVertices, PrimitiveType.TriangleList), sector);
+            Console.WriteLine($"Lakes and multilakes buffer generated for {sector} in {sw.Elapsed.TotalSeconds} s");
+            sw.Restart();
             lakesGraph.Combine(multiLakesGraph); // TODO: this alters lakesGraph
+            Console.WriteLine($"Lakes and multilakes graph combined for {sector} in {sw.Elapsed.TotalSeconds} s");
+            sw.Restart();
             vectorTileBuffer.Add(graphicsDevice, lakesGraph.ConstructAsRoads(graphicsDevice, width, GlobalContent.Beach, Microsoft.Xna.Framework.Color.White), sector);
+            Console.WriteLine($"Lakes and multilakes coast buffer generated for {sector} in {sw.Elapsed.TotalSeconds} s");
+            sw.Restart();
             vectorTileBuffer.Add(graphicsDevice, roadGraph.ConstructAsRoads(graphicsDevice, width * 4 / 50, GlobalContent.Road, Microsoft.Xna.Framework.Color.White), sector);
             //PointCollection points = new PointCollection(sector, 100000); // 3 trillion trees on earth (eh, just guess)
             //roadGraph.Combine(lakesGraph); // TODO: this alters roadGraph
@@ -86,7 +108,8 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             // dereference
             beachVertices = null;
             lakeVertices = null;
-            Console.WriteLine($"Buffers generated for {sector} in {sw.Elapsed.TotalSeconds} s");
+            Console.WriteLine($"Roads buffer generated for {sector} in {sw.Elapsed.TotalSeconds} s");
+            sw.Restart();
         }
 
         public void Dispose()
