@@ -33,6 +33,26 @@ namespace Zenith.LibraryWrappers.OSM
             }
             var collection = new BlobCollection(blobs, sector);
             collection.Init();
+            ISector rootSector = sector.GetRoot();
+            foreach (var blob in blobs)
+            {
+                if (blob.type != "OSMData") continue;
+                // build node data
+                for (int i = 0; i < blob.pBlock.primitivegroup.Count; i++)
+                {
+                    var pGroup = blob.pBlock.primitivegroup[i];
+                    for (int j = 0; j < pGroup.dense.Count; j++)
+                    {
+                        var d = pGroup.dense[j];
+                        for (int k = 0; k < d.id.Count; k++)
+                        {
+                            double longitude = .000000001 * (blob.pBlock.lon_offset + (blob.pBlock.granularity * d.lon[k]));
+                            double latitude = .000000001 * (blob.pBlock.lat_offset + (blob.pBlock.granularity * d.lat[k]));
+                            collection.nodes[d.id[k]] = rootSector.ProjectToLocalCoordinates(new LongLat(longitude * Math.PI / 180, latitude * Math.PI / 180).ToSphereVector());
+                        }
+                    }
+                }
+            }
             return collection;
         }
 

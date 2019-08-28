@@ -27,10 +27,10 @@ namespace ZenithUnitTests
             sw.Start();
             ProceduralTileBuffer buffer = new ProceduralTileBuffer(sector);
             buffer.LoadLinesFromFile();
-            double loadTimeSecs = sw.Elapsed.TotalSeconds; // 2.009 secs
+            double loadTimeSecs = sw.Elapsed.TotalSeconds; // 0.842 secs
             sw.Restart();
             buffer.GenerateVertices();
-            double vertSecs = sw.Elapsed.TotalSeconds; // 0.317 secs
+            double vertSecs = sw.Elapsed.TotalSeconds; // 0.404 secs
         }
 
         [TestMethod]
@@ -49,10 +49,10 @@ namespace ZenithUnitTests
             sw.Start();
             byte[] verticesBytes = buffer.GetVerticesBytes();
             long verticesSize = verticesBytes.Length; // is 3,195,295 bytes
-            double writeSecs = sw.Elapsed.TotalSeconds; // 1.347 secs
+            double writeSecs = sw.Elapsed.TotalSeconds; // 1.313 secs
             sw.Restart();
             buffer.SetVerticesFromBytes(verticesBytes);
-            double readSecs = sw.Elapsed.TotalSeconds; // 2.485 secs
+            double readSecs = sw.Elapsed.TotalSeconds; // 2.292 secs
             // rendered image is 230,981 bytes
         }
 
@@ -97,7 +97,7 @@ namespace ZenithUnitTests
                 buffer.GenerateVertices();
                 buffer.Dispose();
             }
-            double sequentialSecs = sw.Elapsed.TotalSeconds; // 12.155 secs
+            double sequentialSecs = sw.Elapsed.TotalSeconds; // 5.585 secs
             sw.Restart();
             Parallel.ForEach(sectors, sector =>
             {
@@ -106,8 +106,8 @@ namespace ZenithUnitTests
                 buffer.GenerateVertices();
                 buffer.Dispose();
             });
-            double parallelSecs = sw.Elapsed.TotalSeconds; // 8.477 secs
-            double speedMultiplier = sequentialSecs / parallelSecs; // 1.434 (seems to vary between 1.7 at highest and 1.1 at lowest, not the best multiplier but could still be worthwhile)
+            double parallelSecs = sw.Elapsed.TotalSeconds; // 5.056 secs
+            double speedMultiplier = sequentialSecs / parallelSecs; // 1.105 (seems to vary between 1.7 at highest and 1.1 at lowest, not the best multiplier but could still be worthwhile)
         }
     }
 }

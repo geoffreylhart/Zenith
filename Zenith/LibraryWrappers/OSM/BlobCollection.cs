@@ -15,6 +15,7 @@ namespace Zenith.LibraryWrappers.OSM
     // responsible for lots of stuff
     class BlobCollection
     {
+        public Dictionary<long, Vector2d> nodes = new Dictionary<long, Vector2d>();
         private List<Blob> blobs;
         private ISector sector;
 
@@ -39,9 +40,8 @@ namespace Zenith.LibraryWrappers.OSM
             RoadInfoVector roads = new RoadInfoVector();
             foreach (var blob in blobs)
             {
-                var roadInfo = blob.GetVectors(key, value, sector);
+                var roadInfo = blob.GetVectors(key, value);
                 roads.ways.AddRange(roadInfo.ways);
-                foreach (var pair in roadInfo.nodes) roads.nodes.Add(pair.Key, pair.Value);
             }
             LineGraph answer = new LineGraph();
             Dictionary<long, GraphNode> graphNodes = new Dictionary<long, GraphNode>();
@@ -61,10 +61,10 @@ namespace Zenith.LibraryWrappers.OSM
                 // and so when we debug the paths, it probably doesnt know what route to take
                 foreach (var nodeRef in way.refs)
                 {
-                    long? v = roads.nodes.ContainsKey(nodeRef) ? nodeRef : (long?)null;
+                    long? v = nodes.ContainsKey(nodeRef) ? nodeRef : (long?)null;
                     if (v != null && !graphNodes.ContainsKey(v.Value))
                     {
-                        var newNode = new GraphNode(roads.nodes[v.Value]);
+                        var newNode = new GraphNode(nodes[v.Value]);
                         graphNodes[nodeRef] = newNode;
                         answer.nodes.Add(newNode);
                     }
@@ -151,9 +151,8 @@ namespace Zenith.LibraryWrappers.OSM
             RoadInfoVector roads = new RoadInfoVector();
             foreach (var blob in blobs)
             {
-                var roadInfo = blob.GetVectors(allwayIds, sector);
+                var roadInfo = blob.GetVectors(allwayIds);
                 roads.ways.AddRange(roadInfo.ways);
-                foreach (var pair in roadInfo.nodes) roads.nodes.Add(pair.Key, pair.Value);
             }
             for (int i = 0; i < inners.Count; i++)
             {
@@ -179,10 +178,10 @@ namespace Zenith.LibraryWrappers.OSM
                 long? prev = null;
                 foreach (var nodeRef in way.refs)
                 {
-                    long? v = roads.nodes.ContainsKey(nodeRef) ? nodeRef : (long?)null;
+                    long? v = nodes.ContainsKey(nodeRef) ? nodeRef : (long?)null;
                     if (v != null && !graphNodes.ContainsKey(v.Value))
                     {
-                        var newNode = new GraphNode(roads.nodes[v.Value]);
+                        var newNode = new GraphNode(nodes[v.Value]);
                         newNode.isHole = isHole;
                         graphNodes[nodeRef] = newNode;
                         answer.nodes.Add(newNode);

@@ -24,26 +24,12 @@ namespace Zenith.LibraryWrappers.OSM
         // parsed stuff
         public PrimitiveBlock pBlock;
 
-        internal RoadInfoVector GetVectors(string key, string value, ISector sector)
+        internal RoadInfoVector GetVectors(string key, string value)
         {
             if (type != "OSMData") return new RoadInfoVector();
             RoadInfoVector info = new RoadInfoVector();
-            List<VertexPositionColor> roads = new List<VertexPositionColor>();
             int highwayIndex = pBlock.stringtable.vals.IndexOf(key);
             int? valueIndex = value == null ? (int?)null : pBlock.stringtable.vals.IndexOf(value);
-            foreach (var pGroup in pBlock.primitivegroup)
-            {
-                foreach (var d in pGroup.dense)
-                {
-                    if (d.id.Count != d.lat.Count || d.lat.Count != d.lon.Count) throw new NotImplementedException();
-                    for (int i = 0; i < d.id.Count; i++)
-                    {
-                        double longitude = .000000001 * (pBlock.lon_offset + (pBlock.granularity * d.lon[i]));
-                        double latitude = .000000001 * (pBlock.lat_offset + (pBlock.granularity * d.lat[i]));
-                        info.nodes[d.id[i]] = sector.GetRoot().ProjectToLocalCoordinates(new LongLat(longitude * Math.PI / 180, latitude * Math.PI / 180).ToSphereVector());
-                    }
-                }
-            }
             foreach (var pGroup in pBlock.primitivegroup)
             {
                 foreach (var way in pGroup.ways)
@@ -58,26 +44,12 @@ namespace Zenith.LibraryWrappers.OSM
             return info;
         }
 
-        internal RoadInfoVector GetVectors(List<long> ids, ISector sector)
+        internal RoadInfoVector GetVectors(List<long> ids)
         {
             HashSet<long> idHash = new HashSet<long>();
             foreach (var id in ids) idHash.Add(id);
             if (type != "OSMData") return new RoadInfoVector();
             RoadInfoVector info = new RoadInfoVector();
-            List<VertexPositionColor> roads = new List<VertexPositionColor>();
-            foreach (var pGroup in pBlock.primitivegroup)
-            {
-                foreach (var d in pGroup.dense)
-                {
-                    if (d.id.Count != d.lat.Count || d.lat.Count != d.lon.Count) throw new NotImplementedException();
-                    for (int i = 0; i < d.id.Count; i++)
-                    {
-                        double longitude = .000000001 * (pBlock.lon_offset + (pBlock.granularity * d.lon[i]));
-                        double latitude = .000000001 * (pBlock.lat_offset + (pBlock.granularity * d.lat[i]));
-                        info.nodes[d.id[i]] = sector.GetRoot().ProjectToLocalCoordinates(new LongLat(longitude * Math.PI / 180, latitude * Math.PI / 180).ToSphereVector());
-                    }
-                }
-            }
             foreach (var pGroup in pBlock.primitivegroup)
             {
                 foreach (var way in pGroup.ways)
@@ -112,7 +84,6 @@ namespace Zenith.LibraryWrappers.OSM
 
         internal class RoadInfoVector
         {
-            public Dictionary<long, Vector2d> nodes = new Dictionary<long, Vector2d>();
             public List<RawWay> ways = new List<RawWay>();
         }
     }
