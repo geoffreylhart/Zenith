@@ -71,14 +71,26 @@ namespace Zenith.ZGraphics
             if (vertices != null) vertices.Dispose();
             if (indices != null) indices.Dispose();
         }
-
         public void Draw(GraphicsDevice graphicsDevice, Matrix projection)
+        {
+            Draw(graphicsDevice, projection, primitiveType, texture, null);
+        }
+
+        public void Draw(GraphicsDevice graphicsDevice, Matrix projection, PrimitiveType drawType, Texture2D drawTexture, Vector3? color)
         {
             var basicEffect = new BasicEffect(graphicsDevice);
             basicEffect.Projection = projection;
-            if (texture == null)
+            if (drawTexture == null)
             {
-                basicEffect.VertexColorEnabled = true;
+                if (color == null)
+                {
+                    basicEffect.VertexColorEnabled = true;
+                }
+                else
+                {
+                    basicEffect.VertexColorEnabled = false;
+                    basicEffect.DiffuseColor = color.Value;
+                }
             }
             else
             {
@@ -90,7 +102,7 @@ namespace Zenith.ZGraphics
                 {
                     graphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
                 }
-                basicEffect.Texture = texture;
+                basicEffect.Texture = drawTexture;
                 basicEffect.TextureEnabled = true;
             }
             if (vertices == null) return;
@@ -101,19 +113,19 @@ namespace Zenith.ZGraphics
                 pass.Apply();
                 if (indices != null)
                 {
-                    switch (primitiveType)
+                    switch (drawType)
                     {
                         case PrimitiveType.LineList:
-                            graphicsDevice.DrawIndexedPrimitives(primitiveType, 0, 0, indices.IndexCount / 2);
+                            graphicsDevice.DrawIndexedPrimitives(drawType, 0, 0, indices.IndexCount / 2);
                             return;
                         case PrimitiveType.LineStrip:
-                            graphicsDevice.DrawIndexedPrimitives(primitiveType, 0, 0, indices.IndexCount - 1);
+                            graphicsDevice.DrawIndexedPrimitives(drawType, 0, 0, indices.IndexCount - 1);
                             return;
                         case PrimitiveType.TriangleList:
-                            graphicsDevice.DrawIndexedPrimitives(primitiveType, 0, 0, indices.IndexCount / 3);
+                            graphicsDevice.DrawIndexedPrimitives(drawType, 0, 0, indices.IndexCount / 3);
                             return;
                         case PrimitiveType.TriangleStrip:
-                            graphicsDevice.DrawIndexedPrimitives(primitiveType, 0, 0, indices.IndexCount - 2);
+                            graphicsDevice.DrawIndexedPrimitives(drawType, 0, 0, indices.IndexCount - 2);
                             return;
                         default:
                             throw new NotImplementedException();
@@ -121,19 +133,19 @@ namespace Zenith.ZGraphics
                 }
                 else
                 {
-                    switch (primitiveType)
+                    switch (drawType)
                     {
                         case PrimitiveType.LineList:
-                            graphicsDevice.DrawPrimitives(primitiveType, 0, vertices.VertexCount / 2);
+                            graphicsDevice.DrawPrimitives(drawType, 0, vertices.VertexCount / 2);
                             return;
                         case PrimitiveType.LineStrip:
-                            graphicsDevice.DrawPrimitives(primitiveType, 0, vertices.VertexCount - 1);
+                            graphicsDevice.DrawPrimitives(drawType, 0, vertices.VertexCount - 1);
                             return;
                         case PrimitiveType.TriangleList:
-                            graphicsDevice.DrawPrimitives(primitiveType, 0, vertices.VertexCount / 3);
+                            graphicsDevice.DrawPrimitives(drawType, 0, vertices.VertexCount / 3);
                             return;
                         case PrimitiveType.TriangleStrip:
-                            graphicsDevice.DrawPrimitives(primitiveType, 0, vertices.VertexCount - 2);
+                            graphicsDevice.DrawPrimitives(drawType, 0, vertices.VertexCount - 2);
                             return;
                         default:
                             throw new NotImplementedException();
