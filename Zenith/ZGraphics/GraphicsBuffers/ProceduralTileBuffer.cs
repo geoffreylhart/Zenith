@@ -136,7 +136,21 @@ namespace Zenith.ZGraphics.GraphicsBuffers
 
         public Texture2D GetImage(GraphicsDevice graphicsDevice)
         {
-            return vectorTileBuffer.GetImage(graphicsDevice);
+            RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 512 * 16, 512 * 16, true, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
+            graphicsDevice.SetRenderTarget(newTarget);
+            Vector2d topLeft = new Vector2d(sector.X * sector.ZoomPortion, sector.Y * sector.ZoomPortion);
+            Vector2d bottomRight = new Vector2d((sector.X + 1) * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion);
+            Draw(newTarget, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0);
+            return DownScale(graphicsDevice, newTarget, 512);
+        }
+
+        private Texture2D DownScale(GraphicsDevice graphicsDevice, RenderTarget2D texture, int newsize)
+        {
+            Texture2D newtexture = new RenderTarget2D(graphicsDevice, newsize, newsize, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
+            graphicsDevice.SetRenderTarget((RenderTarget2D)newtexture);
+            GraphicsBasic.DrawSpriteRect(graphicsDevice, 0, 0, newsize, newsize, texture, BlendState.AlphaBlend, Microsoft.Xna.Framework.Color.White);
+            texture.Dispose();
+            return newtexture;
         }
 
         // return a compressed stream of the preloaded vertex information

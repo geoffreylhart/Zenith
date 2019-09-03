@@ -15,7 +15,9 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         ISector sector;
         RenderTarget2D treeTiles;
         VertexIndiceBuffer buffer; // just a square
-        private static int REZ = 1024;
+        private static int REZ = 2048;
+        private Vector2[] treePoints;
+        private Vector2[] textureOffsets;
 
         public TreeBuffer(GraphicsDevice graphicsDevice, BasicVertexBuffer beachBuffer, BasicVertexBuffer lakesBuffer, BasicVertexBuffer roadsBuffer, ISector sector)
         {
@@ -55,6 +57,17 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             buffer.indices = new IndexBuffer(graphicsDevice, IndexElementSize.ThirtyTwoBits, indices.Count, BufferUsage.WriteOnly);
             buffer.indices.SetData(indices.ToArray());
             buffer.texture = treeTiles;
+            List<Vector2> treePointList = new List<Vector2>();
+            Random r = new Random(sector.GetHashCode() + 1);
+            for (int i = 0; i < 5; i++)
+            {
+                Vector2 v = new Vector2((float)r.NextDouble() - 0.25f, (float)r.NextDouble() - 0.25f);
+                treePointList.Add(v);
+            }
+            // for now, each point refers to the top left corner of the tree
+            treePoints = treePointList.OrderBy(x => x.Y).ToArray();
+            textureOffsets = new Vector2[] { new Vector2(-1f / REZ, -1f / REZ), new Vector2(-1f / REZ, 0), new Vector2(-1f / REZ, 1f / REZ), new Vector2(0, -1f / REZ), new Vector2(0, 0), new Vector2(0, 1f / REZ), new Vector2(1f / REZ, -1f / REZ), new Vector2(1f / REZ, 0), new Vector2(1f / REZ, 1f / REZ) };
+            textureOffsets = textureOffsets.OrderBy(x => x.Y).ToArray();
         }
 
         public void Dispose()
@@ -70,9 +83,13 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             effect.Parameters["World"].SetValue(Matrix.Identity);
             effect.Parameters["View"].SetValue(Matrix.Identity);
             effect.Parameters["Projection"].SetValue(Matrix.CreateOrthographicOffCenter((float)minX, (float)maxX, (float)maxY, (float)minY, 1, 1000));
-            effect.Parameters["AmbientColor"].SetValue(new Vector4(0, 0.5f, 0, 1));
             effect.Parameters["Texture"].SetValue(treeTiles);
+            effect.Parameters["TreeTexture"].SetValue(GlobalContent.Tree);
+            //effect.Parameters["Offsets"].SetValue(treePoints);
+            effect.Parameters["TextureOffsets"].SetValue(textureOffsets);
             effect.Parameters["Resolution"].SetValue((float)REZ);
+            effect.Parameters["TreeSize"].SetValue(1f);
+            // effect.Parameters["KeyColor"].SetValue(new Vector4(1, 1, 0, 1));
             graphicsDevice.Indices = buffer.indices;
             graphicsDevice.SetVertexBuffer(buffer.vertices);
             foreach (EffectPass pass in effect.CurrentTechnique.Passes)
