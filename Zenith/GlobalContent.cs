@@ -13,6 +13,7 @@ namespace Zenith
         public static Effect BlurShader;
         public static Effect MaskShader;
         public static Effect InvertedMaskShader;
+        public static Effect TreeShader;
         public static SpriteFont Arial;
         public static SpriteFont ArialBold;
         public static Texture2D Road;
@@ -27,6 +28,7 @@ namespace Zenith
             BlurShader = content.Load<Effect>("Shaders/BlurShader");
             MaskShader = content.Load<Effect>("Shaders/MaskShader");
             InvertedMaskShader = content.Load<Effect>("Shaders/InvertedMaskShader");
+            TreeShader = content.Load<Effect>("Shaders/TreeShader");
             Arial = content.Load<SpriteFont>("Fonts/Arial");
             ArialBold = content.Load<SpriteFont>("Fonts/ArialBold");
             Road = content.Load<Texture2D>("Images/Road");
