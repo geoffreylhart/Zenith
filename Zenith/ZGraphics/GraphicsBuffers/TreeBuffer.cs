@@ -66,7 +66,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             }
             // for now, each point refers to the top left corner of the tree
             treePoints = treePointList.OrderBy(x => x.Y).ToArray();
-            textureOffsets = new Vector2[] { new Vector2(-1f / REZ, -1f / REZ), new Vector2(-1f / REZ, 0), new Vector2(-1f / REZ, 1f / REZ), new Vector2(0, -1f / REZ), new Vector2(0, 0), new Vector2(0, 1f / REZ), new Vector2(1f / REZ, -1f / REZ), new Vector2(1f / REZ, 0), new Vector2(1f / REZ, 1f / REZ) };
+            textureOffsets = new Vector2[] { new Vector2(-0.25f / REZ, -0.25f / REZ), new Vector2(-0.25f / REZ, 0), new Vector2(-0.25f / REZ, 0.25f / REZ), new Vector2(0, -0.25f / REZ), new Vector2(0, 0), new Vector2(0, 0.25f / REZ), new Vector2(0.25f / REZ, -0.25f / REZ), new Vector2(0.25f / REZ, 0), new Vector2(0.25f / REZ, 0.25f / REZ) };
             textureOffsets = textureOffsets.OrderBy(x => x.Y).ToArray();
         }
 
@@ -87,8 +87,8 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             effect.Parameters["TreeTexture"].SetValue(GlobalContent.Tree);
             //effect.Parameters["Offsets"].SetValue(treePoints);
             effect.Parameters["TextureOffsets"].SetValue(textureOffsets);
-            effect.Parameters["Resolution"].SetValue((float)REZ);
-            effect.Parameters["TreeSize"].SetValue(1f);
+            effect.Parameters["Resolution"].SetValue(REZ * 4f);
+            effect.Parameters["TreeSize"].SetValue(2f);
             // effect.Parameters["KeyColor"].SetValue(new Vector4(1, 1, 0, 1));
             graphicsDevice.Indices = buffer.indices;
             graphicsDevice.SetVertexBuffer(buffer.vertices);

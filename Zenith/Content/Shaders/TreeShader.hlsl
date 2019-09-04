@@ -2,7 +2,7 @@ float4x4 World;
 float4x4 View;
 float4x4 Projection;
 
-#define TREE_COUNT 11
+#define TREE_COUNT 1
 float Resolution;
 float TreeSize;
 float2 TextureOffsets[9];
@@ -68,7 +68,7 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 				// TODO: somehow integer overflow breaks this?
 				int seed1 = ((int(tile.x) * 217 + int(tile.y)) * 453 + i) % 1024 * 711 + 319;
 				int seed2 = seed1 * 97 + 11;
-				float2 randPos = float2(seed1 % 83 / 83.0 - TreeSize / 2, seed2 % 83 / 83.0 - TreeSize / 2);
+				float2 randPos = float2(seed1 % 83 / 166.0 - TreeSize / 2, seed2 % 83 / 166.0 - TreeSize / 2);
 				float2 treeCoord = (tileCoord - randPos - TextureOffsets[j] * Resolution) / TreeSize;
 				if (treeCoord.x >= 0 && treeCoord.x <= 1 && treeCoord.y >=0 && treeCoord.y <= 1) {
 					float4 temp = tex2D(treeTextureSampler, treeCoord);

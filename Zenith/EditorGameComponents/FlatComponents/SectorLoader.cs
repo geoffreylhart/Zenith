@@ -62,7 +62,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                     }
                 }
             }
-            List<ISector> sorted = loadedMaps.Keys.Where(x => x.GetRoot().Equals(rootSector)).ToList();
+            List<ISector> sorted = containedSectors.Where(x => x.GetRoot().Equals(rootSector)).ToList();
             sorted.Sort((x, y) => x.Zoom.CompareTo(y.Zoom));
             foreach (var sector in sorted)
             {
