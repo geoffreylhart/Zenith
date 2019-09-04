@@ -128,19 +128,26 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             treeBuffer = null;
         }
 
-        public void Draw(RenderTarget2D renderTarget, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        public void InitDraw(GraphicsDevice graphicsDevice, double minX, double maxX, double minY, double maxY, double cameraZoom)
         {
-            vectorTileBuffer.Draw(renderTarget, minX, maxX, minY, maxY, cameraZoom);
-            treeBuffer.Draw(renderTarget, minX, maxX, minY, maxY, cameraZoom);
+            vectorTileBuffer.InitDraw(graphicsDevice, minX, maxX, minY, maxY, cameraZoom);
+            treeBuffer.InitDraw(graphicsDevice, minX, maxX, minY, maxY, cameraZoom);
+        }
+
+        public void Draw(GraphicsDevice graphicsDevice, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        {
+            vectorTileBuffer.Draw(graphicsDevice, minX, maxX, minY, maxY, cameraZoom);
+            treeBuffer.Draw(graphicsDevice, minX, maxX, minY, maxY, cameraZoom);
         }
 
         public Texture2D GetImage(GraphicsDevice graphicsDevice)
         {
-            RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 512 * 16, 512 * 16, true, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
-            graphicsDevice.SetRenderTarget(newTarget);
             Vector2d topLeft = new Vector2d(sector.X * sector.ZoomPortion, sector.Y * sector.ZoomPortion);
             Vector2d bottomRight = new Vector2d((sector.X + 1) * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion);
-            Draw(newTarget, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0);
+            InitDraw(graphicsDevice, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0);
+            RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 512 * 16, 512 * 16, true, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
+            graphicsDevice.SetRenderTarget(newTarget);
+            Draw(graphicsDevice, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0);
             return DownScale(graphicsDevice, newTarget, 512);
         }
 

@@ -18,9 +18,15 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         private static int REZ = 2048;
         private Vector2[] treePoints;
         private Vector2[] textureOffsets;
+        BasicVertexBuffer beachBuffer;
+        BasicVertexBuffer lakesBuffer;
+        BasicVertexBuffer roadsBuffer;
 
         public TreeBuffer(GraphicsDevice graphicsDevice, BasicVertexBuffer beachBuffer, BasicVertexBuffer lakesBuffer, BasicVertexBuffer roadsBuffer, ISector sector)
         {
+            this.beachBuffer = beachBuffer;
+            this.lakesBuffer = lakesBuffer;
+            this.roadsBuffer = roadsBuffer;
             this.sector = sector;
             treeTiles = new RenderTarget2D(
                  graphicsDevice,
@@ -29,16 +35,6 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                  true,
                  graphicsDevice.PresentationParameters.BackBufferFormat,
                  DepthFormat.None);
-            graphicsDevice.SetRenderTarget(treeTiles);
-            double minX = sector.X * sector.ZoomPortion;
-            double maxX = (sector.X + 1) * sector.ZoomPortion;
-            double minY = sector.Y * sector.ZoomPortion;
-            double maxY = (sector.Y + 1) * sector.ZoomPortion;
-            Matrix projection = Matrix.CreateOrthographicOffCenter((float)minX, (float)maxX, (float)maxY, (float)minY, 1, 1000);
-            beachBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
-            lakesBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
-            roadsBuffer.Draw(graphicsDevice, projection, PrimitiveType.LineList, null, new Vector3(0, 0, 0));
-            graphicsDevice.SetRenderTarget(null);
             // make that square, sure
             buffer = new VertexIndiceBuffer();
             List<VertexPositionTexture> vertices = new List<VertexPositionTexture>();
@@ -76,9 +72,21 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             buffer.Dispose();
         }
 
-        public void Draw(RenderTarget2D renderTarget, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        public void InitDraw(GraphicsDevice graphicsDevice, double minX, double maxX, double minY, double maxY, double cameraZoom)
         {
-            GraphicsDevice graphicsDevice = renderTarget.GraphicsDevice;
+            graphicsDevice.SetRenderTarget(treeTiles);
+            double minX2 = sector.X * sector.ZoomPortion;
+            double maxX2 = (sector.X + 1) * sector.ZoomPortion;
+            double minY2 = sector.Y * sector.ZoomPortion;
+            double maxY2 = (sector.Y + 1) * sector.ZoomPortion;
+            Matrix projection = Matrix.CreateOrthographicOffCenter((float)minX2, (float)maxX2, (float)maxY2, (float)minY2, 1, 1000);
+            beachBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
+            lakesBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
+            roadsBuffer.Draw(graphicsDevice, projection, PrimitiveType.LineList, null, new Vector3(0, 0, 0));
+        }
+
+        public void Draw(GraphicsDevice graphicsDevice, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        {
             var effect = GlobalContent.TreeShader;
             effect.Parameters["World"].SetValue(Matrix.Identity);
             effect.Parameters["View"].SetValue(Matrix.Identity);

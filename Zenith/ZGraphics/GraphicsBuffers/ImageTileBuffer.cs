@@ -41,9 +41,12 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             buffer.Dispose();
         }
 
-        public void Draw(RenderTarget2D renderTarget, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        public void InitDraw(GraphicsDevice graphicsDevice, double minX, double maxX, double minY, double maxY, double cameraZoom)
         {
-            GraphicsDevice graphicsDevice = renderTarget.GraphicsDevice;
+        }
+
+        public void Draw(GraphicsDevice graphicsDevice, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        {
             BasicEffect basicEffect = new BasicEffect(graphicsDevice);
             basicEffect.TextureEnabled = true;
             basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)minX, (float)maxX, (float)maxY, (float)minY, 1, 1000);

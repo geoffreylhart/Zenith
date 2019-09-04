@@ -18,7 +18,6 @@ namespace Zenith.EditorGameComponents
 {
     internal class PlanetComponent : DrawableGameComponent, IEditorGameComponent
     {
-        private double aspectRatio = 1;
         private EditorCamera camera;
         private Dictionary<ISector, RenderTarget2D> renderTargets = new Dictionary<ISector, RenderTarget2D>();
         private List<IFlatComponent> flatComponents = new List<IFlatComponent>();
@@ -41,11 +40,19 @@ namespace Zenith.EditorGameComponents
 
         public override void Draw(GameTime gameTime)
         {
-            aspectRatio = GraphicsDevice.Viewport.AspectRatio;
+            var allBounds = new Dictionary<ISector, SectorBounds>();
+            // precompute this because it depends heavily on the active GraphicsDevice RenderTarget
             foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
             {
-                SectorBounds bounds = GetSectorBounds(rootSector);
-                Texture2D renderToTexture = GetTexture(bounds, rootSector);
+                allBounds[rootSector] = GetSectorBounds(rootSector);
+            }
+            foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
+            {
+                InitDraw(GraphicsDevice, allBounds[rootSector], rootSector);
+            }
+            foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
+            {
+                Draw(GraphicsDevice, allBounds[rootSector], rootSector);
             }
             GraphicsDevice.SetRenderTarget(Game1.renderTarget);
             var basicEffect3 = this.GetDefaultEffect();
@@ -105,31 +112,26 @@ namespace Zenith.EditorGameComponents
             basicEffect.AmbientLightColor = new Vector3(0.2f, 0.2f, 0.2f);
             return basicEffect;
         }
-        private Texture2D GetTexture(SectorBounds bounds, ISector rootSector)
+        private void InitDraw(GraphicsDevice graphicsDevice, SectorBounds bounds, ISector rootSector)
+        {
+            foreach (var layer in flatComponents)
+            {
+                layer.InitDraw(graphicsDevice, rootSector, bounds.minX, bounds.maxX, bounds.minY, bounds.maxY, camera.cameraZoom);
+            }
+        }
+
+        private void Draw(GraphicsDevice graphicsDevice, SectorBounds bounds, ISector rootSector)
         {
             RenderTarget2D renderTarget = renderTargets[rootSector];
             // Set the render target
-            GraphicsDevice.SetRenderTarget(renderTarget);
-
-            GraphicsDevice.DepthStencilState = new DepthStencilState() { DepthBufferEnable = true };
-
-            // Draw the scene
-            //GraphicsDevice.Clear(new[] { Color.Red, Color.Blue, Color.Yellow, Color.Green, Color.White, Color.Orange }[ZCoords.GetSectorManager().GetTopmostOSMSectors().IndexOf(rootSector)]);
-            GraphicsDevice.Clear(Pallete.OCEAN_BLUE);
-            BasicEffect bf = new BasicEffect(GraphicsDevice);
-            bf.World = Matrix.Identity;
-            //bf.World *= Matrix.CreateTranslation((float)marker.X, (float)marker.Y, (float)marker.Z);
-            bf.View = Matrix.CreateLookAt(new Vector3(0.0f, 0.0f, 1.0f), Vector3.Zero, Vector3.Up);
-            bf.Projection = Matrix.CreateOrthographicOffCenter((float)bounds.minX, (float)bounds.maxX, (float)bounds.maxY, (float)bounds.minY, 1, 1000);
+            graphicsDevice.SetRenderTarget(renderTarget);
+            graphicsDevice.DepthStencilState = new DepthStencilState() { DepthBufferEnable = true };
+            graphicsDevice.Clear(Pallete.OCEAN_BLUE);
 
             foreach (var layer in flatComponents)
             {
-                layer.Draw(renderTarget, rootSector, bounds.minX, bounds.maxX, bounds.minY, bounds.maxY, camera.cameraZoom);
+                layer.Draw(graphicsDevice, rootSector, bounds.minX, bounds.maxX, bounds.minY, bounds.maxY, camera.cameraZoom);
             }
-
-            // Drop the render target
-            GraphicsDevice.SetRenderTarget(null);
-            return renderTarget;
         }
 
         private SectorBounds GetSectorBounds(ISector rootSector)

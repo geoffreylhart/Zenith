@@ -23,7 +23,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
         ISector toLoad = null;
         ISector previewSquare = null;
 
-        public void Draw(RenderTarget2D renderTarget, ISector rootSector, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        public void InitDraw(GraphicsDevice graphicsDevice, ISector rootSector, double minX, double maxX, double minY, double maxY, double cameraZoom)
         {
             double relativeCameraZoom = cameraZoom - Math.Log(ZCoords.GetSectorManager().GetTopmostOSMSectors().Count, 4);
             // autoload stuff
@@ -36,11 +36,10 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 loadedMaps.Remove(pair.Key);
             }
             // end autoload stuff
-            GraphicsDevice graphicsDevice = renderTarget.GraphicsDevice;
             if (toLoad != null)
             {
                 if (loadedMaps.ContainsKey(toLoad)) loadedMaps[toLoad].Dispose();
-                loadedMaps[toLoad] = GetGraphicsBuffer(renderTarget.GraphicsDevice, toLoad);
+                loadedMaps[toLoad] = GetGraphicsBuffer(graphicsDevice, toLoad);
                 toLoad = null;
             }
             bool loadCache = !(relativeCameraZoom - 4 > ZCoords.GetSectorManager().GetHighestOSMZoom());
@@ -50,7 +49,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 {
                     if (!loadedMaps.ContainsKey(l))
                     {
-                        loadedMaps[l] = GetCacheBuffer(renderTarget.GraphicsDevice, l);
+                        loadedMaps[l] = GetCacheBuffer(graphicsDevice, l);
                     }
                 }
                 else
@@ -58,7 +57,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                     if (!loadedMaps.ContainsKey(l) || loadedMaps[l] is ImageTileBuffer)
                     {
                         if (loadedMaps.ContainsKey(l)) loadedMaps[l].Dispose();
-                        loadedMaps[l] = GetGraphicsBuffer(renderTarget.GraphicsDevice, l);
+                        loadedMaps[l] = GetGraphicsBuffer(graphicsDevice, l);
                     }
                 }
             }
@@ -67,7 +66,21 @@ namespace Zenith.EditorGameComponents.FlatComponents
             foreach (var sector in sorted)
             {
                 IGraphicsBuffer buffer = loadedMaps[sector];
-                buffer.Draw(renderTarget, minX, maxX, minY, maxY, cameraZoom);
+                buffer.InitDraw(graphicsDevice, minX, maxX, minY, maxY, cameraZoom);
+            }
+        }
+
+        public void Draw(GraphicsDevice graphicsDevice, ISector rootSector, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        {
+            double relativeCameraZoom = cameraZoom - Math.Log(ZCoords.GetSectorManager().GetTopmostOSMSectors().Count, 4);
+            int zoomLevel = Math.Min(Math.Max((int)(relativeCameraZoom - 3), 0), ZCoords.GetSectorManager().GetHighestOSMZoom());
+            List<ISector> containedSectors = rootSector.GetSectorsInRange(minX, maxX, minY, maxY, zoomLevel);
+            List<ISector> sorted = containedSectors.Where(x => x.GetRoot().Equals(rootSector)).ToList();
+            sorted.Sort((x, y) => x.Zoom.CompareTo(y.Zoom));
+            foreach (var sector in sorted)
+            {
+                IGraphicsBuffer buffer = loadedMaps[sector];
+                buffer.Draw(graphicsDevice, minX, maxX, minY, maxY, cameraZoom);
             }
             if (previewSquare != null)
             {

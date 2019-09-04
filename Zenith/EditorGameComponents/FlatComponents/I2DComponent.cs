@@ -10,7 +10,10 @@ namespace Zenith.EditorGameComponents.FlatComponents
 {
     interface IFlatComponent
     {
-        void Draw(RenderTarget2D renderTarget, ISector rootSector, double minLong, double maxLong, double minLat, double maxLat, double cameraZoom);
+        // don't actually draw anything to the caller, just initialize your own internal texture draws (only call this once per frame)
+        void InitDraw(GraphicsDevice graphicsDevice, ISector rootSector, double minLong, double maxLong, double minLat, double maxLat, double cameraZoom);
+        // draw to the caller
+        void Draw(GraphicsDevice graphicsDevice, ISector rootSector, double minLong, double maxLong, double minLat, double maxLat, double cameraZoom);
         void Update(double mouseX, double mouseY, double cameraZoom);
     }
 }

@@ -26,11 +26,14 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             foreach (var buffer in buffers) buffer.Dispose();
         }
 
-        public void Draw(RenderTarget2D renderTarget, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        public void InitDraw(GraphicsDevice graphicsDevice, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        {
+        }
+
+        public void Draw(GraphicsDevice graphicsDevice, double minX, double maxX, double minY, double maxY, double cameraZoom)
         {
             foreach (var buffer in buffers)
             {
-                GraphicsDevice graphicsDevice = renderTarget.GraphicsDevice;
                 Matrix projection = Matrix.CreateOrthographicOffCenter((float)minX, (float)maxX, (float)maxY, (float)minY, 1, 1000);
                 buffer.Draw(graphicsDevice, projection);
                 graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, graphicsDevice.Viewport.MaxDepth, 0);
