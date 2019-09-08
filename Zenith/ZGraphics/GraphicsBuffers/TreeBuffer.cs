@@ -30,8 +30,8 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             this.sector = sector;
             treeTiles = new RenderTarget2D(
                  graphicsDevice,
-                 REZ,
-                 REZ,
+                 512,
+                 512,
                  true,
                  graphicsDevice.PresentationParameters.BackBufferFormat,
                  DepthFormat.None);
@@ -75,14 +75,10 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         public void InitDraw(GraphicsDevice graphicsDevice, double minX, double maxX, double minY, double maxY, double cameraZoom)
         {
             graphicsDevice.SetRenderTarget(treeTiles);
-            double minX2 = sector.X * sector.ZoomPortion;
-            double maxX2 = (sector.X + 1) * sector.ZoomPortion;
-            double minY2 = sector.Y * sector.ZoomPortion;
-            double maxY2 = (sector.Y + 1) * sector.ZoomPortion;
-            Matrix projection = Matrix.CreateOrthographicOffCenter((float)minX2, (float)maxX2, (float)maxY2, (float)minY2, 1, 1000);
+            Matrix projection = Matrix.CreateOrthographicOffCenter((float)minX, (float)maxX, (float)maxY, (float)minY, 1, 1000);
             beachBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
             lakesBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
-            roadsBuffer.Draw(graphicsDevice, projection, PrimitiveType.LineList, null, new Vector3(0, 0, 0));
+            roadsBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
         }
 
         public void Draw(GraphicsDevice graphicsDevice, double minX, double maxX, double minY, double maxY, double cameraZoom)
@@ -97,6 +93,16 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             effect.Parameters["TextureOffsets"].SetValue(textureOffsets);
             effect.Parameters["Resolution"].SetValue(REZ * 4f);
             effect.Parameters["TreeSize"].SetValue(2f);
+
+            effect.Parameters["MinX"].SetValue((float)minX);
+            effect.Parameters["MaxX"].SetValue((float)maxX);
+            effect.Parameters["MinY"].SetValue((float)minY);
+            effect.Parameters["MaxY"].SetValue((float)maxY);
+
+            effect.Parameters["sMinX"].SetValue((float)(sector.X * sector.ZoomPortion));
+            effect.Parameters["sMaxX"].SetValue((float)((sector.X + 1) * sector.ZoomPortion));
+            effect.Parameters["sMinY"].SetValue((float)(sector.Y * sector.ZoomPortion));
+            effect.Parameters["sMaxY"].SetValue((float)((sector.Y + 1) * sector.ZoomPortion));
             // effect.Parameters["KeyColor"].SetValue(new Vector4(1, 1, 0, 1));
             graphicsDevice.Indices = buffer.indices;
             graphicsDevice.SetVertexBuffer(buffer.vertices);

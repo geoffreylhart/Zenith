@@ -7,6 +7,16 @@ float Resolution;
 float TreeSize;
 float2 TextureOffsets[9];
 //float4 KeyColor;
+// frustrum bounds
+float MinX;
+float MaxX;
+float MinY;
+float MaxY;
+// sector bounds
+float sMinX;
+float sMaxX;
+float sMinY;
+float sMaxY;
 
 texture Texture;
 sampler2D textureSampler = sampler_state {
@@ -53,23 +63,23 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 	float4 KeyColor = tex2D(treeTextureSampler, float2(0, 0));
 	float4 treeColor = float4(0, 0, 0, 0);
 	for (int j = 0; j < 9; j++) {
-		bool allow = true;
-		for (int i = 0; i < 9; i++) {
-			float4 textureColor = tex2D(textureSampler, input.TextureCoordinate + TextureOffsets[i] + TextureOffsets[j]);
-			if (textureColor.r == 0) {
-				allow = false;
-			}
-		}
-		if (allow) {
-			float4 textureColor = tex2D(textureSampler, input.TextureCoordinate + TextureOffsets[j]);
-			for (int i = 0; i < TREE_COUNT; i++) {
-				float2 tileCoord = input.TextureCoordinate * Resolution % 1;
-				float2 tile = (input.TextureCoordinate + TextureOffsets[j]) * Resolution;
-				// TODO: somehow integer overflow breaks this?
-				int seed1 = ((int(tile.x) * 217 + int(tile.y)) * 453 + i) % 1024 * 711 + 319;
-				int seed2 = seed1 * 97 + 11;
-				float2 randPos = float2(seed1 % 83 / 166.0 - TreeSize / 2, seed2 % 83 / 166.0 - TreeSize / 2);
-				float2 treeCoord = (tileCoord - randPos - TextureOffsets[j] * Resolution) / TreeSize;
+		float4 textureColor = tex2D(textureSampler, input.TextureCoordinate + TextureOffsets[j]);
+		for (int i = 0; i < TREE_COUNT; i++) {
+			float2 tileCoord = input.TextureCoordinate * Resolution % 1; // coordinate within tile, from 0-1
+			float2 tile = (input.TextureCoordinate + TextureOffsets[j]) * Resolution; // coordinate of tile from 0-REZ
+			tile.x = int(tile.x);
+			tile.y = int(tile.y);
+			// TODO: somehow integer overflow breaks this?
+			int seed1 = ((tile.x * 217 + tile.y) * 453 + i) % 1024 * 711 + 319;
+			int seed2 = seed1 * 97 + 11;
+			float2 randPos = float2(seed1 % 83 / 166.0 - TreeSize / 2, seed2 % 83 / 166.0 - TreeSize / 2); // random variation from 0 to 0.5
+			float2 treeCoord = (tileCoord - randPos - TextureOffsets[j] * Resolution) / TreeSize; // coordinate relative to tree texture
+			float2 treePosAbs = tile / Resolution + randPos / Resolution; // absolute sector coordinate of tree
+			float2 treePosTex = treePosAbs * float2(sMaxX - sMinX, sMaxY - sMinY) + float2(sMinX, sMinY);
+			treePosTex -= float2(MinX, MinY);
+			treePosTex.x /= MaxX - MinX;
+			treePosTex.y /= MaxY - MinY;
+			if (tex2D(textureSampler, treePosTex).r != 0) {
 				if (treeCoord.x >= 0 && treeCoord.x <= 1 && treeCoord.y >=0 && treeCoord.y <= 1) {
 					float4 temp = tex2D(treeTextureSampler, treeCoord);
 					if (!all(temp == KeyColor)) treeColor = temp;
