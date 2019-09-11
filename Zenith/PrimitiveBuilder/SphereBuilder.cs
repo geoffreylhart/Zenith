@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Zenith.EditorGameComponents;
 using Zenith.MathHelpers;
 using Zenith.ZMath;
 
@@ -29,8 +30,10 @@ namespace Zenith.PrimitiveBuilder
             return indices;
         }
 
-        internal static VertexIndiceBuffer MakeSphereSegExplicit(GraphicsDevice graphicsDevice, ISector root, double diameter, double minX, double minY, double maxX, double maxY)
+        internal static VertexIndiceBuffer MakeSphereSegExplicit(GraphicsDevice graphicsDevice, ISector root, double diameter, double minX, double minY, double maxX, double maxY, EditorCamera camera)
         {
+            Vector3d cameraVector = new LongLat(camera.cameraRotX, camera.cameraRotY).ToSphereVector(); // TODO: this is hacky
+
             VertexIndiceBuffer buffer = new VertexIndiceBuffer();
             List<VertexPositionNormalTexture> vertices = new List<VertexPositionNormalTexture>();
 
@@ -47,10 +50,10 @@ namespace Zenith.PrimitiveBuilder
                     double tx = j / (double)horizontalSegments;
                     double ty = i / (double)verticalSegments;
                     // stole this equation
-                    Vector3 normal = root.ProjectToSphereCoordinates(new Vector2d(x, y)).ToVector3();
-                    Vector3 position = normal * (float)radius; // switched dy and dz here to align the poles from how we had them
-                    Vector2 texturepos = new Vector2((float)tx, (float)ty);
-                    vertices.Add(new VertexPositionNormalTexture(position, normal, texturepos));
+                    Vector3d normal = root.ProjectToSphereCoordinates(new Vector2d(x, y));
+                    Vector3d position = normal * (float)radius; // switched dy and dz here to align the poles from how we had them
+                    Vector2d texturepos = new Vector2d((float)tx, (float)ty);
+                    vertices.Add(new VertexPositionNormalTexture((position-cameraVector).ToVector3(), normal.ToVector3(), texturepos));
                 }
             }
             List<int> indices = MakeIndices(horizontalSegments, verticalSegments);

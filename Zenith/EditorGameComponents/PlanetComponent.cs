@@ -56,12 +56,16 @@ namespace Zenith.EditorGameComponents
             }
             GraphicsDevice.SetRenderTarget(Game1.renderTarget);
             var basicEffect3 = this.GetDefaultEffect();
+
             camera.ApplyMatrices(basicEffect3);
+            float distance = (float)(9 * Math.Pow(0.5, camera.cameraZoom)); // TODO: this is hacky
+            basicEffect3.View = Matrix.CreateLookAt(new Vector3(0, -distance, 0), new Vector3(0, 0, 0), Vector3.UnitZ); // TODO: this is hacky
+
             basicEffect3.TextureEnabled = true;
             foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
             {
                 SectorBounds bounds = GetSectorBounds(rootSector);
-                VertexIndiceBuffer sphere = SphereBuilder.MakeSphereSegExplicit(GraphicsDevice, rootSector, 2, bounds.minX, bounds.minY, bounds.maxX, bounds.maxY);
+                VertexIndiceBuffer sphere = SphereBuilder.MakeSphereSegExplicit(GraphicsDevice, rootSector, 2, bounds.minX, bounds.minY, bounds.maxX, bounds.maxY, camera);
                 basicEffect3.Texture = renderTargets[rootSector];
                 foreach (EffectPass pass in basicEffect3.CurrentTechnique.Passes)
                 {
