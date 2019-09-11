@@ -32,10 +32,10 @@ namespace Zenith.LibraryWrappers
                 if (PixelIsLand(sector))
                 {
                     List<VertexPositionColor> vertices = new List<VertexPositionColor>();
-                    Vector2d topLeft = new Vector2d(sector.X * sector.ZoomPortion, sector.Y * sector.ZoomPortion);
-                    Vector2d topRight = new Vector2d((sector.X + 1) * sector.ZoomPortion, sector.Y * sector.ZoomPortion);
-                    Vector2d bottomLeft = new Vector2d(sector.X * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion);
-                    Vector2d bottomRight = new Vector2d((sector.X + 1) * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion);
+                    Vector2d topLeft = new Vector2d(0, 0);
+                    Vector2d topRight = new Vector2d(1, 0);
+                    Vector2d bottomLeft = new Vector2d(0, 1);
+                    Vector2d bottomRight = new Vector2d(1, 1);
                     vertices.Add(new VertexPositionColor(new Vector3((float)topLeft.X, (float)topLeft.Y, -10f), Pallete.GRASS_GREEN));
                     vertices.Add(new VertexPositionColor(new Vector3((float)topRight.X, (float)topRight.Y, -10f), Pallete.GRASS_GREEN));
                     vertices.Add(new VertexPositionColor(new Vector3((float)bottomRight.X, (float)bottomRight.Y, -10f), Pallete.GRASS_GREEN));
@@ -74,13 +74,13 @@ namespace Zenith.LibraryWrappers
                 List<ContourVertex> currLine = new List<ContourVertex>();
                 var firstLine = currLine;
                 var lastLine = currLine;
-                if (sector.ContainsRootCoord(new Vector2d(contour[0].Position.X, contour[0].Position.Y))) currLine.Add(contour[0]);
+                if (sector.ContainsCoord(new Vector2d(contour[0].Position.X, contour[0].Position.Y))) currLine.Add(contour[0]);
                 for (int i = 1; i < contour.Count; i++) // iterate through lines
                 {
                     Vector2d v1 = new Vector2d(contour[i - 1].Position.X, contour[i - 1].Position.Y);
                     Vector2d v2 = new Vector2d(contour[i].Position.X, contour[i].Position.Y);
-                    bool isInside1 = sector.ContainsRootCoord(v1);
-                    bool isInside2 = sector.ContainsRootCoord(v2);
+                    bool isInside1 = sector.ContainsCoord(v1);
+                    bool isInside2 = sector.ContainsCoord(v2);
                     Vector2d[] intersections = GetIntersections(sector, v1, v2);
                     if (isInside2 && intersections.Length == 0)
                     {
@@ -125,10 +125,10 @@ namespace Zenith.LibraryWrappers
         // let's return them in order of intersection
         private static Vector2d[] GetIntersections(ISector sector, Vector2d start, Vector2d end)
         {
-            Vector2d topLeft = new Vector2d(sector.X * sector.ZoomPortion, sector.Y * sector.ZoomPortion);
-            Vector2d topRight = new Vector2d((sector.X + 1) * sector.ZoomPortion, sector.Y * sector.ZoomPortion);
-            Vector2d bottomLeft = new Vector2d(sector.X * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion);
-            Vector2d bottomRight = new Vector2d((sector.X + 1) * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion);
+            Vector2d topLeft = new Vector2d(0, 0);
+            Vector2d topRight = new Vector2d(1, 0);
+            Vector2d bottomLeft = new Vector2d(0, 1);
+            Vector2d bottomRight = new Vector2d(1, 1);
             List<Vector2d> answer = new List<Vector2d>();
             answer.AddRange(GetIntersections(start, end, topLeft, topRight));
             answer.AddRange(GetIntersections(start, end, topRight, bottomRight));
@@ -225,10 +225,10 @@ namespace Zenith.LibraryWrappers
             List<ContourVertex> vertices = new List<ContourVertex>();
             vertices.Add(edgeStart);
             vertices.Add(edgeEnd);
-            vertices.Add(ToVertex(new Vector2d(sector.X * sector.ZoomPortion, sector.Y * sector.ZoomPortion)));
-            vertices.Add(ToVertex(new Vector2d((sector.X + 1) * sector.ZoomPortion, sector.Y * sector.ZoomPortion)));
-            vertices.Add(ToVertex(new Vector2d(sector.X * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion)));
-            vertices.Add(ToVertex(new Vector2d((sector.X + 1) * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion)));
+            vertices.Add(ToVertex(new Vector2d(0, 0)));
+            vertices.Add(ToVertex(new Vector2d(1, 0)));
+            vertices.Add(ToVertex(new Vector2d(0, 1)));
+            vertices.Add(ToVertex(new Vector2d(1, 1)));
             vertices.Sort((x, y) => AngleOf(sector, x).CompareTo(AngleOf(sector, y)));
             int start = vertices.IndexOf(edgeStart);
             int end = vertices.IndexOf(edgeEnd);
@@ -255,8 +255,8 @@ namespace Zenith.LibraryWrappers
         }
         private static double AngleOf(ISector sector, ContourVertex vertex)
         {
-            double x = vertex.Position.X - (sector.X + 0.5) * sector.ZoomPortion;
-            double y = vertex.Position.Y - (sector.Y + 0.5) * sector.ZoomPortion;
+            double x = vertex.Position.X - 0.5;
+            double y = vertex.Position.Y - 0.5;
             return Math.Atan2(-y, x);
         }
 

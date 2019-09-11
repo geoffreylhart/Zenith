@@ -66,7 +66,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
             foreach (var sector in sorted)
             {
                 IGraphicsBuffer buffer = loadedMaps[sector];
-                buffer.InitDraw(graphicsDevice, minX, maxX, minY, maxY, cameraZoom);
+                buffer.InitDraw(graphicsDevice, minX * (1 << sector.Zoom) - sector.X, maxX * (1 << sector.Zoom) - sector.X, minY * (1 << sector.Zoom) - sector.Y, maxY * (1 << sector.Zoom) - sector.Y, cameraZoom);
             }
         }
 
@@ -80,7 +80,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
             foreach (var sector in sorted)
             {
                 IGraphicsBuffer buffer = loadedMaps[sector];
-                buffer.Draw(graphicsDevice, minX, maxX, minY, maxY, cameraZoom);
+                buffer.Draw(graphicsDevice, minX * (1 << sector.Zoom) - sector.X, maxX * (1 << sector.Zoom) - sector.X, minY * (1 << sector.Zoom) - sector.Y, maxY * (1 << sector.Zoom) - sector.Y, cameraZoom);
             }
             if (previewSquare != null)
             {

@@ -44,10 +44,10 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         private BasicVertexBuffer GenerateWaterBuffer(GraphicsDevice graphicsDevice, ISector sector)
         {
             List<VertexPositionColor> vertices = new List<VertexPositionColor>();
-            Vector2d topLeft = new Vector2d(sector.X * sector.ZoomPortion, sector.Y * sector.ZoomPortion);
-            Vector2d topRight = new Vector2d((sector.X + 1) * sector.ZoomPortion, sector.Y * sector.ZoomPortion);
-            Vector2d bottomLeft = new Vector2d(sector.X * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion);
-            Vector2d bottomRight = new Vector2d((sector.X + 1) * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion);
+            Vector2d topLeft = new Vector2d(0, 0);
+            Vector2d topRight = new Vector2d(1, 0);
+            Vector2d bottomLeft = new Vector2d(0, 1);
+            Vector2d bottomRight = new Vector2d(1, 1);
             vertices.Add(new VertexPositionColor(new Vector3((float)topLeft.X, (float)topLeft.Y, -10f), Pallete.OCEAN_BLUE));
             vertices.Add(new VertexPositionColor(new Vector3((float)topRight.X, (float)topRight.Y, -10f), Pallete.OCEAN_BLUE));
             vertices.Add(new VertexPositionColor(new Vector3((float)bottomRight.X, (float)bottomRight.Y, -10f), Pallete.OCEAN_BLUE));

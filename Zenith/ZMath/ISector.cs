@@ -29,6 +29,6 @@ namespace Zenith.ZMath
         Vector3d ProjectToSphereCoordinates(Vector2d v);
         ISector GetSectorAt(double x, double y, int zoom);
         ISector GetRoot();
-        bool ContainsRootCoord(Vector2d v);
+        bool ContainsCoord(Vector2d v);
     }
 }

@@ -39,10 +39,10 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             buffer = new VertexIndiceBuffer();
             List<VertexPositionTexture> vertices = new List<VertexPositionTexture>();
             // TODO: are all of these names wrong everywhere? the topleft etc?
-            Vector2d topLeft = new Vector2d(sector.X * sector.ZoomPortion, sector.Y * sector.ZoomPortion);
-            Vector2d topRight = new Vector2d((sector.X + 1) * sector.ZoomPortion, sector.Y * sector.ZoomPortion);
-            Vector2d bottomLeft = new Vector2d(sector.X * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion);
-            Vector2d bottomRight = new Vector2d((sector.X + 1) * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion);
+            Vector2d topLeft = new Vector2d(0, 0);
+            Vector2d topRight = new Vector2d(1, 0);
+            Vector2d bottomLeft = new Vector2d(0, 1);
+            Vector2d bottomRight = new Vector2d(1, 1);
             vertices.Add(new VertexPositionTexture(new Vector3((float)topLeft.X, (float)topLeft.Y, -10f), new Vector2(0, 0)));
             vertices.Add(new VertexPositionTexture(new Vector3((float)topRight.X, (float)topRight.Y, -10f), new Vector2(1, 0)));
             vertices.Add(new VertexPositionTexture(new Vector3((float)bottomLeft.X, (float)bottomLeft.Y, -10f), new Vector2(0, 1)));
@@ -99,10 +99,10 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             effect.Parameters["MinY"].SetValue((float)minY);
             effect.Parameters["MaxY"].SetValue((float)maxY);
 
-            effect.Parameters["sMinX"].SetValue((float)(sector.X * sector.ZoomPortion));
-            effect.Parameters["sMaxX"].SetValue((float)((sector.X + 1) * sector.ZoomPortion));
-            effect.Parameters["sMinY"].SetValue((float)(sector.Y * sector.ZoomPortion));
-            effect.Parameters["sMaxY"].SetValue((float)((sector.Y + 1) * sector.ZoomPortion));
+            effect.Parameters["sMinX"].SetValue(0f);
+            effect.Parameters["sMaxX"].SetValue(1f);
+            effect.Parameters["sMinY"].SetValue(0f);
+            effect.Parameters["sMaxY"].SetValue(1f);
             // effect.Parameters["KeyColor"].SetValue(new Vector4(1, 1, 0, 1));
             graphicsDevice.Indices = buffer.indices;
             graphicsDevice.SetVertexBuffer(buffer.vertices);

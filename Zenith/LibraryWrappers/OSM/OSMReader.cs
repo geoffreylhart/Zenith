@@ -48,7 +48,7 @@ namespace Zenith.LibraryWrappers.OSM
                         {
                             double longitude = .000000001 * (blob.pBlock.lon_offset + (blob.pBlock.granularity * d.lon[k]));
                             double latitude = .000000001 * (blob.pBlock.lat_offset + (blob.pBlock.granularity * d.lat[k]));
-                            collection.nodes[d.id[k]] = rootSector.ProjectToLocalCoordinates(new LongLat(longitude * Math.PI / 180, latitude * Math.PI / 180).ToSphereVector());
+                            collection.nodes[d.id[k]] = sector.ProjectToLocalCoordinates(new LongLat(longitude * Math.PI / 180, latitude * Math.PI / 180).ToSphereVector());
                         }
                     }
                 }

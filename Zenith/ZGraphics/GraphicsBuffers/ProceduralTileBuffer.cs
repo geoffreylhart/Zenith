@@ -142,8 +142,8 @@ namespace Zenith.ZGraphics.GraphicsBuffers
 
         public Texture2D GetImage(GraphicsDevice graphicsDevice)
         {
-            Vector2d topLeft = new Vector2d(sector.X * sector.ZoomPortion, sector.Y * sector.ZoomPortion);
-            Vector2d bottomRight = new Vector2d((sector.X + 1) * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion);
+            Vector2d topLeft = new Vector2d(0, 0);
+            Vector2d bottomRight = new Vector2d(1, 1);
             InitDraw(graphicsDevice, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0);
             RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 512 * 16, 512 * 16, true, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
             graphicsDevice.SetRenderTarget(newTarget);

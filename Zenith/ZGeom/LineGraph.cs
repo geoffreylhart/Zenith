@@ -45,6 +45,7 @@ namespace Zenith.ZGeom
 
         internal BasicVertexBuffer ConstructAsRoads(GraphicsDevice graphicsDevice, double width, Texture2D texture, Color color)
         {
+            width *= 256;
             List<int> indices = new List<int>();
             List<VertexPositionTexture> vertices = new List<VertexPositionTexture>();
             Dictionary<GraphNode, int> indexLookup = new Dictionary<GraphNode, int>();

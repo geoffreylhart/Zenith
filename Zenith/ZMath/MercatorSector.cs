@@ -109,10 +109,10 @@ namespace Zenith.ZMath
             return true;
         }
 
-        public bool ContainsRootCoord(Vector2d v)
+        public bool ContainsCoord(Vector2d v)
         {
-            if (v.X < x * ZoomPortion || v.X > (x + 1) * ZoomPortion) return false;
-            if (v.Y < y * ZoomPortion || v.Y > (y + 1) * ZoomPortion) return false;
+            if (v.X < 0 || v.X > 1) return false;
+            if (v.Y < 0 || v.Y > 1) return false;
             return true;
         }
 

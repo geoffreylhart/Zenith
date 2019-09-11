@@ -31,8 +31,8 @@ namespace Zenith.ZGeom
             // TODO: make evenly distributed?
             double randX = random.NextDouble();
             double randY = random.NextDouble();
-            Vector2d topLeft = new Vector2d(sector.X * sector.ZoomPortion, sector.Y * sector.ZoomPortion);
-            Vector2d bottomRight = new Vector2d((sector.X + 1) * sector.ZoomPortion, (sector.Y + 1) * sector.ZoomPortion);
+            Vector2d topLeft = new Vector2d(0, 0);
+            Vector2d bottomRight = new Vector2d(1, 1);
             return new Vector2d(topLeft.X * (1 - randX) + bottomRight.X * randX, topLeft.Y * (1 - randY) + bottomRight.Y * randY);
         }
 
