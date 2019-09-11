@@ -86,14 +86,14 @@ namespace Zenith.EditorGameComponents.FlatComponents
             {
                 var basicEffect = new BasicEffect(graphicsDevice);
                 basicEffect.TextureEnabled = true;
-                basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)minX, (float)maxX, (float)maxY, (float)minY, 1, 1000);
+                basicEffect.Projection = Matrix.CreateOrthographicOffCenter(0, (float)(maxX - minX), (float)(maxY - minY), 0, 1, 1000);
                 basicEffect.TextureEnabled = false;
                 basicEffect.VertexColorEnabled = true;
                 basicEffect.LightingEnabled = false;
-                float minLat = (float)(previewSquare.ZoomPortion * previewSquare.Y);
-                float maxLat = (float)(previewSquare.ZoomPortion * (previewSquare.Y + 1));
-                float minLong = (float)(previewSquare.ZoomPortion * previewSquare.X);
-                float maxLong = (float)(previewSquare.ZoomPortion * (previewSquare.X + 1));
+                float minLat = (float)(previewSquare.ZoomPortion * previewSquare.Y - minY);
+                float maxLat = (float)(previewSquare.ZoomPortion * (previewSquare.Y + 1) - minY);
+                float minLong = (float)(previewSquare.ZoomPortion * previewSquare.X - minX);
+                float maxLong = (float)(previewSquare.ZoomPortion * (previewSquare.X + 1) - minX);
                 float w = maxLong - minLong;
                 float h = maxLat - minLat;
                 GraphicsBasic.DrawRect(graphicsDevice, basicEffect, minLong, minLat, w / 20, h, Color.Red);
