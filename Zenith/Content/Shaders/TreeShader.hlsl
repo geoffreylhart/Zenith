@@ -81,8 +81,13 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 			treePosTex.y /= MaxY - MinY;
 			if (tex2D(textureSampler, treePosTex).r != 0) {
 				if (treeCoord.x >= 0 && treeCoord.x <= 1 && treeCoord.y >=0 && treeCoord.y <= 1) {
-					float4 temp = tex2D(treeTextureSampler, treeCoord);
-					if (!all(temp == KeyColor)) treeColor = temp;
+					// ddx is probably the amount the texture changes per pixel
+					float2 derivX = float2(1, 0) * (MaxX - MinX); 
+					float2 derivY = float2(0, 1) * (MaxY - MinY);
+					float4 temp = tex2Dgrad(treeTextureSampler, treeCoord, derivX, derivY);
+					//float newa = (1 - temp.a) * treeColor.a + temp.a;
+					treeColor = temp * temp.a + treeColor * (1 - temp.a);
+					//treeColor.a = newa;
 				}
 			}
 		}
