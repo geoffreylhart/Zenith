@@ -32,7 +32,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                  graphicsDevice,
                  512,
                  512,
-                 true,
+                 false,
                  graphicsDevice.PresentationParameters.BackBufferFormat,
                  DepthFormat.None);
             // make that square, sure
