@@ -80,9 +80,9 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             Matrix projection = Matrix.CreateOrthographicOffCenter((float)minX, (float)maxX, (float)maxY, (float)minY, 1, 1000);
             beachBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
             lakesBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
-            beachCoastBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, GlobalContent.BeachFlippedTreeDensity, new Vector3(0, 0, 0));
-            lakesCoastBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, GlobalContent.BeachTreeDensity, new Vector3(0, 0, 0));
-            roadsBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, GlobalContent.RoadTreeDensity, new Vector3(0, 0, 0));
+            beachCoastBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, GlobalContent.BeachFlippedTreeDensity, null);
+            lakesCoastBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, GlobalContent.BeachTreeDensity, null);
+            roadsBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, GlobalContent.RoadTreeDensity, null);
         }
 
         public void Draw(GraphicsDevice graphicsDevice, double minX, double maxX, double minY, double maxY, double cameraZoom)
