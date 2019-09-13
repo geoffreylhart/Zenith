@@ -56,15 +56,15 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 	float4 treeColor = float4(0, 0, 0, 0);
 	for (int j = 0; j < 9; j++) {
 		float2 tileCoord = input.TextureCoordinate * Resolution % 1; // coordinate within tile, from 0-1
-		float2 tile = floor((input.TextureCoordinate + TextureOffsets[j]) * Resolution); // coordinate of tile from 0-REZ
+		float2 tile = floor(input.TextureCoordinate * Resolution + TextureOffsets[j]); // coordinate of tile from 0-REZ
 		// TODO: somehow integer overflow breaks this?
 		int seed1 = ((tile.x * 217 + tile.y) * 453) % 1024 * 711 + 319;
 		int seed2 = seed1 * 97 + 11;
-		int seed3 = seed2 * 97 + 11;
+		int seed3 = seed2 % 742 * 97 + 11;
 		float2 randPos = float2(seed1 % 83 / 83.0 - 0.5, seed2 % 83 / 83.0 - 0.5) * TreeVariance; // random variation off of center
 		float2 treeCornerPos = randPos + float2(0.5 - TreeSize / 2, 0.5 - TreeSize / 2); // position of the tree texture coordinate's top left corner
 		float2 treeCenterPos = treeCornerPos + TreeCenter * TreeSize; // position of the center-base of the tree
-		float2 relTreeCoord = (tileCoord - treeCornerPos - TextureOffsets[j] * Resolution) / TreeSize; // coordinate relative to tree texture
+		float2 relTreeCoord = (tileCoord - treeCornerPos - TextureOffsets[j]) / TreeSize; // coordinate relative to tree texture
 		float2 treePosAbs = tile / Resolution + treeCenterPos / Resolution; // absolute coordinate of tree within sector
 		float2 treePosRelTex = (treePosAbs - Min) / (Max - Min);
 		if (tex2D(textureSampler, treePosRelTex).r > seed3 % 83 / 83.0) {

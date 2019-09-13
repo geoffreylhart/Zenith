@@ -108,11 +108,11 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             Console.WriteLine($"Lakes and multilakes coast buffer generated for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
             BasicVertexBuffer roadsBuffer = roadGraph.ConstructAsRoads(graphicsDevice, width * 4 / 50, GlobalContent.Road, Microsoft.Xna.Framework.Color.White);
-            BasicVertexBuffer roadsBufferFat = roadGraph.ConstructAsRoads(graphicsDevice, width * 20 / 50, GlobalContent.Road, Microsoft.Xna.Framework.Color.White);
+            BasicVertexBuffer roadsBufferFat = roadGraph.ConstructAsRoads(graphicsDevice, width * 12 / 50, GlobalContent.Road, Microsoft.Xna.Framework.Color.White);
             vectorTileBuffer.Add(graphicsDevice, roadsBuffer, sector);
             Console.WriteLine($"Roads buffer generated for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
-            treeBuffer = new TreeBuffer(graphicsDevice, beachBuffer, lakesBuffer, roadsBufferFat, beachCoastBufferFat, lakesCoastBufferFat, sector);
+            treeBuffer = new TreeBuffer(graphicsDevice, beachBuffer, lakesBuffer, roadsBuffer, roadsBufferFat, beachCoastBufferFat, lakesCoastBufferFat, sector);
             Console.WriteLine($"Trees generated for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
             // dereference
