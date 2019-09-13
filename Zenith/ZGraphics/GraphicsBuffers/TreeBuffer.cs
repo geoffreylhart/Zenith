@@ -16,7 +16,6 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         RenderTarget2D treeTiles;
         VertexIndiceBuffer buffer; // just a square
         private static int REZ = 2048;
-        private Vector2[] treePoints;
         private Vector2[] textureOffsets;
         BasicVertexBuffer beachBuffer;
         BasicVertexBuffer lakesBuffer;
@@ -61,7 +60,6 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                 treePointList.Add(v);
             }
             // for now, each point refers to the top left corner of the tree
-            treePoints = treePointList.OrderBy(x => x.Y).ToArray();
             textureOffsets = new Vector2[] { new Vector2(-0.25f / REZ, -0.25f / REZ), new Vector2(-0.25f / REZ, 0), new Vector2(-0.25f / REZ, 0.25f / REZ), new Vector2(0, -0.25f / REZ), new Vector2(0, 0), new Vector2(0, 0.25f / REZ), new Vector2(0.25f / REZ, -0.25f / REZ), new Vector2(0.25f / REZ, 0), new Vector2(0.25f / REZ, 0.25f / REZ) };
             textureOffsets = textureOffsets.OrderBy(x => x.Y).ToArray();
         }
@@ -89,21 +87,14 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             effect.Parameters["Projection"].SetValue(Matrix.CreateOrthographicOffCenter((float)minX, (float)maxX, (float)maxY, (float)minY, 1, 1000));
             effect.Parameters["Texture"].SetValue(treeTiles);
             effect.Parameters["TreeTexture"].SetValue(GlobalContent.Tree);
-            //effect.Parameters["Offsets"].SetValue(treePoints);
             effect.Parameters["TextureOffsets"].SetValue(textureOffsets);
             effect.Parameters["Resolution"].SetValue(REZ * 4f);
             effect.Parameters["TreeSize"].SetValue(2f);
 
-            effect.Parameters["MinX"].SetValue((float)minX);
-            effect.Parameters["MaxX"].SetValue((float)maxX);
-            effect.Parameters["MinY"].SetValue((float)minY);
-            effect.Parameters["MaxY"].SetValue((float)maxY);
-
-            effect.Parameters["sMinX"].SetValue(0f);
-            effect.Parameters["sMaxX"].SetValue(1f);
-            effect.Parameters["sMinY"].SetValue(0f);
-            effect.Parameters["sMaxY"].SetValue(1f);
-            // effect.Parameters["KeyColor"].SetValue(new Vector4(1, 1, 0, 1));
+            effect.Parameters["Min"].SetValue(new Vector2((float)minX, (float)minY));
+            effect.Parameters["Max"].SetValue(new Vector2((float)maxX, (float)maxY));
+            effect.Parameters["TreeCenter"].SetValue(new Vector2((float)0.5, (float)1));
+            effect.Parameters["TreeVariance"].SetValue(new Vector2((float)0.5, (float)0.5));
             graphicsDevice.Indices = buffer.indices;
             graphicsDevice.SetVertexBuffer(buffer.vertices);
             foreach (EffectPass pass in effect.CurrentTechnique.Passes)

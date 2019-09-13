@@ -2,21 +2,14 @@ float4x4 World;
 float4x4 View;
 float4x4 Projection;
 
-#define TREE_COUNT 1
 float Resolution;
 float TreeSize;
 float2 TextureOffsets[9];
-//float4 KeyColor;
 // frustrum bounds
-float MinX;
-float MaxX;
-float MinY;
-float MaxY;
-// sector bounds
-float sMinX;
-float sMaxX;
-float sMinY;
-float sMaxY;
+float2 Min;
+float2 Max;
+float2 TreeCenter;
+float2 TreeVariance; // the "width" of the variance of a tree off its normal center of 0.5, 0.5
 
 texture Texture;
 sampler2D textureSampler = sampler_state {
@@ -60,35 +53,28 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 
 float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 {
-	float4 KeyColor = tex2D(treeTextureSampler, float2(0, 0));
 	float4 treeColor = float4(0, 0, 0, 0);
 	for (int j = 0; j < 9; j++) {
-		float4 textureColor = tex2D(textureSampler, input.TextureCoordinate + TextureOffsets[j]);
-		for (int i = 0; i < TREE_COUNT; i++) {
-			float2 tileCoord = input.TextureCoordinate * Resolution % 1; // coordinate within tile, from 0-1
-			float2 tile = (input.TextureCoordinate + TextureOffsets[j]) * Resolution; // coordinate of tile from 0-REZ
-			tile.x = int(tile.x);
-			tile.y = int(tile.y);
-			// TODO: somehow integer overflow breaks this?
-			int seed1 = ((tile.x * 217 + tile.y) * 453 + i) % 1024 * 711 + 319;
-			int seed2 = seed1 * 97 + 11;
-			float2 randPos = float2(seed1 % 83 / 166.0 - TreeSize / 2, seed2 % 83 / 166.0 - TreeSize / 2); // random variation from 0 to 0.5
-			float2 treeCoord = (tileCoord - randPos - TextureOffsets[j] * Resolution) / TreeSize; // coordinate relative to tree texture
-			float2 treePosAbs = tile / Resolution + randPos / Resolution; // absolute sector coordinate of tree
-			float2 treePosTex = treePosAbs * float2(sMaxX - sMinX, sMaxY - sMinY) + float2(sMinX, sMinY);
-			treePosTex -= float2(MinX, MinY);
-			treePosTex.x /= MaxX - MinX;
-			treePosTex.y /= MaxY - MinY;
-			if (tex2D(textureSampler, treePosTex).r != 0) {
-				if (treeCoord.x >= 0 && treeCoord.x <= 1 && treeCoord.y >=0 && treeCoord.y <= 1) {
-					// ddx is probably the amount the texture changes per pixel
-					float2 derivX = float2(1, 0) * (MaxX - MinX); 
-					float2 derivY = float2(0, 1) * (MaxY - MinY);
-					float4 temp = tex2Dgrad(treeTextureSampler, treeCoord, derivX, derivY);
-					//float newa = (1 - temp.a) * treeColor.a + temp.a;
-					treeColor = temp * temp.a + treeColor * (1 - temp.a);
-					//treeColor.a = newa;
-				}
+		float2 tileCoord = input.TextureCoordinate * Resolution % 1; // coordinate within tile, from 0-1
+		float2 tile = floor((input.TextureCoordinate + TextureOffsets[j]) * Resolution); // coordinate of tile from 0-REZ
+		// TODO: somehow integer overflow breaks this?
+		int seed1 = ((tile.x * 217 + tile.y) * 453) % 1024 * 711 + 319;
+		int seed2 = seed1 * 97 + 11;
+		float2 randPos = float2(seed1 % 83 / 83.0 - 0.5, seed2 % 83 / 83.0 - 0.5) * TreeVariance; // random variation off of center
+		float2 treeCornerPos = randPos + float2(0.5 - TreeSize / 2, 0.5 - TreeSize / 2); // position of the tree texture coordinate's top left corner
+		float2 treeCenterPos = treeCornerPos + TreeCenter * TreeSize; // position of the center-base of the tree
+		float2 relTreeCoord = (tileCoord - treeCornerPos - TextureOffsets[j] * Resolution) / TreeSize; // coordinate relative to tree texture
+		float2 treePosAbs = tile / Resolution + treeCenterPos / Resolution; // absolute coordinate of tree within sector
+		float2 treePosRelTex = (treePosAbs - Min) / (Max - Min);
+		if (tex2D(textureSampler, treePosRelTex).r != 0) {
+			if (relTreeCoord.x >= 0 && relTreeCoord.x <= 1 && relTreeCoord.y >=0 && relTreeCoord.y <= 1) {
+				// ddx is probably the amount the texture changes per pixel
+				float2 derivX = float2(1, 0) * (Max.x - Min.x); 
+				float2 derivY = float2(0, 1) * (Max.y - Min.y);
+				float4 temp = tex2Dgrad(treeTextureSampler, relTreeCoord, derivX, derivY);
+				//float newa = (1 - temp.a) * treeColor.a + temp.a;
+				treeColor = temp * temp.a + treeColor * (1 - temp.a);
+				//treeColor.a = newa;
 			}
 		}
 	}
