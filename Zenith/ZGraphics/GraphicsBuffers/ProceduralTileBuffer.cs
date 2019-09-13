@@ -90,7 +90,9 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             double widthInFeet = 10.7 * 50; // extra thick
             double circumEarth = 24901 * 5280;
             double width = widthInFeet / circumEarth * 2 * Math.PI;
-            vectorTileBuffer.Add(graphicsDevice, beachGraph.ConstructAsRoads(graphicsDevice, width, GlobalContent.BeachFlipped, Microsoft.Xna.Framework.Color.White), sector);
+            BasicVertexBuffer beachCoastBuffer = beachGraph.ConstructAsRoads(graphicsDevice, width, GlobalContent.BeachFlipped, Microsoft.Xna.Framework.Color.White);
+            BasicVertexBuffer beachCoastBufferFat = beachGraph.ConstructAsRoads(graphicsDevice, width * 2, GlobalContent.BeachFlipped, Microsoft.Xna.Framework.Color.White);
+            vectorTileBuffer.Add(graphicsDevice, beachCoastBuffer, sector);
             Console.WriteLine($"Beach coast buffer generated for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
             BasicVertexBuffer lakesBuffer = new BasicVertexBuffer(graphicsDevice, lakeVertices, PrimitiveType.TriangleList);
@@ -100,14 +102,17 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             lakesGraph.Combine(multiLakesGraph); // TODO: this alters lakesGraph
             Console.WriteLine($"Lakes and multilakes graph combined for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
-            vectorTileBuffer.Add(graphicsDevice, lakesGraph.ConstructAsRoads(graphicsDevice, width, GlobalContent.Beach, Microsoft.Xna.Framework.Color.White), sector);
+            BasicVertexBuffer lakesCoastBuffer = lakesGraph.ConstructAsRoads(graphicsDevice, width, GlobalContent.Beach, Microsoft.Xna.Framework.Color.White);
+            BasicVertexBuffer lakesCoastBufferFat = lakesGraph.ConstructAsRoads(graphicsDevice, width * 2, GlobalContent.Beach, Microsoft.Xna.Framework.Color.White);
+            vectorTileBuffer.Add(graphicsDevice, lakesCoastBuffer, sector);
             Console.WriteLine($"Lakes and multilakes coast buffer generated for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
             BasicVertexBuffer roadsBuffer = roadGraph.ConstructAsRoads(graphicsDevice, width * 4 / 50, GlobalContent.Road, Microsoft.Xna.Framework.Color.White);
+            BasicVertexBuffer roadsBufferFat = roadGraph.ConstructAsRoads(graphicsDevice, width * 20 / 50, GlobalContent.Road, Microsoft.Xna.Framework.Color.White);
             vectorTileBuffer.Add(graphicsDevice, roadsBuffer, sector);
             Console.WriteLine($"Roads buffer generated for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
-            treeBuffer = new TreeBuffer(graphicsDevice, beachBuffer, lakesBuffer, roadsBuffer, sector);
+            treeBuffer = new TreeBuffer(graphicsDevice, beachBuffer, lakesBuffer, roadsBufferFat, beachCoastBufferFat, lakesCoastBufferFat, sector);
             Console.WriteLine($"Trees generated for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
             // dereference

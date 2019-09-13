@@ -20,12 +20,16 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         BasicVertexBuffer beachBuffer;
         BasicVertexBuffer lakesBuffer;
         BasicVertexBuffer roadsBuffer;
+        BasicVertexBuffer beachCoastBuffer;
+        BasicVertexBuffer lakesCoastBuffer;
 
-        public TreeBuffer(GraphicsDevice graphicsDevice, BasicVertexBuffer beachBuffer, BasicVertexBuffer lakesBuffer, BasicVertexBuffer roadsBuffer, ISector sector)
+        public TreeBuffer(GraphicsDevice graphicsDevice, BasicVertexBuffer beachBuffer, BasicVertexBuffer lakesBuffer, BasicVertexBuffer roadsBuffer, BasicVertexBuffer beachCoastBuffer, BasicVertexBuffer lakesCoastBuffer, ISector sector)
         {
             this.beachBuffer = beachBuffer;
             this.lakesBuffer = lakesBuffer;
             this.roadsBuffer = roadsBuffer;
+            this.beachCoastBuffer = beachCoastBuffer;
+            this.lakesCoastBuffer = lakesCoastBuffer;
             this.sector = sector;
             treeTiles = new RenderTarget2D(
                  graphicsDevice,
@@ -76,7 +80,9 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             Matrix projection = Matrix.CreateOrthographicOffCenter((float)minX, (float)maxX, (float)maxY, (float)minY, 1, 1000);
             beachBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
             lakesBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
-            roadsBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
+            beachCoastBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, GlobalContent.BeachFlippedTreeDensity, new Vector3(0, 0, 0));
+            lakesCoastBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, GlobalContent.BeachTreeDensity, new Vector3(0, 0, 0));
+            roadsBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, GlobalContent.RoadTreeDensity, new Vector3(0, 0, 0));
         }
 
         public void Draw(GraphicsDevice graphicsDevice, double minX, double maxX, double minY, double maxY, double cameraZoom)
