@@ -38,10 +38,8 @@ namespace Zenith.EditorGameComponents.FlatComponents
             // end autoload stuff
             if (toLoad != null)
             {
-                foreach (var sector in toLoad.GetChildrenAtLevel(ZCoords.GetSectorManager().GetHighestOSMZoom()))
-                {
-                    GetGraphicsBuffer(graphicsDevice, sector).Dispose();
-                }
+                if (loadedMaps.ContainsKey(toLoad)) loadedMaps[toLoad].Dispose();
+                loadedMaps[toLoad] = GetGraphicsBuffer(graphicsDevice, toLoad);
                 toLoad = null;
             }
             bool loadCache = !(relativeCameraZoom - 4 > ZCoords.GetSectorManager().GetHighestOSMZoom());
