@@ -10,6 +10,7 @@ float2 Min;
 float2 Max;
 float2 TreeCenter;
 float2 TreeVariance; // the "width" of the variance of a tree off its normal center of 0.5, 0.5
+int TextureCount;
 
 texture Texture;
 sampler2D textureSampler = sampler_state {
@@ -29,6 +30,15 @@ sampler2D treeTextureSampler = sampler_state {
 	AddressV = Clamp;
 };
 
+texture TreeDepthTexture;
+sampler2D treeDepthTextureSampler = sampler_state {
+	Texture = (TreeDepthTexture);
+	MinFilter = Point;
+	MagFilter = Point;
+	AddressU = Clamp;
+	AddressV = Clamp;
+};
+
 struct VertexShaderInput
 {
 	float4 Position : POSITION0;
@@ -41,6 +51,12 @@ struct VertexShaderOutput
 	float2 TextureCoordinate : TEXCOORD0;
 };
 
+struct PixelShaderOutput
+{
+	float4 Color : COLOR0;
+	float Depth : DEPTH0;
+};
+
 VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 {
 	VertexShaderOutput output;
@@ -51,9 +67,11 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 	return output;
 }
 
-float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
+PixelShaderOutput PixelShaderFunction(VertexShaderOutput input)
 {
-	float4 treeColor = float4(0, 0, 0, 0);
+	PixelShaderOutput output;
+	output.Color = float4(0, 0, 0, 0);
+	output.Depth = 1;
 	for (int j = 0; j < 9; j++) {
 		float2 tileCoord = input.TextureCoordinate * Resolution % 1; // coordinate within tile, from 0-1
 		float2 tile = floor(input.TextureCoordinate * Resolution + TextureOffsets[j]); // coordinate of tile from 0-REZ
@@ -69,17 +87,21 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 		float2 treePosRelTex = (treePosAbs - Min) / (Max - Min);
 		if (tex2D(textureSampler, treePosRelTex).r > seed3 % 83 / 83.0) {
 			if (relTreeCoord.x >= 0 && relTreeCoord.x <= 1 && relTreeCoord.y >=0 && relTreeCoord.y <= 1) {
+				int seed4 = seed3 % 1273 * 43 + 17;
+				relTreeCoord.x = (relTreeCoord.x + seed4 % TextureCount) / TextureCount;
 				// ddx is probably the amount the texture changes per pixel
 				float2 derivX = float2(1, 0) * (Max.x - Min.x); 
 				float2 derivY = float2(0, 1) * (Max.y - Min.y);
 				float4 temp = tex2Dgrad(treeTextureSampler, relTreeCoord, derivX, derivY);
-				//float newa = (1 - temp.a) * treeColor.a + temp.a;
-				treeColor = temp * temp.a + treeColor * (1 - temp.a);
-				//treeColor.a = newa;
+				//float newa = (1 - temp.a) * output.Color.a + temp.a;
+				output.Color = temp * temp.a + output.Color * (1 - temp.a);
+				output.Color = temp * temp.a + output.Color * (1 - temp.a);
+				output.Depth = min(output.Depth, 1 - tex2Dgrad(treeDepthTextureSampler, relTreeCoord, derivX, derivY).r);
+				//output.Color.a = newa;
 			}
 		}
 	}
-	return treeColor;
+	return output;
 }
 
 technique Ambient
