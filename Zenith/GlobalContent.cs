@@ -25,9 +25,7 @@ namespace Zenith
         public static Texture2D CWArrows;
         public static Texture2D Error;
         public static Texture2D Grass;
-        public static Texture2D GrassDepth;
         public static Texture2D Tree;
-        public static Texture2D TreeDepth;
 
         public static void Init(ContentManager content)
         {
@@ -46,9 +44,7 @@ namespace Zenith
             CWArrows = content.Load<Texture2D>("Images/CWArrows");
             Error = content.Load<Texture2D>("Images/Error");
             Grass = content.Load<Texture2D>("Images/Grass");
-            GrassDepth = content.Load<Texture2D>("Images/GrassDepth");
             Tree = content.Load<Texture2D>("Images/Tree");
-            TreeDepth = content.Load<Texture2D>("Images/TreeDepth");
         }
     }
 }

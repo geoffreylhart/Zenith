@@ -30,15 +30,6 @@ sampler2D treeTextureSampler = sampler_state {
 	AddressV = Clamp;
 };
 
-texture TreeDepthTexture;
-sampler2D treeDepthTextureSampler = sampler_state {
-	Texture = (TreeDepthTexture);
-	MinFilter = Point;
-	MagFilter = Point;
-	AddressU = Clamp;
-	AddressV = Clamp;
-};
-
 struct VertexShaderInput
 {
 	float4 Position : POSITION0;
@@ -54,7 +45,6 @@ struct VertexShaderOutput
 struct PixelShaderOutput
 {
 	float4 Color : COLOR0;
-	float Depth : DEPTH0;
 };
 
 VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
@@ -71,7 +61,6 @@ PixelShaderOutput PixelShaderFunction(VertexShaderOutput input)
 {
 	PixelShaderOutput output;
 	output.Color = float4(0, 0, 0, 0);
-	output.Depth = 1;
 	for (int j = 0; j < 9; j++) {
 		float2 tileCoord = input.TextureCoordinate * Resolution % 1; // coordinate within tile, from 0-1
 		float2 tile = floor(input.TextureCoordinate * Resolution + TextureOffsets[j]); // coordinate of tile from 0-REZ
@@ -96,8 +85,6 @@ PixelShaderOutput PixelShaderFunction(VertexShaderOutput input)
 				//float newa = (1 - temp.a) * output.Color.a + temp.a;
 				output.Color = temp * temp.a + output.Color * (1 - temp.a);
 				output.Color = temp * temp.a + output.Color * (1 - temp.a);
-				output.Depth = min(output.Depth, 1 - tex2Dgrad(treeDepthTextureSampler, relTreeCoord, derivX, derivY).r);
-				//output.Color.a = newa;
 			}
 		}
 	}

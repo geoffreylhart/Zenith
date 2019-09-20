@@ -108,7 +108,6 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             effect.Parameters["Projection"].SetValue(Matrix.CreateOrthographicOffCenter((float)minX, (float)maxX, (float)maxY, (float)minY, 1, 1000));
             effect.Parameters["Texture"].SetValue(grassTiles);
             effect.Parameters["TreeTexture"].SetValue(GlobalContent.Grass);
-            effect.Parameters["TreeDepthTexture"].SetValue(GlobalContent.GrassDepth);
             effect.Parameters["TextureCount"].SetValue(4);
             effect.Parameters["TextureOffsets"].SetValue(textureOffsets);
             effect.Parameters["Resolution"].SetValue(REZ * 8f);
@@ -127,8 +126,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             }
             effect.Parameters["Texture"].SetValue(treeTiles);
             effect.Parameters["TreeTexture"].SetValue(GlobalContent.Tree);
-            effect.Parameters["TreeDepthTexture"].SetValue(GlobalContent.TreeDepth);
-            effect.Parameters["TextureCount"].SetValue(4);
+            effect.Parameters["TextureCount"].SetValue(1);
             effect.Parameters["Resolution"].SetValue(REZ * 4f);
             effect.Parameters["TreeSize"].SetValue(2f);
             effect.Parameters["TreeCenter"].SetValue(new Vector2((float)0.5, (float)1));
