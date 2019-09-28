@@ -153,7 +153,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
 
         // keep trying to save the texture until it doesn't mess up
         // TODO: still doesn't work??
-        private void SuperSave(Texture2D texture, string path)
+        public static void SuperSave(Texture2D texture, string path)
         {
             if (!Directory.Exists(Path.GetDirectoryName(path))) Directory.CreateDirectory(Path.GetDirectoryName(path));
             // https://stackoverflow.com/questions/19248018/texture2d-saveaspng-memory-leak

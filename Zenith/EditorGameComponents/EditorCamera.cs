@@ -24,7 +24,7 @@ namespace Zenith.EditorGameComponents
         {
         }
 
-        public override void Update(GameTime gameTime)
+        public override void Draw(GameTime gameTime)
         {
             double cameraMoveAmount = 0.15 * Math.Pow(0.5, cameraZoom);
             Keyboard.GetState().AffectNumber(ref cameraRotX, Keys.Left, Keys.Right, Keys.A, Keys.D, cameraMoveAmount);

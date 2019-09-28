@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -12,6 +13,9 @@ namespace Zenith
         public DebugConsole debug;
         public GraphicsDeviceManager graphics;
         public static RenderTarget2D renderTarget;
+        public bool recording = false;
+        public int recordFrame = 0;
+        public static string RECORD_PATH = @"..\..\..\..\LocalCache\Recording";
 
         public Game1()
         {
@@ -72,7 +76,7 @@ namespace Zenith
             Components.Add(debug = new DebugConsole(this));
             // TODO: just change the ordering to fix this? apparantly setting a render target clears the backbuffer due to Xbox stuff
             GraphicsDevice.PresentationParameters.RenderTargetUsage = RenderTargetUsage.PreserveContents;
-
+            if (!Directory.Exists(RECORD_PATH)) Directory.CreateDirectory(RECORD_PATH);
             base.Initialize();
         }
 
@@ -81,6 +85,10 @@ namespace Zenith
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape) || Program.TERMINATE)
             {
                 Exit();
+            }
+            foreach (var key in Keyboard.GetState().GetPressedKeys())
+            {
+                if (key == Keys.R) recording = !recording;
             }
             base.Update(gameTime);
         }
@@ -95,6 +103,11 @@ namespace Zenith
         {
             GraphicsDevice.Clear(Color.Black);
             base.Draw(gameTime);
+            if (recording)
+            {
+                OSMSectorLoader.SuperSave(renderTarget, Path.Combine(RECORD_PATH, $"frame{recordFrame}.png"));
+                recordFrame++;
+            }
         }
     }
 }

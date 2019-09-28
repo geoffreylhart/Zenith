@@ -26,7 +26,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
 
         public void InitDraw(GraphicsDevice graphicsDevice, ISector rootSector, double minX, double maxX, double minY, double maxY, double cameraZoom)
         {
-            double relativeCameraZoom = cameraZoom - Math.Log(ZCoords.GetSectorManager().GetTopmostOSMSectors().Count, 4);
+            double relativeCameraZoom = cameraZoom - Math.Log(ZCoords.GetSectorManager().GetTopmostOSMSectors().Count, 4)+1;
             // autoload stuff
             // TODO: move to update step?
             int zoomLevel = Math.Min(Math.Max((int)(relativeCameraZoom - 3), 0), ZCoords.GetSectorManager().GetHighestOSMZoom());
@@ -87,7 +87,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
 
         public void Draw(GraphicsDevice graphicsDevice, ISector rootSector, double minX, double maxX, double minY, double maxY, double cameraZoom)
         {
-            double relativeCameraZoom = cameraZoom - Math.Log(ZCoords.GetSectorManager().GetTopmostOSMSectors().Count, 4);
+            double relativeCameraZoom = cameraZoom - Math.Log(ZCoords.GetSectorManager().GetTopmostOSMSectors().Count, 4)+1;
             int zoomLevel = Math.Min(Math.Max((int)(relativeCameraZoom - 3), 0), ZCoords.GetSectorManager().GetHighestOSMZoom());
             List<ISector> containedSectors = rootSector.GetSectorsInRange(minX, maxX, minY, maxY, zoomLevel);
             List<ISector> sorted = containedSectors.Where(x => x.GetRoot().Equals(rootSector)).ToList();
@@ -97,25 +97,25 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 IGraphicsBuffer buffer = loadedMaps[sector];
                 buffer.Draw(graphicsDevice, minX * (1 << sector.Zoom) - sector.X, maxX * (1 << sector.Zoom) - sector.X, minY * (1 << sector.Zoom) - sector.Y, maxY * (1 << sector.Zoom) - sector.Y, cameraZoom);
             }
-            if (previewSquare != null)
-            {
-                var basicEffect = new BasicEffect(graphicsDevice);
-                basicEffect.TextureEnabled = true;
-                basicEffect.Projection = Matrix.CreateOrthographicOffCenter(0, (float)(maxX - minX), (float)(maxY - minY), 0, 1, 1000);
-                basicEffect.TextureEnabled = false;
-                basicEffect.VertexColorEnabled = true;
-                basicEffect.LightingEnabled = false;
-                float minLat = (float)(previewSquare.ZoomPortion * previewSquare.Y - minY);
-                float maxLat = (float)(previewSquare.ZoomPortion * (previewSquare.Y + 1) - minY);
-                float minLong = (float)(previewSquare.ZoomPortion * previewSquare.X - minX);
-                float maxLong = (float)(previewSquare.ZoomPortion * (previewSquare.X + 1) - minX);
-                float w = maxLong - minLong;
-                float h = maxLat - minLat;
-                GraphicsBasic.DrawRect(graphicsDevice, basicEffect, minLong, minLat, w / 20, h, Color.Red);
-                GraphicsBasic.DrawRect(graphicsDevice, basicEffect, minLong, minLat, w, h / 20, Color.Red);
-                GraphicsBasic.DrawRect(graphicsDevice, basicEffect, minLong + w * 19 / 20, minLat, w / 20, h, Color.Red);
-                GraphicsBasic.DrawRect(graphicsDevice, basicEffect, minLong, minLat + h * 19 / 20, w, h / 20, Color.Red);
-            }
+            //if (previewSquare != null)
+            //{
+            //    var basicEffect = new BasicEffect(graphicsDevice);
+            //    basicEffect.TextureEnabled = true;
+            //    basicEffect.Projection = Matrix.CreateOrthographicOffCenter(0, (float)(maxX - minX), (float)(maxY - minY), 0, 1, 1000);
+            //    basicEffect.TextureEnabled = false;
+            //    basicEffect.VertexColorEnabled = true;
+            //    basicEffect.LightingEnabled = false;
+            //    float minLat = (float)(previewSquare.ZoomPortion * previewSquare.Y - minY);
+            //    float maxLat = (float)(previewSquare.ZoomPortion * (previewSquare.Y + 1) - minY);
+            //    float minLong = (float)(previewSquare.ZoomPortion * previewSquare.X - minX);
+            //    float maxLong = (float)(previewSquare.ZoomPortion * (previewSquare.X + 1) - minX);
+            //    float w = maxLong - minLong;
+            //    float h = maxLat - minLat;
+            //    GraphicsBasic.DrawRect(graphicsDevice, basicEffect, minLong, minLat, w / 20, h, Color.Red);
+            //    GraphicsBasic.DrawRect(graphicsDevice, basicEffect, minLong, minLat, w, h / 20, Color.Red);
+            //    GraphicsBasic.DrawRect(graphicsDevice, basicEffect, minLong + w * 19 / 20, minLat, w / 20, h, Color.Red);
+            //    GraphicsBasic.DrawRect(graphicsDevice, basicEffect, minLong, minLat + h * 19 / 20, w, h / 20, Color.Red);
+            //}
         }
 
         private bool AllowUnload(ISector sector, ISector rootSector, List<ISector> loadingSectors)
