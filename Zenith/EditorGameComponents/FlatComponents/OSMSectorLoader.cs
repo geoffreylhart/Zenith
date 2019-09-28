@@ -76,7 +76,10 @@ namespace Zenith.EditorGameComponents.FlatComponents
                         Console.WriteLine($"Total load time for {sector} is {sw.Elapsed.TotalSeconds} s");
                         if (sector.Zoom <= ZCoords.GetSectorManager().GetHighestCacheZoom())
                         {
-                            SuperSave(buffer.GetImage(graphicsDevice), OSMPaths.GetSectorImagePath(sector));
+                            using (var image = buffer.GetImage(graphicsDevice))
+                            {
+                                SuperSave(image, OSMPaths.GetSectorImagePath(sector));
+                            }
                             RebuildImage(graphicsDevice, sector);
                         }
                         return buffer;

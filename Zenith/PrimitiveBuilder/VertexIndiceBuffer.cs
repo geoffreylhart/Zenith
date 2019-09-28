@@ -13,7 +13,7 @@ namespace Zenith.PrimitiveBuilder
         {
             if (vertices != null) vertices.Dispose();
             if (indices != null) indices.Dispose();
-            if (texture != null) texture.Dispose();
+            if (texture != null && texture != GlobalContent.Error) texture.Dispose();
         }
     }
 }

@@ -29,6 +29,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         List<VertexPositionColor> lakeVertices;
         // actual final buffers that gets drawn
         VectorTileBuffer vectorTileBuffer;
+        VectorTileBuffer vectorTileBufferUnused;
         TreeBuffer treeBuffer;
 
         public ProceduralTileBuffer(ISector sector)
@@ -83,6 +84,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             Stopwatch sw = new Stopwatch();
             sw.Start();
             vectorTileBuffer = new VectorTileBuffer(graphicsDevice, sector);
+            vectorTileBufferUnused = new VectorTileBuffer(graphicsDevice, sector);
             BasicVertexBuffer beachBuffer = new BasicVertexBuffer(graphicsDevice, beachVertices, PrimitiveType.TriangleList);
             vectorTileBuffer.Add(graphicsDevice, beachBuffer, sector);
             Console.WriteLine($"Beach buffer generated for {sector} in {sw.Elapsed.TotalSeconds} s");
@@ -93,6 +95,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             BasicVertexBuffer beachCoastBuffer = beachGraph.ConstructAsRoads(graphicsDevice, width, GlobalContent.BeachFlipped, Microsoft.Xna.Framework.Color.White);
             BasicVertexBuffer beachCoastBufferFat = beachGraph.ConstructAsRoads(graphicsDevice, width * 2, GlobalContent.BeachFlipped, Microsoft.Xna.Framework.Color.White);
             vectorTileBuffer.Add(graphicsDevice, beachCoastBuffer, sector);
+            vectorTileBufferUnused.Add(graphicsDevice, beachCoastBufferFat, sector);
             Console.WriteLine($"Beach coast buffer generated for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
             BasicVertexBuffer lakesBuffer = new BasicVertexBuffer(graphicsDevice, lakeVertices, PrimitiveType.TriangleList);
@@ -105,11 +108,13 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             BasicVertexBuffer lakesCoastBuffer = lakesGraph.ConstructAsRoads(graphicsDevice, width, GlobalContent.Beach, Microsoft.Xna.Framework.Color.White);
             BasicVertexBuffer lakesCoastBufferFat = lakesGraph.ConstructAsRoads(graphicsDevice, width * 2, GlobalContent.Beach, Microsoft.Xna.Framework.Color.White);
             vectorTileBuffer.Add(graphicsDevice, lakesCoastBuffer, sector);
+            vectorTileBufferUnused.Add(graphicsDevice, lakesCoastBufferFat, sector);
             Console.WriteLine($"Lakes and multilakes coast buffer generated for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
             BasicVertexBuffer roadsBuffer = roadGraph.ConstructAsRoads(graphicsDevice, width * 4 / 50, GlobalContent.Road, Microsoft.Xna.Framework.Color.White);
             BasicVertexBuffer roadsBufferFat = roadGraph.ConstructAsRoads(graphicsDevice, width * 12 / 50, GlobalContent.Road, Microsoft.Xna.Framework.Color.White);
             vectorTileBuffer.Add(graphicsDevice, roadsBuffer, sector);
+            vectorTileBufferUnused.Add(graphicsDevice, roadsBufferFat, sector);
             Console.WriteLine($"Roads buffer generated for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
             treeBuffer = new TreeBuffer(graphicsDevice, beachBuffer, lakesBuffer, roadsBuffer, roadsBufferFat, beachCoastBufferFat, lakesCoastBufferFat, sector);
@@ -128,6 +133,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             roadGraph = null;
             beachVertices = null;
             if (vectorTileBuffer != null) vectorTileBuffer.Dispose();
+            if (vectorTileBufferUnused != null) vectorTileBufferUnused.Dispose();
             vectorTileBuffer = null;
             if (treeBuffer != null) treeBuffer.Dispose();
             treeBuffer = null;

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -36,13 +37,25 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 loadedMaps.Remove(pair.Key);
             }
             // end autoload stuff
-            if (toLoad != null)
+            if (toLoad != null || Program.TO_LOAD != null)
             {
+                if (Program.TO_LOAD != null)
+                {
+                    toLoad = ZCoords.GetSectorManager().FromString(Program.TO_LOAD);
+                }
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
                 foreach (var sector in toLoad.GetChildrenAtLevel(ZCoords.GetSectorManager().GetHighestOSMZoom()))
                 {
                     GetGraphicsBuffer(graphicsDevice, sector).Dispose();
                 }
+                Console.WriteLine($"Total load time for {toLoad} is {sw.Elapsed.TotalHours} h");
                 toLoad = null;
+                if (Program.TO_LOAD != null)
+                {
+                    Program.TERMINATE = true;
+                    Program.TO_LOAD = null;
+                }
             }
             bool loadCache = !(relativeCameraZoom - 4 > ZCoords.GetSectorManager().GetHighestOSMZoom());
             foreach (var l in containedSectors)

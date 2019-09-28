@@ -10,9 +10,13 @@ namespace Zenith
 {
     public static class Program
     {
+        public static string TO_LOAD = null;
+        public static bool TERMINATE = false;
+
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
+            if (args.Length > 0) TO_LOAD = args[0];
             using (var game = new Game1())
             {
                 game.Run();
