@@ -24,7 +24,17 @@ namespace Zenith.EditorGameComponents
         {
         }
 
+        public override void Update(GameTime gameTime)
+        {
+            if (!Game1.recording) MoveCamera();
+        }
+
         public override void Draw(GameTime gameTime)
+        {
+            if (Game1.recording) MoveCamera();
+        }
+
+        private void MoveCamera()
         {
             double cameraMoveAmount = 0.15 * Math.Pow(0.5, cameraZoom);
             Keyboard.GetState().AffectNumber(ref cameraRotX, Keys.Left, Keys.Right, Keys.A, Keys.D, cameraMoveAmount);
@@ -126,7 +136,7 @@ namespace Zenith.EditorGameComponents
             Vector3d xy1 = GetUnitSphereIntersection(x1, y1);
             Vector3d xy2 = GetUnitSphereIntersection(x2, y2);
             // TODO: correctly assign start/stop (I think our current logic works for our uses)
-            if ((projected[0]-new Vector3((float)x1, (float)y1,0)).Length()> (projected[1] - new Vector3((float)x1, (float)y1, 0)).Length())
+            if ((projected[0] - new Vector3((float)x1, (float)y1, 0)).Length() > (projected[1] - new Vector3((float)x1, (float)y1, 0)).Length())
             {
                 var temp = tangents[0];
                 tangents[0] = tangents[1];

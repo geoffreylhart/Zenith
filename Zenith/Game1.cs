@@ -13,7 +13,7 @@ namespace Zenith
         public DebugConsole debug;
         public GraphicsDeviceManager graphics;
         public static RenderTarget2D renderTarget;
-        public bool recording = false;
+        public static bool recording = false;
         public int recordFrame = 0;
         public static string RECORD_PATH = @"..\..\..\..\LocalCache\Recording";
 
