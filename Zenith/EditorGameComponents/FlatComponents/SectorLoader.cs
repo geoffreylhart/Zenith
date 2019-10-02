@@ -97,7 +97,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 IGraphicsBuffer buffer = loadedMaps[sector];
                 buffer.Draw(graphicsDevice, minX * (1 << sector.Zoom) - sector.X, maxX * (1 << sector.Zoom) - sector.X, minY * (1 << sector.Zoom) - sector.Y, maxY * (1 << sector.Zoom) - sector.Y, cameraZoom);
             }
-            if (previewSquare != null && Game1.recording)
+            if (previewSquare != null && !Game1.recording)
             {
                 var basicEffect = new BasicEffect(graphicsDevice);
                 basicEffect.TextureEnabled = true;
