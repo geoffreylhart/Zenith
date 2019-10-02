@@ -70,6 +70,7 @@ namespace Zenith
             //Components.Add(geom);
             Components.Add(new CityMarker(this, camera, "Pensacola", 30.4668536, -87.3294527));
             Components.Add(new CityMarker(this, camera, "ProblemCoast", -36.3294, -56.9690));
+            Components.Add(new ShipComponent(this, camera));
             Components.Add(new FPSCounter(this));
             //Components.Add(new CityMarker(this, camera, "0, 0", 0, 0));
             // Components.Add(new BlenderAxis(this, camera));

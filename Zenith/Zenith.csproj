@@ -52,6 +52,7 @@
     <Compile Include="EditorGameComponents\FlatComponents\SectorLoader.cs" />
     <Compile Include="EditorGameComponents\FPSCounter.cs" />
     <Compile Include="EditorGameComponents\PlanetComponent.cs" />
+    <Compile Include="EditorGameComponents\ShipComponent.cs" />
     <Compile Include="EditorGameComponents\UIComponents\Button.cs" />
     <Compile Include="EditorGameComponents\UIComponents\Checkbox.cs" />
     <Compile Include="EditorGameComponents\UIComponents\IUIComponent.cs" />
