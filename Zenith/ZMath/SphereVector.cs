@@ -25,7 +25,7 @@ namespace Zenith.ZMath
 
         public SphereVector WalkNorth(double radians)
         {
-            return WalkTowardsPortion(new SphereVector(0, 0, 1), radians);
+            return WalkTowards(new SphereVector(0, 0, 1), radians);
         }
 
         public SphereVector WalkEast(double radians)
