@@ -12,7 +12,7 @@ namespace Zenith.Helpers
 
         internal static bool WasKeyPressed(this KeyboardState state, Keys key)
         {
-            bool answer = state.IsKeyDown(key) && oldStates[key];
+            bool answer = !state.IsKeyDown(key) && (oldStates.ContainsKey(key) && oldStates[key]);
             oldStates[key] = state.IsKeyDown(key);
             return answer;
         }

@@ -20,6 +20,7 @@ namespace Zenith.EditorGameComponents
         public SphereVector position = new SphereVector(0, -1, 0);
         public double zoom = 1;
         private EditorCamera camera;
+        double rotationSpeed = 0;
 
         public override void Update(GameTime gameTime)
         {
@@ -28,10 +29,12 @@ namespace Zenith.EditorGameComponents
 
         private void MoveShip()
         {
-            double rotationSpeed = 0;
+            double rotationAccel = 0;
             double accel = 0;
-            Keyboard.GetState().AffectNumber(ref rotationSpeed, Keys.Left, Keys.Right, Keys.A, Keys.D, 0.05);
-            Keyboard.GetState().AffectNumber(ref accel, Keys.Down, Keys.Up, Keys.S, Keys.W, 0.0002);
+            Keyboard.GetState().AffectNumber(ref rotationAccel, Keys.Left, Keys.Right, Keys.A, Keys.D, 0.01);
+            rotationSpeed = Math.Max(Math.Min(rotationSpeed + rotationAccel, 0.1), -0.1);
+            rotationSpeed *= 0.9;
+            Keyboard.GetState().AffectNumber(ref accel, Keys.Down, Keys.Up, Keys.S, Keys.W, 0.002);
             // apply rotation
 
             SphereVector right = new SphereVector(forward.Cross(position).Normalized());
@@ -42,22 +45,30 @@ namespace Zenith.EditorGameComponents
             position = new SphereVector((position + velocity).Normalized());
             // flatten our forward/velocity against current position
             forward = new SphereVector(forward.Cross(position).Cross(-position).Normalized());
-            if (velocity.Length() > 0.0001)
+            if (velocity.Length() > 0.0000000001)
             {
-                velocity = velocity.Cross(position).Cross(-position).Normalized() * velocity.Length();
+                double currentSpeed = velocity.Length();
+                //if (rotationSpeed != 0) currentSpeed *= velocity.Normalized().Dot(forward);
+                double max = Math.Pow(0.5, zoom) * 0.2;
+                double min = Math.Pow(0.5, zoom) * 0;
+                currentSpeed = Math.Max(Math.Min(currentSpeed, max), min);
+                velocity = (velocity.Cross(position).Cross(-position).Normalized() * 0.8 + forward * 0.2).Normalized() * currentSpeed;
             }
             else
             {
                 velocity = velocity.Cross(position).Cross(-position);
             }
             // now update altitude
-            Keyboard.GetState().AffectNumber(ref zoom, Keys.Space, Keys.LeftShift, 0.03);
+            if (Keyboard.GetState().WasKeyPressed(Keys.LeftShift)) zoom += 3;
+            if (Keyboard.GetState().WasKeyPressed(Keys.Space)) zoom -= 3;
+            //Keyboard.GetState().AffectNumber(ref zoom, Keys.Space, Keys.LeftShift, 0.1);
+            //zoom = Math.Min(20, -3+Math.Log(velocity.Length()) / Math.Log(0.5));
             // update the camera from the ship info
             SphereVector unitPosition2 = new SphereVector(position.Normalized());
             camera.cameraRotX = unitPosition2.ToLongLat().X;
             camera.cameraRotY = unitPosition2.ToLongLat().Y;
             //camera.cameraZoom = Math.Log((position.Length() - 1) / 9) / Math.Log(0.5);
-            camera.cameraZoom = zoom;
+            camera.cameraZoom = zoom * 0.05 + camera.cameraZoom * 0.95;
             camera.UpdateCamera();
         }
 
