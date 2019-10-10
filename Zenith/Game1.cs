@@ -90,7 +90,7 @@ namespace Zenith
                 Exit();
             }
             if (Keyboard.GetState().WasKeyPressed(Keys.R)) recording = !recording;
-            if (Keyboard.GetState().WasKeyPressed(Keys.C)) CameraMatrixManager.MODE = (CameraMatrixManager.MODE + 1) % 3;
+            if (Keyboard.GetState().WasKeyPressed(Keys.C)) CameraMatrixManager.MODE = (CameraMatrixManager.MODE + 1) % CameraMatrixManager.MODE_COUNT;
 
             base.Update(gameTime);
         }
