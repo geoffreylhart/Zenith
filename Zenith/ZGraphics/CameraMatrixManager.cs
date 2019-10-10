@@ -16,6 +16,7 @@ namespace Zenith.ZGraphics
         public static int MODE = 0;
         //static float M_1 = (float)(Math.Sin(Math.PI / 4) / Math.Sin(Math.PI / 8));
         static float M_1 = 2.5f;
+        static float M_2 = 4.5f;
 
         internal static Matrix GetWorldView(float distance)
         {
@@ -27,7 +28,7 @@ namespace Zenith.ZGraphics
                     distance *= M_1;
                     return Matrix.CreateLookAt(new Vector3(0, -1 - distance * (float)Math.Sqrt(0.5), -distance * (float)Math.Sqrt(0.5)), new Vector3(0, -1, 0), Vector3.UnitZ);
                 case 2:
-                    distance *= 2;
+                    distance *= M_2;
                     return Matrix.CreateLookAt(new Vector3(0, -1 - distance * (float)Math.Sqrt(0.5), -distance * (float)Math.Sqrt(0.5)), new Vector3(0, -1, 0), Vector3.UnitZ);
             }
             throw new NotImplementedException();
@@ -43,7 +44,7 @@ namespace Zenith.ZGraphics
                     distance *= M_1;
                     return Matrix.CreatePerspectiveFieldOfView(Mathf.PI / 4, aspectRatio, distance * 0.1f, distance * 100);
                 case 2:
-                    distance *= 2;
+                    distance *= M_2;
                     return Matrix.CreateOrthographicOffCenter(-0.2f * distance * aspectRatio, 0.2f * distance * aspectRatio, -0.2f * distance, 0.2f * distance, distance * 0.1f, distance * 100);
             }
             throw new NotImplementedException();
@@ -59,7 +60,7 @@ namespace Zenith.ZGraphics
                     distance *= M_1;
                     return Matrixd.CreateLookAt(new Vector3d(0, -1 - distance * Math.Sqrt(0.5), -distance * Math.Sqrt(0.5)), new Vector3d(0, -1, 0), new Vector3d(0, 0, 1));
                 case 2:
-                    distance *= 2;
+                    distance *= M_2;
                     return Matrixd.CreateLookAt(new Vector3d(0, -1 - distance * Math.Sqrt(0.5), -distance * Math.Sqrt(0.5)), new Vector3d(0, -1, 0), new Vector3d(0, 0, 1));
             }
             throw new NotImplementedException();
@@ -75,7 +76,7 @@ namespace Zenith.ZGraphics
                     distance *= M_1;
                     return Matrixd.CreatePerspectiveFieldOfView(Math.PI / 4, aspectRatio, distance * 0.1f, distance * 100);
                 case 2:
-                    distance *= 2;
+                    distance *= M_2;
                     return Matrixd.CreateOrthographicOffCenter(-0.2 * distance * aspectRatio, 0.2 * distance * aspectRatio, -0.2 * distance, 0.2 * distance, distance * 0.1, distance * 100);
             }
             throw new NotImplementedException();
@@ -91,7 +92,7 @@ namespace Zenith.ZGraphics
                     distance *= M_1;
                     return Matrix.CreateLookAt(new Vector3(0, -distance * (float)Math.Sqrt(0.5), -distance * (float)Math.Sqrt(0.5)), new Vector3(0, 0, 0), Vector3.UnitZ); // TODO: this is hacky
                 case 2:
-                    distance *= 2;
+                    distance *= M_2;
                     return Matrix.CreateLookAt(new Vector3(0, -distance * (float)Math.Sqrt(0.5), -distance * (float)Math.Sqrt(0.5)), new Vector3(0, 0, 0), Vector3.UnitZ); // TODO: this is hacky
             }
             throw new NotImplementedException();
@@ -107,6 +108,8 @@ namespace Zenith.ZGraphics
                     return Matrix.CreatePerspectiveFieldOfView(Mathf.PI / 4, aspectRatio, 0.1f, 1000);
                 case 2:
                     float pixelsPerUnit = 32;
+                    width = aspectRatio * 1200;
+                    height = 1200;
                     return Matrix.CreateOrthographicOffCenter(-width / pixelsPerUnit / 2, width / pixelsPerUnit / 2, -height / pixelsPerUnit / 2, height / pixelsPerUnit / 2, 1, 1000); // note: we've flipped this from usual to match blender coordinates?
             }
             throw new NotImplementedException();
@@ -119,8 +122,9 @@ namespace Zenith.ZGraphics
                 case 0:
                     return Matrix.CreateLookAt(new Vector3(0, 0, 20), new Vector3(0, 0, 0), -Vector3.UnitY);
                 case 1:
+                    return Matrix.CreateLookAt(new Vector3(0, 14.142f * M_1, 14.142f * M_1), new Vector3(0, 0, 0), -Vector3.UnitY);
                 case 2:
-                    return Matrix.CreateLookAt(new Vector3(0, 80, 80), new Vector3(0, 0, 0), -Vector3.UnitY);
+                    return Matrix.CreateLookAt(new Vector3(0, 14.142f * M_2, 14.142f * M_2), new Vector3(0, 0, 0), -Vector3.UnitY);
             }
             throw new NotImplementedException();
         }

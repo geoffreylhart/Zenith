@@ -154,8 +154,8 @@ namespace Zenith.EditorGameComponents
         // absolute coordinates
         private Vector3d GetPosition()
         {
-            double distance = 9 * Math.Pow(0.5, cameraZoom) + 1;
-            return To3D(new Vector3d(cameraRotX, cameraRotY, 0)) * distance;
+            var cheat = new Vector3d(Unproject(new Vector3(GraphicsDevice.Viewport.Width / 2, GraphicsDevice.Viewport.Height / 2, -10)));
+            return cheat;
         }
 
         private double getFOV()
