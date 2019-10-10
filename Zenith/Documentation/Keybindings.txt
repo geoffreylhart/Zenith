@@ -1,0 +1,5 @@
+﻿Current keybindings:
+ASDW or arrow keys = Movements
+Shift & Space = Zoom
+R = Record/Stop
+C = Change Camera Type

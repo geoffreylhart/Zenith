@@ -1,0 +1,128 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.Xna.Framework;
+using Zenith.MathHelpers;
+
+namespace Zenith.ZGraphics
+{
+    class CameraMatrixManager
+    {
+        // 0 is old top-down view with 90 fov (earth takes 1/6)
+        // 1 is view from 45 degrees with 45 fov (earth takes 1/4)
+        // 2 is isometric at 45 degrees (earth takes 1/2 way too close)
+        public static int MODE = 0;
+        //static float M_1 = (float)(Math.Sin(Math.PI / 4) / Math.Sin(Math.PI / 8));
+        static float M_1 = 2.5f;
+
+        internal static Matrix GetWorldView(float distance)
+        {
+            switch (MODE)
+            {
+                case 0:
+                    return Matrix.CreateLookAt(new Vector3(0, -1 - distance, 0), new Vector3(0, 0, 0), Vector3.UnitZ);
+                case 1:
+                    distance *= M_1;
+                    return Matrix.CreateLookAt(new Vector3(0, -1 - distance * (float)Math.Sqrt(0.5), -distance * (float)Math.Sqrt(0.5)), new Vector3(0, -1, 0), Vector3.UnitZ);
+                case 2:
+                    distance *= 2;
+                    return Matrix.CreateLookAt(new Vector3(0, -1 - distance * (float)Math.Sqrt(0.5), -distance * (float)Math.Sqrt(0.5)), new Vector3(0, -1, 0), Vector3.UnitZ);
+            }
+            throw new NotImplementedException();
+        }
+
+        internal static Matrix GetWorldProjection(float distance, float aspectRatio)
+        {
+            switch (MODE)
+            {
+                case 0:
+                    return Matrix.CreatePerspectiveFieldOfView(Mathf.PI / 2, aspectRatio, distance * 0.1f, distance * 100);
+                case 1:
+                    distance *= M_1;
+                    return Matrix.CreatePerspectiveFieldOfView(Mathf.PI / 4, aspectRatio, distance * 0.1f, distance * 100);
+                case 2:
+                    distance *= 2;
+                    return Matrix.CreateOrthographicOffCenter(-0.2f * distance * aspectRatio, 0.2f * distance * aspectRatio, -0.2f * distance, 0.2f * distance, distance * 0.1f, distance * 100);
+            }
+            throw new NotImplementedException();
+        }
+
+        internal static Matrixd GetWorldViewd(double distance)
+        {
+            switch (MODE)
+            {
+                case 0:
+                    return Matrixd.CreateLookAt(new Vector3d(0, -1 - distance, 0), new Vector3d(0, 0, 0), new Vector3d(0, 0, 1));
+                case 1:
+                    distance *= M_1;
+                    return Matrixd.CreateLookAt(new Vector3d(0, -1 - distance * Math.Sqrt(0.5), -distance * Math.Sqrt(0.5)), new Vector3d(0, -1, 0), new Vector3d(0, 0, 1));
+                case 2:
+                    distance *= 2;
+                    return Matrixd.CreateLookAt(new Vector3d(0, -1 - distance * Math.Sqrt(0.5), -distance * Math.Sqrt(0.5)), new Vector3d(0, -1, 0), new Vector3d(0, 0, 1));
+            }
+            throw new NotImplementedException();
+        }
+
+        internal static Matrixd GetWorldProjectiond(double distance, double aspectRatio)
+        {
+            switch (MODE)
+            {
+                case 0:
+                    return Matrixd.CreatePerspectiveFieldOfView(Math.PI / 2, aspectRatio, distance * 0.1f, distance * 100);
+                case 1:
+                    distance *= M_1;
+                    return Matrixd.CreatePerspectiveFieldOfView(Math.PI / 4, aspectRatio, distance * 0.1f, distance * 100);
+                case 2:
+                    distance *= 2;
+                    return Matrixd.CreateOrthographicOffCenter(-0.2 * distance * aspectRatio, 0.2 * distance * aspectRatio, -0.2 * distance, 0.2 * distance, distance * 0.1, distance * 100);
+            }
+            throw new NotImplementedException();
+        }
+
+        internal static Matrix GetWorldRelativeView(float distance)
+        {
+            switch (MODE)
+            {
+                case 0:
+                    return Matrix.CreateLookAt(new Vector3(0, -distance, 0), new Vector3(0, 0, 0), Vector3.UnitZ); // TODO: this is hacky
+                case 1:
+                    distance *= M_1;
+                    return Matrix.CreateLookAt(new Vector3(0, -distance * (float)Math.Sqrt(0.5), -distance * (float)Math.Sqrt(0.5)), new Vector3(0, 0, 0), Vector3.UnitZ); // TODO: this is hacky
+                case 2:
+                    distance *= 2;
+                    return Matrix.CreateLookAt(new Vector3(0, -distance * (float)Math.Sqrt(0.5), -distance * (float)Math.Sqrt(0.5)), new Vector3(0, 0, 0), Vector3.UnitZ); // TODO: this is hacky
+            }
+            throw new NotImplementedException();
+        }
+
+        internal static Matrix GetShipProjection(float aspectRatio, float width, float height)
+        {
+            switch (MODE)
+            {
+                case 0:
+                    return Matrix.CreatePerspectiveFieldOfView(Mathf.PI / 2, aspectRatio, 0.1f, 100);
+                case 1:
+                    return Matrix.CreatePerspectiveFieldOfView(Mathf.PI / 4, aspectRatio, 0.1f, 1000);
+                case 2:
+                    float pixelsPerUnit = 32;
+                    return Matrix.CreateOrthographicOffCenter(-width / pixelsPerUnit / 2, width / pixelsPerUnit / 2, -height / pixelsPerUnit / 2, height / pixelsPerUnit / 2, 1, 1000); // note: we've flipped this from usual to match blender coordinates?
+            }
+            throw new NotImplementedException();
+        }
+
+        internal static Matrix GetShipView()
+        {
+            switch (MODE)
+            {
+                case 0:
+                    return Matrix.CreateLookAt(new Vector3(0, 0, 20), new Vector3(0, 0, 0), -Vector3.UnitY);
+                case 1:
+                case 2:
+                    return Matrix.CreateLookAt(new Vector3(0, 80, 80), new Vector3(0, 0, 0), -Vector3.UnitY);
+            }
+            throw new NotImplementedException();
+        }
+    }
+}

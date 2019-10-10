@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework.Input;
 using Zenith.EditorGameComponents.UIComponents;
 using Zenith.Helpers;
 using Zenith.MathHelpers;
+using Zenith.ZGraphics;
 using Zenith.ZMath;
 
 namespace Zenith.EditorGameComponents
@@ -28,8 +29,8 @@ namespace Zenith.EditorGameComponents
         {
             world = Matrix.CreateRotationZ(-(float)cameraRotX) * Matrix.CreateRotationX((float)cameraRotY); // eh.... think hard on this later
             float distance = (float)(9 * Math.Pow(0.5, cameraZoom));
-            view = Matrix.CreateLookAt(new Vector3(0, -1 - distance, 0), new Vector3(0, 0, 0), Vector3.UnitZ);
-            projection = Matrix.CreatePerspectiveFieldOfView(Mathf.PI / 2, GetAspectRatio(), distance * 0.1f, distance * 100);
+            view = CameraMatrixManager.GetWorldView(distance);
+            projection = CameraMatrixManager.GetWorldProjection(distance, this.GraphicsDevice.Viewport.AspectRatio);
         }
 
         private float GetAspectRatio()
@@ -67,8 +68,8 @@ namespace Zenith.EditorGameComponents
         {
             Matrixd worldd = Matrixd.CreateRotationZ(-cameraRotX) * Matrixd.CreateRotationX(cameraRotY);
             float distance = (float)(9 * Math.Pow(0.5, cameraZoom));
-            Matrixd viewd = Matrixd.CreateLookAt(new Vector3d(0, -1 - distance, 0), new Vector3d(0, 0, 0), new Vector3d(0, 0, 1));
-            Matrixd projectiond = Matrixd.CreatePerspectiveFieldOfView(Mathf.PI / 2, GetAspectRatio(), distance * 0.1f, distance * 100);
+            Matrixd viewd = CameraMatrixManager.GetWorldViewd(distance);
+            Matrixd projectiond = CameraMatrixManager.GetWorldProjectiond(distance, this.GraphicsDevice.Viewport.AspectRatio);
             return Rayd.CastFromCamera2(Game.GraphicsDevice, mouseVector.X, mouseVector.Y, projectiond, viewd, worldd);
         }
 

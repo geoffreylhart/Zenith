@@ -61,7 +61,7 @@ namespace Zenith.MathHelpers
         {
             //return new Vector3d(viewport.Unproject(source.ToVector3(), projection.toMatrix(), view.toMatrix(), world.toMatrix()));
             Matrixd matrix = Matrixd.Invert(Matrixd.Multiply(Matrixd.Multiply(world, view), projection));
-            Vector3d source2 = new Vector3d(0,0,0);
+            Vector3d source2 = new Vector3d(0, 0, 0);
             source2.X = (((source.X - viewport.X) / (viewport.Width)) * 2f) - 1f;
             source2.Y = -((((source.Y - viewport.Y) / (viewport.Height)) * 2f) - 1f);
             source2.Z = (source.Z - viewport.MinDepth) / (viewport.MaxDepth - viewport.MinDepth);
@@ -105,7 +105,7 @@ namespace Zenith.MathHelpers
             var m42 = (((matrix1.M41 * matrix2.M12) + (matrix1.M42 * matrix2.M22)) + (matrix1.M43 * matrix2.M32)) + (matrix1.M44 * matrix2.M42);
             var m43 = (((matrix1.M41 * matrix2.M13) + (matrix1.M42 * matrix2.M23)) + (matrix1.M43 * matrix2.M33)) + (matrix1.M44 * matrix2.M43);
             var m44 = (((matrix1.M41 * matrix2.M14) + (matrix1.M42 * matrix2.M24)) + (matrix1.M43 * matrix2.M34)) + (matrix1.M44 * matrix2.M44);
-            return new Matrixd(m11,m12,m13,m14,m21,m22,m23,m24,m31,m32,m33,m34,m41,m42,m43,m44);
+            return new Matrixd(m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34, m41, m42, m43, m44);
         }
 
         internal static Matrixd CreatePerspectiveFieldOfView(double fieldOfView, double aspectRatio, double nearPlaneDistance, double farPlaneDistance)
@@ -138,6 +138,28 @@ namespace Zenith.MathHelpers
             result.M34 = -1;
             result.M41 = result.M42 = result.M44 = 0;
             result.M43 = (nearPlaneDistance * farPlaneDistance) / (nearPlaneDistance - farPlaneDistance);
+            return result;
+        }
+
+        public static Matrixd CreateOrthographicOffCenter(double left, double right, double bottom, double top, double zNearPlane, double zFarPlane)
+        {
+            Matrixd result = new Matrixd();
+            result.M11 = (2.0 / (right - left));
+            result.M12 = 0.0f;
+            result.M13 = 0.0f;
+            result.M14 = 0.0f;
+            result.M21 = 0.0f;
+            result.M22 = (2.0 / (top - bottom));
+            result.M23 = 0.0f;
+            result.M24 = 0.0f;
+            result.M31 = 0.0f;
+            result.M32 = 0.0f;
+            result.M33 = (1.0 / (zNearPlane - zFarPlane));
+            result.M34 = 0.0f;
+            result.M41 = ((left + right) / (left - right));
+            result.M42 = ((top + bottom) / (bottom - top));
+            result.M43 = (zNearPlane / (zNearPlane - zFarPlane));
+            result.M44 = 1.0f;
             return result;
         }
 
@@ -196,7 +218,7 @@ namespace Zenith.MathHelpers
 
         internal static Matrixd Identity()
         {
-            return new Matrixd(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1);
+            return new Matrixd(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
         }
 
         public static Matrixd Invert(Matrixd matrix)

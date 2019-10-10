@@ -5,6 +5,8 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Zenith.EditorGameComponents;
 using Zenith.EditorGameComponents.FlatComponents;
+using Zenith.Helpers;
+using Zenith.ZGraphics;
 
 namespace Zenith
 {
@@ -87,10 +89,9 @@ namespace Zenith
             {
                 Exit();
             }
-            foreach (var key in Keyboard.GetState().GetPressedKeys())
-            {
-                if (key == Keys.R) recording = !recording;
-            }
+            if (Keyboard.GetState().WasKeyPressed(Keys.R)) recording = !recording;
+            if (Keyboard.GetState().WasKeyPressed(Keys.C)) CameraMatrixManager.MODE = (CameraMatrixManager.MODE + 1) % 3;
+
             base.Update(gameTime);
         }
 

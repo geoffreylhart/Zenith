@@ -59,7 +59,7 @@ namespace Zenith.EditorGameComponents
 
             camera.ApplyMatrices(basicEffect3);
             float distance = (float)(9 * Math.Pow(0.5, camera.cameraZoom)); // TODO: this is hacky
-            basicEffect3.View = Matrix.CreateLookAt(new Vector3(0, -distance, 0), new Vector3(0, 0, 0), Vector3.UnitZ); // TODO: this is hacky
+            basicEffect3.View = CameraMatrixManager.GetWorldRelativeView(distance);
 
             basicEffect3.TextureEnabled = true;
             foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())

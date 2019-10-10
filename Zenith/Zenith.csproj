@@ -89,6 +89,7 @@
     <Compile Include="ZGeom\PointCollection.cs" />
     <Compile Include="ZGeom\ZCoords.cs" />
     <Compile Include="ZGraphics\BasicVertexBuffer.cs" />
+    <Compile Include="ZGraphics\CameraMatrixManager.cs" />
     <Compile Include="ZGraphics\GraphicsBasic.cs" />
     <Compile Include="Helpers\GraphicsDeviceHelper.cs" />
     <Compile Include="Helpers\KeyboardStateHelper.cs" />
@@ -234,6 +235,7 @@
     </Content>
     <Content Include="Documentation\CoordinateSystemCheatSheet.txt" />
     <Content Include="Documentation\ImageSources.txt" />
+    <Content Include="Documentation\Keybindings.txt" />
     <Content Include="Documentation\LibraryInfo.txt" />
     <Content Include="Documentation\RandomIdeas.txt" />
     <Content Include="Documentation\readosmPlan.txt" />
