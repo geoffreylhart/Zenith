@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Zenith.Helpers;
 
 namespace Zenith.MathHelpers
 {
@@ -19,21 +20,10 @@ namespace Zenith.MathHelpers
             this.Direction = direction;
         }
 
-        // looks like the graphicsDevice viewport is mostly used for screen resolution and stuff? I guess that makes sense
-        internal static Rayd CastFromCamera(GraphicsDevice graphicsDevice, Vector2 screenCoordinate, Matrix projection, Matrix view, Matrix world)
-        {
-            // close enough to the camera position for me, I think it's a position on the near clip plane
-            // TODO: make this doubles too?
-            Vector3d unprojected = new Vector3d(graphicsDevice.Viewport.Unproject(new Vector3(screenCoordinate.X, screenCoordinate.Y, 0), projection, view, world));
-            Vector3d unprojected2 = new Vector3d(graphicsDevice.Viewport.Unproject(new Vector3(screenCoordinate.X, screenCoordinate.Y, 1), projection, view, world));
-            return new Rayd(unprojected, unprojected2 - unprojected);
-        }
-
         // more accurate version
-        internal static Rayd CastFromCamera2(GraphicsDevice graphicsDevice, double x, double y, Matrixd projection, Matrixd view, Matrixd world)
+        internal static Rayd CastFromCamera(GraphicsDevice graphicsDevice, double x, double y, Matrixd projection, Matrixd view, Matrixd world)
         {
             // close enough to the camera position for me, I think it's a position on the near clip plane
-            // TODO: make this doubles too?
             Vector3d unprojected = Matrixd.Unproject(graphicsDevice.Viewport, new Vector3d(x, y, 0), projection, view, world);
             Vector3d unprojected2 = Matrixd.Unproject(graphicsDevice.Viewport, new Vector3d(x, y, 1), projection, view, world);
             return new Rayd(unprojected, unprojected2 - unprojected);

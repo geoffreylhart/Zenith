@@ -13,7 +13,7 @@ namespace Zenith.ZGraphics
         // 0 is old top-down view with 90 fov
         // 1 is view from 45 degrees with 45 fov
         // 2 is isometric at 45 degrees
-        // 2 is view from 45 degrees with 90 fov
+        // 2 is view from 45 degrees with 80 fov (cant do 90 because infinite view)
         public static int MODE = 0;
         public static int MODE_COUNT = 4;
         //static float M_1 = (float)(Math.Sin(Math.PI / 4) / Math.Sin(Math.PI / 8));
@@ -51,7 +51,7 @@ namespace Zenith.ZGraphics
                     distance *= M_2;
                     return Matrix.CreateOrthographicOffCenter(-0.2f * distance * aspectRatio, 0.2f * distance * aspectRatio, -0.2f * distance, 0.2f * distance, distance * 0.1f, distance * 100);
                 case 3:
-                    return Matrix.CreatePerspectiveFieldOfView(Mathf.PI / 2, aspectRatio, distance * 0.1f, distance * 100);
+                    return Matrix.CreatePerspectiveFieldOfView(Mathf.PI * 80 / 180, aspectRatio, distance * 0.1f, distance * 100);
             }
             throw new NotImplementedException();
         }
@@ -87,7 +87,7 @@ namespace Zenith.ZGraphics
                     distance *= M_2;
                     return Matrixd.CreateOrthographicOffCenter(-0.2 * distance * aspectRatio, 0.2 * distance * aspectRatio, -0.2 * distance, 0.2 * distance, distance * 0.1, distance * 100);
                 case 3:
-                    return Matrixd.CreatePerspectiveFieldOfView(Math.PI / 2, aspectRatio, distance * 0.1f, distance * 100);
+                    return Matrixd.CreatePerspectiveFieldOfView(Math.PI * 80 / 180, aspectRatio, distance * 0.1f, distance * 100);
             }
             throw new NotImplementedException();
         }
@@ -124,7 +124,7 @@ namespace Zenith.ZGraphics
                     height = 1200;
                     return Matrix.CreateOrthographicOffCenter(-width / pixelsPerUnit / 2, width / pixelsPerUnit / 2, -height / pixelsPerUnit / 2, height / pixelsPerUnit / 2, 1, 1000); // note: we've flipped this from usual to match blender coordinates?
                 case 3:
-                    return Matrix.CreatePerspectiveFieldOfView(Mathf.PI / 4, aspectRatio, 0.1f, 1000);
+                    return Matrix.CreatePerspectiveFieldOfView(Mathf.PI * 80 / 180, aspectRatio, 0.1f, 1000);
             }
             throw new NotImplementedException();
         }

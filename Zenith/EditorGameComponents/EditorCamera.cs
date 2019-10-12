@@ -56,9 +56,14 @@ namespace Zenith.EditorGameComponents
         }
 
         // yup, it returns lat/long only in the range you'd expect
-        internal Vector3d GetLatLongOfCoord(Vector2 mouseVector)
+        internal Vector3d GetLatLongOfCoord(double x, double y)
         {
-            Rayd ray = Rayd.CastFromCamera(Game.GraphicsDevice, mouseVector, projection, view, world);
+            Matrixd worldd = Matrixd.CreateRotationZ(-cameraRotX) * Matrixd.CreateRotationX(cameraRotY);
+            double distance = 9 * Math.Pow(0.5, cameraZoom);
+            Matrixd viewd = CameraMatrixManager.GetWorldViewd(distance);
+            Matrixd projectiond = CameraMatrixManager.GetWorldProjectiond(distance, this.GraphicsDevice.Viewport.AspectRatio);
+
+            Rayd ray = Rayd.CastFromCamera(Game.GraphicsDevice, x, y, projectiond, viewd, worldd);
             Vector3d intersection = ray.IntersectionSphere(new Vector3d(0, 0, 0), 1); // angle 0
             if (intersection == null) return null;
             return ToLatLong(intersection);
@@ -67,36 +72,15 @@ namespace Zenith.EditorGameComponents
         internal Rayd CastFromCamera(Vector2 mouseVector)
         {
             Matrixd worldd = Matrixd.CreateRotationZ(-cameraRotX) * Matrixd.CreateRotationX(cameraRotY);
-            float distance = (float)(9 * Math.Pow(0.5, cameraZoom));
+            double distance = 9 * Math.Pow(0.5, cameraZoom);
             Matrixd viewd = CameraMatrixManager.GetWorldViewd(distance);
             Matrixd projectiond = CameraMatrixManager.GetWorldProjectiond(distance, this.GraphicsDevice.Viewport.AspectRatio);
-            return Rayd.CastFromCamera2(Game.GraphicsDevice, mouseVector.X, mouseVector.Y, projectiond, viewd, worldd);
-        }
-
-        // TODO: probably keep all of the double precision classes, but discard stuff I've written myself
-
-        // more accurate version
-        internal Vector3d GetLatLongOfCoord2(double x, double y)
-        {
-            double xRel = (x - GraphicsDevice.Viewport.Width / 2.0) / GraphicsDevice.Viewport.Width * 2; // change to range -1 to 1
-            double yRel = (y - GraphicsDevice.Viewport.Height / 2.0) / GraphicsDevice.Viewport.Height * 2;
-            double distance = 9 * Math.Pow(0.5, cameraZoom);
-            Vector3d rayPos = new Vector3d(0, -1 - distance, 0);
-            Vector3d rayDir = new Vector3d(xRel * GraphicsDevice.Viewport.AspectRatio, 1, -yRel);
-            Vector3d v_2 = rayDir / rayDir.Length();
-            double t_1 = -v_2.Y * (-1 - distance);
-            double t_2 = Math.Sqrt(Math.Pow(t_1, 2) - rayPos.LengthSquared() + 1);
-            if (double.IsNaN(t_2)) return null;
-            double d = t_1 - t_2;
-            Vector3d intersection = rayPos + v_2 * d;
-            Matrixd world = Matrixd.Invert(Matrixd.CreateRotationZ(-cameraRotX) * Matrixd.CreateRotationX(cameraRotY));
-            intersection = Vector3d.Transform(intersection, world);
-            return ToLatLong(intersection);// + new Vector3d(cameraRotX, cameraRotY, 0);
+            return Rayd.CastFromCamera(Game.GraphicsDevice, mouseVector.X, mouseVector.Y, projectiond, viewd, worldd);
         }
 
         internal Vector3d GetUnitSphereIntersection(double x, double y)
         {
-            var latlong = GetLatLongOfCoord2(x, y);
+            var latlong = GetLatLongOfCoord(x, y);
             return latlong == null ? null : To3D(latlong);
         }
 

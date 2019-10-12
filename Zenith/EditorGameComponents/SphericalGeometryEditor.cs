@@ -62,7 +62,7 @@ namespace Zenith.EditorGameComponents
         public override void Update(GameTime gameTime)
         {
             var mousePos = Mouse.GetState().Position;
-            var mouseLongLat = camera.GetLatLongOfCoord(new Vector2(mousePos.X, mousePos.Y));
+            var mouseLongLat = camera.GetLatLongOfCoord(mousePos.X, mousePos.Y);
             if (mouseLongLat != null)
             {
                 Vector2 mouseAsVec2 = new Vector2((float)mouseLongLat.X, (float)mouseLongLat.Y);

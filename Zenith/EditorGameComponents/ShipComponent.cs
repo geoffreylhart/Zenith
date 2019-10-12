@@ -16,7 +16,7 @@ namespace Zenith.EditorGameComponents
 {
     internal class ShipComponent : DrawableGameComponent
     {
-        public Vector3d velocity = new Vector3d(0, 0, 0.01);
+        public Vector3d velocity = new Vector3d(0, 0, 0);
         public SphereVector forward = new SphereVector(0, 0, 1);
         public SphereVector position = new SphereVector(0, -1, 0);
         public double zoom = 1;

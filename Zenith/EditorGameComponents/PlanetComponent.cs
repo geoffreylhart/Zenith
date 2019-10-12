@@ -82,15 +82,13 @@ namespace Zenith.EditorGameComponents
 
         public override void Update(GameTime gameTime)
         {
-            Vector2 mouseVector = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
-            Vector3d circleStart = camera.GetLatLongOfCoord2(Mouse.GetState().X, Mouse.GetState().Y);
+            Vector3d circleStart = camera.GetLatLongOfCoord(Mouse.GetState().X, Mouse.GetState().Y);
             if (circleStart != null)
             {
-                Vector2 circleStart2D = new Vector2((float)circleStart.X, (float)circleStart.Y);
                 // update in reverse order
                 for (int i = 0; i < flatComponents.Count; i++)
                 {
-                    flatComponents[flatComponents.Count - 1 - i].Update(circleStart2D.X, circleStart2D.Y, camera.cameraZoom);
+                    flatComponents[flatComponents.Count - 1 - i].Update(circleStart.X, circleStart.Y, camera.cameraZoom);
                 }
             }
         }
