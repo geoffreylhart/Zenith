@@ -164,7 +164,10 @@ namespace Zenith.EditorGameComponents
                     Vector3d close2 = arc2.start;
                     if ((close1 - close2).Length() > 0.01)
                     {
-                        arcs.Add(new SphereArc(visible, close1, close2, true));
+                        Vector3d halfway = (close1 + close2).Normalized();
+                        if (close1.Cross(halfway).Dot(camera.GetPosition()) > 0) halfway = -halfway;
+                        arcs.Add(new SphereArc(visible, close1, halfway, true));
+                        arcs.Add(new SphereArc(visible, halfway, close2, true));
                     }
                 }
                 minX = arcs.Min(x => x.Min(y => rootSector.ProjectToLocalCoordinates(y).X));

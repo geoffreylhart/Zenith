@@ -119,12 +119,13 @@ namespace Zenith.EditorGameComponents
 
         internal Circle3 GetUnitSphereVisibleCircle()
         {
-            double cameraDistance = 9 * Math.Pow(0.5, cameraZoom) + 1;
+            Vector3d position = GetPosition();
+            double cameraDistance = position.Length();
             double tangentDistance = Math.Sqrt(cameraDistance * cameraDistance - 1);
             double angle = Math.Asin(1 / cameraDistance);
             double circleRadius = Math.Sin(angle) * tangentDistance;
             double centerDistance = Math.Sqrt(tangentDistance * tangentDistance - circleRadius * circleRadius);
-            Vector3d cameraVector = To3D(new Vector3d(cameraRotX, cameraRotY, 0));
+            Vector3d cameraVector = position.Normalized();
             return new Circle3(cameraVector * (cameraDistance - centerDistance), cameraVector, circleRadius);
         }
 
@@ -136,7 +137,7 @@ namespace Zenith.EditorGameComponents
         }
 
         // absolute coordinates
-        private Vector3d GetPosition()
+        internal Vector3d GetPosition()
         {
             var cheat = new Vector3d(Unproject(new Vector3(GraphicsDevice.Viewport.Width / 2, GraphicsDevice.Viewport.Height / 2, -10)));
             return cheat;
