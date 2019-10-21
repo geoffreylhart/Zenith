@@ -58,7 +58,7 @@ namespace Zenith.EditorGameComponents
             }
             foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
             {
-                Draw(GraphicsDevice, allBounds[rootSector], rootSector);
+                DrawFlat(GraphicsDevice, allBounds[rootSector], rootSector);
             }
             GraphicsDevice.SetRenderTarget(Game1.renderTarget);
             var basicEffect3 = this.GetDefaultEffect();
@@ -82,6 +82,10 @@ namespace Zenith.EditorGameComponents
                 }
                 sphere.vertices.Dispose();
                 sphere.indices.Dispose();
+            }
+            foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
+            {
+                Draw3D(GraphicsDevice, allBounds[rootSector], rootSector);
             }
             GraphicsDevice.SetRenderTarget(null);
         }
@@ -204,7 +208,7 @@ namespace Zenith.EditorGameComponents
             }
         }
 
-        private void Draw(GraphicsDevice graphicsDevice, SectorBounds bounds, ISector rootSector)
+        private void DrawFlat(GraphicsDevice graphicsDevice, SectorBounds bounds, ISector rootSector)
         {
             RenderTarget2D renderTarget = renderTargets[rootSector];
             // Set the render target
@@ -220,8 +224,41 @@ namespace Zenith.EditorGameComponents
             foreach (var sector in sorted)
             {
                 IGraphicsBuffer buffer = loadedMaps[sector];
+                if (!(buffer is ImageTileBuffer)) continue;
                 BasicEffect basicEffect = new BasicEffect(graphicsDevice);
                 basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)(bounds.minX * (1 << sector.Zoom) - sector.X), (float)(bounds.maxX * (1 << sector.Zoom) - sector.X), (float)(bounds.maxY * (1 << sector.Zoom) - sector.Y), (float)(bounds.minY * (1 << sector.Zoom) - sector.Y), -1, 0.01f); // TODO: why negative?
+                buffer.Draw(graphicsDevice, basicEffect, bounds.minX * (1 << sector.Zoom) - sector.X, bounds.maxX * (1 << sector.Zoom) - sector.X, bounds.minY * (1 << sector.Zoom) - sector.Y, bounds.maxY * (1 << sector.Zoom) - sector.Y, camera.cameraZoom);
+            }
+        }
+
+        private void Draw3D(GraphicsDevice graphicsDevice, SectorBounds bounds, ISector rootSector)
+        {
+
+            double relativeCameraZoom = camera.cameraZoom - Math.Log(ZCoords.GetSectorManager().GetTopmostOSMSectors().Count, 4) + (Game1.recording ? 1 : 0);
+            int zoomLevel = Math.Min(Math.Max((int)(relativeCameraZoom - 3), 0), ZCoords.GetSectorManager().GetHighestOSMZoom());
+            List<ISector> containedSectors = rootSector.GetSectorsInRange(bounds.minX, bounds.maxX, bounds.minY, bounds.maxY, zoomLevel);
+            List<ISector> sorted = containedSectors.Where(x => x.GetRoot().Equals(rootSector)).ToList();
+            sorted.Sort((x, y) => x.Zoom.CompareTo(y.Zoom));
+            foreach (var sector in sorted)
+            {
+                IGraphicsBuffer buffer = loadedMaps[sector];
+                if (buffer is ImageTileBuffer) continue;
+                BasicEffect basicEffect = new BasicEffect(graphicsDevice);
+                camera.ApplyMatrices(basicEffect);
+                // going to make it easy and assume the shape is perfectly parallel (it's not)
+                Vector3 start = sector.ProjectToSphereCoordinates(new Vector2d(0, 0)).ToVector3();
+                Vector3 xAxis = sector.ProjectToSphereCoordinates(new Vector2d(1, 0)).ToVector3() - start;
+                Vector3 yAxis = sector.ProjectToSphereCoordinates(new Vector2d(0, 1)).ToVector3() - start;
+                Vector3 zAxis = start * 0.00001f;
+                // matrixes copied over
+                Matrixd world = Matrixd.CreateRotationZ(-camera.cameraRotX) * Matrixd.CreateRotationX(camera.cameraRotY); // eh.... think hard on this later
+                double distance = 9 * Math.Pow(0.5, camera.cameraZoom);
+                Matrixd view = CameraMatrixManager.GetWorldViewd(distance);
+                Matrixd projection = CameraMatrixManager.GetWorldProjectiond(distance, this.GraphicsDevice.Viewport.AspectRatio);
+                Matrixd transformMatrix = new Matrixd(xAxis.X, xAxis.Y, xAxis.Z, 0, yAxis.X, yAxis.Y, yAxis.Z, 0, zAxis.X, zAxis.Y, zAxis.Z, 0, start.X, start.Y, start.Z, 1); // turns our local coordinates into 3d spherical coordinates, based on the sector
+                basicEffect.World = (transformMatrix * world * view * projection).toMatrix(); // combine them all to allow for higher precision
+                basicEffect.View = Matrix.Identity;
+                basicEffect.Projection = Matrix.Identity;
                 buffer.Draw(graphicsDevice, basicEffect, bounds.minX * (1 << sector.Zoom) - sector.X, bounds.maxX * (1 << sector.Zoom) - sector.X, bounds.minY * (1 << sector.Zoom) - sector.Y, bounds.maxY * (1 << sector.Zoom) - sector.Y, camera.cameraZoom);
             }
         }
