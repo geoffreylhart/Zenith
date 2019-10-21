@@ -56,10 +56,10 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             Vector2d topRight = new Vector2d(1, 0);
             Vector2d bottomLeft = new Vector2d(0, 1);
             Vector2d bottomRight = new Vector2d(1, 1);
-            vertices.Add(new VertexPositionTexture(new Vector3((float)topLeft.X, (float)topLeft.Y, -10f), new Vector2(0, 0)));
-            vertices.Add(new VertexPositionTexture(new Vector3((float)topRight.X, (float)topRight.Y, -10f), new Vector2(1, 0)));
-            vertices.Add(new VertexPositionTexture(new Vector3((float)bottomLeft.X, (float)bottomLeft.Y, -10f), new Vector2(0, 1)));
-            vertices.Add(new VertexPositionTexture(new Vector3((float)bottomRight.X, (float)bottomRight.Y, -10f), new Vector2(1, 1)));
+            vertices.Add(new VertexPositionTexture(new Vector3((float)topLeft.X, (float)topLeft.Y, 0), new Vector2(0, 0)));
+            vertices.Add(new VertexPositionTexture(new Vector3((float)topRight.X, (float)topRight.Y, 0), new Vector2(1, 0)));
+            vertices.Add(new VertexPositionTexture(new Vector3((float)bottomLeft.X, (float)bottomLeft.Y, 0), new Vector2(0, 1)));
+            vertices.Add(new VertexPositionTexture(new Vector3((float)bottomRight.X, (float)bottomRight.Y, 0), new Vector2(1, 1)));
             List<int> indices = new List<int>() { 0, 1, 3, 0, 3, 2 };
             buffer.vertices = new VertexBuffer(graphicsDevice, VertexPositionTexture.VertexDeclaration, vertices.Count, BufferUsage.WriteOnly);
             buffer.vertices.SetData(vertices.ToArray());
@@ -84,28 +84,27 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             buffer.Dispose();
         }
 
-        public void InitDraw(GraphicsDevice graphicsDevice, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        public void InitDraw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom)
         {
             graphicsDevice.SetRenderTarget(treeTiles);
-            Matrix projection = Matrix.CreateOrthographicOffCenter((float)minX, (float)maxX, (float)maxY, (float)minY, 1, 1000);
-            beachBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
-            lakesBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
-            beachCoastBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, GlobalContent.BeachFlippedTreeDensity, new Vector3(1, 1, 1));
-            lakesCoastBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, GlobalContent.BeachTreeDensity, new Vector3(0, 0, 0));
-            roadsBufferFat.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, GlobalContent.RoadTreeDensity, new Vector3(0, 0, 0));
-            roadsBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
+            beachBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
+            lakesBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
+            beachCoastBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, GlobalContent.BeachFlippedTreeDensity, new Vector3(1, 1, 1));
+            lakesCoastBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, GlobalContent.BeachTreeDensity, new Vector3(0, 0, 0));
+            roadsBufferFat.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, GlobalContent.RoadTreeDensity, new Vector3(0, 0, 0));
+            roadsBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
             graphicsDevice.SetRenderTarget(grassTiles);
-            beachBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
-            lakesBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
-            roadsBuffer.Draw(graphicsDevice, projection, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
+            beachBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
+            lakesBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
+            roadsBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
         }
 
-        public void Draw(GraphicsDevice graphicsDevice, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom)
         {
             var effect = GlobalContent.TreeShader;
-            effect.Parameters["World"].SetValue(Matrix.Identity);
-            effect.Parameters["View"].SetValue(Matrix.Identity);
-            effect.Parameters["Projection"].SetValue(Matrix.CreateOrthographicOffCenter((float)minX, (float)maxX, (float)maxY, (float)minY, 1, 1000));
+            effect.Parameters["World"].SetValue(basicEffect.World);
+            effect.Parameters["View"].SetValue(basicEffect.View);
+            effect.Parameters["Projection"].SetValue(basicEffect.Projection);
             effect.Parameters["Texture"].SetValue(grassTiles);
             effect.Parameters["TreeTexture"].SetValue(GlobalContent.Grass);
             effect.Parameters["TextureCount"].SetValue(4);

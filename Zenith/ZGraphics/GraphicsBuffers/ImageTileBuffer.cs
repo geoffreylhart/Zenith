@@ -24,10 +24,10 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             Vector2d topRight = new Vector2d(1, 0);
             Vector2d bottomLeft = new Vector2d(0, 1);
             Vector2d bottomRight = new Vector2d(1, 1);
-            vertices.Add(new VertexPositionNormalTexture(new Vector3((float)topLeft.X, (float)topLeft.Y, -10f), new Vector3(0, 0, 1), new Vector2(0, 0)));
-            vertices.Add(new VertexPositionNormalTexture(new Vector3((float)topRight.X, (float)topRight.Y, -10f), new Vector3(0, 0, 1), new Vector2(1, 0)));
-            vertices.Add(new VertexPositionNormalTexture(new Vector3((float)bottomLeft.X, (float)bottomLeft.Y, -10f), new Vector3(0, 0, 1), new Vector2(0, 1)));
-            vertices.Add(new VertexPositionNormalTexture(new Vector3((float)bottomRight.X, (float)bottomRight.Y, -10f), new Vector3(0, 0, 1), new Vector2(1, 1)));
+            vertices.Add(new VertexPositionNormalTexture(new Vector3((float)topLeft.X, (float)topLeft.Y, 0), new Vector3(0, 0, 1), new Vector2(0, 0)));
+            vertices.Add(new VertexPositionNormalTexture(new Vector3((float)topRight.X, (float)topRight.Y, 0), new Vector3(0, 0, 1), new Vector2(1, 0)));
+            vertices.Add(new VertexPositionNormalTexture(new Vector3((float)bottomLeft.X, (float)bottomLeft.Y, 0), new Vector3(0, 0, 1), new Vector2(0, 1)));
+            vertices.Add(new VertexPositionNormalTexture(new Vector3((float)bottomRight.X, (float)bottomRight.Y, 0), new Vector3(0, 0, 1), new Vector2(1, 1)));
             List<int> indices = new List<int>() { 0, 1, 3, 0, 3, 2 };
             buffer.vertices = new VertexBuffer(graphicsDevice, VertexPositionNormalTexture.VertexDeclaration, vertices.Count, BufferUsage.WriteOnly);
             buffer.vertices.SetData(vertices.ToArray());
@@ -41,15 +41,14 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             buffer.Dispose();
         }
 
-        public void InitDraw(GraphicsDevice graphicsDevice, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        public void InitDraw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom)
         {
         }
 
-        public void Draw(GraphicsDevice graphicsDevice, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom)
         {
-            BasicEffect basicEffect = new BasicEffect(graphicsDevice);
+            basicEffect = (BasicEffect)basicEffect.Clone();
             basicEffect.TextureEnabled = true;
-            basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)minX, (float)maxX, (float)maxY, (float)minY, 1, 1000);
             basicEffect.Texture = buffer.texture;
             foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
             {

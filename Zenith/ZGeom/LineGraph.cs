@@ -28,7 +28,7 @@ namespace Zenith.ZGeom
             for (int i = 0; i < nodes.Count; i++) indexLookup[nodes[i]] = i;
             foreach (var node in nodes)
             {
-                vertices.Add(new VertexPositionColor(new Vector3(node.pos, -10f), Color.White));
+                vertices.Add(new VertexPositionColor(new Vector3(node.pos, 0), Color.White));
                 foreach (var c in node.nextConnections)
                 {
                     int i1 = indexLookup[node];
@@ -64,12 +64,12 @@ namespace Zenith.ZGeom
                     Vector2d bottomRight = v1 + w1;
                     int i = vertices.Count;
                     double texLength = (v2 - v1).Length() / width;
-                    vertices.Add(new VertexPositionTexture(new Vector3(topLeft, -10f), new Vector2(1, 0)));
-                    vertices.Add(new VertexPositionTexture(new Vector3(v2, -9f), new Vector2(0.5f, 0))); // mid
-                    vertices.Add(new VertexPositionTexture(new Vector3(topRight, -10f), new Vector2(0, 0)));
-                    vertices.Add(new VertexPositionTexture(new Vector3(bottomLeft, -10f), new Vector2(1, (float)texLength)));
-                    vertices.Add(new VertexPositionTexture(new Vector3(v1, -9f), new Vector2(0.5f, (float)texLength)));
-                    vertices.Add(new VertexPositionTexture(new Vector3(bottomRight, -10f), new Vector2(0, (float)texLength)));
+                    vertices.Add(new VertexPositionTexture(new Vector3(topLeft, 0), new Vector2(1, 0)));
+                    vertices.Add(new VertexPositionTexture(new Vector3(v2, 0.01f), new Vector2(0.5f, 0))); // mid
+                    vertices.Add(new VertexPositionTexture(new Vector3(topRight, 0), new Vector2(0, 0)));
+                    vertices.Add(new VertexPositionTexture(new Vector3(bottomLeft, 0.01f), new Vector2(1, (float)texLength)));
+                    vertices.Add(new VertexPositionTexture(new Vector3(v1, 0.01f), new Vector2(0.5f, (float)texLength)));
+                    vertices.Add(new VertexPositionTexture(new Vector3(bottomRight, 0), new Vector2(0, (float)texLength)));
                     // TODO: why was flipping opposite that I expect correct?
                     // TODO: redo all of this in light of our new coordinate stuff
                     indices.Add(i);

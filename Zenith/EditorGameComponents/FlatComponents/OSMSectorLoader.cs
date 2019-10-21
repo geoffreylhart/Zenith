@@ -19,14 +19,14 @@ using Zenith.ZMath;
 
 namespace Zenith.EditorGameComponents.FlatComponents
 {
-    class OSMSectorLoader : SectorLoader
+    class OSMSectorLoader
     {
-        public override IGraphicsBuffer GetCacheBuffer(GraphicsDevice graphicsDevice, ISector sector)
+        public IGraphicsBuffer GetCacheBuffer(GraphicsDevice graphicsDevice, ISector sector)
         {
             return GetBuffer(graphicsDevice, sector, true);
         }
 
-        public override IGraphicsBuffer GetGraphicsBuffer(GraphicsDevice graphicsDevice, ISector sector)
+        public IGraphicsBuffer GetGraphicsBuffer(GraphicsDevice graphicsDevice, ISector sector)
         {
             return GetBuffer(graphicsDevice, sector, false);
         }

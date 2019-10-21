@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,6 +13,7 @@ using Zenith.MathHelpers;
 using Zenith.PrimitiveBuilder;
 using Zenith.ZGeom;
 using Zenith.ZGraphics;
+using Zenith.ZGraphics.GraphicsBuffers;
 using Zenith.ZMath;
 
 namespace Zenith.EditorGameComponents
@@ -20,7 +22,11 @@ namespace Zenith.EditorGameComponents
     {
         private EditorCamera camera;
         private Dictionary<ISector, RenderTarget2D> renderTargets = new Dictionary<ISector, RenderTarget2D>();
-        private List<IFlatComponent> flatComponents = new List<IFlatComponent>();
+        private OSMSectorLoader osmSectorLoader = new OSMSectorLoader();
+
+        private static int MAX_ZOOM = 19;
+        Dictionary<ISector, IGraphicsBuffer> loadedMaps = new Dictionary<ISector, IGraphicsBuffer>();
+        ISector toLoad = null;
 
         public PlanetComponent(Game game, EditorCamera camera) : base(game)
         {
@@ -86,16 +92,36 @@ namespace Zenith.EditorGameComponents
             if (circleStart != null)
             {
                 // update in reverse order
-                for (int i = 0; i < flatComponents.Count; i++)
-                {
-                    flatComponents[flatComponents.Count - 1 - i].Update(circleStart.X, circleStart.Y, camera.cameraZoom);
-                }
+                if (UILayer.LeftPressed) AddImage(circleStart.X, circleStart.Y, camera.cameraZoom);
             }
         }
 
-        internal void Add(IFlatComponent component)
+        private void AddImage(double mouseX, double mouseY, double cameraZoom)
         {
-            flatComponents.Add(component);
+            ISector squareCenter = GetSector(mouseX, mouseY, cameraZoom);
+            if (squareCenter == null) return;
+            toLoad = squareCenter;
+        }
+
+        private ISector GetSector(double mouseX, double mouseY, double cameraZoom)
+        {
+            int zoom = GetRoundedZoom(cameraZoom);
+            LongLat longLat = new LongLat(mouseX, mouseY);
+            foreach (var sector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
+            {
+                if (sector.ContainsLongLat(longLat))
+                {
+                    var localCoord = sector.ProjectToLocalCoordinates(longLat.ToSphereVector());
+                    var sectorAt = sector.GetSectorAt(localCoord.X, localCoord.Y, zoom);
+                    if (sectorAt != null) return sectorAt;
+                }
+            }
+            return null;
+        }
+
+        private int GetRoundedZoom(double cameraZoom)
+        {
+            return Math.Min((int)cameraZoom, MAX_ZOOM); // google only accepts integer zoom
         }
 
         // ------------
@@ -114,11 +140,67 @@ namespace Zenith.EditorGameComponents
             basicEffect.AmbientLightColor = new Vector3(0.2f, 0.2f, 0.2f);
             return basicEffect;
         }
+
         private void InitDraw(GraphicsDevice graphicsDevice, SectorBounds bounds, ISector rootSector)
         {
-            foreach (var layer in flatComponents)
+            double relativeCameraZoom = camera.cameraZoom - Math.Log(ZCoords.GetSectorManager().GetTopmostOSMSectors().Count, 4) + (Game1.recording ? 1 : 0);
+            // autoload stuff
+            // TODO: move to update step?
+            int zoomLevel = Math.Min(Math.Max((int)(relativeCameraZoom - 3), 0), ZCoords.GetSectorManager().GetHighestOSMZoom());
+            List<ISector> containedSectors = rootSector.GetSectorsInRange(bounds.minX, bounds.maxX, bounds.minY, bounds.maxY, zoomLevel);
+            foreach (var pair in loadedMaps.Where(x => AllowUnload(x.Key, rootSector, containedSectors)).ToList())
             {
-                layer.InitDraw(graphicsDevice, rootSector, bounds.minX, bounds.maxX, bounds.minY, bounds.maxY, camera.cameraZoom);
+                loadedMaps[pair.Key].Dispose();
+                loadedMaps.Remove(pair.Key);
+            }
+            // end autoload stuff
+            if (toLoad != null || Program.TO_LOAD != null)
+            {
+                if (Program.TO_LOAD != null)
+                {
+                    toLoad = ZCoords.GetSectorManager().FromString(Program.TO_LOAD);
+                }
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
+                foreach (var sector in toLoad.GetChildrenAtLevel(ZCoords.GetSectorManager().GetHighestOSMZoom()))
+                {
+                    osmSectorLoader.GetGraphicsBuffer(graphicsDevice, sector).Dispose();
+                }
+                Console.WriteLine($"Total load time for {toLoad} is {sw.Elapsed.TotalHours} h");
+                toLoad = null;
+                if (Program.TO_LOAD != null)
+                {
+                    Program.TERMINATE = true;
+                    Program.TO_LOAD = null;
+                }
+            }
+            bool loadCache = !(relativeCameraZoom - 4 > ZCoords.GetSectorManager().GetHighestOSMZoom());
+            foreach (var l in containedSectors)
+            {
+                if (loadCache)
+                {
+                    if (!loadedMaps.ContainsKey(l))
+                    {
+                        loadedMaps[l] = osmSectorLoader.GetCacheBuffer(graphicsDevice, l);
+                    }
+                }
+                else
+                {
+                    if (!loadedMaps.ContainsKey(l) || loadedMaps[l] is ImageTileBuffer)
+                    {
+                        if (loadedMaps.ContainsKey(l)) loadedMaps[l].Dispose();
+                        loadedMaps[l] = osmSectorLoader.GetGraphicsBuffer(graphicsDevice, l);
+                    }
+                }
+            }
+            List<ISector> sorted = containedSectors.Where(x => x.GetRoot().Equals(rootSector)).ToList();
+            sorted.Sort((x, y) => x.Zoom.CompareTo(y.Zoom));
+            foreach (var sector in sorted)
+            {
+                IGraphicsBuffer buffer = loadedMaps[sector];
+                BasicEffect basicEffect = new BasicEffect(graphicsDevice);
+                basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)(bounds.minX * (1 << sector.Zoom) - sector.X), (float)(bounds.maxX * (1 << sector.Zoom) - sector.X), (float)(bounds.maxY * (1 << sector.Zoom) - sector.Y), (float)(bounds.minY * (1 << sector.Zoom) - sector.Y), -1, 0.01f); // TODO: why negative?
+                buffer.InitDraw(graphicsDevice, basicEffect, bounds.minX * (1 << sector.Zoom) - sector.X, bounds.maxX * (1 << sector.Zoom) - sector.X, bounds.minY * (1 << sector.Zoom) - sector.Y, bounds.maxY * (1 << sector.Zoom) - sector.Y, camera.cameraZoom);
             }
         }
 
@@ -130,9 +212,17 @@ namespace Zenith.EditorGameComponents
             graphicsDevice.DepthStencilState = new DepthStencilState() { DepthBufferEnable = true };
             graphicsDevice.Clear(Pallete.OCEAN_BLUE);
 
-            foreach (var layer in flatComponents)
+            double relativeCameraZoom = camera.cameraZoom - Math.Log(ZCoords.GetSectorManager().GetTopmostOSMSectors().Count, 4) + (Game1.recording ? 1 : 0);
+            int zoomLevel = Math.Min(Math.Max((int)(relativeCameraZoom - 3), 0), ZCoords.GetSectorManager().GetHighestOSMZoom());
+            List<ISector> containedSectors = rootSector.GetSectorsInRange(bounds.minX, bounds.maxX, bounds.minY, bounds.maxY, zoomLevel);
+            List<ISector> sorted = containedSectors.Where(x => x.GetRoot().Equals(rootSector)).ToList();
+            sorted.Sort((x, y) => x.Zoom.CompareTo(y.Zoom));
+            foreach (var sector in sorted)
             {
-                layer.Draw(graphicsDevice, rootSector, bounds.minX, bounds.maxX, bounds.minY, bounds.maxY, camera.cameraZoom);
+                IGraphicsBuffer buffer = loadedMaps[sector];
+                BasicEffect basicEffect = new BasicEffect(graphicsDevice);
+                basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)(bounds.minX * (1 << sector.Zoom) - sector.X), (float)(bounds.maxX * (1 << sector.Zoom) - sector.X), (float)(bounds.maxY * (1 << sector.Zoom) - sector.Y), (float)(bounds.minY * (1 << sector.Zoom) - sector.Y), -1, 0.01f); // TODO: why negative?
+                buffer.Draw(graphicsDevice, basicEffect, bounds.minX * (1 << sector.Zoom) - sector.X, bounds.maxX * (1 << sector.Zoom) - sector.X, bounds.minY * (1 << sector.Zoom) - sector.Y, bounds.maxY * (1 << sector.Zoom) - sector.Y, camera.cameraZoom);
             }
         }
 
@@ -212,7 +302,18 @@ namespace Zenith.EditorGameComponents
 
         public List<IEditorGameComponent> GetSubComponents()
         {
-            return flatComponents.Where(x => x is IEditorGameComponent).Cast<IEditorGameComponent>().ToList();
+            return new List<IEditorGameComponent>();
+        }
+
+        private bool AllowUnload(ISector sector, ISector rootSector, List<ISector> loadingSectors)
+        {
+            if (loadedMaps[sector] is ProceduralTileBuffer) return false; // TODO: eventually unload these, maybe just have a queue
+            if (!sector.GetRoot().Equals(rootSector)) return false;
+            foreach (var s in loadingSectors)
+            {
+                if (s.Equals(sector)) return false; // very basic: don't unload sectors immediately after loading them
+            }
+            return true;
         }
 
         class SectorBounds

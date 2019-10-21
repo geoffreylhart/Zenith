@@ -71,15 +71,14 @@ namespace Zenith.ZGraphics
             if (vertices != null) vertices.Dispose();
             if (indices != null) indices.Dispose();
         }
-        public void Draw(GraphicsDevice graphicsDevice, Matrix projection)
+        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect)
         {
-            Draw(graphicsDevice, projection, primitiveType, texture, null);
+            Draw(graphicsDevice, basicEffect, primitiveType, texture, null);
         }
 
-        public void Draw(GraphicsDevice graphicsDevice, Matrix projection, PrimitiveType drawType, Texture2D drawTexture, Vector3? color)
+        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, PrimitiveType drawType, Texture2D drawTexture, Vector3? color)
         {
-            var basicEffect = new BasicEffect(graphicsDevice);
-            basicEffect.Projection = projection;
+            basicEffect = (BasicEffect)basicEffect.Clone();
             if (drawTexture == null)
             {
                 if (color == null)

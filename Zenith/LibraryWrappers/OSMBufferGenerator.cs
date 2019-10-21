@@ -19,7 +19,6 @@ using Zenith.LibraryWrappers.OSM;
 using Zenith.ZGeom;
 using Zenith.ZGraphics;
 using Zenith.ZMath;
-using static Zenith.EditorGameComponents.FlatComponents.SectorLoader;
 
 namespace Zenith.LibraryWrappers
 {
@@ -36,12 +35,12 @@ namespace Zenith.LibraryWrappers
                     Vector2d topRight = new Vector2d(1, 0);
                     Vector2d bottomLeft = new Vector2d(0, 1);
                     Vector2d bottomRight = new Vector2d(1, 1);
-                    vertices.Add(new VertexPositionColor(new Vector3((float)topLeft.X, (float)topLeft.Y, -10f), Pallete.GRASS_GREEN));
-                    vertices.Add(new VertexPositionColor(new Vector3((float)topRight.X, (float)topRight.Y, -10f), Pallete.GRASS_GREEN));
-                    vertices.Add(new VertexPositionColor(new Vector3((float)bottomRight.X, (float)bottomRight.Y, -10f), Pallete.GRASS_GREEN));
-                    vertices.Add(new VertexPositionColor(new Vector3((float)topLeft.X, (float)topLeft.Y, -10f), Pallete.GRASS_GREEN));
-                    vertices.Add(new VertexPositionColor(new Vector3((float)bottomRight.X, (float)bottomRight.Y, -10f), Pallete.GRASS_GREEN));
-                    vertices.Add(new VertexPositionColor(new Vector3((float)bottomLeft.X, (float)bottomLeft.Y, -10f), Pallete.GRASS_GREEN));
+                    vertices.Add(new VertexPositionColor(new Vector3((float)topLeft.X, (float)topLeft.Y, 0), Pallete.GRASS_GREEN));
+                    vertices.Add(new VertexPositionColor(new Vector3((float)topRight.X, (float)topRight.Y, 0), Pallete.GRASS_GREEN));
+                    vertices.Add(new VertexPositionColor(new Vector3((float)bottomRight.X, (float)bottomRight.Y, 0), Pallete.GRASS_GREEN));
+                    vertices.Add(new VertexPositionColor(new Vector3((float)topLeft.X, (float)topLeft.Y, 0), Pallete.GRASS_GREEN));
+                    vertices.Add(new VertexPositionColor(new Vector3((float)bottomRight.X, (float)bottomRight.Y, 0), Pallete.GRASS_GREEN));
+                    vertices.Add(new VertexPositionColor(new Vector3((float)bottomLeft.X, (float)bottomLeft.Y, 0), Pallete.GRASS_GREEN));
                     return vertices;
                 }
             }
@@ -264,7 +263,7 @@ namespace Zenith.LibraryWrappers
         {
             List<VertexPositionColor> lines = new List<VertexPositionColor>();
             if (contours.Count == 0) return lines;
-            float z = -10f;
+            float z = 0;
             for (int j = 0; j < contours.Count; j++)
             {
                 List<ContourVertex> contour = contours[j];
@@ -343,7 +342,7 @@ namespace Zenith.LibraryWrappers
                     }
                     List<VertexPositionColor> triangles = new List<VertexPositionColor>();
                     if (contours.Count == 0) return triangles;
-                    float z = -10f;
+                    float z = 0;
                     var mesh = polygon.Triangulate();
                     foreach (var triangle in mesh.Triangles)
                     {

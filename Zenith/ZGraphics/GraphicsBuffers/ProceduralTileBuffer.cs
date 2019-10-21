@@ -6,6 +6,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Zenith.LibraryWrappers;
 using Zenith.LibraryWrappers.OSM;
@@ -139,26 +140,28 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             treeBuffer = null;
         }
 
-        public void InitDraw(GraphicsDevice graphicsDevice, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        public void InitDraw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom)
         {
-            vectorTileBuffer.InitDraw(graphicsDevice, minX, maxX, minY, maxY, cameraZoom);
-            treeBuffer.InitDraw(graphicsDevice, minX, maxX, minY, maxY, cameraZoom);
+            vectorTileBuffer.InitDraw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom);
+            treeBuffer.InitDraw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom);
         }
 
-        public void Draw(GraphicsDevice graphicsDevice, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom)
         {
-            vectorTileBuffer.Draw(graphicsDevice, minX, maxX, minY, maxY, cameraZoom);
-            treeBuffer.Draw(graphicsDevice, minX, maxX, minY, maxY, cameraZoom);
+            vectorTileBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom);
+            treeBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom);
         }
 
         public Texture2D GetImage(GraphicsDevice graphicsDevice)
         {
             Vector2d topLeft = new Vector2d(0, 0);
             Vector2d bottomRight = new Vector2d(1, 1);
-            InitDraw(graphicsDevice, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0);
+            BasicEffect basicEffect = new BasicEffect(graphicsDevice);
+            basicEffect.Projection = Matrix.CreateOrthographicOffCenter(0, 1, 1, 0, -1, 0.01f); // TODO: why negative?
+            InitDraw(graphicsDevice, basicEffect, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0);
             RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 512 * 16, 512 * 16, true, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
             graphicsDevice.SetRenderTarget(newTarget);
-            Draw(graphicsDevice, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0);
+            Draw(graphicsDevice, basicEffect, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0);
             return DownScale(graphicsDevice, newTarget, 512);
         }
 

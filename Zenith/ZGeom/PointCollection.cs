@@ -52,10 +52,10 @@ namespace Zenith.ZGeom
                 Vector2d bottomLeft = point - w + h;
                 Vector2d bottomRight = point + w + h;
                 int i = vertices.Count;
-                vertices.Add(new VertexPositionTexture(new Vector3(topLeft, -10f), new Vector2(0, 0)));
-                vertices.Add(new VertexPositionTexture(new Vector3(topRight, -10f), new Vector2(1, 0)));
-                vertices.Add(new VertexPositionTexture(new Vector3(bottomLeft, -10f), new Vector2(0, 1)));
-                vertices.Add(new VertexPositionTexture(new Vector3(bottomRight, -10f), new Vector2(1, 1)));
+                vertices.Add(new VertexPositionTexture(new Vector3(topLeft, 0), new Vector2(0, 0)));
+                vertices.Add(new VertexPositionTexture(new Vector3(topRight, 0), new Vector2(1, 0)));
+                vertices.Add(new VertexPositionTexture(new Vector3(bottomLeft, 0), new Vector2(0, 1)));
+                vertices.Add(new VertexPositionTexture(new Vector3(bottomRight, 0), new Vector2(1, 1)));
                 indices.Add(i);
                 indices.Add(i + 1);
                 indices.Add(i + 3);
