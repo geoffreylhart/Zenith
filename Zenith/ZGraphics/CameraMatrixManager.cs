@@ -19,6 +19,7 @@ namespace Zenith.ZGraphics
         //static float M_1 = (float)(Math.Sin(Math.PI / 4) / Math.Sin(Math.PI / 8));
         static float M_1 = 2.5f;
         static float M_2 = 4.5f;
+        static double angle = Math.PI/4;
 
         internal static Matrix GetWorldView(float distance)
         {
@@ -28,12 +29,12 @@ namespace Zenith.ZGraphics
                     return Matrix.CreateLookAt(new Vector3(0, -1 - distance, 0), new Vector3(0, 0, 0), Vector3.UnitZ);
                 case 1:
                     distance *= M_1;
-                    return Matrix.CreateLookAt(new Vector3(0, -1 - distance * (float)Math.Sqrt(0.5), -distance * (float)Math.Sqrt(0.5)), new Vector3(0, -1, 0), Vector3.UnitZ);
+                    return Matrix.CreateLookAt(new Vector3(0, -1 - distance * (float)Math.Cos(angle), -distance * (float)Math.Sin(angle)), new Vector3(0, -1, 0), Vector3.UnitZ);
                 case 2:
                     distance *= M_2;
-                    return Matrix.CreateLookAt(new Vector3(0, -1 - distance * (float)Math.Sqrt(0.5), -distance * (float)Math.Sqrt(0.5)), new Vector3(0, -1, 0), Vector3.UnitZ);
+                    return Matrix.CreateLookAt(new Vector3(0, -1 - distance * (float)Math.Cos(angle), -distance * (float)Math.Sin(angle)), new Vector3(0, -1, 0), Vector3.UnitZ);
                 case 3:
-                    return Matrix.CreateLookAt(new Vector3(0, -1 - distance * (float)Math.Sqrt(0.5), -distance * (float)Math.Sqrt(0.5)), new Vector3(0, -1, 0), Vector3.UnitZ);
+                    return Matrix.CreateLookAt(new Vector3(0, -1 - distance * (float)Math.Cos(angle), -distance * (float)Math.Sin(angle)), new Vector3(0, -1, 0), Vector3.UnitZ);
             }
             throw new NotImplementedException();
         }
@@ -64,12 +65,12 @@ namespace Zenith.ZGraphics
                     return Matrixd.CreateLookAt(new Vector3d(0, -1 - distance, 0), new Vector3d(0, 0, 0), new Vector3d(0, 0, 1));
                 case 1:
                     distance *= M_1;
-                    return Matrixd.CreateLookAt(new Vector3d(0, -1 - distance * Math.Sqrt(0.5), -distance * Math.Sqrt(0.5)), new Vector3d(0, -1, 0), new Vector3d(0, 0, 1));
+                    return Matrixd.CreateLookAt(new Vector3d(0, -1 - distance * Math.Cos(angle), -distance * Math.Sin(angle)), new Vector3d(0, -1, 0), new Vector3d(0, 0, 1));
                 case 2:
                     distance *= M_2;
-                    return Matrixd.CreateLookAt(new Vector3d(0, -1 - distance * Math.Sqrt(0.5), -distance * Math.Sqrt(0.5)), new Vector3d(0, -1, 0), new Vector3d(0, 0, 1));
+                    return Matrixd.CreateLookAt(new Vector3d(0, -1 - distance * Math.Cos(angle), -distance * Math.Sin(angle)), new Vector3d(0, -1, 0), new Vector3d(0, 0, 1));
                 case 3:
-                    return Matrixd.CreateLookAt(new Vector3d(0, -1 - distance * Math.Sqrt(0.5), -distance * Math.Sqrt(0.5)), new Vector3d(0, -1, 0), new Vector3d(0, 0, 1));
+                    return Matrixd.CreateLookAt(new Vector3d(0, -1 - distance * Math.Cos(angle), -distance * Math.Sin(angle)), new Vector3d(0, -1, 0), new Vector3d(0, 0, 1));
             }
             throw new NotImplementedException();
         }
@@ -100,12 +101,12 @@ namespace Zenith.ZGraphics
                     return Matrix.CreateLookAt(new Vector3(0, -distance, 0), new Vector3(0, 0, 0), Vector3.UnitZ); // TODO: this is hacky
                 case 1:
                     distance *= M_1;
-                    return Matrix.CreateLookAt(new Vector3(0, -distance * (float)Math.Sqrt(0.5), -distance * (float)Math.Sqrt(0.5)), new Vector3(0, 0, 0), Vector3.UnitZ); // TODO: this is hacky
+                    return Matrix.CreateLookAt(new Vector3(0, -distance * (float)Math.Cos(angle), -distance * (float)Math.Sin(angle)), new Vector3(0, 0, 0), Vector3.UnitZ); // TODO: this is hacky
                 case 2:
                     distance *= M_2;
-                    return Matrix.CreateLookAt(new Vector3(0, -distance * (float)Math.Sqrt(0.5), -distance * (float)Math.Sqrt(0.5)), new Vector3(0, 0, 0), Vector3.UnitZ); // TODO: this is hacky
+                    return Matrix.CreateLookAt(new Vector3(0, -distance * (float)Math.Cos(angle), -distance * (float)Math.Sin(angle)), new Vector3(0, 0, 0), Vector3.UnitZ); // TODO: this is hacky
                 case 3:
-                    return Matrix.CreateLookAt(new Vector3(0, -distance * (float)Math.Sqrt(0.5), -distance * (float)Math.Sqrt(0.5)), new Vector3(0, 0, 0), Vector3.UnitZ); // TODO: this is hacky
+                    return Matrix.CreateLookAt(new Vector3(0, -distance * (float)Math.Cos(angle), -distance * (float)Math.Sin(angle)), new Vector3(0, 0, 0), Vector3.UnitZ); // TODO: this is hacky
             }
             throw new NotImplementedException();
         }
@@ -136,11 +137,11 @@ namespace Zenith.ZGraphics
                 case 0:
                     return Matrix.CreateLookAt(new Vector3(0, 0, 20), new Vector3(0, 0, 0), -Vector3.UnitY);
                 case 1:
-                    return Matrix.CreateLookAt(new Vector3(0, 14.142f * M_1, 14.142f * M_1), new Vector3(0, 0, 0), -Vector3.UnitY);
+                    return Matrix.CreateLookAt(new Vector3(0, 20 * M_1 * (float)Math.Sin(angle), 20 * M_1 * (float)Math.Cos(angle)), new Vector3(0, 0, 0), -Vector3.UnitY);
                 case 2:
-                    return Matrix.CreateLookAt(new Vector3(0, 14.142f * M_2, 14.142f * M_2), new Vector3(0, 0, 0), -Vector3.UnitY);
+                    return Matrix.CreateLookAt(new Vector3(0, 20 * M_2 * (float)Math.Sin(angle), 20 * M_2 * (float)Math.Cos(angle)), new Vector3(0, 0, 0), -Vector3.UnitY);
                 case 3:
-                    return Matrix.CreateLookAt(new Vector3(0, 14.142f * M_1, 14.142f * M_1), new Vector3(0, 0, 0), -Vector3.UnitY);
+                    return Matrix.CreateLookAt(new Vector3(0, 20 * M_1 * (float)Math.Sin(angle), 20 * M_1 * (float)Math.Cos(angle)), new Vector3(0, 0, 0), -Vector3.UnitY);
             }
             throw new NotImplementedException();
         }

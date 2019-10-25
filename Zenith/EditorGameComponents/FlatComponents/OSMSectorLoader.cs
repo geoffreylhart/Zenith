@@ -65,8 +65,8 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 }
                 else
                 {
-                    try
-                    {
+                    //try
+                    //{
                         ProceduralTileBuffer buffer = new ProceduralTileBuffer(sector);
                         Stopwatch sw = new Stopwatch();
                         sw.Start();
@@ -83,16 +83,16 @@ namespace Zenith.EditorGameComponents.FlatComponents
                             RebuildImage(graphicsDevice, sector);
                         }
                         return buffer;
-                    }
-                    catch (Exception ex)
-                    {
-                        if (sector.Zoom <= ZCoords.GetSectorManager().GetHighestCacheZoom())
-                        {
-                            SuperSave(GlobalContent.Error, OSMPaths.GetSectorImagePath(sector));
-                            RebuildImage(graphicsDevice, sector);
-                        }
-                        return new ImageTileBuffer(graphicsDevice, GlobalContent.Error, sector);
-                    }
+                    //}
+                    //catch (Exception ex)
+                    //{
+                    //    if (sector.Zoom <= ZCoords.GetSectorManager().GetHighestCacheZoom())
+                    //    {
+                    //        SuperSave(GlobalContent.Error, OSMPaths.GetSectorImagePath(sector));
+                    //        RebuildImage(graphicsDevice, sector);
+                    //    }
+                    //    return new ImageTileBuffer(graphicsDevice, GlobalContent.Error, sector);
+                    //}
                 }
             }
             else

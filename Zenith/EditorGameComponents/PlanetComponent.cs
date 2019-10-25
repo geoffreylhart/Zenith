@@ -249,7 +249,7 @@ namespace Zenith.EditorGameComponents
                 Vector3 start = sector.ProjectToSphereCoordinates(new Vector2d(0, 0)).ToVector3();
                 Vector3 xAxis = sector.ProjectToSphereCoordinates(new Vector2d(1, 0)).ToVector3() - start;
                 Vector3 yAxis = sector.ProjectToSphereCoordinates(new Vector2d(0, 1)).ToVector3() - start;
-                Vector3 zAxis = start * 0.00001f;
+                Vector3 zAxis = start * (xAxis.Length() + yAxis.Length()) / start.Length() / 2; // make this roughly the same length
                 // matrixes copied over
                 Matrixd world = Matrixd.CreateRotationZ(-camera.cameraRotX) * Matrixd.CreateRotationX(camera.cameraRotY); // eh.... think hard on this later
                 double distance = 9 * Math.Pow(0.5, camera.cameraZoom);
@@ -344,13 +344,14 @@ namespace Zenith.EditorGameComponents
 
         private bool AllowUnload(ISector sector, ISector rootSector, List<ISector> loadingSectors)
         {
-            if (loadedMaps[sector] is ProceduralTileBuffer) return false; // TODO: eventually unload these, maybe just have a queue
-            if (!sector.GetRoot().Equals(rootSector)) return false;
-            foreach (var s in loadingSectors)
-            {
-                if (s.Equals(sector)) return false; // very basic: don't unload sectors immediately after loading them
-            }
-            return true;
+            //if (loadedMaps[sector] is ProceduralTileBuffer) return false; // TODO: eventually unload these, maybe just have a queue
+            //if (!sector.GetRoot().Equals(rootSector)) return false;
+            //foreach (var s in loadingSectors)
+            //{
+            //    if (s.Equals(sector)) return false; // very basic: don't unload sectors immediately after loading them
+            //}
+            //return true;
+            return false;
         }
 
         class SectorBounds

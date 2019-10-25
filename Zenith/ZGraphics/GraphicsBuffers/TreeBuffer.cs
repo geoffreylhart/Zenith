@@ -74,7 +74,8 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                 treePointList.Add(v);
             }
             // for now, each point refers to the top left corner of the tree
-            textureOffsets = new Vector2[] { new Vector2(-1, -1), new Vector2(-1, 0), new Vector2(-1, 1), new Vector2(0, -1), new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, -1), new Vector2(1, 0), new Vector2(1, 1) };
+            textureOffsets = new Vector2[9];
+            for (int i = 0; i < 9; i++) textureOffsets[i] = new Vector2(i / 3 - 1, i % 3 - 1);
             textureOffsets = textureOffsets.OrderBy(x => x.Y).ToArray();
         }
 
@@ -105,6 +106,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             effect.Parameters["World"].SetValue(basicEffect.World);
             effect.Parameters["View"].SetValue(basicEffect.View);
             effect.Parameters["Projection"].SetValue(basicEffect.Projection);
+            effect.Parameters["Inverse"].SetValue(Matrix.Invert(basicEffect.World * basicEffect.View * basicEffect.Projection));
             effect.Parameters["Texture"].SetValue(grassTiles);
             effect.Parameters["TreeTexture"].SetValue(GlobalContent.Grass);
             effect.Parameters["TextureCount"].SetValue(4);

@@ -29,3 +29,4 @@ Texture coordinates (I think) are supposed to have 0,0 in the top left corner
 
 Preferred quad triangulation method:
 Topleft, topright, bottomright, topleft, bottomright, bottomleft
+The HLSL screen space is different from the monogame screenspace: topright is 1,1 and bottomleft is -1,-1
