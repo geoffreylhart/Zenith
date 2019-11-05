@@ -30,12 +30,15 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         {
         }
 
-        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, int layer)
         {
-            foreach (var buffer in buffers)
+            if (layer == 2)
             {
-                buffer.Draw(graphicsDevice, basicEffect);
-                graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, graphicsDevice.Viewport.MaxDepth, 0);
+                foreach (var buffer in buffers)
+                {
+                    buffer.Draw(graphicsDevice, basicEffect);
+                    graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, graphicsDevice.Viewport.MaxDepth, 0);
+                }
             }
         }
 

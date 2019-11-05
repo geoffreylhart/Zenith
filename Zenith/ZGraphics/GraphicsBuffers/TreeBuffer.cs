@@ -13,8 +13,6 @@ namespace Zenith.ZGraphics.GraphicsBuffers
     class TreeBuffer : IGraphicsBuffer
     {
         ISector sector;
-        RenderTarget2D treeTiles;
-        RenderTarget2D grassTiles;
         VertexIndiceBuffer buffer; // just a square
         private static int REZ = 2048;
         private Vector2[] textureOffsets;
@@ -34,20 +32,6 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             this.beachCoastBuffer = beachCoastBuffer;
             this.lakesCoastBuffer = lakesCoastBuffer;
             this.sector = sector;
-            treeTiles = new RenderTarget2D(
-                 graphicsDevice,
-                 512,
-                 512,
-                 false,
-                 graphicsDevice.PresentationParameters.BackBufferFormat,
-                 DepthFormat.None);
-            grassTiles = new RenderTarget2D(
-                 graphicsDevice,
-                 512,
-                 512,
-                 false,
-                 graphicsDevice.PresentationParameters.BackBufferFormat,
-                 DepthFormat.None);
             // make that square, sure
             buffer = new VertexIndiceBuffer();
             List<VertexPositionTexture> vertices = new List<VertexPositionTexture>();
@@ -65,7 +49,6 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             buffer.vertices.SetData(vertices.ToArray());
             buffer.indices = new IndexBuffer(graphicsDevice, IndexElementSize.ThirtyTwoBits, indices.Count, BufferUsage.WriteOnly);
             buffer.indices.SetData(indices.ToArray());
-            buffer.texture = treeTiles;
             List<Vector2> treePointList = new List<Vector2>();
             Random r = new Random(sector.GetHashCode() + 1);
             for (int i = 0; i < 5; i++)
@@ -81,61 +64,67 @@ namespace Zenith.ZGraphics.GraphicsBuffers
 
         public void Dispose()
         {
-            treeTiles.Dispose();
             buffer.Dispose();
         }
 
         public void InitDraw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom)
         {
-            graphicsDevice.SetRenderTarget(treeTiles);
-            beachBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
-            lakesBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
-            beachCoastBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, GlobalContent.BeachFlippedTreeDensity, new Vector3(1, 1, 1));
-            lakesCoastBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, GlobalContent.BeachTreeDensity, new Vector3(0, 0, 0));
-            roadsBufferFat.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, GlobalContent.RoadTreeDensity, new Vector3(0, 0, 0));
-            roadsBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
-            graphicsDevice.SetRenderTarget(grassTiles);
-            beachBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
-            lakesBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
-            roadsBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
         }
 
-        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, int layer)
         {
-            var effect = GlobalContent.TreeShader;
-            effect.Parameters["World"].SetValue(basicEffect.World);
-            effect.Parameters["View"].SetValue(basicEffect.View);
-            effect.Parameters["Projection"].SetValue(basicEffect.Projection);
-            effect.Parameters["Inverse"].SetValue(Matrix.Invert(basicEffect.World * basicEffect.View * basicEffect.Projection));
-            effect.Parameters["Texture"].SetValue(grassTiles);
-            effect.Parameters["TreeTexture"].SetValue(GlobalContent.Grass);
-            effect.Parameters["TextureCount"].SetValue(4);
-            effect.Parameters["TextureOffsets"].SetValue(textureOffsets);
-            effect.Parameters["Resolution"].SetValue(REZ * 8f);
-            effect.Parameters["TreeSize"].SetValue(2f);
-
-            effect.Parameters["Min"].SetValue(new Vector2((float)minX, (float)minY));
-            effect.Parameters["Max"].SetValue(new Vector2((float)maxX, (float)maxY));
-            effect.Parameters["TreeCenter"].SetValue(new Vector2((float)0.5, (float)1));
-            effect.Parameters["TreeVariance"].SetValue(new Vector2((float)0.5, (float)0.5));
-            graphicsDevice.Indices = buffer.indices;
-            graphicsDevice.SetVertexBuffer(buffer.vertices);
-            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+            if (layer == 0)
             {
-                pass.Apply();
-                graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, buffer.indices.IndexCount / 3);
+                beachBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
+                lakesBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
+                beachCoastBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, GlobalContent.BeachFlippedTreeDensity, new Vector3(1, 1, 1));
+                lakesCoastBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, GlobalContent.BeachTreeDensity, new Vector3(0, 0, 0));
+                roadsBufferFat.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, GlobalContent.RoadTreeDensity, new Vector3(0, 0, 0));
+                roadsBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
             }
-            effect.Parameters["Texture"].SetValue(treeTiles);
-            effect.Parameters["TreeTexture"].SetValue(GlobalContent.Tree);
-            effect.Parameters["TextureCount"].SetValue(1);
-            effect.Parameters["Resolution"].SetValue(REZ * 4f);
-            effect.Parameters["TreeSize"].SetValue(2f);
-            effect.Parameters["TreeCenter"].SetValue(new Vector2((float)0.5, (float)1));
-            effect.Parameters["TreeVariance"].SetValue(new Vector2((float)0.5, (float)0.5));
-            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+            if (layer == 1)
             {
-                pass.Apply();
-                graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, buffer.indices.IndexCount / 3);
+                beachBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
+                lakesBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
+                roadsBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
+            }
+            if (layer == 2)
+            {
+                var effect = GlobalContent.TreeShader;
+                effect.Parameters["World"].SetValue(basicEffect.World);
+                effect.Parameters["View"].SetValue(basicEffect.View);
+                effect.Parameters["Projection"].SetValue(basicEffect.Projection);
+                effect.Parameters["Inverse"].SetValue(Matrix.Invert(basicEffect.World * basicEffect.View * basicEffect.Projection));
+                effect.Parameters["Texture"].SetValue(Game1.renderTargets[1]);
+                effect.Parameters["TreeTexture"].SetValue(GlobalContent.Grass);
+                effect.Parameters["TextureCount"].SetValue(4);
+                effect.Parameters["TextureOffsets"].SetValue(textureOffsets);
+                effect.Parameters["Resolution"].SetValue(REZ * 8f);
+                effect.Parameters["TreeSize"].SetValue(2f);
+
+                effect.Parameters["Min"].SetValue(new Vector2((float)minX, (float)minY));
+                effect.Parameters["Max"].SetValue(new Vector2((float)maxX, (float)maxY));
+                effect.Parameters["TreeCenter"].SetValue(new Vector2((float)0.5, (float)1));
+                effect.Parameters["TreeVariance"].SetValue(new Vector2((float)0.5, (float)0.5));
+                graphicsDevice.Indices = buffer.indices;
+                graphicsDevice.SetVertexBuffer(buffer.vertices);
+                foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+                {
+                    pass.Apply();
+                    graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, buffer.indices.IndexCount / 3);
+                }
+                effect.Parameters["Texture"].SetValue(Game1.renderTargets[0]);
+                effect.Parameters["TreeTexture"].SetValue(GlobalContent.Tree);
+                effect.Parameters["TextureCount"].SetValue(1);
+                effect.Parameters["Resolution"].SetValue(REZ * 4f);
+                effect.Parameters["TreeSize"].SetValue(2f);
+                effect.Parameters["TreeCenter"].SetValue(new Vector2((float)0.5, (float)1));
+                effect.Parameters["TreeVariance"].SetValue(new Vector2((float)0.5, (float)0.5));
+                foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+                {
+                    pass.Apply();
+                    graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, buffer.indices.IndexCount / 3);
+                }
             }
         }
 

@@ -26,7 +26,6 @@ namespace Zenith.EditorGameComponents
     {
         private static int QUICK_CLICK_MAX_FRAMES = 10; // where 1 is minimum and 0 makes quick clicks impossible
         private List<ComponentCoord> components = new List<ComponentCoord>();
-        private ComponentManager cm;
         private static bool oldLeft = false;
         private static bool oldRight = false;
         private static int leftAge = 0;
@@ -56,17 +55,15 @@ namespace Zenith.EditorGameComponents
             RightAvailable = false;
         }
 
-        internal UILayer(Game game, ComponentManager cm) : base(game)
+        internal UILayer(Game game) : base(game)
         {
-            this.cm = cm;
-            cm.Init(this);
         }
 
         public override void Draw(GameTime gameTime)
         {
             SpriteBatch spriteBatch = new SpriteBatch(GraphicsDevice);
             spriteBatch.Begin();
-            spriteBatch.Draw(Game1.renderTarget, new Rectangle(0, 0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height), Color.White);
+            spriteBatch.Draw(Game1.renderTargets[2], new Rectangle(0, 0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height), Color.White);
             spriteBatch.End();
             foreach (var component in components)
             {

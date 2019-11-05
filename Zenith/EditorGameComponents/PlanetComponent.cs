@@ -8,7 +8,6 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Zenith.EditorGameComponents.FlatComponents;
-using Zenith.EditorGameComponents.UIComponents;
 using Zenith.MathHelpers;
 using Zenith.PrimitiveBuilder;
 using Zenith.ZGeom;
@@ -18,7 +17,7 @@ using Zenith.ZMath;
 
 namespace Zenith.EditorGameComponents
 {
-    internal class PlanetComponent : DrawableGameComponent, IEditorGameComponent
+    internal class PlanetComponent : DrawableGameComponent
     {
         private EditorCamera camera;
         private Dictionary<ISector, RenderTarget2D> renderTargets = new Dictionary<ISector, RenderTarget2D>();
@@ -60,32 +59,38 @@ namespace Zenith.EditorGameComponents
             {
                 DrawFlat(GraphicsDevice, allBounds[rootSector], rootSector);
             }
-            GraphicsDevice.SetRenderTarget(Game1.renderTarget);
-            var basicEffect3 = this.GetDefaultEffect();
-
-            camera.ApplyMatrices(basicEffect3);
-            float distance = (float)(9 * Math.Pow(0.5, camera.cameraZoom)); // TODO: this is hacky
-            basicEffect3.View = CameraMatrixManager.GetWorldRelativeView(distance);
-
-            basicEffect3.TextureEnabled = true;
-            foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
+            for (int i = 0; i < Game1.RENDER_TARGET_COUNT; i++)
             {
-                SectorBounds bounds = GetSectorBounds(rootSector);
-                VertexIndiceBuffer sphere = SphereBuilder.MakeSphereSegExplicit(GraphicsDevice, rootSector, 2, bounds.minX, bounds.minY, bounds.maxX, bounds.maxY, camera);
-                basicEffect3.Texture = renderTargets[rootSector];
-                foreach (EffectPass pass in basicEffect3.CurrentTechnique.Passes)
+                GraphicsDevice.SetRenderTarget(Game1.renderTargets[i]);
+                if (i == 2)
                 {
-                    pass.Apply();
-                    GraphicsDevice.Indices = sphere.indices;
-                    GraphicsDevice.SetVertexBuffer(sphere.vertices);
-                    GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, sphere.indices.IndexCount / 3);
+                    var basicEffect3 = this.GetDefaultEffect();
+
+                    camera.ApplyMatrices(basicEffect3);
+                    float distance = (float)(9 * Math.Pow(0.5, camera.cameraZoom)); // TODO: this is hacky
+                    basicEffect3.View = CameraMatrixManager.GetWorldRelativeView(distance);
+
+                    basicEffect3.TextureEnabled = true;
+                    foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
+                    {
+                        SectorBounds bounds = GetSectorBounds(rootSector);
+                        VertexIndiceBuffer sphere = SphereBuilder.MakeSphereSegExplicit(GraphicsDevice, rootSector, 2, bounds.minX, bounds.minY, bounds.maxX, bounds.maxY, camera);
+                        basicEffect3.Texture = renderTargets[rootSector];
+                        foreach (EffectPass pass in basicEffect3.CurrentTechnique.Passes)
+                        {
+                            pass.Apply();
+                            GraphicsDevice.Indices = sphere.indices;
+                            GraphicsDevice.SetVertexBuffer(sphere.vertices);
+                            GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, sphere.indices.IndexCount / 3);
+                        }
+                        sphere.vertices.Dispose();
+                        sphere.indices.Dispose();
+                    }
                 }
-                sphere.vertices.Dispose();
-                sphere.indices.Dispose();
-            }
-            foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
-            {
-                Draw3D(GraphicsDevice, allBounds[rootSector], rootSector);
+                foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
+                {
+                    Draw3D(GraphicsDevice, allBounds[rootSector], rootSector, i);
+                }
             }
             GraphicsDevice.SetRenderTarget(null);
         }
@@ -96,7 +101,7 @@ namespace Zenith.EditorGameComponents
             if (circleStart != null)
             {
                 // update in reverse order
-                if (UILayer.LeftPressed) AddImage(circleStart.X, circleStart.Y, camera.cameraZoom);
+                //if (UILayer.LeftPressed) AddImage(circleStart.X, circleStart.Y, camera.cameraZoom);
             }
         }
 
@@ -227,11 +232,11 @@ namespace Zenith.EditorGameComponents
                 if (!(buffer is ImageTileBuffer)) continue;
                 BasicEffect basicEffect = new BasicEffect(graphicsDevice);
                 basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)(bounds.minX * (1 << sector.Zoom) - sector.X), (float)(bounds.maxX * (1 << sector.Zoom) - sector.X), (float)(bounds.maxY * (1 << sector.Zoom) - sector.Y), (float)(bounds.minY * (1 << sector.Zoom) - sector.Y), -1, 0.01f); // TODO: why negative?
-                buffer.Draw(graphicsDevice, basicEffect, bounds.minX * (1 << sector.Zoom) - sector.X, bounds.maxX * (1 << sector.Zoom) - sector.X, bounds.minY * (1 << sector.Zoom) - sector.Y, bounds.maxY * (1 << sector.Zoom) - sector.Y, camera.cameraZoom);
+                buffer.Draw(graphicsDevice, basicEffect, bounds.minX * (1 << sector.Zoom) - sector.X, bounds.maxX * (1 << sector.Zoom) - sector.X, bounds.minY * (1 << sector.Zoom) - sector.Y, bounds.maxY * (1 << sector.Zoom) - sector.Y, camera.cameraZoom, 0);
             }
         }
 
-        private void Draw3D(GraphicsDevice graphicsDevice, SectorBounds bounds, ISector rootSector)
+        private void Draw3D(GraphicsDevice graphicsDevice, SectorBounds bounds, ISector rootSector, int layer)
         {
 
             double relativeCameraZoom = camera.cameraZoom - Math.Log(ZCoords.GetSectorManager().GetTopmostOSMSectors().Count, 4) + (Game1.recording ? 1 : 0);
@@ -259,7 +264,7 @@ namespace Zenith.EditorGameComponents
                 basicEffect.World = (transformMatrix * world * view * projection).toMatrix(); // combine them all to allow for higher precision
                 basicEffect.View = Matrix.Identity;
                 basicEffect.Projection = Matrix.Identity;
-                buffer.Draw(graphicsDevice, basicEffect, bounds.minX * (1 << sector.Zoom) - sector.X, bounds.maxX * (1 << sector.Zoom) - sector.X, bounds.minY * (1 << sector.Zoom) - sector.Y, bounds.maxY * (1 << sector.Zoom) - sector.Y, camera.cameraZoom);
+                buffer.Draw(graphicsDevice, basicEffect, bounds.minX * (1 << sector.Zoom) - sector.X, bounds.maxX * (1 << sector.Zoom) - sector.X, bounds.minY * (1 << sector.Zoom) - sector.Y, bounds.maxY * (1 << sector.Zoom) - sector.Y, camera.cameraZoom, layer) ;
             }
         }
 
@@ -325,21 +330,6 @@ namespace Zenith.EditorGameComponents
                 }
             }
             return new SectorBounds(Math.Max(minX, 0), Math.Min(maxX, 1), Math.Max(minY, 0), Math.Min(maxY, 1));
-        }
-
-        public List<string> GetDebugInfo()
-        {
-            return new List<string>();
-        }
-
-        public List<IUIComponent> GetSettings()
-        {
-            return new List<IUIComponent>();
-        }
-
-        public List<IEditorGameComponent> GetSubComponents()
-        {
-            return new List<IEditorGameComponent>();
         }
 
         private bool AllowUnload(ISector sector, ISector rootSector, List<ISector> loadingSectors)

@@ -146,10 +146,10 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             treeBuffer.InitDraw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom);
         }
 
-        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, int layer)
         {
-            vectorTileBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom);
-            treeBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom);
+            vectorTileBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, layer);
+            treeBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, layer);
         }
 
         public Texture2D GetImage(GraphicsDevice graphicsDevice)
@@ -161,7 +161,10 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             InitDraw(graphicsDevice, basicEffect, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0);
             RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 512 * 16, 512 * 16, true, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
             graphicsDevice.SetRenderTarget(newTarget);
-            Draw(graphicsDevice, basicEffect, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0);
+            for (int i = 0; i < Game1.RENDER_TARGET_COUNT; i++)
+            {
+                Draw(graphicsDevice, basicEffect, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0, i);
+            }
             return DownScale(graphicsDevice, newTarget, 512);
         }
 

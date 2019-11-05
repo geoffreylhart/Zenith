@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -6,6 +7,7 @@ using Microsoft.Xna.Framework.Input;
 using Zenith.EditorGameComponents;
 using Zenith.EditorGameComponents.FlatComponents;
 using Zenith.Helpers;
+using Zenith.PrimitiveBuilder;
 using Zenith.ZGraphics;
 
 namespace Zenith
@@ -14,7 +16,8 @@ namespace Zenith
     {
         public DebugConsole debug;
         public GraphicsDeviceManager graphics;
-        public static RenderTarget2D renderTarget;
+        public static int RENDER_TARGET_COUNT = 3;
+        public static RenderTarget2D[] renderTargets = new RenderTarget2D[RENDER_TARGET_COUNT];
         public static bool recording = false;
         public int recordFrame = 0;
         public static string RECORD_PATH = @"..\..\..\..\LocalCache\Recording";
@@ -35,40 +38,41 @@ namespace Zenith
 
         private void OnResize(object sender, EventArgs e)
         {
-            renderTarget.Dispose();
-            renderTarget = new RenderTarget2D(
-                 GraphicsDevice,
-                 GraphicsDevice.Viewport.Width,
-                 GraphicsDevice.Viewport.Height,
-                 false,
-                 GraphicsDevice.PresentationParameters.BackBufferFormat,
-                 DepthFormat.Depth24);
+            for (int i = 0; i < RENDER_TARGET_COUNT; i++)
+            {
+                renderTargets[i].Dispose();
+                renderTargets[i] = new RenderTarget2D(
+                     GraphicsDevice,
+                     GraphicsDevice.Viewport.Width,
+                     GraphicsDevice.Viewport.Height,
+                     false,
+                     GraphicsDevice.PresentationParameters.BackBufferFormat,
+                     DepthFormat.Depth24);
+            }
         }
 
         protected override void Initialize()
         {
-            renderTarget = new RenderTarget2D(
+            for (int i = 0; i < RENDER_TARGET_COUNT; i++)
+            {
+                renderTargets[i] = new RenderTarget2D(
                  GraphicsDevice,
                  GraphicsDevice.Viewport.Width,
                  GraphicsDevice.Viewport.Height,
                  false,
                  GraphicsDevice.PresentationParameters.BackBufferFormat,
                  DepthFormat.Depth24);
+            }
             GlobalContent.Init(this.Content);
 
             IsMouseVisible = true;
             var camera = new EditorCamera(this);
             Components.Add(camera);
-            // Components.Add(new MultiResMesh(this, camera));
-            //var googleMaps = new GoogleMapsSphere(this, camera);
-            //var geom = new SphericalGeometryEditor(this, camera);
             var earth = new PlanetComponent(this, camera);
-            //earth.Add(new GeometryEditor());
             Components.Add(earth);
-            var uiLayer = new UILayer(this, new ComponentManager(camera, earth));
+            var uiLayer = new UILayer(this);
             Components.Add(uiLayer);
             uiLayer.UpdateOrder = camera.UpdateOrder - 1;
-            //Components.Add(geom);
             Components.Add(new CityMarker(this, camera, "Pensacola", 30.4668536, -87.3294527));
             Components.Add(new CityMarker(this, camera, "Anchorage", 61.2008367, -149.8923965));
             Components.Add(new ShipComponent(this, camera));
@@ -106,7 +110,7 @@ namespace Zenith
             base.Draw(gameTime);
             if (recording)
             {
-                OSMSectorLoader.SuperSave(renderTarget, Path.Combine(RECORD_PATH, $"frame{recordFrame}.png"));
+                OSMSectorLoader.SuperSave(renderTargets[2], Path.Combine(RECORD_PATH, $"frame{recordFrame}.png"));
                 recordFrame++;
             }
         }

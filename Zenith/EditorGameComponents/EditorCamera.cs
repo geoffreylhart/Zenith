@@ -3,16 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-using Zenith.EditorGameComponents.UIComponents;
-using Zenith.Helpers;
 using Zenith.MathHelpers;
 using Zenith.ZGraphics;
 using Zenith.ZMath;
 
 namespace Zenith.EditorGameComponents
 {
-    public class EditorCamera : DrawableGameComponent, IEditorGameComponent
+    public class EditorCamera : DrawableGameComponent
     {
         public double cameraRotX = 0; // longitude coordinate of our character
         public double cameraRotY = 0; // latitude coordinate of our character
@@ -151,21 +148,6 @@ namespace Zenith.EditorGameComponents
         private Vector3d ToLatLong(Vector3d v)
         {
             return new Vector3d(Math.Atan2(v.X, -v.Y), Math.Asin(v.Z), 0);
-        }
-
-        public List<string> GetDebugInfo()
-        {
-            return new List<String> { "Controls: WASD, arrow keys, shift, space", $"{cameraRotX}:{cameraRotY}:{cameraZoom}" };
-        }
-
-        public List<IUIComponent> GetSettings()
-        {
-            return new List<IUIComponent>();
-        }
-
-        public List<IEditorGameComponent> GetSubComponents()
-        {
-            return new List<IEditorGameComponent>();
         }
     }
 }

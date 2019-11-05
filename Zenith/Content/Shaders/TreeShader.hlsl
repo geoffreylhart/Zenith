@@ -102,7 +102,7 @@ PixelShaderOutput PixelShaderFunction(VertexShaderOutput input)
 		relTreeCoord.x /= (scBottomRight.x - scTopLeft.x);
 		relTreeCoord.y /= (scBottomRight.y - scTopLeft.y);
 		
-		float2 treePosRelTex = (treePosAbs - Min) / (Max - Min); // position of tree relative to the zoomed-in density texture
+		float2 treePosRelTex = ((scTopLeft + (scBottomRight - scTopLeft) * TreeCenter) * float2(1, -1) + float2(1, 1)) / 2; // position of tree relative to the zoomed-in density texture
 		if (tex2D(textureSampler, treePosRelTex).r > seed3 % 83 / 83.0) {
 			if (relTreeCoord.x >= 0 && relTreeCoord.x <= 1 && relTreeCoord.y >=0 && relTreeCoord.y <= 1) {
 				int seed4 = seed3 % 1273 * 43 + 17;
