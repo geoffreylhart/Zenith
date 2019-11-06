@@ -31,7 +31,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         // actual final buffers that gets drawn
         VectorTileBuffer vectorTileBuffer;
         VectorTileBuffer vectorTileBufferUnused;
-        TreeBuffer treeBuffer;
+        TreeGeometryBuffer treeBuffer;
 
         public ProceduralTileBuffer(ISector sector)
         {
@@ -118,7 +118,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             vectorTileBufferUnused.Add(graphicsDevice, roadsBufferFat, sector);
             Console.WriteLine($"Roads buffer generated for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
-            treeBuffer = new TreeBuffer(graphicsDevice, beachBuffer, lakesBuffer, roadsBuffer, roadsBufferFat, beachCoastBufferFat, lakesCoastBufferFat, sector);
+            treeBuffer = new TreeGeometryBuffer(graphicsDevice, beachBuffer, lakesBuffer, roadsBuffer, roadsBufferFat, beachCoastBufferFat, lakesCoastBufferFat, sector);
             Console.WriteLine($"Trees generated for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
             // dereference
