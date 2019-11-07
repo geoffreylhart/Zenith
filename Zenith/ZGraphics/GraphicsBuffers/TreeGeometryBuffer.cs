@@ -44,10 +44,10 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                 {
                     int x = i % size;
                     int y = i / size;
-                    Vector3 topLeft = new Vector3((float)x / size, (y + 0.5f) / size, 1f / size);
-                    Vector3 topRight = new Vector3((x + 1f) / size, (y + 0.5f) / size, 1f / size);
-                    Vector3 bottomLeft = new Vector3((float)x / size, (y + 0.5f) / size, 0);
-                    Vector3 bottomRight = new Vector3((x + 1f) / size, (y + 0.5f) / size, 0);
+                    Vector3 topLeft = new Vector3((x + 0.5f) / size, (y + 0.5f) / size, 0);
+                    Vector3 topRight = new Vector3((x + 0.5f) / size, (y + 0.5f) / size, 0);
+                    Vector3 bottomLeft = new Vector3((x + 0.5f) / size, (y + 0.5f) / size, 0);
+                    Vector3 bottomRight = new Vector3((x + 0.5f) / size, (y + 0.5f) / size, 0);
                     vertices.Add(new VertexPositionTexture(topLeft, new Vector2(0, 0)));
                     vertices.Add(new VertexPositionTexture(topRight, new Vector2(1, 0)));
                     vertices.Add(new VertexPositionTexture(bottomLeft, new Vector2(0, 1)));
@@ -95,11 +95,10 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             if (layer == 2)
             {
                 int size = 32;
-                var effect = new BasicEffect(graphicsDevice);
-                effect.View = basicEffect.View;
-                effect.Projection = basicEffect.Projection;
-                effect.TextureEnabled = true;
-                effect.Texture = GlobalContent.Tree;
+                var effect = GlobalContent.TreeGeometryShader;
+                effect.Parameters["View"].SetValue(basicEffect.View);
+                effect.Parameters["Projection"].SetValue(basicEffect.Projection);
+                effect.Parameters["TreeTexture"].SetValue(GlobalContent.Tree);
 
                 graphicsDevice.Indices = buffer.indices;
                 graphicsDevice.SetVertexBuffer(buffer.vertices);
@@ -108,7 +107,9 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                     int x = i % size;
                     int y = i / size;
                     if (x + 1 < minX * size || x > maxX * size || y + 1 < minY * size || y > maxY * size) continue;
-                    effect.World = Matrix.CreateScale(1f / size) * Matrix.CreateTranslation((float)x / size, (float)y / size, 0) * basicEffect.World;
+                    Matrix world = Matrix.CreateScale(1f / size) * Matrix.CreateTranslation((float)x / size, (float)y / size, 0) * basicEffect.World;
+                    effect.Parameters["World"].SetValue(world);
+                    effect.Parameters["Inverse"].SetValue(Matrix.Invert(world * basicEffect.View * basicEffect.Projection));
                     foreach (EffectPass pass in effect.CurrentTechnique.Passes)
                     {
                         pass.Apply();

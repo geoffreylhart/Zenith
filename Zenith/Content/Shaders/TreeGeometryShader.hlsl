@@ -51,6 +51,24 @@ struct PixelShaderOutput
 VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 {
 	VertexShaderOutput output;
+	float xAmount = (input.TextureCoordinate.x - 0.5);
+	float zAmount = (1 - input.TextureCoordinate.y);
+	float4 scCenter = mul(mul(mul(input.Position, World), View), Projection);
+	scCenter /= scCenter.w;
+	float3 scRight = scCenter.xyz + float3(0.1, 0, 0);
+	float3 scUp = scCenter.xyz + float3(0, 0.1, 0);
+	float4 locRight = mul(float4(scRight,1), Inverse);
+	float4 locUp = mul(float4(scUp,1), Inverse);
+	locRight /= locRight.w;
+	locUp /= locUp.w;
+	float3 unitRight = locRight.xyz - input.Position.xyz;
+	float3 unitUp = locUp.xyz - input.Position.xyz;
+	// normalize to the size of a tree
+	unitRight *= 1.0 / 256 / length(unitRight);
+	unitUp *= 1.0 / 256 / length(unitUp);
+	input.Position.xyz += xAmount * unitRight;
+	input.Position.xyz += zAmount * unitUp;
+	
 	float4 worldPosition = mul(input.Position, World);
 	float4 viewPosition = mul(worldPosition, View);
 	output.Position = mul(viewPosition, Projection);
@@ -61,62 +79,7 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 PixelShaderOutput PixelShaderFunction(VertexShaderOutput input)
 {
 	PixelShaderOutput output;
-	output.Color = float4(0, 0, 0, 0);
-	for (int j = 0; j < 9; j++) {
-		float2 tileCoord = input.TextureCoordinate * Resolution % 1; // coordinate within tile, from 0-1
-		float2 tile = floor(input.TextureCoordinate * Resolution + TextureOffsets[j]); // coordinate of tile from 0-REZ
-		// TODO: somehow integer overflow breaks this?
-		int seed1 = ((tile.x * 217 + tile.y) * 453) % 1024 * 711 + 319;
-		int seed2 = seed1 * 97 + 11;
-		int seed3 = seed2 % 742 * 97 + 11;
-		float2 randPos = float2(seed1 % 83 / 83.0 - 0.5, seed2 % 83 / 83.0 - 0.5) * TreeVariance; // random variation off of center
-		float2 treeCornerPos = randPos + float2(0.5 - TreeSize / 2, 0.5 - TreeSize / 2); // position of the tree texture coordinate's top left corner
-		float2 treeCenterPos = treeCornerPos + TreeCenter * TreeSize; // position of the center-base of the tree
-		float2 relTreeCoord = (tileCoord - treeCornerPos - TextureOffsets[j]) / TreeSize; // coordinate relative to tree texture
-		float2 treePosAbs = tile / Resolution + treeCenterPos / Resolution; // absolute coordinate of tree within sector
-		
-		// I bet our issue before was not dealing with homogenous coordinates properly, duh-doy
-		// TODO: obviously optimize all of this if it works
-		float4 scPixel = mul(mul(mul(float4(input.TextureCoordinate, 0, 1), World), View), Projection);
-		scPixel /= scPixel.w;
-		float4 scCenter = mul(mul(mul(float4(treePosAbs, 0, 1), World), View), Projection);
-		scCenter /= scCenter.w;
-		float3 scRight = scCenter.xyz + float3(0.1, 0, 0);
-		float3 scUp = scCenter.xyz + float3(0, 0.1, 0);
-		float4 locRight = mul(float4(scRight,1), Inverse);
-		float4 locUp = mul(float4(scUp,1), Inverse);
-		locRight /= locRight.w;
-		locUp /= locUp.w;
-		float3 unitRight = locRight.xyz - float3(treePosAbs, 0);
-		float3 unitUp = locUp.xyz - float3(treePosAbs, 0);
-		// normalize to the size of a tree
-		unitRight *= TreeSize / Resolution / length(unitRight);
-		unitUp *= TreeSize / Resolution / length(unitUp);
-		float3 topLeft = float3(treePosAbs, 0) - unitRight * TreeCenter.x + unitUp * TreeCenter.y;
-		float3 bottomRight = float3(treePosAbs, 0) + unitRight * (1 - TreeCenter.x) - unitUp * (1 - TreeCenter.y);
-		float4 scTopLeft = mul(mul(mul(float4(topLeft, 1), World), View), Projection);
-		float4 scBottomRight = mul(mul(mul(float4(bottomRight, 1), World), View), Projection);
-		scTopLeft /= scTopLeft.w;
-		scBottomRight /= scBottomRight.w;
-		relTreeCoord = (scPixel.xy - scTopLeft.xy);
-		relTreeCoord.x /= (scBottomRight.x - scTopLeft.x);
-		relTreeCoord.y /= (scBottomRight.y - scTopLeft.y);
-		
-		float2 treePosRelTex = ((scTopLeft + (scBottomRight - scTopLeft) * TreeCenter) * float2(1, -1) + float2(1, 1)) / 2; // position of tree relative to the zoomed-in density texture
-		if (tex2D(textureSampler, treePosRelTex).r > seed3 % 83 / 83.0) {
-			if (relTreeCoord.x >= 0 && relTreeCoord.x <= 1 && relTreeCoord.y >=0 && relTreeCoord.y <= 1) {
-				int seed4 = seed3 % 1273 * 43 + 17;
-				relTreeCoord.x = (relTreeCoord.x + seed4 % TextureCount) / TextureCount;
-				// ddx is probably the amount the texture changes per pixel
-				float2 derivX = float2(1, 0) * (Max.x - Min.x); // this logic should still suffice even after we switch to 3d trees
-				float2 derivY = float2(0, 1) * (Max.y - Min.y);
-				float4 temp = tex2Dgrad(treeTextureSampler, relTreeCoord, derivX, derivY);
-				//float newa = (1 - temp.a) * output.Color.a + temp.a;
-				output.Color = temp * temp.a + output.Color * (1 - temp.a);
-				output.Color = temp * temp.a + output.Color * (1 - temp.a);
-			}
-		}
-	}
+	output.Color = tex2D(treeTextureSampler, input.TextureCoordinate);
 	return output;
 }
 
