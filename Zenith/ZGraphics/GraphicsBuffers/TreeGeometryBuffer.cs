@@ -99,6 +99,8 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                 effect.Parameters["View"].SetValue(basicEffect.View);
                 effect.Parameters["Projection"].SetValue(basicEffect.Projection);
                 effect.Parameters["TreeTexture"].SetValue(GlobalContent.Tree);
+                effect.Parameters["Texture"].SetValue(Game1.renderTargets[1]);
+                effect.Parameters["TreeVariance"].SetValue(new Vector2((float)0.5, (float)0.5));
 
                 graphicsDevice.Indices = buffer.indices;
                 graphicsDevice.SetVertexBuffer(buffer.vertices);

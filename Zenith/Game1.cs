@@ -29,6 +29,7 @@ namespace Zenith
             //graphics.IsFullScreen = true;
             //graphics.PreferredBackBufferWidth = 2560;
             //graphics.PreferredBackBufferHeight = 1440;
+            graphics.GraphicsProfile = GraphicsProfile.HiDef;
             Window.AllowUserResizing = true;
             Window.ClientSizeChanged += OnResize;
             graphics.ApplyChanges();
