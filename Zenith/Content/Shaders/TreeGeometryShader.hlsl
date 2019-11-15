@@ -50,6 +50,14 @@ struct PixelShaderOutput
 
 VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 {
+	float2 tile = floor(input.Position.xy * 256); // coordinate of tile from 0-REZ
+	// TODO: somehow integer overflow breaks this?
+	int seed1 = ((tile.x * 217 + tile.y) * 453) % 1024 * 711 + 319;
+	int seed2 = seed1 * 97 + 11;
+	int seed3 = seed2 % 742 * 97 + 11;
+	float2 randPos = float2(seed1 % 83 / 83.0 - 0.5, seed2 % 83 / 83.0 - 0.5) * TreeVariance; // random variation off of center
+	input.Position.xy += randPos / 256;
+	
 	VertexShaderOutput output;
 	float xAmount = (input.TextureCoordinate.x - 0.5);
 	float zAmount = (1 - input.TextureCoordinate.y);
@@ -72,6 +80,11 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 	float4 worldPosition = mul(input.Position, World);
 	float4 viewPosition = mul(worldPosition, View);
 	output.Position = mul(viewPosition, Projection);
+	float4 blah = tex2Dlod(textureSampler, float4(output.Position.xy, 2, 2));
+	if (blah.r < seed3 % 83 / 83.0) {
+		output.Position.x = -1;
+	}
+	
 	output.TextureCoordinate = input.TextureCoordinate;
 	return output;
 }
