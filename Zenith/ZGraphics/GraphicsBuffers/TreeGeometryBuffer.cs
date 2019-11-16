@@ -94,13 +94,44 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             }
             if (layer == 2)
             {
-                int size = 32;
+                // first grass
+                int size = 64;
                 var effect = GlobalContent.TreeGeometryShader;
                 effect.Parameters["View"].SetValue(basicEffect.View);
                 effect.Parameters["Projection"].SetValue(basicEffect.Projection);
-                effect.Parameters["TreeTexture"].SetValue(GlobalContent.Tree);
+                effect.Parameters["TreeTexture"].SetValue(GlobalContent.Grass);
                 effect.Parameters["Texture"].SetValue(Game1.renderTargets[1]);
                 effect.Parameters["TreeVariance"].SetValue(new Vector2((float)0.5, (float)0.5));
+                effect.Parameters["TreeSize"].SetValue(2f);
+                effect.Parameters["TreeCenter"].SetValue(new Vector2((float)0.5, (float)1));
+                effect.Parameters["Resolution"].SetValue(256f);
+                effect.Parameters["TextureCount"].SetValue(4);
+
+                graphicsDevice.Indices = buffer.indices;
+                graphicsDevice.SetVertexBuffer(buffer.vertices);
+                for (int i = 0; i < size * size; i++)
+                {
+                    int x = i % size;
+                    int y = i / size;
+                    if (x + 1 < minX * size || x > maxX * size || y + 1 < minY * size || y > maxY * size) continue;
+                    Matrix world = Matrix.CreateScale(1f / size) * Matrix.CreateTranslation((float)x / size, (float)y / size, 0) * basicEffect.World;
+                    effect.Parameters["World"].SetValue(world);
+                    effect.Parameters["Inverse"].SetValue(Matrix.Invert(world * basicEffect.View * basicEffect.Projection));
+                    foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+                    {
+                        pass.Apply();
+                        graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, buffer.indices.IndexCount / 3);
+                    }
+                }
+                // now trees
+                size = 32;
+                effect.Parameters["TreeTexture"].SetValue(GlobalContent.Tree);
+                effect.Parameters["Texture"].SetValue(Game1.renderTargets[0]);
+                effect.Parameters["TreeVariance"].SetValue(new Vector2((float)0.5, (float)0.5));
+                effect.Parameters["TreeSize"].SetValue(2f);
+                effect.Parameters["TreeCenter"].SetValue(new Vector2((float)0.5, (float)1));
+                effect.Parameters["Resolution"].SetValue(256f);
+                effect.Parameters["TextureCount"].SetValue(1);
 
                 graphicsDevice.Indices = buffer.indices;
                 graphicsDevice.SetVertexBuffer(buffer.vertices);

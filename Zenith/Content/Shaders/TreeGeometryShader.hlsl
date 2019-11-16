@@ -50,17 +50,20 @@ struct PixelShaderOutput
 
 VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 {
-	float2 tile = floor(input.Position.xy * 256); // coordinate of tile from 0-REZ
+	float2 tile = floor(input.Position.xy * Resolution); // coordinate of tile from 0-REZ
 	// TODO: somehow integer overflow breaks this?
 	int seed1 = ((tile.x * 217 + tile.y) * 453) % 1024 * 711 + 319;
 	int seed2 = seed1 * 97 + 11;
 	int seed3 = seed2 % 742 * 97 + 11;
+	int seed4 = seed3 % 1273 * 43 + 17;
 	float2 randPos = float2(seed1 % 83 / 83.0 - 0.5, seed2 % 83 / 83.0 - 0.5) * TreeVariance; // random variation off of center
-	input.Position.xy += randPos / 256;
+	input.Position.xy += randPos / Resolution;
+	float4 originProjected = mul(mul(mul(input.Position, World), View), Projection);
+	originProjected /= originProjected.w;
 	
 	VertexShaderOutput output;
-	float xAmount = (input.TextureCoordinate.x - 0.5);
-	float zAmount = (1 - input.TextureCoordinate.y);
+	float xAmount = (input.TextureCoordinate.x - TreeCenter.x);
+	float zAmount = (TreeCenter.y - input.TextureCoordinate.y);
 	float4 scCenter = mul(mul(mul(input.Position, World), View), Projection);
 	scCenter /= scCenter.w;
 	float3 scRight = scCenter.xyz + float3(0.1, 0, 0);
@@ -72,20 +75,22 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 	float3 unitRight = locRight.xyz - input.Position.xyz;
 	float3 unitUp = locUp.xyz - input.Position.xyz;
 	// normalize to the size of a tree
-	unitRight *= 1.0 / 256 / length(unitRight);
-	unitUp *= 1.0 / 256 / length(unitUp);
-	input.Position.xyz += xAmount * unitRight;
-	input.Position.xyz += zAmount * unitUp;
+	unitRight *= 1.0 / Resolution / length(unitRight);
+	unitUp *= 1.0 / Resolution / length(unitUp);
+	input.Position.xyz += xAmount * unitRight * TreeSize;
+	input.Position.xyz += zAmount * unitUp * TreeSize;
 	
 	float4 worldPosition = mul(input.Position, World);
 	float4 viewPosition = mul(worldPosition, View);
 	output.Position = mul(viewPosition, Projection);
-	float4 blah = tex2Dlod(textureSampler, float4(output.Position.xy, 2, 2));
-	if (blah.r < seed3 % 83 / 83.0) {
+	float2 texPos = (originProjected.xy * float2(1, -1) + float2(1, 1)) / 2;
+	float4 blah = tex2Dlod(textureSampler, float4(texPos, 2, 2));
+	if (blah.r <= seed3 % 83 / 83.0) {
 		output.Position.x = -1;
 	}
 	
 	output.TextureCoordinate = input.TextureCoordinate;
+	output.TextureCoordinate.x = (output.TextureCoordinate.x + seed4 % TextureCount) / TextureCount;
 	return output;
 }
 
