@@ -248,13 +248,19 @@ namespace Zenith.EditorGameComponents
             {
                 IGraphicsBuffer buffer = loadedMaps[sector];
                 if (buffer is ImageTileBuffer) continue;
+                SectorBounds b = new SectorBounds(bounds.minX * (1 << sector.Zoom) - sector.X, bounds.maxX * (1 << sector.Zoom) - sector.X, bounds.minY * (1 << sector.Zoom) - sector.Y, bounds.maxY * (1 << sector.Zoom) - sector.Y);
+                SectorBounds limitedB = new SectorBounds(Math.Max(0, Math.Min(1, b.minX)), Math.Max(0, Math.Min(1, b.maxX)), Math.Max(0, Math.Min(1, b.minY)), Math.Max(0, Math.Min(1, b.maxY)));
                 BasicEffect basicEffect = new BasicEffect(graphicsDevice);
                 camera.ApplyMatrices(basicEffect);
                 // going to make it easy and assume the shape is perfectly parallel (it's not)
-                Vector3 start = sector.ProjectToSphereCoordinates(new Vector2d(0, 0)).ToVector3();
-                Vector3 xAxis = sector.ProjectToSphereCoordinates(new Vector2d(1, 0)).ToVector3() - start;
-                Vector3 yAxis = sector.ProjectToSphereCoordinates(new Vector2d(0, 1)).ToVector3() - start;
-                Vector3 zAxis = start * (xAxis.Length() + yAxis.Length()) / start.Length() / 2; // make this roughly the same length
+                // the sector plane is constructed by flattening the visible portion of the sphere, basically
+                Vector3d v1 = sector.ProjectToSphereCoordinates(new Vector2d(limitedB.minX, limitedB.minY));
+                Vector3d v2 = sector.ProjectToSphereCoordinates(new Vector2d(limitedB.maxX, limitedB.minY));
+                Vector3d v3 = sector.ProjectToSphereCoordinates(new Vector2d(limitedB.minX, limitedB.maxY));
+                Vector3d xAxis = (v2 - v1) / (limitedB.maxX - limitedB.minX);
+                Vector3d yAxis = (v3 - v1) / (limitedB.maxY - limitedB.minY);
+                Vector3d start = v1 - xAxis * limitedB.minX - yAxis * limitedB.minY;
+                Vector3d zAxis = start * (xAxis.Length() + yAxis.Length()) / start.Length() / 2; // make this roughly the same length
                 // matrixes copied over
                 Matrixd world = Matrixd.CreateRotationZ(-camera.cameraRotX) * Matrixd.CreateRotationX(camera.cameraRotY); // eh.... think hard on this later
                 double distance = 9 * Math.Pow(0.5, camera.cameraZoom);
@@ -264,7 +270,7 @@ namespace Zenith.EditorGameComponents
                 basicEffect.World = (transformMatrix * world * view * projection).toMatrix(); // combine them all to allow for higher precision
                 basicEffect.View = Matrix.Identity;
                 basicEffect.Projection = Matrix.Identity;
-                buffer.Draw(graphicsDevice, basicEffect, bounds.minX * (1 << sector.Zoom) - sector.X, bounds.maxX * (1 << sector.Zoom) - sector.X, bounds.minY * (1 << sector.Zoom) - sector.Y, bounds.maxY * (1 << sector.Zoom) - sector.Y, camera.cameraZoom, layer) ;
+                buffer.Draw(graphicsDevice, basicEffect, b.minX, b.maxX, b.minY, b.maxY, camera.cameraZoom, layer);
             }
         }
 

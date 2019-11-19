@@ -77,6 +77,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
 
         public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, int layer)
         {
+            if (maxX - minX > 0.1 || maxY - minY > 0.1) return;
             if (layer == 0)
             {
                 beachBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
