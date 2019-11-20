@@ -68,8 +68,8 @@ namespace Zenith.ZGeom
                     vertices.Add(new VertexPositionTexture(new Vector3(topLeft, 0), new Vector2(1, 0)));
                     vertices.Add(new VertexPositionTexture(new Vector3(v2, RIDGE_HEIGHT), new Vector2(0.5f, 0))); // mid
                     vertices.Add(new VertexPositionTexture(new Vector3(topRight, 0), new Vector2(0, 0)));
-                    vertices.Add(new VertexPositionTexture(new Vector3(bottomLeft, RIDGE_HEIGHT), new Vector2(1, (float)texLength)));
-                    vertices.Add(new VertexPositionTexture(new Vector3(v1, RIDGE_HEIGHT), new Vector2(0.5f, (float)texLength)));
+                    vertices.Add(new VertexPositionTexture(new Vector3(bottomLeft, 0), new Vector2(1, (float)texLength)));
+                    vertices.Add(new VertexPositionTexture(new Vector3(v1, RIDGE_HEIGHT), new Vector2(0.5f, (float)texLength))); // mid
                     vertices.Add(new VertexPositionTexture(new Vector3(bottomRight, 0), new Vector2(0, (float)texLength)));
                     // TODO: why was flipping opposite that I expect correct?
                     // TODO: redo all of this in light of our new coordinate stuff
