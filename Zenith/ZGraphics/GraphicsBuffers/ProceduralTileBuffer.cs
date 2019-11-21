@@ -32,6 +32,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         VectorTileBuffer vectorTileBuffer;
         VectorTileBuffer vectorTileBufferUnused;
         TreeGeometryBuffer treeBuffer;
+        HouseBuffer houseBuffer;
 
         public ProceduralTileBuffer(ISector sector)
         {
@@ -121,6 +122,9 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             treeBuffer = new TreeGeometryBuffer(graphicsDevice, beachBuffer, lakesBuffer, roadsBuffer, roadsBufferFat, beachCoastBufferFat, lakesCoastBufferFat, sector);
             Console.WriteLine($"Trees generated for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
+            houseBuffer = new HouseBuffer(graphicsDevice, sector);
+            Console.WriteLine($"Houses generated for {sector} in {sw.Elapsed.TotalSeconds} s");
+            sw.Restart();
             // dereference
             beachVertices = null;
             lakeVertices = null;
@@ -138,6 +142,8 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             vectorTileBuffer = null;
             if (treeBuffer != null) treeBuffer.Dispose();
             treeBuffer = null;
+            if (houseBuffer != null) houseBuffer.Dispose();
+            houseBuffer = null;
         }
 
         public void InitDraw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom)
@@ -149,6 +155,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, int layer)
         {
             vectorTileBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, layer);
+            houseBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, layer);
             treeBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, layer);
         }
 

@@ -30,3 +30,9 @@ Texture coordinates (I think) are supposed to have 0,0 in the top left corner
 Preferred quad triangulation method:
 Topleft, topright, bottomright, topleft, bottomright, bottomleft
 The HLSL screen space is different from the monogame screenspace: topright is 1,1 and bottomleft is -1,-1
+
+Blender export options:
+.fbx, front is front, scale is 1 unit = 1 meter = 32 pixels for pixel art
+-only export mesh
+(-y) forward and z up (this isnt default? boo)
+-everything else default

@@ -15,6 +15,7 @@ namespace Zenith
         public static Effect InvertedMaskShader;
         public static Effect TreeShader;
         public static Effect TreeGeometryShader;
+        public static Model House;
         public static Model StartingShuttle;
         public static SpriteFont Arial;
         public static SpriteFont ArialBold;
@@ -36,6 +37,7 @@ namespace Zenith
             InvertedMaskShader = content.Load<Effect>("Shaders/InvertedMaskShader");
             TreeShader = content.Load<Effect>("Shaders/TreeShader");
             TreeGeometryShader = content.Load<Effect>("Shaders/TreeGeometryShader");
+            House = content.Load<Model>("Models/House");
             StartingShuttle = content.Load<Model>("Models/StartingShuttle");
             Arial = content.Load<SpriteFont>("Fonts/Arial");
             ArialBold = content.Load<SpriteFont>("Fonts/ArialBold");

@@ -102,6 +102,7 @@
     <Compile Include="MathHelpers\Rayd.cs" />
     <Compile Include="MathHelpers\RayHelper.cs" />
     <Compile Include="ZGraphics\GraphicsBuffers\GraphicsBuffer.cs" />
+    <Compile Include="ZGraphics\GraphicsBuffers\HouseBuffer.cs" />
     <Compile Include="ZGraphics\GraphicsBuffers\IGraphicsBuffer.cs" />
     <Compile Include="ZGraphics\GraphicsBuffers\ImageTileBuffer.cs" />
     <Compile Include="ZGraphics\GraphicsBuffers\ProceduralTileBuffer.cs" />
