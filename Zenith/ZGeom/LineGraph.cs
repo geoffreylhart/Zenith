@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Zenith.LibraryWrappers.OSM;
+using Zenith.MathHelpers;
 using Zenith.ZGraphics;
 using Zenith.ZMath;
 
@@ -175,6 +176,41 @@ namespace Zenith.ZGeom
                     }
                 }
             }
+        }
+
+        internal List<Matrix> ConstructHousePositions()
+        {
+            var matrices = new List<Matrix>();
+
+            double houseSpacing = 0.001;
+            double width = 0.0005;
+            foreach (var node in nodes)
+            {
+                foreach (var c in node.nextConnections)
+                {
+                    Vector2d v1 = node.pos;
+                    Vector2d v2 = c.pos;
+                    Vector2d w1 = node.GetW(c, width);
+                    Vector2d w2 = c.GetW(node, width);
+                    Vector2d topLeft = v2 - w2;
+                    Vector2d topRight = v2 + w2;
+                    Vector2d bottomLeft = v1 - w1;
+                    Vector2d bottomRight = v1 + w1;
+                    int i = matrices.Count;
+                    int houseCount = (int)((v2 - v1).Length() / houseSpacing);
+                    Matrix rotation = Matrix.CreateRotationZ((float)Math.Atan2(v2.Y - v1.Y, v2.X - v1.X) + Mathf.PI);
+                    Matrix rotation2 = Matrix.CreateRotationZ((float)Math.Atan2(v2.Y - v1.Y, v2.X - v1.X));
+                    for (int j = 0; j < houseCount; j++)
+                    {
+                        double t = (j + 0.5) / houseCount;
+                        var pos = new Vector3(v1 * (1 - t) + v2 * t, 0);
+                        var wt = new Vector3(w1 * (1 - t) + w2 * t, 0);
+                        matrices.Add(rotation * Matrix.CreateTranslation(pos + wt));
+                        matrices.Add(rotation2 * Matrix.CreateTranslation(pos - wt));
+                    }
+                }
+            }
+            return matrices;
         }
 
         internal LineGraph ReadFromStream(Stream stream)
