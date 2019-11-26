@@ -28,7 +28,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, int layer)
         {
             // TODO: we've temporarily flipped the normals on the model
-            if (maxX - minX > 0.1 || maxY - minY > 0.1) return;
+            if (maxX - minX > 0.3 || maxY - minY > 0.3) return;
             double radius = 6356000; // of earth, in meters
             double scale = 2 / Math.Sqrt(4 * Math.PI * radius * radius / ZCoords.GetSectorManager().GetTopmostOSMSectors().Count / (1 << (2 * ZCoords.GetSectorManager().GetHighestOSMZoom())));
             foreach (ModelMesh mesh in GlobalContent.House.Meshes)
