@@ -12,6 +12,7 @@ namespace Zenith
     {
         public static Effect BlurShader;
         public static Effect MaskShader;
+        public static Effect InstancingShader;
         public static Effect InvertedMaskShader;
         public static Effect TreeShader;
         public static Effect TreeGeometryShader;
@@ -34,6 +35,7 @@ namespace Zenith
         {
             BlurShader = content.Load<Effect>("Shaders/BlurShader");
             MaskShader = content.Load<Effect>("Shaders/MaskShader");
+            InstancingShader = content.Load<Effect>("Shaders/InstancingShader");
             InvertedMaskShader = content.Load<Effect>("Shaders/InvertedMaskShader");
             TreeShader = content.Load<Effect>("Shaders/TreeShader");
             TreeGeometryShader = content.Load<Effect>("Shaders/TreeGeometryShader");

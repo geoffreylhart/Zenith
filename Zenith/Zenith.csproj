@@ -165,6 +165,7 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Documentation\BlenderInfo.txt" />
     <Content Include="Icon.ico" />
   </ItemGroup>
   <ItemGroup>
