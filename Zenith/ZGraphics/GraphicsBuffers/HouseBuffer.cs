@@ -62,7 +62,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                     graphicsDevice.Indices = meshPart.IndexBuffer;
                     effect.CurrentTechnique.Passes[0].Apply();
                     graphicsDevice.SetVertexBuffers(bindings[i]);
-                    graphicsDevice.DrawInstancedPrimitives(PrimitiveType.TriangleList, 0, 0, meshPart.PrimitiveCount, matrices.Count);
+                    graphicsDevice.DrawInstancedPrimitives(PrimitiveType.TriangleList, meshPart.VertexOffset, meshPart.StartIndex, meshPart.PrimitiveCount, matrices.Count);
                     i++;
                 }
             }
