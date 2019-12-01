@@ -1,3 +1,4 @@
+float2 ScreenSize;
 float4x4 WVP;
 
 texture Texture;
@@ -12,24 +13,29 @@ sampler2D textureSampler = sampler_state {
 struct VertexShaderInput
 {
 	float4 Position : POSITION0;
+	float3 Normal : NORMAL0;
 	float2 TextureCoordinate : TEXCOORD0;
 };
  
 struct VertexShaderOutput
 {
 	float4 Position : POSITION0;
+	float3 Normal : NORMAL0;
 	float2 TextureCoordinate : TEXCOORD0;
 };
 
 struct PixelShaderOutput
 {
-	float4 Color : COLOR0;
+	float4 Position : COLOR0;
+	float3 Normal : COLOR1;
+	float4 Albedo : COLOR2;
 };
 
 VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 {
 	VertexShaderOutput output;
 	output.Position = mul(input.Position, WVP);
+	output.Normal = input.Normal;
 	output.TextureCoordinate = input.TextureCoordinate;
 	return output;
 }
@@ -37,7 +43,10 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 PixelShaderOutput PixelShaderFunction(VertexShaderOutput input)
 {
 	PixelShaderOutput output;
-	output.Color = tex2D(textureSampler, input.TextureCoordinate);
+	output.Position = input.Position;
+	output.Position.xy /= ScreenSize.xy;
+	output.Normal = normalize(input.Normal);
+	output.Albedo = tex2D(textureSampler, input.TextureCoordinate);
 	return output;
 }
 

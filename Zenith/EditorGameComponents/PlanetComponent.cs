@@ -90,7 +90,7 @@ namespace Zenith.EditorGameComponents
                 if (targets == Game1.G_BUFFER)
                 {
                     var basicEffect3 = GlobalContent.DeferredBasicShader;
-
+                    basicEffect3.Parameters["ScreenSize"].SetValue(new Vector2(GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height));
                     float distance = (float)(9 * Math.Pow(0.5, camera.cameraZoom)); // TODO: this is hacky
                     Matrix view = CameraMatrixManager.GetWorldRelativeView(distance);
                     basicEffect3.Parameters["WVP"].SetValue(camera.world * view * camera.projection);

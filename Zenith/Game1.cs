@@ -55,7 +55,10 @@ namespace Zenith
         {
             if (DEFERRED_RENDERING)
             {
-                G_BUFFER = new[] { new RenderTargetBinding(MakeDefaultRenderTarget()), new RenderTargetBinding(MakeDefaultRenderTarget()), new RenderTargetBinding(MakeDefaultRenderTarget()) };
+                var POSITION_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget());
+                var NORMAL_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget());
+                var ALBEDO_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget());
+                G_BUFFER = new[] { POSITION_BUFFER, NORMAL_BUFFER, ALBEDO_BUFFER };
             }
             RENDER_BUFFER = new[] { new RenderTargetBinding(MakeDefaultRenderTarget()) };
             TREE_DENSITY_BUFFER = new[] { new RenderTargetBinding(MakeDefaultRenderTarget()) };
