@@ -81,10 +81,20 @@ namespace Zenith.EditorGameComponents
             //spriteBatch.Draw(Game1.renderTargets[3], screenRect, screenRect, Color.White);
             //spriteBatch.End();
 
-            GraphicsDevice.SetRenderTarget(null);
-            spriteBatch.Begin();
-            spriteBatch.Draw(Game1.ALBEDO_BUFFER, screenRect, Color.White);
-            spriteBatch.End();
+            if (Game1.DEFERRED_RENDERING)
+            {
+                GraphicsDevice.SetRenderTarget(null);
+                spriteBatch.Begin();
+                spriteBatch.Draw((Texture2D)Game1.G_BUFFER[0].RenderTarget, screenRect, Color.White);
+                spriteBatch.End();
+            }
+            else
+            {
+                GraphicsDevice.SetRenderTarget(null);
+                spriteBatch.Begin();
+                spriteBatch.Draw((Texture2D)Game1.RENDER_BUFFER[0].RenderTarget, screenRect, Color.White);
+                spriteBatch.End();
+            }
             foreach (var component in components)
             {
                 component.Draw(GraphicsDevice);

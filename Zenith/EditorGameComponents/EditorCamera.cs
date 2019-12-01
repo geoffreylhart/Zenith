@@ -14,9 +14,9 @@ namespace Zenith.EditorGameComponents
         public double cameraRotX = 0; // longitude coordinate of our character
         public double cameraRotY = 0; // latitude coordinate of our character
         public double cameraZoom = 1; // no basis in reality (YET), positive means increased zoom, though
-        private Matrix world;
-        private Matrix view;
-        private Matrix projection;
+        public Matrix world;
+        public Matrix view;
+        public Matrix projection;
 
         public EditorCamera(Game game) : base(game)
         {

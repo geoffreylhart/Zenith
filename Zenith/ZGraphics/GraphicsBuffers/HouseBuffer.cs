@@ -46,9 +46,9 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         {
         }
 
-        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, RenderTarget2D target)
+        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, RenderTargetBinding[] targets)
         {
-            if (target == Game1.ALBEDO_BUFFER)
+            if (targets == Game1.RENDER_BUFFER)
             {
                 // TODO: we've temporarily flipped the normals on the model
                 var effect = GlobalContent.InstancingShader;

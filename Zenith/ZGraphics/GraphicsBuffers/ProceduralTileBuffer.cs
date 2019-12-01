@@ -153,11 +153,11 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             treeBuffer.InitDraw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom);
         }
 
-        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, RenderTarget2D target)
+        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, RenderTargetBinding[] targets)
         {
-            vectorTileBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, target);
-            houseBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, target);
-            treeBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, target);
+            vectorTileBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, targets);
+            houseBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, targets);
+            treeBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, targets);
         }
 
         public Texture2D GetImage(GraphicsDevice graphicsDevice)
@@ -169,7 +169,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             InitDraw(graphicsDevice, basicEffect, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0);
             RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 512 * 16, 512 * 16, true, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
             graphicsDevice.SetRenderTarget(newTarget);
-            foreach (var target in new[] { Game1.TREE_DENSITY_BUFFER, Game1.GRASS_DENSITY_BUFFER, Game1.ALBEDO_BUFFER })
+            foreach (var target in new[] { Game1.TREE_DENSITY_BUFFER, Game1.GRASS_DENSITY_BUFFER, Game1.RENDER_BUFFER })
             {
                 Draw(graphicsDevice, basicEffect, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0, target);
             }

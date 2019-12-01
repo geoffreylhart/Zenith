@@ -16,12 +16,11 @@ namespace Zenith
     {
         public DebugConsole debug;
         public GraphicsDeviceManager graphics;
-        public static RenderTarget2D ALBEDO_BUFFER;
-        public static RenderTarget2D POSITION_BUFFER;
-        public static RenderTarget2D NORMAL_BUFFER;
-        public static RenderTarget2D RENDER_BUFFER;
-        public static RenderTarget2D TREE_DENSITY_BUFFER;
-        public static RenderTarget2D GRASS_DENSITY_BUFFER;
+        public static bool DEFERRED_RENDERING = true;
+        public static RenderTargetBinding[] G_BUFFER;
+        public static RenderTargetBinding[] RENDER_BUFFER;
+        public static RenderTargetBinding[] TREE_DENSITY_BUFFER;
+        public static RenderTargetBinding[] GRASS_DENSITY_BUFFER;
         public static bool recording = false;
         public int recordFrame = 0;
         public static string RECORD_PATH = @"..\..\..\..\LocalCache\Recording";
@@ -54,22 +53,27 @@ namespace Zenith
 
         private void MakeRenderTargets()
         {
-            ALBEDO_BUFFER = MakeDefaultRenderTarget();
-            POSITION_BUFFER = MakeDefaultRenderTarget();
-            NORMAL_BUFFER = MakeDefaultRenderTarget();
-            RENDER_BUFFER = MakeDefaultRenderTarget();
-            TREE_DENSITY_BUFFER = MakeDefaultRenderTarget();
-            GRASS_DENSITY_BUFFER = MakeDefaultRenderTarget();
+            if (DEFERRED_RENDERING)
+            {
+                G_BUFFER = new[] { new RenderTargetBinding(MakeDefaultRenderTarget()), new RenderTargetBinding(MakeDefaultRenderTarget()), new RenderTargetBinding(MakeDefaultRenderTarget()) };
+            }
+            RENDER_BUFFER = new[] { new RenderTargetBinding(MakeDefaultRenderTarget()) };
+            TREE_DENSITY_BUFFER = new[] { new RenderTargetBinding(MakeDefaultRenderTarget()) };
+            GRASS_DENSITY_BUFFER = new[] { new RenderTargetBinding(MakeDefaultRenderTarget()) };
         }
 
         private void OnResize(object sender, EventArgs e)
         {
-            ALBEDO_BUFFER.Dispose();
-            POSITION_BUFFER.Dispose();
-            NORMAL_BUFFER.Dispose();
-            RENDER_BUFFER.Dispose();
-            TREE_DENSITY_BUFFER.Dispose();
-            GRASS_DENSITY_BUFFER.Dispose();
+            foreach (var targets in new[] { G_BUFFER, RENDER_BUFFER, TREE_DENSITY_BUFFER, GRASS_DENSITY_BUFFER })
+            {
+                if (targets != null)
+                {
+                    foreach (var target in targets)
+                    {
+                        if (target.RenderTarget != null) target.RenderTarget.Dispose();
+                    }
+                }
+            }
             MakeRenderTargets();
         }
 
@@ -123,7 +127,7 @@ namespace Zenith
             base.Draw(gameTime);
             if (recording)
             {
-                OSMSectorLoader.SuperSave(ALBEDO_BUFFER, Path.Combine(RECORD_PATH, $"frame{recordFrame}.png"));
+                OSMSectorLoader.SuperSave((Texture2D)RENDER_BUFFER[0].RenderTarget, Path.Combine(RECORD_PATH, $"frame{recordFrame}.png"));
                 recordFrame++;
             }
         }

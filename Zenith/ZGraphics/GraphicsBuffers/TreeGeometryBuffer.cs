@@ -75,10 +75,10 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         {
         }
 
-        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, RenderTarget2D target)
+        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, RenderTargetBinding[] targets)
         {
             if (maxX - minX > 0.1 || maxY - minY > 0.1) return;
-            if (target == Game1.TREE_DENSITY_BUFFER)
+            if (targets == Game1.TREE_DENSITY_BUFFER)
             {
                 beachBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
                 lakesBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
@@ -87,13 +87,13 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                 roadsBufferFat.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, GlobalContent.RoadTreeDensity, new Vector3(0, 0, 0));
                 roadsBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
             }
-            if (target == Game1.GRASS_DENSITY_BUFFER)
+            if (targets == Game1.GRASS_DENSITY_BUFFER)
             {
                 beachBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
                 lakesBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
                 roadsBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
             }
-            if (target == Game1.ALBEDO_BUFFER)
+            if (targets == Game1.RENDER_BUFFER)
             {
                 // first grass
                 int size = 64;
@@ -101,7 +101,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                 effect.Parameters["View"].SetValue(basicEffect.View);
                 effect.Parameters["Projection"].SetValue(basicEffect.Projection);
                 effect.Parameters["TreeTexture"].SetValue(GlobalContent.Grass);
-                effect.Parameters["Texture"].SetValue(Game1.GRASS_DENSITY_BUFFER);
+                effect.Parameters["Texture"].SetValue(Game1.GRASS_DENSITY_BUFFER[0].RenderTarget);
                 effect.Parameters["TreeVariance"].SetValue(new Vector2((float)0.5, (float)0.5));
                 effect.Parameters["TreeSize"].SetValue(2f);
                 effect.Parameters["TreeCenter"].SetValue(new Vector2((float)0.5, (float)1));
@@ -127,7 +127,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                 // now trees
                 size = 32;
                 effect.Parameters["TreeTexture"].SetValue(GlobalContent.Tree);
-                effect.Parameters["Texture"].SetValue(Game1.TREE_DENSITY_BUFFER);
+                effect.Parameters["Texture"].SetValue(Game1.TREE_DENSITY_BUFFER[0].RenderTarget);
                 effect.Parameters["TreeVariance"].SetValue(new Vector2((float)0.5, (float)0.5));
                 effect.Parameters["TreeSize"].SetValue(2f);
                 effect.Parameters["TreeCenter"].SetValue(new Vector2((float)0.5, (float)1));
