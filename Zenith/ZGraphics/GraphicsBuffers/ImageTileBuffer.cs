@@ -45,7 +45,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         {
         }
 
-        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, int layer)
+        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, RenderTarget2D target)
         {
             basicEffect = (BasicEffect)basicEffect.Clone();
             basicEffect.TextureEnabled = true;

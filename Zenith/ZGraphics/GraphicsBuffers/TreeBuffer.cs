@@ -71,9 +71,9 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         {
         }
 
-        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, int layer)
+        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, RenderTarget2D target)
         {
-            if (layer == 0)
+            if (target == Game1.TREE_DENSITY_BUFFER)
             {
                 beachBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
                 lakesBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
@@ -82,20 +82,20 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                 roadsBufferFat.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, GlobalContent.RoadTreeDensity, new Vector3(0, 0, 0));
                 roadsBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
             }
-            if (layer == 1)
+            if (target == Game1.GRASS_DENSITY_BUFFER)
             {
                 beachBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
                 lakesBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
                 roadsBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
             }
-            if (layer == 2)
+            if (target == Game1.ALBEDO_BUFFER)
             {
                 var effect = GlobalContent.TreeShader;
                 effect.Parameters["World"].SetValue(basicEffect.World);
                 effect.Parameters["View"].SetValue(basicEffect.View);
                 effect.Parameters["Projection"].SetValue(basicEffect.Projection);
                 effect.Parameters["Inverse"].SetValue(Matrix.Invert(basicEffect.World * basicEffect.View * basicEffect.Projection));
-                effect.Parameters["Texture"].SetValue(Game1.renderTargets[1]);
+                effect.Parameters["Texture"].SetValue(Game1.GRASS_DENSITY_BUFFER);
                 effect.Parameters["TreeTexture"].SetValue(GlobalContent.Grass);
                 effect.Parameters["TextureCount"].SetValue(4);
                 effect.Parameters["TextureOffsets"].SetValue(textureOffsets);
@@ -113,7 +113,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                     pass.Apply();
                     graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, buffer.indices.IndexCount / 3);
                 }
-                effect.Parameters["Texture"].SetValue(Game1.renderTargets[0]);
+                effect.Parameters["Texture"].SetValue(Game1.TREE_DENSITY_BUFFER);
                 effect.Parameters["TreeTexture"].SetValue(GlobalContent.Tree);
                 effect.Parameters["TextureCount"].SetValue(1);
                 effect.Parameters["Resolution"].SetValue(REZ * 4f);

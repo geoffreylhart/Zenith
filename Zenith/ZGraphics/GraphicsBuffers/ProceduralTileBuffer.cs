@@ -153,11 +153,11 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             treeBuffer.InitDraw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom);
         }
 
-        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, int layer)
+        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, RenderTarget2D target)
         {
-            vectorTileBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, layer);
-            houseBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, layer);
-            treeBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, layer);
+            vectorTileBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, target);
+            houseBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, target);
+            treeBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, target);
         }
 
         public Texture2D GetImage(GraphicsDevice graphicsDevice)
@@ -169,9 +169,9 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             InitDraw(graphicsDevice, basicEffect, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0);
             RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 512 * 16, 512 * 16, true, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
             graphicsDevice.SetRenderTarget(newTarget);
-            for (int i = 0; i < Game1.RENDER_TARGET_COUNT; i++)
+            foreach (var target in new[] { Game1.TREE_DENSITY_BUFFER, Game1.GRASS_DENSITY_BUFFER, Game1.ALBEDO_BUFFER })
             {
-                Draw(graphicsDevice, basicEffect, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0, i);
+                Draw(graphicsDevice, basicEffect, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0, target);
             }
             return DownScale(graphicsDevice, newTarget, 512);
         }

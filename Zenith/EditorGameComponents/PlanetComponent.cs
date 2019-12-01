@@ -59,10 +59,10 @@ namespace Zenith.EditorGameComponents
             {
                 DrawFlat(GraphicsDevice, allBounds[rootSector], rootSector);
             }
-            for (int i = 0; i < Game1.RENDER_TARGET_COUNT; i++)
+            foreach (var target in new[] { Game1.TREE_DENSITY_BUFFER, Game1.GRASS_DENSITY_BUFFER, Game1.ALBEDO_BUFFER })
             {
-                GraphicsDevice.SetRenderTarget(Game1.renderTargets[i]);
-                if (i == 2)
+                GraphicsDevice.SetRenderTarget(target);
+                if (target == Game1.ALBEDO_BUFFER)
                 {
                     var basicEffect3 = this.GetDefaultEffect();
 
@@ -89,7 +89,7 @@ namespace Zenith.EditorGameComponents
                 }
                 foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
                 {
-                    Draw3D(GraphicsDevice, allBounds[rootSector], rootSector, i);
+                    Draw3D(GraphicsDevice, allBounds[rootSector], rootSector, target);
                 }
             }
             GraphicsDevice.SetRenderTarget(null);
@@ -232,11 +232,11 @@ namespace Zenith.EditorGameComponents
                 if (!(buffer is ImageTileBuffer)) continue;
                 BasicEffect basicEffect = new BasicEffect(graphicsDevice);
                 basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)(bounds.minX * (1 << sector.Zoom) - sector.X), (float)(bounds.maxX * (1 << sector.Zoom) - sector.X), (float)(bounds.maxY * (1 << sector.Zoom) - sector.Y), (float)(bounds.minY * (1 << sector.Zoom) - sector.Y), -1, 0.01f); // TODO: why negative?
-                buffer.Draw(graphicsDevice, basicEffect, bounds.minX * (1 << sector.Zoom) - sector.X, bounds.maxX * (1 << sector.Zoom) - sector.X, bounds.minY * (1 << sector.Zoom) - sector.Y, bounds.maxY * (1 << sector.Zoom) - sector.Y, camera.cameraZoom, 0);
+                buffer.Draw(graphicsDevice, basicEffect, bounds.minX * (1 << sector.Zoom) - sector.X, bounds.maxX * (1 << sector.Zoom) - sector.X, bounds.minY * (1 << sector.Zoom) - sector.Y, bounds.maxY * (1 << sector.Zoom) - sector.Y, camera.cameraZoom, renderTarget);
             }
         }
 
-        private void Draw3D(GraphicsDevice graphicsDevice, SectorBounds bounds, ISector rootSector, int layer)
+        private void Draw3D(GraphicsDevice graphicsDevice, SectorBounds bounds, ISector rootSector, RenderTarget2D target)
         {
 
             double relativeCameraZoom = camera.cameraZoom - Math.Log(ZCoords.GetSectorManager().GetTopmostOSMSectors().Count, 4) + (Game1.recording ? 1 : 0);
@@ -270,7 +270,7 @@ namespace Zenith.EditorGameComponents
                 basicEffect.World = (transformMatrix * world * view * projection).toMatrix(); // combine them all to allow for higher precision
                 basicEffect.View = Matrix.Identity;
                 basicEffect.Projection = Matrix.Identity;
-                buffer.Draw(graphicsDevice, basicEffect, b.minX, b.maxX, b.minY, b.maxY, camera.cameraZoom, layer);
+                buffer.Draw(graphicsDevice, basicEffect, b.minX, b.maxX, b.minY, b.maxY, camera.cameraZoom, target);
             }
         }
 

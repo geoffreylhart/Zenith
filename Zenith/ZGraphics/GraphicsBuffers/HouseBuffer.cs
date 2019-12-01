@@ -46,24 +46,27 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         {
         }
 
-        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, int layer)
+        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, RenderTarget2D target)
         {
-            // TODO: we've temporarily flipped the normals on the model
-            var effect = GlobalContent.InstancingShader;
-            effect.Parameters["World"].SetValue(basicEffect.World);
-            effect.Parameters["View"].SetValue(basicEffect.View);
-            effect.Parameters["Projection"].SetValue(basicEffect.Projection);
-            int i = 0;
-            foreach (ModelMesh mesh in GlobalContent.House.Meshes)
+            if (target == Game1.ALBEDO_BUFFER)
             {
-                foreach (var meshPart in mesh.MeshParts)
+                // TODO: we've temporarily flipped the normals on the model
+                var effect = GlobalContent.InstancingShader;
+                effect.Parameters["World"].SetValue(basicEffect.World);
+                effect.Parameters["View"].SetValue(basicEffect.View);
+                effect.Parameters["Projection"].SetValue(basicEffect.Projection);
+                int i = 0;
+                foreach (ModelMesh mesh in GlobalContent.House.Meshes)
                 {
-                    effect.Parameters["Texture"].SetValue(((BasicEffect)meshPart.Effect).Texture);
-                    graphicsDevice.Indices = meshPart.IndexBuffer;
-                    effect.CurrentTechnique.Passes[0].Apply();
-                    graphicsDevice.SetVertexBuffers(bindings[i]);
-                    graphicsDevice.DrawInstancedPrimitives(PrimitiveType.TriangleList, meshPart.VertexOffset, meshPart.StartIndex, meshPart.PrimitiveCount, matrices.Count);
-                    i++;
+                    foreach (var meshPart in mesh.MeshParts)
+                    {
+                        effect.Parameters["Texture"].SetValue(((BasicEffect)meshPart.Effect).Texture);
+                        graphicsDevice.Indices = meshPart.IndexBuffer;
+                        effect.CurrentTechnique.Passes[0].Apply();
+                        graphicsDevice.SetVertexBuffers(bindings[i]);
+                        graphicsDevice.DrawInstancedPrimitives(PrimitiveType.TriangleList, meshPart.VertexOffset, meshPart.StartIndex, meshPart.PrimitiveCount, matrices.Count);
+                        i++;
+                    }
                 }
             }
         }

@@ -12,7 +12,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         // don't actually draw anything to the caller, just initialize your own internal texture draws (only call this once per frame)
         void InitDraw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom);
         // draw to the caller
-        void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, int layer);
+        void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, RenderTarget2D target);
         Texture2D GetImage(GraphicsDevice graphicsDevice);
     }
 }

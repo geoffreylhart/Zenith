@@ -61,9 +61,29 @@ namespace Zenith.EditorGameComponents
 
         public override void Draw(GameTime gameTime)
         {
+            Rectangle screenRect = new Rectangle(0, 0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
+
             SpriteBatch spriteBatch = new SpriteBatch(GraphicsDevice);
+
+            // TODO: how come we have to use position in our shader and can't user the texture coordinate anymore??
+            GlobalContent.SSAOShader.Parameters["ScreenSize"].SetValue(new Vector2(GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height));
+            GlobalContent.FXAAShader.Parameters["ScreenSize"].SetValue(new Vector2(GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height));
+
+            //GraphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
+            //GraphicsDevice.SetRenderTarget(Game1.renderTargets[3]);
+            //spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.LinearClamp, DepthStencilState.Default, RasterizerState.CullNone, GlobalContent.SSAOShader);
+            //spriteBatch.Draw(Game1.renderTargets[2], screenRect, screenRect, Color.White);
+            //spriteBatch.End();
+
+            //GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+            //GraphicsDevice.SetRenderTarget(Game1.renderTargets[4]);
+            //spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.LinearClamp, DepthStencilState.Default, RasterizerState.CullNone, GlobalContent.FXAAShader);
+            //spriteBatch.Draw(Game1.renderTargets[3], screenRect, screenRect, Color.White);
+            //spriteBatch.End();
+
+            GraphicsDevice.SetRenderTarget(null);
             spriteBatch.Begin();
-            spriteBatch.Draw(Game1.renderTargets[2], new Rectangle(0, 0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height), Color.White);
+            spriteBatch.Draw(Game1.ALBEDO_BUFFER, screenRect, Color.White);
             spriteBatch.End();
             foreach (var component in components)
             {
