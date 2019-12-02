@@ -69,6 +69,25 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                     }
                 }
             }
+            if (targets == Game1.G_BUFFER)
+            {
+                // TODO: we've temporarily flipped the normals on the model
+                var effect = GlobalContent.DeferredInstancingShader;
+                effect.Parameters["WVP"].SetValue(basicEffect.World * basicEffect.View * basicEffect.Projection);
+                int i = 0;
+                foreach (ModelMesh mesh in GlobalContent.House.Meshes)
+                {
+                    foreach (var meshPart in mesh.MeshParts)
+                    {
+                        effect.Parameters["Texture"].SetValue(((BasicEffect)meshPart.Effect).Texture);
+                        graphicsDevice.Indices = meshPart.IndexBuffer;
+                        effect.CurrentTechnique.Passes[0].Apply();
+                        graphicsDevice.SetVertexBuffers(bindings[i]);
+                        graphicsDevice.DrawInstancedPrimitives(PrimitiveType.TriangleList, meshPart.VertexOffset, meshPart.StartIndex, meshPart.PrimitiveCount, matrices.Count);
+                        i++;
+                    }
+                }
+            }
         }
 
         public Texture2D GetImage(GraphicsDevice graphicsDevice)

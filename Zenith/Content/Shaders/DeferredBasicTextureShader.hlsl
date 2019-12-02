@@ -24,8 +24,8 @@ struct VertexShaderOutput
 
 struct PixelShaderOutput
 {
-	float3 Position : COLOR0;
-	float3 Normal : COLOR1;
+	float4 Position : COLOR0;
+	float4 Normal : COLOR1;
 	float4 Albedo : COLOR2;
 };
 
@@ -44,9 +44,8 @@ PixelShaderOutput PixelShaderFunction(VertexShaderOutput input)
 {
 	PixelShaderOutput output;
 	float depth = input.Position.z / input.Position.w;
-	output.Position.r = depth * 256 % 1;
-	output.Position.g = depth - (depth * 256 % 1) / 256;
-	output.Normal = normalize(input.Normal);
+	output.Position = float4(depth * 256 * 256 % 1, depth * 256 % 1  - depth % 0.00390625, depth - depth % 0.0000152587890625, 1);
+	output.Normal = float4(normalize(input.Normal), 1);
 	output.Albedo = tex2D(textureSampler, input.TextureCoordinate);
 	return output;
 }

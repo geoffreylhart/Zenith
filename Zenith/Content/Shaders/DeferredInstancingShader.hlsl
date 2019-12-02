@@ -3,10 +3,10 @@ float4x4 WVP;
 texture Texture;
 sampler2D textureSampler = sampler_state {
 	Texture = (Texture);
-	MinFilter = Linear;
-	MagFilter = Linear;
-	AddressU = Clamp;
-	AddressV = Clamp;
+	MinFilter = Point;
+	MagFilter = Point;
+	AddressU = Wrap;
+	AddressV = Wrap;
 };
 
 struct VertexShaderInput
@@ -30,11 +30,11 @@ struct PixelShaderOutput
 	float4 Albedo : COLOR2;
 };
 
-VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
+VertexShaderOutput VertexShaderFunction(VertexShaderInput input, float4x4 instanceTransform : TEXCOORD1)
 {
 	VertexShaderOutput output;
-	output.Position = mul(input.Position, WVP);
-	float4 normal = mul(input.Position + float4(input.Normal, 0), WVP) - mul(input.Position, WVP);
+	output.Position = mul(mul(input.Position, transpose(instanceTransform)), WVP);
+	float4 normal = mul(mul(input.Position + float4(input.Normal, 0), transpose(instanceTransform)), WVP) - output.Position;
 	output.Normal = normal.xyz / normal.w;
 	output.TextureCoordinate = input.TextureCoordinate;
 	return output;
