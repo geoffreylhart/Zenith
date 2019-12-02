@@ -85,7 +85,7 @@ namespace Zenith.EditorGameComponents
             {
                 GraphicsDevice.SetRenderTarget(null);
                 spriteBatch.Begin();
-                spriteBatch.Draw((Texture2D)Game1.G_BUFFER[0].RenderTarget, screenRect, Color.White);
+                spriteBatch.Draw((Texture2D)Game1.G_BUFFER[2].RenderTarget, screenRect, Color.White);
                 spriteBatch.End();
             }
             else

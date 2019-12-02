@@ -32,11 +32,11 @@ namespace Zenith.ZGraphics.GraphicsBuffers
 
         public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, RenderTargetBinding[] targets)
         {
-            if (targets == Game1.RENDER_BUFFER)
+            if (targets == Game1.RENDER_BUFFER || targets == Game1.G_BUFFER)
             {
                 foreach (var buffer in buffers)
                 {
-                    buffer.Draw(graphicsDevice, basicEffect);
+                    buffer.Draw(graphicsDevice, basicEffect, targets);
                     graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, graphicsDevice.Viewport.MaxDepth, 0);
                 }
             }

@@ -28,18 +28,6 @@ namespace Zenith.ZGraphics
             }
         }
 
-        public BasicVertexBuffer(GraphicsDevice graphicsDevice, List<VertexPositionTexture> vertices, Texture2D texture, bool textureWrap, PrimitiveType primitiveType)
-        {
-            if (vertices.Count > 0)
-            {
-                this.vertices = new VertexBuffer(graphicsDevice, VertexPositionTexture.VertexDeclaration, vertices.Count, BufferUsage.WriteOnly);
-                this.vertices.SetData(vertices.ToArray());
-                this.texture = texture;
-                this.textureWrap = textureWrap;
-                this.primitiveType = primitiveType;
-            }
-        }
-
         public BasicVertexBuffer(GraphicsDevice graphicsDevice, List<int> indices, List<VertexPositionColor> vertices, PrimitiveType primitiveType)
         {
             if (vertices.Count > 0)
@@ -71,43 +59,81 @@ namespace Zenith.ZGraphics
             if (vertices != null) vertices.Dispose();
             if (indices != null) indices.Dispose();
         }
-        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect)
+        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, RenderTargetBinding[] targets)
         {
-            Draw(graphicsDevice, basicEffect, primitiveType, texture, null);
+            Draw(graphicsDevice, basicEffect, targets, primitiveType, texture, null);
         }
 
-        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, PrimitiveType drawType, Texture2D drawTexture, Vector3? color)
+        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, RenderTargetBinding[] targets, PrimitiveType drawType, Texture2D drawTexture, Vector3? color)
         {
-            basicEffect = (BasicEffect)basicEffect.Clone();
-            if (drawTexture == null)
+            Effect effect;
+            if (targets == Game1.RENDER_BUFFER || targets == Game1.TREE_DENSITY_BUFFER || targets == Game1.GRASS_DENSITY_BUFFER)
             {
-                if (color == null)
+                BasicEffect clone = (BasicEffect)basicEffect.Clone();
+                if (drawTexture == null)
                 {
-                    basicEffect.VertexColorEnabled = true;
+                    if (color == null)
+                    {
+                        clone.VertexColorEnabled = true;
+                    }
+                    else
+                    {
+                        clone.VertexColorEnabled = false;
+                        clone.DiffuseColor = color.Value;
+                    }
                 }
                 else
                 {
-                    basicEffect.VertexColorEnabled = false;
-                    basicEffect.DiffuseColor = color.Value;
+                    if (textureWrap)
+                    {
+                        graphicsDevice.SamplerStates[0] = SamplerState.PointWrap;
+                    }
+                    else
+                    {
+                        graphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
+                    }
+                    clone.Texture = drawTexture;
+                    clone.TextureEnabled = true;
                 }
+                effect = clone;
+            }
+            else if (targets == Game1.G_BUFFER)
+            {
+                if (drawTexture == null)
+                {
+                    if (color == null)
+                    {
+                        effect = GlobalContent.DeferredBasicColorShader;
+                    }
+                    else
+                    {
+                        effect = GlobalContent.DeferredBasicDiffuseShader;
+                        effect.Parameters["DiffuseColor"].SetValue(new Vector4(color.Value, 1));
+                    }
+                }
+                else
+                {
+                    effect = GlobalContent.DeferredBasicTextureShader;
+                    if (textureWrap)
+                    {
+                        graphicsDevice.SamplerStates[0] = SamplerState.PointWrap;
+                    }
+                    else
+                    {
+                        graphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
+                    }
+                    effect.Parameters["Texture"].SetValue(drawTexture);
+                }
+                effect.Parameters["WVP"].SetValue(basicEffect.World * basicEffect.View * basicEffect.Projection);
             }
             else
             {
-                if (textureWrap)
-                {
-                    graphicsDevice.SamplerStates[0] = SamplerState.PointWrap;
-                }
-                else
-                {
-                    graphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
-                }
-                basicEffect.Texture = drawTexture;
-                basicEffect.TextureEnabled = true;
+                throw new NotImplementedException();
             }
             if (vertices == null) return;
             if (indices != null) graphicsDevice.Indices = indices;
             graphicsDevice.SetVertexBuffer(vertices);
-            foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
+            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
             {
                 pass.Apply();
                 if (indices != null)

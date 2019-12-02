@@ -75,18 +75,18 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         {
             if (targets == Game1.TREE_DENSITY_BUFFER)
             {
-                beachBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
-                lakesBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
-                beachCoastBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, GlobalContent.BeachFlippedTreeDensity, new Vector3(1, 1, 1));
-                lakesCoastBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, GlobalContent.BeachTreeDensity, new Vector3(0, 0, 0));
-                roadsBufferFat.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, GlobalContent.RoadTreeDensity, new Vector3(0, 0, 0));
-                roadsBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
+                beachBuffer.Draw(graphicsDevice, basicEffect, targets, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
+                lakesBuffer.Draw(graphicsDevice, basicEffect, targets, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
+                beachCoastBuffer.Draw(graphicsDevice, basicEffect, targets, PrimitiveType.TriangleList, GlobalContent.BeachFlippedTreeDensity, new Vector3(1, 1, 1));
+                lakesCoastBuffer.Draw(graphicsDevice, basicEffect, targets, PrimitiveType.TriangleList, GlobalContent.BeachTreeDensity, new Vector3(0, 0, 0));
+                roadsBufferFat.Draw(graphicsDevice, basicEffect, targets, PrimitiveType.TriangleList, GlobalContent.RoadTreeDensity, new Vector3(0, 0, 0));
+                roadsBuffer.Draw(graphicsDevice, basicEffect, targets, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
             }
             if (targets == Game1.GRASS_DENSITY_BUFFER)
             {
-                beachBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
-                lakesBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
-                roadsBuffer.Draw(graphicsDevice, basicEffect, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
+                beachBuffer.Draw(graphicsDevice, basicEffect, targets, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
+                lakesBuffer.Draw(graphicsDevice, basicEffect, targets, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
+                roadsBuffer.Draw(graphicsDevice, basicEffect, targets, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
             }
             if (targets == Game1.RENDER_BUFFER)
             {

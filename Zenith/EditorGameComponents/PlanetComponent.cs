@@ -64,19 +64,19 @@ namespace Zenith.EditorGameComponents
                 GraphicsDevice.SetRenderTargets(targets);
                 if (targets == Game1.RENDER_BUFFER)
                 {
-                    var basicEffect3 = this.GetDefaultEffect();
+                    var effect = this.GetDefaultEffect();
 
-                    camera.ApplyMatrices(basicEffect3);
+                    camera.ApplyMatrices(effect);
                     float distance = (float)(9 * Math.Pow(0.5, camera.cameraZoom)); // TODO: this is hacky
-                    basicEffect3.View = CameraMatrixManager.GetWorldRelativeView(distance);
+                    effect.View = CameraMatrixManager.GetWorldRelativeView(distance);
 
-                    basicEffect3.TextureEnabled = true;
+                    effect.TextureEnabled = true;
                     foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
                     {
                         SectorBounds bounds = GetSectorBounds(rootSector);
                         VertexIndiceBuffer sphere = SphereBuilder.MakeSphereSegExplicit(GraphicsDevice, rootSector, 2, bounds.minX, bounds.minY, bounds.maxX, bounds.maxY, camera);
-                        basicEffect3.Texture = renderTargets[rootSector];
-                        foreach (EffectPass pass in basicEffect3.CurrentTechnique.Passes)
+                        effect.Texture = renderTargets[rootSector];
+                        foreach (EffectPass pass in effect.CurrentTechnique.Passes)
                         {
                             pass.Apply();
                             GraphicsDevice.Indices = sphere.indices;
@@ -89,18 +89,16 @@ namespace Zenith.EditorGameComponents
                 }
                 if (targets == Game1.G_BUFFER)
                 {
-                    var basicEffect3 = GlobalContent.DeferredBasicShader;
-                    basicEffect3.Parameters["ScreenSize"].SetValue(new Vector2(GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height));
+                    var effect = GlobalContent.DeferredBasicNormalTextureShader;
                     float distance = (float)(9 * Math.Pow(0.5, camera.cameraZoom)); // TODO: this is hacky
                     Matrix view = CameraMatrixManager.GetWorldRelativeView(distance);
-                    basicEffect3.Parameters["WVP"].SetValue(camera.world * view * camera.projection);
-
+                    effect.Parameters["WVP"].SetValue(camera.world * view * camera.projection);
                     foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
                     {
                         SectorBounds bounds = GetSectorBounds(rootSector);
                         VertexIndiceBuffer sphere = SphereBuilder.MakeSphereSegExplicit(GraphicsDevice, rootSector, 2, bounds.minX, bounds.minY, bounds.maxX, bounds.maxY, camera);
-                        basicEffect3.Parameters["Texture"].SetValue(renderTargets[rootSector]);
-                        foreach (EffectPass pass in basicEffect3.CurrentTechnique.Passes)
+                        effect.Parameters["Texture"].SetValue(renderTargets[rootSector]);
+                        foreach (EffectPass pass in effect.CurrentTechnique.Passes)
                         {
                             pass.Apply();
                             GraphicsDevice.Indices = sphere.indices;

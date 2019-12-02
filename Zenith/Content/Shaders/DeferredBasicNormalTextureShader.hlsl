@@ -1,4 +1,3 @@
-float2 ScreenSize;
 float4x4 WVP;
 
 texture Texture;
@@ -26,7 +25,7 @@ struct VertexShaderOutput
 
 struct PixelShaderOutput
 {
-	float4 Position : COLOR0;
+	float3 Position : COLOR0;
 	float3 Normal : COLOR1;
 	float4 Albedo : COLOR2;
 };
@@ -35,7 +34,8 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 {
 	VertexShaderOutput output;
 	output.Position = mul(input.Position, WVP);
-	output.Normal = input.Normal;
+	float4 normal = mul(input.Position + float4(input.Normal, 0), WVP) - mul(input.Position, WVP);
+	output.Normal = normal.xyz / normal.w;
 	output.TextureCoordinate = input.TextureCoordinate;
 	return output;
 }
@@ -43,8 +43,9 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 PixelShaderOutput PixelShaderFunction(VertexShaderOutput input)
 {
 	PixelShaderOutput output;
-	output.Position = input.Position;
-	output.Position.xy /= ScreenSize.xy;
+	float depth = input.Position.z / input.Position.w;
+	output.Position.r = depth * 256 % 1;
+	output.Position.g = depth - (depth * 256 % 1) / 256;
 	output.Normal = normalize(input.Normal);
 	output.Albedo = tex2D(textureSampler, input.TextureCoordinate);
 	return output;

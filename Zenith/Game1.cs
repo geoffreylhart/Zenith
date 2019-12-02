@@ -55,9 +55,9 @@ namespace Zenith
         {
             if (DEFERRED_RENDERING)
             {
-                var POSITION_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget());
-                var NORMAL_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget());
-                var ALBEDO_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget());
+                var POSITION_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget()); // for now, holds the depth
+                var NORMAL_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget()); // for now, holds the normal relative to the camera (after perspective is applid)
+                var ALBEDO_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget()); // holds the color
                 G_BUFFER = new[] { POSITION_BUFFER, NORMAL_BUFFER, ALBEDO_BUFFER };
             }
             RENDER_BUFFER = new[] { new RenderTargetBinding(MakeDefaultRenderTarget()) };
