@@ -33,7 +33,8 @@ PixelShaderOutput PixelShaderFunction(VertexShaderOutput input)
 {
 	PixelShaderOutput output;
 	float depth = input.Position.z / input.Position.w;
-	output.Position = float4(depth * 256 * 256 % 1, depth * 256 % 1  - depth % 0.00390625, depth - depth % 0.0000152587890625, 1);
+	output.Position.r = depth;
+	output.Position.a = 1;
 	output.Normal = float4(normalize(input.Normal), 1);
 	output.Albedo = DiffuseColor;
 	return output;

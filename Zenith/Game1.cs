@@ -51,11 +51,22 @@ namespace Zenith
                      DepthFormat.Depth24);
         }
 
+        private RenderTarget2D MakeDefaultRenderTarget(SurfaceFormat surfaceFormat)
+        {
+            return new RenderTarget2D(
+                     GraphicsDevice,
+                     GraphicsDevice.Viewport.Width,
+                     GraphicsDevice.Viewport.Height,
+                     false,
+                     surfaceFormat,
+                     DepthFormat.Depth24);
+        }
+
         private void MakeRenderTargets()
         {
             if (DEFERRED_RENDERING)
             {
-                var POSITION_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget()); // for now, holds the depth
+                var POSITION_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget(SurfaceFormat.Vector4)); // for now, holds the depth, TODO: why can't I just use Single? adds weird alpha
                 var NORMAL_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget()); // for now, holds the normal relative to the camera (after perspective is applid)
                 var ALBEDO_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget()); // holds the color
                 G_BUFFER = new[] { POSITION_BUFFER, NORMAL_BUFFER, ALBEDO_BUFFER };

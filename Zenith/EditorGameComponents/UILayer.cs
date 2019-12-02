@@ -83,9 +83,14 @@ namespace Zenith.EditorGameComponents
 
             if (Game1.DEFERRED_RENDERING)
             {
+                GraphicsDevice.SetRenderTargets(Game1.RENDER_BUFFER);
+                spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.LinearClamp, DepthStencilState.Default, RasterizerState.CullNone, GlobalContent.SSAOShader);
+                spriteBatch.Draw((Texture2D)Game1.G_BUFFER[0].RenderTarget, screenRect, Color.White);
+                spriteBatch.End();
+
                 GraphicsDevice.SetRenderTarget(null);
                 spriteBatch.Begin();
-                spriteBatch.Draw((Texture2D)Game1.G_BUFFER[2].RenderTarget, screenRect, Color.White);
+                spriteBatch.Draw((Texture2D)Game1.RENDER_BUFFER[0].RenderTarget, screenRect, Color.White);
                 spriteBatch.End();
             }
             else
