@@ -17,6 +17,7 @@ namespace Zenith
         public static Effect DeferredBasicTextureShader;
         public static Effect DeferredInstancingShader;
         public static Effect DeferredLightingShader;
+        public static Effect DeferredTreeGeometryShader;
         public static Effect FXAAShader;
         public static Effect MaskShader;
         public static Effect InstancingShader;
@@ -48,6 +49,7 @@ namespace Zenith
             DeferredBasicTextureShader = content.Load<Effect>("Shaders/DeferredBasicTextureShader");
             DeferredInstancingShader = content.Load<Effect>("Shaders/DeferredInstancingShader");
             DeferredLightingShader = content.Load<Effect>("Shaders/DeferredLightingShader");
+            DeferredTreeGeometryShader = content.Load<Effect>("Shaders/DeferredTreeGeometryShader");
             FXAAShader = content.Load<Effect>("Shaders/FXAAShader");
             MaskShader = content.Load<Effect>("Shaders/MaskShader");
             InstancingShader = content.Load<Effect>("Shaders/InstancingShader");

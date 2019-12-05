@@ -16,6 +16,7 @@ namespace Zenith
     {
         public DebugConsole debug;
         public GraphicsDeviceManager graphics;
+        public static EditorCamera camera;
         public static bool DEFERRED_RENDERING = true;
         public static RenderTargetBinding[] G_BUFFER;
         public static RenderTargetBinding[] RENDER_BUFFER;
@@ -97,7 +98,7 @@ namespace Zenith
             GlobalContent.Init(this.Content);
 
             IsMouseVisible = true;
-            var camera = new EditorCamera(this);
+            camera = new EditorCamera(this);
             Components.Add(camera);
             var earth = new PlanetComponent(this, camera);
             Components.Add(earth);

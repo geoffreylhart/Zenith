@@ -21,6 +21,7 @@ struct VertexShaderOutput
 	float4 Position : POSITION0;
 	float3 Normal : NORMAL0;
 	float2 TextureCoordinate : TEXCOORD0;
+	float4 TexPosition : TEXCOORD1; // TODO: why does using this work but using position not??
 };
 
 struct PixelShaderOutput
@@ -34,6 +35,7 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 {
 	VertexShaderOutput output;
 	output.Position = mul(input.Position, WVP);
+	output.TexPosition = mul(input.Position, WVP);
 	float4 normal = mul(input.Position + float4(input.Normal, 0), WVP) - mul(input.Position, WVP);
 	output.Normal = normal.xyz / normal.w;
 	output.TextureCoordinate = input.TextureCoordinate;
@@ -43,9 +45,7 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 PixelShaderOutput PixelShaderFunction(VertexShaderOutput input)
 {
 	PixelShaderOutput output;
-	float depth = input.Position.z / input.Position.w;
-	output.Position.r = depth;
-	output.Position.a = 1;
+	output.Position = float4(input.TexPosition.xyz / input.TexPosition.w, 1);
 	output.Normal = float4(normalize(input.Normal), 1);
 	output.Albedo = tex2D(textureSampler, input.TextureCoordinate);
 	return output;

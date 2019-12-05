@@ -84,9 +84,20 @@ namespace Zenith.EditorGameComponents
             if (Game1.DEFERRED_RENDERING)
             {
                 GraphicsDevice.SetRenderTargets(Game1.RENDER_BUFFER);
-                spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.LinearClamp, DepthStencilState.Default, RasterizerState.CullNone, GlobalContent.SSAOShader);
-                spriteBatch.Draw((Texture2D)Game1.G_BUFFER[0].RenderTarget, screenRect, Color.White);
-                spriteBatch.End();
+                GlobalContent.SSAOShader.Parameters["Projection"].SetValue(Game1.camera.projection);
+                GlobalContent.SSAOShader.Parameters["InverseProjection"].SetValue(Matrix.Invert(Game1.camera.projection));
+                Vector4[] randomOffsets = new Vector4[128];
+                Random rand = new Random(12345);
+                for (int i = 0; i < 128; i++)
+                {
+                    randomOffsets[i] = new Vector4((float)rand.NextDouble() - 0.5f, (float)rand.NextDouble() - 0.5f, (float)rand.NextDouble() - 0.5f, 0);
+                }
+                GlobalContent.SSAOShader.Parameters["offsets"].SetValue(randomOffsets);
+                float distance = 9 * (float)Math.Pow(0.5, Game1.camera.cameraZoom);
+                GlobalContent.SSAOShader.Parameters["SphereRadius"].SetValue(distance / 20);
+                GlobalContent.SSAOShader.Parameters["AlbedoTexture"].SetValue(Game1.G_BUFFER[2].RenderTarget);
+                GlobalContent.SSAOShader.Parameters["PositionTexture"].SetValue(Game1.G_BUFFER[0].RenderTarget);
+                DrawSquare(GraphicsDevice, GlobalContent.SSAOShader);
 
                 GraphicsDevice.SetRenderTarget(null);
                 spriteBatch.Begin();
@@ -103,6 +114,30 @@ namespace Zenith.EditorGameComponents
             foreach (var component in components)
             {
                 component.Draw(GraphicsDevice);
+            }
+        }
+
+        VertexBuffer squareVertexBuffer = null;
+        private void DrawSquare(GraphicsDevice graphicsDevice, Effect effect)
+        {
+            if (squareVertexBuffer == null)
+            {
+                List<VertexPosition> vertices = new List<VertexPosition>();
+                vertices.Add(new VertexPosition(new Vector3(0, 0, -10)));
+                vertices.Add(new VertexPosition(new Vector3(1, 0, -10)));
+                vertices.Add(new VertexPosition(new Vector3(1, 1, -10)));
+                vertices.Add(new VertexPosition(new Vector3(0, 0, -10)));
+                vertices.Add(new VertexPosition(new Vector3(1, 1, -10)));
+                vertices.Add(new VertexPosition(new Vector3(0, 1, -10)));
+                squareVertexBuffer = new VertexBuffer(graphicsDevice, VertexPosition.VertexDeclaration, vertices.Count, BufferUsage.WriteOnly);
+                squareVertexBuffer.SetData(vertices.ToArray());
+            }
+            effect.Parameters["WVP"].SetValue(Matrix.CreateOrthographicOffCenter(0, 1, 1, 0, 1, 1000));
+            graphicsDevice.SetVertexBuffer(squareVertexBuffer);
+            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                graphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, 2);
             }
         }
 

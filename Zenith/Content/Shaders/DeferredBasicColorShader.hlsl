@@ -11,6 +11,7 @@ struct VertexShaderOutput
 	float4 Position : POSITION0;
 	float3 Normal : NORMAL0;
 	float3 Color : Color0;
+	float4 TexPosition : TEXCOORD1; // TODO: why does using this work but using position not??
 };
 
 struct PixelShaderOutput
@@ -24,6 +25,7 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 {
 	VertexShaderOutput output;
 	output.Position = mul(input.Position, WVP);
+	output.TexPosition = mul(input.Position, WVP);
 	// assumes the normal if not provided
 	float4 normal = mul(input.Position + float4(0, 0, 1, 0), WVP) - mul(input.Position, WVP);
 	output.Normal = normal.xyz / normal.w;
@@ -34,9 +36,7 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 PixelShaderOutput PixelShaderFunction(VertexShaderOutput input)
 {
 	PixelShaderOutput output;
-	float depth = input.Position.z / input.Position.w;
-	output.Position.r = depth;
-	output.Position.a = 1;
+	output.Position = float4(input.TexPosition.xyz / input.TexPosition.w, 1);
 	output.Normal = float4(normalize(input.Normal), 1);
 	output.Albedo = float4(input.Color, 1);
 	return output;

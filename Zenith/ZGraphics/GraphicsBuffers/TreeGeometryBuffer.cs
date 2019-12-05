@@ -40,14 +40,16 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                 List<int> indices = new List<int>();
                 // TODO: are all of these names wrong everywhere? the topleft etc?
                 int size = 256;
+                Random rand = new Random();
                 for (int i = 0; i < size * size; i++)
                 {
                     int x = i % size;
                     int y = i / size;
-                    Vector3 topLeft = new Vector3((x + 0.5f) / size, (y + 0.5f) / size, 0);
-                    Vector3 topRight = new Vector3((x + 0.5f) / size, (y + 0.5f) / size, 0);
-                    Vector3 bottomLeft = new Vector3((x + 0.5f) / size, (y + 0.5f) / size, 0);
-                    Vector3 bottomRight = new Vector3((x + 0.5f) / size, (y + 0.5f) / size, 0);
+                    Vector3 randVec = new Vector3((float)rand.NextDouble() / 2 - 0.25f, (float)rand.NextDouble() / 2 - 0.25f, 0) / size;
+                    Vector3 topLeft = new Vector3((x + 0.5f) / size, (y + 0.5f) / size, 0) + randVec;
+                    Vector3 topRight = new Vector3((x + 0.5f) / size, (y + 0.5f) / size, 0) + randVec;
+                    Vector3 bottomLeft = new Vector3((x + 0.5f) / size, (y + 0.5f) / size, 0) + randVec;
+                    Vector3 bottomRight = new Vector3((x + 0.5f) / size, (y + 0.5f) / size, 0) + randVec;
                     vertices.Add(new VertexPositionTexture(topLeft, new Vector2(0, 0)));
                     vertices.Add(new VertexPositionTexture(topRight, new Vector2(1, 0)));
                     vertices.Add(new VertexPositionTexture(bottomLeft, new Vector2(0, 1)));
@@ -60,7 +62,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                     indices.Add(i * 4 + 2);
                 }
                 buffer.vertices = new VertexBuffer(graphicsDevice, VertexPositionTexture.VertexDeclaration, vertices.Count, BufferUsage.WriteOnly);
-                buffer.vertices.SetData(vertices.ToArray());
+                buffer.vertices.SetData(vertices.OrderBy(x => x.Position.Y).ToArray());
                 buffer.indices = new IndexBuffer(graphicsDevice, IndexElementSize.ThirtyTwoBits, indices.Count, BufferUsage.WriteOnly);
                 buffer.indices.SetData(indices.ToArray());
             }
@@ -93,11 +95,11 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                 lakesBuffer.Draw(graphicsDevice, basicEffect, targets, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
                 roadsBuffer.Draw(graphicsDevice, basicEffect, targets, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
             }
-            if (targets == Game1.RENDER_BUFFER)
+            if (targets == Game1.RENDER_BUFFER || targets == Game1.G_BUFFER)
             {
                 // first grass
                 int size = 64;
-                var effect = GlobalContent.TreeGeometryShader;
+                var effect = targets == Game1.RENDER_BUFFER ? GlobalContent.TreeGeometryShader : GlobalContent.DeferredTreeGeometryShader;
                 effect.Parameters["View"].SetValue(basicEffect.View);
                 effect.Parameters["Projection"].SetValue(basicEffect.Projection);
                 effect.Parameters["TreeTexture"].SetValue(GlobalContent.Grass);
