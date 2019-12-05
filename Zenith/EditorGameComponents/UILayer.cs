@@ -90,12 +90,15 @@ namespace Zenith.EditorGameComponents
                 Random rand = new Random(12345);
                 for (int i = 0; i < 128; i++)
                 {
-                    randomOffsets[i] = new Vector4((float)rand.NextDouble() - 0.5f, (float)rand.NextDouble() - 0.5f, (float)rand.NextDouble() - 0.5f, 0);
+                    randomOffsets[i] = new Vector4((float)rand.NextDouble() * 2 - 1, (float)rand.NextDouble() * 2 - 1, -(float)rand.NextDouble(), 0);
+                    randomOffsets[i].Normalize();
+                    randomOffsets[i] = randomOffsets[i] * (float)rand.NextDouble();
                 }
                 GlobalContent.SSAOShader.Parameters["offsets"].SetValue(randomOffsets);
                 float distance = 9 * (float)Math.Pow(0.5, Game1.camera.cameraZoom);
                 GlobalContent.SSAOShader.Parameters["SphereRadius"].SetValue(distance / 20);
                 GlobalContent.SSAOShader.Parameters["AlbedoTexture"].SetValue(Game1.G_BUFFER[2].RenderTarget);
+                GlobalContent.SSAOShader.Parameters["NormalTexture"].SetValue(Game1.G_BUFFER[1].RenderTarget);
                 GlobalContent.SSAOShader.Parameters["PositionTexture"].SetValue(Game1.G_BUFFER[0].RenderTarget);
                 DrawSquare(GraphicsDevice, GlobalContent.SSAOShader);
 

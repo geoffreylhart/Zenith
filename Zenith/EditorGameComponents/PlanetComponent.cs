@@ -92,6 +92,7 @@ namespace Zenith.EditorGameComponents
                     var effect = GlobalContent.DeferredBasicNormalTextureShader;
                     float distance = (float)(9 * Math.Pow(0.5, camera.cameraZoom)); // TODO: this is hacky
                     Matrix view = CameraMatrixManager.GetWorldRelativeView(distance);
+                    effect.Parameters["WV"].SetValue(camera.world * view);
                     effect.Parameters["WVP"].SetValue(camera.world * view * camera.projection);
                     foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
                     {
@@ -289,9 +290,9 @@ namespace Zenith.EditorGameComponents
                 Matrixd view = CameraMatrixManager.GetWorldViewd(distance);
                 Matrixd projection = CameraMatrixManager.GetWorldProjectiond(distance, this.GraphicsDevice.Viewport.AspectRatio);
                 Matrixd transformMatrix = new Matrixd(xAxis.X, xAxis.Y, xAxis.Z, 0, yAxis.X, yAxis.Y, yAxis.Z, 0, zAxis.X, zAxis.Y, zAxis.Z, 0, start.X, start.Y, start.Z, 1); // turns our local coordinates into 3d spherical coordinates, based on the sector
-                basicEffect.World = (transformMatrix * world * view * projection).toMatrix(); // combine them all to allow for higher precision
+                basicEffect.World = (transformMatrix * world * view).toMatrix(); // combine them all to allow for higher precision
                 basicEffect.View = Matrix.Identity;
-                basicEffect.Projection = Matrix.Identity;
+                basicEffect.Projection = projection.toMatrix();
                 buffer.Draw(graphicsDevice, basicEffect, b.minX, b.maxX, b.minY, b.maxY, camera.cameraZoom, targets);
             }
         }

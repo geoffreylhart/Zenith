@@ -1,3 +1,4 @@
+float4x4 WV;
 float4x4 WVP;
 
 texture Texture;
@@ -36,8 +37,11 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input, float4x4 instan
 	VertexShaderOutput output;
 	output.Position = mul(mul(input.Position, transpose(instanceTransform)), WVP);
 	output.TexPosition = mul(mul(input.Position, transpose(instanceTransform)), WVP);
-	float4 normal = mul(mul(input.Position + float4(input.Normal, 0), transpose(instanceTransform)), WVP) - output.Position;
-	output.Normal = normal.xyz / normal.w;
+	float4 pos = mul(mul(input.Position, transpose(instanceTransform)), WV);
+	pos /= pos.w;
+	float4 normalpos = mul(mul(input.Position + float4(input.Normal, 0), transpose(instanceTransform)), WV);
+	normalpos /= normalpos.w;
+	output.Normal = -(normalpos.xyz - pos.xyz);
 	output.TextureCoordinate = input.TextureCoordinate;
 	return output;
 }

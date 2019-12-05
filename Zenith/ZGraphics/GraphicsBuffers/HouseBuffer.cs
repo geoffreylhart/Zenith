@@ -73,6 +73,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             {
                 // TODO: we've temporarily flipped the normals on the model
                 var effect = GlobalContent.DeferredInstancingShader;
+                effect.Parameters["WV"].SetValue(basicEffect.World * basicEffect.View);
                 effect.Parameters["WVP"].SetValue(basicEffect.World * basicEffect.View * basicEffect.Projection);
                 int i = 0;
                 foreach (ModelMesh mesh in GlobalContent.House.Meshes)

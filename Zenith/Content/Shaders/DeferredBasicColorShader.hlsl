@@ -1,3 +1,4 @@
+float4x4 WV;
 float4x4 WVP;
 
 struct VertexShaderInput
@@ -27,8 +28,11 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 	output.Position = mul(input.Position, WVP);
 	output.TexPosition = mul(input.Position, WVP);
 	// assumes the normal if not provided
-	float4 normal = mul(input.Position + float4(0, 0, 1, 0), WVP) - mul(input.Position, WVP);
-	output.Normal = normal.xyz / normal.w;
+	float4 pos = mul(input.Position, WV);
+	pos /= pos.w;
+	float4 normalpos = mul(input.Position + float4(0, 0, 1, 0), WV);
+	normalpos /= normalpos.w;
+	output.Normal = normalpos.xyz - pos.xyz;
 	output.Color = input.Color;
 	return output;
 }

@@ -124,6 +124,7 @@ namespace Zenith.ZGraphics
                     }
                     effect.Parameters["Texture"].SetValue(drawTexture);
                 }
+                effect.Parameters["WV"].SetValue(basicEffect.World * basicEffect.View);
                 effect.Parameters["WVP"].SetValue(basicEffect.World * basicEffect.View * basicEffect.Projection);
             }
             else

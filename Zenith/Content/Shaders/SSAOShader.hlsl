@@ -15,6 +15,15 @@ sampler PositionSampler = sampler_state {
 	AddressV = Clamp;
 };
 
+texture NormalTexture;
+sampler2D NormalSampler = sampler_state {
+	Texture = (NormalTexture);
+	MinFilter = Linear;
+	MagFilter = Linear;
+	AddressU = Clamp;
+	AddressV = Clamp;
+};
+
 texture AlbedoTexture;
 sampler2D AlbedoSampler = sampler_state {
 	Texture = (AlbedoTexture);
@@ -50,25 +59,26 @@ PixelShaderOutput PixelShaderFunction(VertexShaderOutput input)
 {
 	PixelShaderOutput output;
 	float4 bufferPosition = tex2D(PositionSampler, input.Position.xy / ScreenSize);
+	float4 bufferNormal = tex2D(NormalSampler, input.Position.xy / ScreenSize);
+	float3 normal = -bufferNormal.xyz;
 	float4 originalPos = mul(bufferPosition, InverseProjection); // gets the position relative to the camera
 	originalPos /= originalPos.w;
 	float occludeCount = 0;
-	float4 colorAverage = float4(0, 0, 0, 0);
 	for(int i = 0; i < KERNEL_SIZE; i++) {
-		float4 samplePos = originalPos + SphereRadius * offsets[i];
+		float3 randomVec = normalize(float3(1, 1, 1));
+		float3 tangent = normalize(cross(normal, randomVec));
+		float3 bitangent = cross(normal, tangent);
+		float3x3 mat = float3x3(tangent, bitangent, normal);
+		float3 offset = offsets[i].z * normal + offsets[i].x * tangent + offsets[i].y * bitangent;
+		float4 samplePos = originalPos + float4(SphereRadius * offset, 0);
 		float4 projectedSamplePos = mul(samplePos, Projection);
 		projectedSamplePos /= projectedSamplePos.w;
-		float4 sampleBufferPos = tex2D(PositionSampler, projectedSamplePos.xy*float2(0.5,-0.5)+float2(0.5,0.5));
-		float4 sampleColor = tex2D(AlbedoSampler, projectedSamplePos.xy*float2(0.5,-0.5)+float2(0.5,0.5));
+		float4 sampleBufferPos = tex2D(PositionSampler, projectedSamplePos.xy * float2(0.5, -0.5) + float2(0.5, 0.5));
 		if (sampleBufferPos.z > projectedSamplePos.z) {
 			occludeCount++;
 		}
-		colorAverage += sampleColor / KERNEL_SIZE;
 	}
-	float occlude = occludeCount / KERNEL_SIZE;
-	//return float4(occlude, occlude, occlude, 1);
-	//output.Color = float4(tex2D(PositionSampler, input.Position.xy/ScreenSize).xyz%1,1);
-	//output.Color = colorAverage;
+	float occlude = occludeCount / KERNEL_SIZE * occludeCount / KERNEL_SIZE;
 	output.Color = float4(occlude*tex2D(AlbedoSampler, input.Position.xy / ScreenSize).xyz, 1);
 	return output;
 }
