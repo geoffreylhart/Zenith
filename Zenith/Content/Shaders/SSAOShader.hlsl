@@ -79,7 +79,7 @@ PixelShaderOutput PixelShaderFunction(VertexShaderOutput input)
 		}
 	}
 	float occlude = occludeCount / KERNEL_SIZE * occludeCount / KERNEL_SIZE;
-	output.Color = float4(occlude*tex2D(AlbedoSampler, input.Position.xy / ScreenSize).xyz, 1);
+	output.Color = float4(occlude * tex2D(AlbedoSampler, input.Position.xy / ScreenSize).xyz, 1);
 	return output;
 }
 

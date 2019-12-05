@@ -68,7 +68,7 @@ namespace Zenith
             if (DEFERRED_RENDERING)
             {
                 var POSITION_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget(SurfaceFormat.Vector4)); // for now, holds the depth, TODO: why can't I just use Single? adds weird alpha
-                var NORMAL_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget()); // for now, holds the normal relative to the camera (after perspective is applid)
+                var NORMAL_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget(SurfaceFormat.Vector4)); // for now, holds the normal relative to the camera (after perspective is applid)
                 var ALBEDO_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget()); // holds the color
                 G_BUFFER = new[] { POSITION_BUFFER, NORMAL_BUFFER, ALBEDO_BUFFER };
             }
