@@ -65,24 +65,11 @@ namespace Zenith.EditorGameComponents
 
             SpriteBatch spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            // TODO: how come we have to use position in our shader and can't user the texture coordinate anymore??
-            GlobalContent.SSAOShader.Parameters["ScreenSize"].SetValue(new Vector2(GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height));
-            GlobalContent.FXAAShader.Parameters["ScreenSize"].SetValue(new Vector2(GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height));
-
-            //GraphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
-            //GraphicsDevice.SetRenderTarget(Game1.renderTargets[3]);
-            //spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.LinearClamp, DepthStencilState.Default, RasterizerState.CullNone, GlobalContent.SSAOShader);
-            //spriteBatch.Draw(Game1.renderTargets[2], screenRect, screenRect, Color.White);
-            //spriteBatch.End();
-
-            //GraphicsDevice.DepthStencilState = DepthStencilState.Default;
-            //GraphicsDevice.SetRenderTarget(Game1.renderTargets[4]);
-            //spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.LinearClamp, DepthStencilState.Default, RasterizerState.CullNone, GlobalContent.FXAAShader);
-            //spriteBatch.Draw(Game1.renderTargets[3], screenRect, screenRect, Color.White);
-            //spriteBatch.End();
-
             if (Game1.DEFERRED_RENDERING)
             {
+                // TODO: how come we have to use position in our shader and can't user the texture coordinate anymore??
+                GlobalContent.SSAOShader.Parameters["ScreenSize"].SetValue(new Vector2(GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height));
+                GlobalContent.FXAAShader.Parameters["ScreenSize"].SetValue(new Vector2(GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height));
                 GraphicsDevice.SetRenderTargets(Game1.RENDER_BUFFER);
                 GlobalContent.SSAOShader.Parameters["Projection"].SetValue(Game1.camera.projection);
                 GlobalContent.SSAOShader.Parameters["InverseProjection"].SetValue(Matrix.Invert(Game1.camera.projection));

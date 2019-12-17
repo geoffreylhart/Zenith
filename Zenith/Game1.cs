@@ -29,7 +29,11 @@ namespace Zenith
         public static RenderTargetBinding[] GRASS_DENSITY_BUFFER;
         public static bool recording = false;
         public int recordFrame = 0;
+#if Windows
         public static string RECORD_PATH = OSMPaths.GetLocalCacheRoot() + @"\LocalCache\Recording";
+#else
+        public static string RECORD_PATH = "blah";
+#endif
 
         public Game1()
         {
