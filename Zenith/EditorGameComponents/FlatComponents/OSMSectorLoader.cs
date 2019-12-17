@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+#if WINDOWS
+using System.Drawing;
+using System.Drawing.Imaging;
+#endif
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -153,7 +157,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
         // TODO: still doesn't work??
         public static void SuperSave(Texture2D texture, string path)
         {
-#if Windows
+#if WINDOWS
             if (!Directory.Exists(Path.GetDirectoryName(path))) Directory.CreateDirectory(Path.GetDirectoryName(path));
             // https://stackoverflow.com/questions/19248018/texture2d-saveaspng-memory-leak
             // what I originally tested this on was the texture for LE,X=67,Y=20,Zoom=7.PNG, a 206,940 byte PNG when saved using our new method (the other one failed at 245,817)
@@ -161,7 +165,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
 #endif
         }
 
-#if Windows
+#if WINDOWS
         private static void Save(Texture2D texture, int width, int height, ImageFormat imageFormat, string filename)
         {
             using (Bitmap bitmap = new Bitmap(width, height, PixelFormat.Format32bppArgb))

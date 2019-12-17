@@ -18,7 +18,7 @@ namespace Zenith
         public DebugConsole debug;
         public GraphicsDeviceManager graphics;
         public static EditorCamera camera;
-#if Windows
+#if WINDOWS
         public static bool DEFERRED_RENDERING = true;
 #else
         public static bool DEFERRED_RENDERING = false;
@@ -29,7 +29,7 @@ namespace Zenith
         public static RenderTargetBinding[] GRASS_DENSITY_BUFFER;
         public static bool recording = false;
         public int recordFrame = 0;
-#if Windows
+#if WINDOWS
         public static string RECORD_PATH = OSMPaths.GetLocalCacheRoot() + @"\LocalCache\Recording";
 #else
         public static string RECORD_PATH = "blah";
@@ -108,7 +108,7 @@ namespace Zenith
             IsMouseVisible = true;
             camera = new EditorCamera(this);
             Components.Add(camera);
-#if Windows
+#if WINDOWS
             var earth = new PlanetComponent(this, camera);
             Components.Add(earth);
 #endif
@@ -117,16 +117,14 @@ namespace Zenith
             uiLayer.UpdateOrder = camera.UpdateOrder - 1;
             Components.Add(new CityMarker(this, camera, "Pensacola", 30.4668536, -87.3294527));
             Components.Add(new CityMarker(this, camera, "Anchorage", 61.2008367, -149.8923965));
-#if Windows
             Components.Add(new ShipComponent(this, camera));
-#endif
             Components.Add(new FPSCounter(this));
             //Components.Add(new CityMarker(this, camera, "0, 0", 0, 0));
             // Components.Add(new BlenderAxis(this, camera));
             Components.Add(debug = new DebugConsole(this));
             // TODO: just change the ordering to fix this? apparantly setting a render target clears the backbuffer due to Xbox stuff
             GraphicsDevice.PresentationParameters.RenderTargetUsage = RenderTargetUsage.PreserveContents;
-#if Windows
+#if WINDOWS
             if (!Directory.Exists(RECORD_PATH)) Directory.CreateDirectory(RECORD_PATH);
 #endif
             base.Initialize();

@@ -42,7 +42,7 @@ namespace Zenith
 
         public static void Init(ContentManager content)
         {
-#if Windows
+#if WINDOWS
             DeferredLightingShader = content.Load<Effect>("Shaders/DeferredLightingShader");
             DeferredTreeGeometryShader = content.Load<Effect>("Shaders/DeferredTreeGeometryShader");
             FXAAShader = content.Load<Effect>("Shaders/FXAAShader");

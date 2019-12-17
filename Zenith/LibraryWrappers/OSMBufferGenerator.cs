@@ -50,7 +50,7 @@ namespace Zenith.LibraryWrappers
             return Tesselate(outline, Pallete.GRASS_GREEN);
         }
 
-#if Windows
+#if WINDOWS
         static Dictionary<ISector, Bitmap> landImages = new Dictionary<ISector, Bitmap>();
         private static bool PixelIsLand(ISector sector)
         {
