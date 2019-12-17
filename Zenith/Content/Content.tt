@@ -50,7 +50,7 @@
 /build:Images/<#Write(Path.GetFileName(x) + "\r\n");#>
 
 <#}#>
-<#foreach (var x in Directory.GetFiles(this.Host.ResolvePath(".") + "\\Models", "*.*", SearchOption.TopDirectoryOnly)) {#>
+<#foreach (var x in Directory.GetFiles(this.Host.ResolvePath(".") + "\\Models", "*.fbx", SearchOption.TopDirectoryOnly)) {#>
 #begin Models/<#Write(Path.GetFileName(x) + "\r\n");#>
 /importer:FbxImporter
 /processor:ModelProcessor
