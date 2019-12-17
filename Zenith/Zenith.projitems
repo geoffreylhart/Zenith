@@ -10,7 +10,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)AdvancedGeometryDataStructures\EditableMesh.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Configuration.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Constants.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\BlenderAxis.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\CityMarker.cs" />

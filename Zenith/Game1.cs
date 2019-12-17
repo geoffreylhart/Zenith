@@ -18,7 +18,11 @@ namespace Zenith
         public DebugConsole debug;
         public GraphicsDeviceManager graphics;
         public static EditorCamera camera;
+#if Windows
         public static bool DEFERRED_RENDERING = true;
+#else
+        public static bool DEFERRED_RENDERING = false;
+#endif
         public static RenderTargetBinding[] G_BUFFER;
         public static RenderTargetBinding[] RENDER_BUFFER;
         public static RenderTargetBinding[] TREE_DENSITY_BUFFER;
@@ -29,7 +33,6 @@ namespace Zenith
 
         public Game1()
         {
-            Configuration.Load();
             graphics = new GraphicsDeviceManager(this);
             //graphics.IsFullScreen = true;
             //graphics.PreferredBackBufferWidth = 2560;
@@ -101,21 +104,27 @@ namespace Zenith
             IsMouseVisible = true;
             camera = new EditorCamera(this);
             Components.Add(camera);
+#if Windows
             var earth = new PlanetComponent(this, camera);
             Components.Add(earth);
+#endif
             var uiLayer = new UILayer(this);
             Components.Add(uiLayer);
             uiLayer.UpdateOrder = camera.UpdateOrder - 1;
             Components.Add(new CityMarker(this, camera, "Pensacola", 30.4668536, -87.3294527));
             Components.Add(new CityMarker(this, camera, "Anchorage", 61.2008367, -149.8923965));
+#if Windows
             Components.Add(new ShipComponent(this, camera));
+#endif
             Components.Add(new FPSCounter(this));
             //Components.Add(new CityMarker(this, camera, "0, 0", 0, 0));
             // Components.Add(new BlenderAxis(this, camera));
             Components.Add(debug = new DebugConsole(this));
             // TODO: just change the ordering to fix this? apparantly setting a render target clears the backbuffer due to Xbox stuff
             GraphicsDevice.PresentationParameters.RenderTargetUsage = RenderTargetUsage.PreserveContents;
+#if Windows
             if (!Directory.Exists(RECORD_PATH)) Directory.CreateDirectory(RECORD_PATH);
+#endif
             base.Initialize();
         }
 
@@ -133,7 +142,6 @@ namespace Zenith
 
         protected override void OnExiting(object sender, EventArgs args)
         {
-            Configuration.Save();
             base.OnExiting(sender, args);
         }
 
