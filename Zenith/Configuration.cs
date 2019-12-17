@@ -5,12 +5,13 @@ using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
+using Zenith.LibraryWrappers.OSM;
 
 namespace Zenith
 {
     internal class Configuration
     {
-        private static String FILE_PATH = @"..\..\..\..\LocalCache\Settings.ini";
+        private static String FILE_PATH = OSMPaths.GetLocalCacheRoot() + @"\Settings.ini";
         // TODO: Why isn't reflection working with internal/private? I thought it was supposed to be able to
         public static bool AUTO_LOAD = false;
 

@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework.Input;
 using Zenith.EditorGameComponents;
 using Zenith.EditorGameComponents.FlatComponents;
 using Zenith.Helpers;
+using Zenith.LibraryWrappers.OSM;
 using Zenith.PrimitiveBuilder;
 using Zenith.ZGraphics;
 
@@ -24,7 +25,7 @@ namespace Zenith
         public static RenderTargetBinding[] GRASS_DENSITY_BUFFER;
         public static bool recording = false;
         public int recordFrame = 0;
-        public static string RECORD_PATH = @"..\..\..\..\LocalCache\Recording";
+        public static string RECORD_PATH = OSMPaths.GetLocalCacheRoot() + @"\LocalCache\Recording";
 
         public Game1()
         {
@@ -120,7 +121,7 @@ namespace Zenith
 
         protected override void Update(GameTime gameTime)
         {
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape) || Program.TERMINATE)
+            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape) || Constants.TERMINATE)
             {
                 Exit();
             }

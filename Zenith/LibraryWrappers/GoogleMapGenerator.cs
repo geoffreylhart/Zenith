@@ -5,6 +5,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Net;
 using Microsoft.Xna.Framework.Graphics;
+using Zenith.LibraryWrappers.OSM;
 using Zenith.MathHelpers;
 using Zenith.ZMath;
 using static System.Net.Mime.MediaTypeNames;
@@ -144,7 +145,7 @@ namespace Zenith
         private static String GetAPIKey()
         {
             if (API_KEY != null) return API_KEY;
-            API_KEY = File.ReadAllText(@"..\..\..\..\LocalCache\apikey.txt");
+            API_KEY = File.ReadAllText(OSMPaths.GetLocalCacheRoot() + @"\LocalCache\apikey.txt");
             return API_KEY;
         }
     }

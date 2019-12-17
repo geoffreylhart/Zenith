@@ -186,11 +186,11 @@ namespace Zenith.EditorGameComponents
                 loadedMaps.Remove(pair.Key);
             }
             // end autoload stuff
-            if (toLoad != null || Program.TO_LOAD != null)
+            if (toLoad != null || Constants.TO_LOAD != null)
             {
-                if (Program.TO_LOAD != null)
+                if (Constants.TO_LOAD != null)
                 {
-                    toLoad = ZCoords.GetSectorManager().FromString(Program.TO_LOAD);
+                    toLoad = ZCoords.GetSectorManager().FromString(Constants.TO_LOAD);
                 }
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
@@ -200,10 +200,10 @@ namespace Zenith.EditorGameComponents
                 }
                 Console.WriteLine($"Total load time for {toLoad} is {sw.Elapsed.TotalHours} h");
                 toLoad = null;
-                if (Program.TO_LOAD != null)
+                if (Constants.TO_LOAD != null)
                 {
-                    Program.TERMINATE = true;
-                    Program.TO_LOAD = null;
+                    Constants.TERMINATE = true;
+                    Constants.TO_LOAD = null;
                 }
             }
             bool loadCache = !(relativeCameraZoom - 4 > ZCoords.GetSectorManager().GetHighestOSMZoom());

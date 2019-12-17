@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>31cbd2d4-2060-4d98-a61d-a64a7355bbec</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>Zenith</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)AdvancedGeometryDataStructures\EditableMesh.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Configuration.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Constants.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\BlenderAxis.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\CityMarker.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\FlatComponents\OSMSectorLoader.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\FPSCounter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\PlanetComponent.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\ShipComponent.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\UIComponents\IUIComponent.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\UILayer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\DebugConsole.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\EditorCamera.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\IEditorGameComponent.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\SphericalGeometryEditor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\UITemp.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Game1.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GlobalContent.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSMBufferGenerator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\Blob.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\BlobCollection.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\ChangeSet.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\DenseInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\DenseNodes.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\HeaderBlock.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\Info.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\Node.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\OSMReader.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\OSMPaths.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\PrimitiveBlock.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\PrimitiveGroup.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\Relation.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\StringTable.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\Way2.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZGeom\IGeom.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZGeom\LineGraph.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZGeom\PointCollection.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZGeom\ZCoords.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\BasicVertexBuffer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\CameraMatrixManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\GraphicsBasic.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Helpers\GraphicsDeviceHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Helpers\KeyboardStateHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\Clipper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\Tesselate\Dict.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\Tesselate\Geom.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\Tesselate\Mesh.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\Tesselate\MeshUtils.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\Tesselate\PriorityHeap.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\Tesselate\PriorityQueue.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\Tesselate\Sweep.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\Tesselate\Tess.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\GoogleMapGenerator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MathHelpers\AllMath.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MathHelpers\Line3.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MathHelpers\LongLatHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MathHelpers\Mathf.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MathHelpers\Matrixd.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MathHelpers\Rayd.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MathHelpers\RayHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\GraphicsBuffers\GraphicsBuffer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\GraphicsBuffers\HouseBuffer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\GraphicsBuffers\IGraphicsBuffer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\GraphicsBuffers\ImageTileBuffer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\GraphicsBuffers\ProceduralTileBuffer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\GraphicsBuffers\TreeBuffer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\GraphicsBuffers\TreeGeometryBuffer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\GraphicsBuffers\VectorTileBuffer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\Pallete.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\SpriteBatchBasic.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZMath\CubeSector.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZMath\CubeSectorManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZMath\ISector.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZMath\ISectorManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZMath\Line3.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZMath\LongLat.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZMath\MeractorSectorManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZMath\MercatorSector.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZMath\Vector2d.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZMath\Vector3d.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MathHelpers\Vector3Helper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)PrimitiveBuilder\CubeBuilder.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)PrimitiveBuilder\SphereBuilder.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)PrimitiveBuilder\VertexIndiceBuffer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZMath\Circle3.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZMath\GlobeMath.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZMath\Plane.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZMath\SphereArc.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZMath\SphereVector.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="$(MSBuildThisFileDirectory)Content\" />
+  </ItemGroup>
+  <ItemGroup>
+    <MonoGameContentReference Include="$(MSBuildThisFileDirectory)Content\Content.mgcb" />
+  </ItemGroup>
+</Project>

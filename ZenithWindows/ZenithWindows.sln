@@ -5,16 +5,36 @@ VisualStudioVersion = 15.0.28307.960
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZenithWindows", "ZenithWindows\ZenithWindows.csproj", "{1D90274A-3EFE-4311-95BB-890306CA5451}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Zenith", "..\Zenith\Zenith.shproj", "{E01A9E95-DCBF-4587-8590-1370700B3675}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Triangle", "..\Zenith\LibraryWrappers\Triangle.NET\Triangle\Triangle.csproj", "{F7907A0A-B75F-400B-9E78-BFAD00DB4D6B}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		..\Zenith\Zenith.projitems*{1d90274a-3efe-4311-95bb-890306ca5451}*SharedItemsImports = 4
+		..\Zenith\Zenith.projitems*{e01a9e95-dcbf-4587-8590-1370700b3675}*SharedItemsImports = 13
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
 		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1D90274A-3EFE-4311-95BB-890306CA5451}.Debug|Any CPU.ActiveCfg = Debug|x86
 		{1D90274A-3EFE-4311-95BB-890306CA5451}.Debug|x86.ActiveCfg = Debug|x86
 		{1D90274A-3EFE-4311-95BB-890306CA5451}.Debug|x86.Build.0 = Debug|x86
+		{1D90274A-3EFE-4311-95BB-890306CA5451}.Release|Any CPU.ActiveCfg = Release|x86
 		{1D90274A-3EFE-4311-95BB-890306CA5451}.Release|x86.ActiveCfg = Release|x86
 		{1D90274A-3EFE-4311-95BB-890306CA5451}.Release|x86.Build.0 = Release|x86
+		{F7907A0A-B75F-400B-9E78-BFAD00DB4D6B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F7907A0A-B75F-400B-9E78-BFAD00DB4D6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F7907A0A-B75F-400B-9E78-BFAD00DB4D6B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F7907A0A-B75F-400B-9E78-BFAD00DB4D6B}.Debug|x86.Build.0 = Debug|Any CPU
+		{F7907A0A-B75F-400B-9E78-BFAD00DB4D6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F7907A0A-B75F-400B-9E78-BFAD00DB4D6B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F7907A0A-B75F-400B-9E78-BFAD00DB4D6B}.Release|x86.ActiveCfg = Release|Any CPU
+		{F7907A0A-B75F-400B-9E78-BFAD00DB4D6B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
