@@ -61,7 +61,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\Tesselate\PriorityQueue.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\Tesselate\Sweep.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\Tesselate\Tess.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\GoogleMapGenerator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MathHelpers\AllMath.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MathHelpers\Line3.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MathHelpers\LongLatHelper.cs" />

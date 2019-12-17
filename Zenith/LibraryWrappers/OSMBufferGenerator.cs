@@ -50,6 +50,7 @@ namespace Zenith.LibraryWrappers
             return Tesselate(outline, Pallete.GRASS_GREEN);
         }
 
+#if Windows
         static Dictionary<ISector, Bitmap> landImages = new Dictionary<ISector, Bitmap>();
         private static bool PixelIsLand(ISector sector)
         {
@@ -60,6 +61,12 @@ namespace Zenith.LibraryWrappers
             }
             return landImages[sector.GetRoot()].GetPixel(sector.X, sector.Y) == System.Drawing.Color.FromArgb(255, 0, 255, 0);
         }
+#else
+        private static bool PixelIsLand(ISector sector)
+        {
+            return false;
+        }
+#endif
 
         // cut off the lines hanging outside of the sector
         // we call this before closing lines to prevent any possible confusion on how lines should connect

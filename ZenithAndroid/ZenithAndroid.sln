@@ -5,7 +5,15 @@ VisualStudioVersion = 15.0.28307.960
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZenithAndroid", "ZenithAndroid\ZenithAndroid.csproj", "{F58667D7-A07C-4179-BE93-9DE915C08A17}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Zenith", "..\Zenith\Zenith.shproj", "{E01A9E95-DCBF-4587-8590-1370700B3675}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Triangle", "..\Zenith\LibraryWrappers\Triangle.NET\Triangle\Triangle.csproj", "{F7907A0A-B75F-400B-9E78-BFAD00DB4D6B}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		..\Zenith\Zenith.projitems*{e01a9e95-dcbf-4587-8590-1370700b3675}*SharedItemsImports = 13
+		..\Zenith\Zenith.projitems*{f58667d7-a07c-4179-be93-9de915c08a17}*SharedItemsImports = 4
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
@@ -17,6 +25,10 @@ Global
 		{F58667D7-A07C-4179-BE93-9DE915C08A17}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F58667D7-A07C-4179-BE93-9DE915C08A17}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F58667D7-A07C-4179-BE93-9DE915C08A17}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{F7907A0A-B75F-400B-9E78-BFAD00DB4D6B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F7907A0A-B75F-400B-9E78-BFAD00DB4D6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F7907A0A-B75F-400B-9E78-BFAD00DB4D6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F7907A0A-B75F-400B-9E78-BFAD00DB4D6B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
