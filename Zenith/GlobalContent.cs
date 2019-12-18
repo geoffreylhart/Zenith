@@ -44,10 +44,8 @@ namespace Zenith
         {
 #if WINDOWS
             DeferredLightingShader = content.Load<Effect>("Shaders/DeferredLightingShader");
-            DeferredTreeGeometryShader = content.Load<Effect>("Shaders/DeferredTreeGeometryShader");
             FXAAShader = content.Load<Effect>("Shaders/FXAAShader");
             SSAOShader = content.Load<Effect>("Shaders/SSAOShader");
-            TreeGeometryShader = content.Load<Effect>("Shaders/TreeGeometryShader");
 #endif
             BlurShader = content.Load<Effect>("Shaders/BlurShader");
             DeferredBasicColorShader = content.Load<Effect>("Shaders/DeferredBasicColorShader");
@@ -55,9 +53,11 @@ namespace Zenith
             DeferredBasicNormalTextureShader = content.Load<Effect>("Shaders/DeferredBasicNormalTextureShader");
             DeferredBasicTextureShader = content.Load<Effect>("Shaders/DeferredBasicTextureShader");
             DeferredInstancingShader = content.Load<Effect>("Shaders/DeferredInstancingShader");
+            DeferredTreeGeometryShader = content.Load<Effect>("Shaders/DeferredTreeGeometryShader");
             MaskShader = content.Load<Effect>("Shaders/MaskShader");
             InstancingShader = content.Load<Effect>("Shaders/InstancingShader");
             InvertedMaskShader = content.Load<Effect>("Shaders/InvertedMaskShader");
+            TreeGeometryShader = content.Load<Effect>("Shaders/TreeGeometryShader");
             TreeShader = content.Load<Effect>("Shaders/TreeShader");
             House = content.Load<Model>("Models/House");
             StartingShuttle = content.Load<Model>("Models/StartingShuttle");

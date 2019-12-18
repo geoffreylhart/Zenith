@@ -119,11 +119,9 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             vectorTileBufferUnused.Add(graphicsDevice, roadsBufferFat, sector);
             Console.WriteLine($"Roads buffer generated for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
-#if WINDOWS
             treeBuffer = new TreeGeometryBuffer(graphicsDevice, beachBuffer, lakesBuffer, roadsBuffer, roadsBufferFat, beachCoastBufferFat, lakesCoastBufferFat, sector);
             Console.WriteLine($"Trees generated for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
-#endif
             List<Matrix> matrices = roadGraph.ConstructHousePositions();
             houseBuffer = new HouseBuffer(graphicsDevice, matrices, sector);
             Console.WriteLine($"Houses generated for {sector} in {sw.Elapsed.TotalSeconds} s");
@@ -152,9 +150,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         public void InitDraw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom)
         {
             vectorTileBuffer.InitDraw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom);
-#if WINDOWS
             treeBuffer.InitDraw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom);
-#endif
         }
 
         public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, RenderTargetBinding[] targets)
@@ -162,8 +158,8 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             vectorTileBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, targets);
 #if WINDOWS
             houseBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, targets);
-            treeBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, targets);
 #endif
+            treeBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, targets);
         }
 
         public Texture2D GetImage(GraphicsDevice graphicsDevice)

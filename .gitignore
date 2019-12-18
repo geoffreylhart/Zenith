@@ -6,7 +6,6 @@
 # Geoffrey files
 Assets/
 LocalCache/
-Content.mgcb
 *.blend1
 
 # User-specific files
