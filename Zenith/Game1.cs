@@ -10,6 +10,9 @@ using Zenith.Helpers;
 using Zenith.LibraryWrappers.OSM;
 using Zenith.PrimitiveBuilder;
 using Zenith.ZGraphics;
+#if ANDROID
+using ZenithAndroid;
+#endif
 
 namespace Zenith
 {
@@ -115,7 +118,11 @@ namespace Zenith
             uiLayer.UpdateOrder = camera.UpdateOrder - 1;
             Components.Add(new CityMarker(this, camera, "Pensacola", 30.4668536, -87.3294527));
             Components.Add(new CityMarker(this, camera, "Anchorage", 61.2008367, -149.8923965));
+#if WINDOWS
             Components.Add(new ShipComponent(this, camera));
+#else
+            Components.Add(new PinchController(this, camera));
+#endif
             Components.Add(new FPSCounter(this));
             //Components.Add(new CityMarker(this, camera, "0, 0", 0, 0));
             // Components.Add(new BlenderAxis(this, camera));
