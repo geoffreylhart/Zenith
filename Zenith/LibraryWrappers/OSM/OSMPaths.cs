@@ -11,21 +11,22 @@ namespace Zenith.LibraryWrappers.OSM
 {
     public class OSMPaths
     {
-        public static string GetSectorPath(ISector sector)
+        public static string GetSectorPath(ISector sector, string root = null)
         {
+            if (root == null) root = GetOpenStreetMapsRoot();
             if (sector is MercatorSector)
             {
                 var parent = sector.GetChildrenAtLevel(sector.Zoom + 1)[0].GetAllParents().Where(x => x.Zoom == 10);
                 var parent5 = sector.GetChildrenAtLevel(sector.Zoom + 1)[0].GetAllParents().Where(x => x.Zoom == 5);
                 if (parent.Count() != 0)
                 {
-                    return Path.Combine(GetOpenStreetMapsRoot(), parent5.Single().ToString(), parent.Single().ToString() + ".osm.pbf");
+                    return Path.Combine(root, parent5.Single().ToString(), parent.Single().ToString() + ".osm.pbf");
                 }
                 if (parent5.Count() != 0)
                 {
-                    return Path.Combine(GetOpenStreetMapsRoot(), parent5.Single().ToString(), sector.ToString() + ".osm.pbf");
+                    return Path.Combine(root, parent5.Single().ToString(), sector.ToString() + ".osm.pbf");
                 }
-                return Path.Combine(GetOpenStreetMapsRoot(), sector.ToString() + ".osm.pbf");
+                return Path.Combine(root, sector.ToString() + ".osm.pbf");
             }
             if (sector is CubeSector)
             {
@@ -33,13 +34,13 @@ namespace Zenith.LibraryWrappers.OSM
                 var parent4 = sector.GetChildrenAtLevel(sector.Zoom + 1)[0].GetAllParents().Where(x => x.Zoom == 4);
                 if (parent.Count() != 0)
                 {
-                    return Path.Combine(GetOpenStreetMapsRoot(), ((CubeSector)sector).sectorFace.GetFaceAcronym() + "Face", parent4.Single().ToString(), parent.Single().ToString() + ".osm.pbf");
+                    return Path.Combine(root, ((CubeSector)sector).sectorFace.GetFaceAcronym() + "Face", parent4.Single().ToString(), parent.Single().ToString() + ".osm.pbf");
                 }
                 if (parent4.Count() != 0)
                 {
-                    return Path.Combine(GetOpenStreetMapsRoot(), ((CubeSector)sector).sectorFace.GetFaceAcronym() + "Face", parent4.Single().ToString(), sector.ToString() + ".osm.pbf");
+                    return Path.Combine(root, ((CubeSector)sector).sectorFace.GetFaceAcronym() + "Face", parent4.Single().ToString(), sector.ToString() + ".osm.pbf");
                 }
-                return Path.Combine(GetOpenStreetMapsRoot(), ((CubeSector)sector).sectorFace.GetFaceAcronym() + "Face", sector.ToString() + ".osm.pbf");
+                return Path.Combine(root, ((CubeSector)sector).sectorFace.GetFaceAcronym() + "Face", sector.ToString() + ".osm.pbf");
             }
             throw new NotImplementedException();
         }

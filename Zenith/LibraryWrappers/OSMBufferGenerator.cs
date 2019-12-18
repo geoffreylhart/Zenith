@@ -64,7 +64,7 @@ namespace Zenith.LibraryWrappers
 #else
         private static bool PixelIsLand(ISector sector)
         {
-            return false;
+            return true;
         }
 #endif
 

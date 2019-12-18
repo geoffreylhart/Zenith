@@ -14,7 +14,7 @@ namespace Zenith.ZGraphics
         // 1 is view from 45 degrees with 45 fov
         // 2 is isometric at 45 degrees
         // 2 is view from 45 degrees with 80 fov (cant do 90 because infinite view)
-        public static int MODE = 0;
+        public static int MODE = 1;
         public static int MODE_COUNT = 4;
         //static float M_1 = (float)(Math.Sin(Math.PI / 4) / Math.Sin(Math.PI / 8));
         static float M_1 = 2.5f;

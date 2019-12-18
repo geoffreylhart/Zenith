@@ -116,7 +116,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <AndroidAsset Include="Assets\OpenStreetMaps\Renders\**" />
+    <AndroidAsset Include="Assets\OpenStreetMaps\**" />
   </ItemGroup>
   <Import Project="..\..\Zenith\Zenith.projitems" Label="Shared" />
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />

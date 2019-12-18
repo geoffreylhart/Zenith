@@ -11,6 +11,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Zenith.ZGeom;
 using Zenith.ZMath;
+#if ANDROID
+using ZenithAndroid;
+#endif
 using static Zenith.LibraryWrappers.OSM.Blob;
 using static Zenith.ZGeom.LineGraph;
 
@@ -21,16 +24,31 @@ namespace Zenith.LibraryWrappers.OSM
         internal static BlobCollection GetAllBlobs(ISector sector)
         {
             List<Blob> blobs = new List<Blob>();
+#if WINDOWS
             string path = OSMPaths.GetSectorPath(sector);
             using (var reader = File.OpenRead(path))
             {
-                while (CanRead(reader))
+                while (true)
                 {
                     Blob blob = ReadBlob(reader);
+                    if (blob == null) break;
                     blob.Init();
                     blobs.Add(blob);
                 }
             }
+#else
+            string path = OSMPaths.GetSectorPath(sector);
+            using (var reader = Activity1.ASSETS.Open(path))
+            {
+                while (true)
+                {
+                    Blob blob = ReadBlob(reader);
+                    if (blob == null) break;
+                    blob.Init();
+                    blobs.Add(blob);
+                }
+            }
+#endif
             var collection = new BlobCollection(blobs, sector);
             collection.Init();
             ISector rootSector = sector.GetRoot();
@@ -184,18 +202,15 @@ namespace Zenith.LibraryWrappers.OSM
             stream.Seek(length, SeekOrigin.Current);
         }
 
-        public static bool CanRead(FileStream reader)
-        {
-            if (reader.ReadByte() < 0) return false;
-            reader.Seek(-1, SeekOrigin.Current);
-            return true;
-        }
-
         public static Blob ReadBlob(Stream reader)
         {
             Blob blob = new Blob();
-            blob.length = ReadInt32(reader);
+            int? length = ReadInt32UnlessEOF(reader);
+            if (!length.HasValue) return null;
+            blob.length = length.Value;
+#if WINDOWS
             long endOfHead = blob.length + reader.Position;
+#endif
             byte b = (byte)reader.ReadByte();
             if (b != 10) throw new NotImplementedException();
             blob.type = ReadString(reader);
@@ -207,7 +222,9 @@ namespace Zenith.LibraryWrappers.OSM
             }
             if (b != 24) throw new NotImplementedException();
             blob.datasize = (int)ReadVarInt(reader);
+#if WINDOWS
             if (reader.Position != endOfHead) throw new NotImplementedException();
+#endif
             b = (byte)reader.ReadByte();
             if (b == 16)
             {
@@ -252,6 +269,17 @@ namespace Zenith.LibraryWrappers.OSM
         public static int ReadInt32(Stream reader)
         {
             int b1 = reader.ReadByte() << 12;
+            int b2 = reader.ReadByte() << 8;
+            int b3 = reader.ReadByte() << 4;
+            int b4 = reader.ReadByte();
+            return b1 + b2 + b3 + b4;
+        }
+
+        public static int? ReadInt32UnlessEOF(Stream reader)
+        {
+            int b = reader.ReadByte();
+            if (b < 0) return null;
+            int b1 = b << 12;
             int b2 = reader.ReadByte() << 8;
             int b3 = reader.ReadByte() << 4;
             int b4 = reader.ReadByte();
