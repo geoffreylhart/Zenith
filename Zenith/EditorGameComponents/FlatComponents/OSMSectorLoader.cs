@@ -18,6 +18,9 @@ using Zenith.ZGeom;
 using Zenith.ZGraphics;
 using Zenith.ZGraphics.GraphicsBuffers;
 using Zenith.ZMath;
+#if ANDROID
+using ZenithAndroid;
+#endif
 
 namespace Zenith.EditorGameComponents.FlatComponents
 {
@@ -40,12 +43,23 @@ namespace Zenith.EditorGameComponents.FlatComponents
 
             try
             {
-                if (File.Exists(OSMPaths.GetSectorImagePath(sector)) && (cached || sector.Zoom != ZCoords.GetSectorManager().GetHighestOSMZoom()))
+                if ((cached || sector.Zoom != ZCoords.GetSectorManager().GetHighestOSMZoom()))
                 {
-                    using (var reader = File.OpenRead(OSMPaths.GetSectorImagePath(sector)))
+                    string path = OSMPaths.GetSectorImagePath(sector);
+#if WINDOWS
+                    if (File.Exists(path))
+                    {
+                        using (var reader = File.OpenRead(path))
+                        {
+                            return new ImageTileBuffer(graphicsDevice, Texture2D.FromStream(graphicsDevice, reader), sector);
+                        }
+                    }
+#else
+                    using (var reader = Activity1.ASSETS.Open(path))
                     {
                         return new ImageTileBuffer(graphicsDevice, Texture2D.FromStream(graphicsDevice, reader), sector);
                     }
+#endif
                 }
             }
             catch (Exception ex)
@@ -69,22 +83,22 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 {
                     //try
                     //{
-                        ProceduralTileBuffer buffer = new ProceduralTileBuffer(sector);
-                        Stopwatch sw = new Stopwatch();
-                        sw.Start();
-                        buffer.LoadLinesFromFile();
-                        buffer.GenerateVertices();
-                        buffer.GenerateBuffers(graphicsDevice);
-                        Console.WriteLine($"Total load time for {sector} is {sw.Elapsed.TotalSeconds} s");
-                        if (sector.Zoom <= ZCoords.GetSectorManager().GetHighestCacheZoom())
+                    ProceduralTileBuffer buffer = new ProceduralTileBuffer(sector);
+                    Stopwatch sw = new Stopwatch();
+                    sw.Start();
+                    buffer.LoadLinesFromFile();
+                    buffer.GenerateVertices();
+                    buffer.GenerateBuffers(graphicsDevice);
+                    Console.WriteLine($"Total load time for {sector} is {sw.Elapsed.TotalSeconds} s");
+                    if (sector.Zoom <= ZCoords.GetSectorManager().GetHighestCacheZoom())
+                    {
+                        using (var image = buffer.GetImage(graphicsDevice))
                         {
-                            using (var image = buffer.GetImage(graphicsDevice))
-                            {
-                                SuperSave(image, OSMPaths.GetSectorImagePath(sector));
-                            }
-                            RebuildImage(graphicsDevice, sector);
+                            SuperSave(image, OSMPaths.GetSectorImagePath(sector));
                         }
-                        return buffer;
+                        RebuildImage(graphicsDevice, sector);
+                    }
+                    return buffer;
                     //}
                     //catch (Exception ex)
                     //{

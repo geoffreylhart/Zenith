@@ -86,7 +86,6 @@
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="Resources\AboutResources.txt" />
-    <None Include="Assets\AboutAssets.txt" />
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\Values\Strings.xml" />
@@ -114,6 +113,9 @@
       <Project>{f7907a0a-b75f-400b-9e78-bfad00db4d6b}</Project>
       <Name>Triangle</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidAsset Include="Assets\OpenStreetMaps\Renders\**" /> 
   </ItemGroup>
   <Import Project="..\..\Zenith\Zenith.projitems" Label="Shared" />
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />

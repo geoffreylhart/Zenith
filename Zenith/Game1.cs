@@ -108,10 +108,8 @@ namespace Zenith
             IsMouseVisible = true;
             camera = new EditorCamera(this);
             Components.Add(camera);
-#if WINDOWS
             var earth = new PlanetComponent(this, camera);
             Components.Add(earth);
-#endif
             var uiLayer = new UILayer(this);
             Components.Add(uiLayer);
             uiLayer.UpdateOrder = camera.UpdateOrder - 1;
