@@ -10,7 +10,7 @@ struct VertexShaderInput
 struct VertexShaderOutput
 {
 	float4 Position : POSITION0;
-	float3 Normal : NORMAL0;
+	float3 Normal : TEXCOORD0;
 	float4 TexPosition : TEXCOORD1; // TODO: why does using this work but using position not??
 };
 

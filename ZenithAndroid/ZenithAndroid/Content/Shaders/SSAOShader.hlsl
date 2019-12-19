@@ -1,8 +1,7 @@
-float2 ScreenSize;
 float4x4 Projection;
 float4x4 InverseProjection;
 float4x4 WVP;
-#define KERNEL_SIZE 128
+#define KERNEL_SIZE 16
 float4 offsets[KERNEL_SIZE];
 float SphereRadius;
 
@@ -54,15 +53,15 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 {
 	VertexShaderOutput output;
 	output.Position = mul(input.Position, WVP);
-	output.TextureCoordinate = mul(input.Position, WVP).xy;
+	output.TextureCoordinate = input.TextureCoordinate;
 	return output;
 }
 
 PixelShaderOutput PixelShaderFunction(VertexShaderOutput input)
 {
 	PixelShaderOutput output;
-	float4 bufferPosition = tex2D(PositionSampler, input.TextureCoordinate.xy / ScreenSize);
-	float4 bufferNormal = tex2D(NormalSampler, input.TextureCoordinate.xy / ScreenSize);
+	float4 bufferPosition = tex2D(PositionSampler, input.TextureCoordinate.xy);
+	float4 bufferNormal = tex2D(NormalSampler, input.TextureCoordinate.xy);
 	float3 normal = -bufferNormal.xyz;
 	float4 originalPos = mul(bufferPosition, InverseProjection); // gets the position relative to the camera
 	originalPos /= originalPos.w;
@@ -82,7 +81,7 @@ PixelShaderOutput PixelShaderFunction(VertexShaderOutput input)
 		}
 	}
 	float occlude = occludeCount / KERNEL_SIZE * occludeCount / KERNEL_SIZE;
-	output.Color = float4(occlude * tex2D(AlbedoSampler, input.TextureCoordinate.xy / ScreenSize).xyz, 1);
+	output.Color = float4(occlude * tex2D(AlbedoSampler, input.TextureCoordinate.xy).xyz, 1);
 	return output;
 }
 
