@@ -121,10 +121,12 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             sw.Restart();
             treeBuffer = new TreeGeometryBuffer(graphicsDevice, beachBuffer, lakesBuffer, roadsBuffer, roadsBufferFat, beachCoastBufferFat, lakesCoastBufferFat, sector);
             Console.WriteLine($"Trees generated for {sector} in {sw.Elapsed.TotalSeconds} s");
+#if WINDOWS
             sw.Restart();
             List<Matrix> matrices = roadGraph.ConstructHousePositions();
             houseBuffer = new HouseBuffer(graphicsDevice, matrices, sector);
             Console.WriteLine($"Houses generated for {sector} in {sw.Elapsed.TotalSeconds} s");
+#endif
             sw.Restart();
             // dereference
             beachVertices = null;

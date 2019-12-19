@@ -67,14 +67,12 @@ namespace Zenith.EditorGameComponents
 
             if (Game1.DEFERRED_RENDERING)
             {
-                // TODO: how come we have to use position in our shader and can't user the texture coordinate anymore??
-                GlobalContent.SSAOShader.Parameters["ScreenSize"].SetValue(new Vector2(GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height));
                 GraphicsDevice.SetRenderTargets(Game1.RENDER_BUFFER);
                 GlobalContent.SSAOShader.Parameters["Projection"].SetValue(Game1.camera.projection);
                 GlobalContent.SSAOShader.Parameters["InverseProjection"].SetValue(Matrix.Invert(Game1.camera.projection));
-                Vector4[] randomOffsets = new Vector4[128];
+                Vector4[] randomOffsets = new Vector4[16];
                 Random rand = new Random(12345);
-                for (int i = 0; i < 128; i++)
+                for (int i = 0; i < 16; i++)
                 {
                     randomOffsets[i] = new Vector4((float)rand.NextDouble() * 2 - 1, (float)rand.NextDouble() * 2 - 1, -(float)rand.NextDouble(), 0);
                     randomOffsets[i].Normalize();
@@ -111,14 +109,14 @@ namespace Zenith.EditorGameComponents
         {
             if (squareVertexBuffer == null)
             {
-                List<VertexPosition> vertices = new List<VertexPosition>();
-                vertices.Add(new VertexPosition(new Vector3(0, 0, -10)));
-                vertices.Add(new VertexPosition(new Vector3(1, 0, -10)));
-                vertices.Add(new VertexPosition(new Vector3(1, 1, -10)));
-                vertices.Add(new VertexPosition(new Vector3(0, 0, -10)));
-                vertices.Add(new VertexPosition(new Vector3(1, 1, -10)));
-                vertices.Add(new VertexPosition(new Vector3(0, 1, -10)));
-                squareVertexBuffer = new VertexBuffer(graphicsDevice, VertexPosition.VertexDeclaration, vertices.Count, BufferUsage.WriteOnly);
+                List<VertexPositionTexture> vertices = new List<VertexPositionTexture>();
+                vertices.Add(new VertexPositionTexture(new Vector3(0, 0, -10), new Vector2(0, 0)));
+                vertices.Add(new VertexPositionTexture(new Vector3(1, 0, -10), new Vector2(1, 0)));
+                vertices.Add(new VertexPositionTexture(new Vector3(1, 1, -10), new Vector2(1, 1)));
+                vertices.Add(new VertexPositionTexture(new Vector3(0, 0, -10), new Vector2(0, 0)));
+                vertices.Add(new VertexPositionTexture(new Vector3(1, 1, -10), new Vector2(1, 1)));
+                vertices.Add(new VertexPositionTexture(new Vector3(0, 1, -10), new Vector2(0, 1)));
+                squareVertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionTexture.VertexDeclaration, vertices.Count, BufferUsage.WriteOnly);
                 squareVertexBuffer.SetData(vertices.ToArray());
             }
             effect.Parameters["WVP"].SetValue(Matrix.CreateOrthographicOffCenter(0, 1, 1, 0, 1, 1000));
