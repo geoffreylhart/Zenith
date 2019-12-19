@@ -269,6 +269,12 @@
 /processorParam:DebugMode=Auto
 /build:Shaders/MaskShader.hlsl
 
+#begin Shaders/SSAOShader.hlsl
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Shaders/SSAOShader.hlsl
+
 #begin Shaders/TreeGeometryShader.hlsl
 /importer:EffectImporter
 /processor:EffectProcessor

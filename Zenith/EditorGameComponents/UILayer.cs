@@ -69,7 +69,6 @@ namespace Zenith.EditorGameComponents
             {
                 // TODO: how come we have to use position in our shader and can't user the texture coordinate anymore??
                 GlobalContent.SSAOShader.Parameters["ScreenSize"].SetValue(new Vector2(GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height));
-                GlobalContent.FXAAShader.Parameters["ScreenSize"].SetValue(new Vector2(GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height));
                 GraphicsDevice.SetRenderTargets(Game1.RENDER_BUFFER);
                 GlobalContent.SSAOShader.Parameters["Projection"].SetValue(Game1.camera.projection);
                 GlobalContent.SSAOShader.Parameters["InverseProjection"].SetValue(Matrix.Invert(Game1.camera.projection));

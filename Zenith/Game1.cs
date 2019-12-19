@@ -21,11 +21,7 @@ namespace Zenith
         public DebugConsole debug;
         public GraphicsDeviceManager graphics;
         public static EditorCamera camera;
-#if WINDOWS
         public static bool DEFERRED_RENDERING = true;
-#else
-        public static bool DEFERRED_RENDERING = false;
-#endif
         public static RenderTargetBinding[] G_BUFFER;
         public static RenderTargetBinding[] RENDER_BUFFER;
         public static RenderTargetBinding[] TREE_DENSITY_BUFFER;
@@ -78,8 +74,8 @@ namespace Zenith
         {
             if (DEFERRED_RENDERING)
             {
-                var POSITION_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget(SurfaceFormat.Vector4)); // for now, holds the depth, TODO: why can't I just use Single? adds weird alpha
-                var NORMAL_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget(SurfaceFormat.Vector4)); // for now, holds the normal relative to the camera (after perspective is applid)
+                var POSITION_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget()); // for now, holds the depth, TODO: why can't I just use Single? adds weird alpha
+                var NORMAL_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget()); // for now, holds the normal relative to the camera (after perspective is applid)
                 var ALBEDO_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget()); // holds the color
                 G_BUFFER = new[] { POSITION_BUFFER, NORMAL_BUFFER, ALBEDO_BUFFER };
             }

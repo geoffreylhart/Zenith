@@ -16,9 +16,7 @@ namespace Zenith
         public static Effect DeferredBasicNormalTextureShader;
         public static Effect DeferredBasicTextureShader;
         public static Effect DeferredInstancingShader;
-        public static Effect DeferredLightingShader;
         public static Effect DeferredTreeGeometryShader;
-        public static Effect FXAAShader;
         public static Effect MaskShader;
         public static Effect InstancingShader;
         public static Effect InvertedMaskShader;
@@ -42,11 +40,6 @@ namespace Zenith
 
         public static void Init(ContentManager content)
         {
-#if WINDOWS
-            DeferredLightingShader = content.Load<Effect>("Shaders/DeferredLightingShader");
-            FXAAShader = content.Load<Effect>("Shaders/FXAAShader");
-            SSAOShader = content.Load<Effect>("Shaders/SSAOShader");
-#endif
             BlurShader = content.Load<Effect>("Shaders/BlurShader");
             DeferredBasicColorShader = content.Load<Effect>("Shaders/DeferredBasicColorShader");
             DeferredBasicDiffuseShader = content.Load<Effect>("Shaders/DeferredBasicDiffuseShader");
@@ -59,6 +52,7 @@ namespace Zenith
             InvertedMaskShader = content.Load<Effect>("Shaders/InvertedMaskShader");
             TreeGeometryShader = content.Load<Effect>("Shaders/TreeGeometryShader");
             TreeShader = content.Load<Effect>("Shaders/TreeShader");
+            SSAOShader = content.Load<Effect>("Shaders/SSAOShader");
             House = content.Load<Model>("Models/House");
             StartingShuttle = content.Load<Model>("Models/StartingShuttle");
             Arial = content.Load<SpriteFont>("Fonts/Arial");
