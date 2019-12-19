@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.960
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZenithCrossPlatform", "ZenithCrossPlatform\ZenithCrossPlatform.csproj", "{04CC6827-F642-4BFD-9116-4D2A0405211B}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Zenith", "..\Zenith\Zenith.shproj", "{E01A9E95-DCBF-4587-8590-1370700B3675}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Triangle", "..\Zenith\LibraryWrappers\Triangle.NET\Triangle\Triangle.csproj", "{F7907A0A-B75F-400B-9E78-BFAD00DB4D6B}"
+EndProject
+Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		..\Zenith\Zenith.projitems*{04cc6827-f642-4bfd-9116-4d2a0405211b}*SharedItemsImports = 4
+		..\Zenith\Zenith.projitems*{e01a9e95-dcbf-4587-8590-1370700b3675}*SharedItemsImports = 13
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{04CC6827-F642-4BFD-9116-4D2A0405211B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{04CC6827-F642-4BFD-9116-4D2A0405211B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{04CC6827-F642-4BFD-9116-4D2A0405211B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{04CC6827-F642-4BFD-9116-4D2A0405211B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F7907A0A-B75F-400B-9E78-BFAD00DB4D6B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F7907A0A-B75F-400B-9E78-BFAD00DB4D6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F7907A0A-B75F-400B-9E78-BFAD00DB4D6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F7907A0A-B75F-400B-9E78-BFAD00DB4D6B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7C3203E7-EBB7-4034-85B8-6B5D22B0DC06}
+	EndGlobalSection
+EndGlobal

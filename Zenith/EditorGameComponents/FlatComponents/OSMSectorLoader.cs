@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-#if WINDOWS
+#if WINDOWS || LINUX
 using System.Drawing;
 using System.Drawing.Imaging;
 #endif
@@ -46,7 +46,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 if ((cached || sector.Zoom != ZCoords.GetSectorManager().GetHighestOSMZoom()))
                 {
                     string path = OSMPaths.GetSectorImagePath(sector);
-#if WINDOWS
+#if WINDOWS || LINUX
                     if (File.Exists(path))
                     {
                         using (var reader = File.OpenRead(path))
@@ -92,7 +92,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
                     Console.WriteLine($"Total load time for {sector} is {sw.Elapsed.TotalSeconds} s");
                     if (sector.Zoom <= ZCoords.GetSectorManager().GetHighestCacheZoom())
                     {
-#if WINDOWS
+#if WINDOWS || LINUX
                         using (var image = buffer.GetImage(graphicsDevice))
                         {
                             SuperSave(image, OSMPaths.GetSectorImagePath(sector));
@@ -173,7 +173,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
         // TODO: still doesn't work??
         public static void SuperSave(Texture2D texture, string path)
         {
-#if WINDOWS
+#if WINDOWS || LINUX
             if (!Directory.Exists(Path.GetDirectoryName(path))) Directory.CreateDirectory(Path.GetDirectoryName(path));
             // https://stackoverflow.com/questions/19248018/texture2d-saveaspng-memory-leak
             // what I originally tested this on was the texture for LE,X=67,Y=20,Zoom=7.PNG, a 206,940 byte PNG when saved using our new method (the other one failed at 245,817)
@@ -181,7 +181,7 @@ namespace Zenith.EditorGameComponents.FlatComponents
 #endif
         }
 
-#if WINDOWS
+#if WINDOWS || LINUX
         private static void Save(Texture2D texture, int width, int height, ImageFormat imageFormat, string filename)
         {
             using (Bitmap bitmap = new Bitmap(width, height, PixelFormat.Format32bppArgb))

@@ -28,7 +28,7 @@ namespace Zenith
         public static RenderTargetBinding[] GRASS_DENSITY_BUFFER;
         public static bool recording = false;
         public int recordFrame = 0;
-#if WINDOWS
+#if WINDOWS || LINUX
         public static string RECORD_PATH = OSMPaths.GetLocalCacheRoot() + @"\LocalCache\Recording";
 #else
         public static string RECORD_PATH = "blah";
@@ -114,7 +114,7 @@ namespace Zenith
             uiLayer.UpdateOrder = camera.UpdateOrder - 1;
             Components.Add(new CityMarker(this, camera, "Pensacola", 30.4668536, -87.3294527));
             Components.Add(new CityMarker(this, camera, "Anchorage", 61.2008367, -149.8923965));
-#if WINDOWS
+#if WINDOWS || LINUX
             Components.Add(new ShipComponent(this, camera));
 #else
             Components.Add(new PinchController(this, camera));
@@ -125,7 +125,7 @@ namespace Zenith
             Components.Add(debug = new DebugConsole(this));
             // TODO: just change the ordering to fix this? apparantly setting a render target clears the backbuffer due to Xbox stuff
             GraphicsDevice.PresentationParameters.RenderTargetUsage = RenderTargetUsage.PreserveContents;
-#if WINDOWS
+#if WINDOWS || LINUX
             if (!Directory.Exists(RECORD_PATH)) Directory.CreateDirectory(RECORD_PATH);
 #endif
             base.Initialize();

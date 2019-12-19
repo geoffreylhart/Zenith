@@ -81,7 +81,7 @@ namespace Zenith.LibraryWrappers.OSM
 
         public static string GetLocalCacheRoot()
         {
-#if WINDOWS
+#if WINDOWS || LINUX
             string currDirectory = Directory.GetCurrentDirectory();
             return Path.Combine(currDirectory.Substring(0, currDirectory.IndexOf("Zenith")), @"Zenith\Zenith\LocalCache");
 #else

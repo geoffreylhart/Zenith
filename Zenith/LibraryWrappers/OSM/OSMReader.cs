@@ -24,7 +24,7 @@ namespace Zenith.LibraryWrappers.OSM
         internal static BlobCollection GetAllBlobs(ISector sector)
         {
             List<Blob> blobs = new List<Blob>();
-#if WINDOWS
+#if WINDOWS || LINUX
             string path = OSMPaths.GetSectorPath(sector);
             using (var reader = File.OpenRead(path))
             {
@@ -208,7 +208,7 @@ namespace Zenith.LibraryWrappers.OSM
             int? length = ReadInt32UnlessEOF(reader);
             if (!length.HasValue) return null;
             blob.length = length.Value;
-#if WINDOWS
+#if WINDOWS || LINUX
             long endOfHead = blob.length + reader.Position;
 #endif
             byte b = (byte)reader.ReadByte();
@@ -222,7 +222,7 @@ namespace Zenith.LibraryWrappers.OSM
             }
             if (b != 24) throw new NotImplementedException();
             blob.datasize = (int)ReadVarInt(reader);
-#if WINDOWS
+#if WINDOWS || LINUX
             if (reader.Position != endOfHead) throw new NotImplementedException();
 #endif
             b = (byte)reader.ReadByte();
