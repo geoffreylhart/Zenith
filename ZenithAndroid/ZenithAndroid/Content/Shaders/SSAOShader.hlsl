@@ -5,29 +5,11 @@ float4x4 WVP;
 float4 offsets[KERNEL_SIZE];
 float SphereRadius;
 
-texture PositionTexture;
-sampler PositionSampler = sampler_state {
-	Texture = (PositionTexture);
-	MinFilter = Linear;
-	MagFilter = Linear;
-	AddressU = Clamp;
-	AddressV = Clamp;
-};
-
-texture NormalTexture;
-sampler2D NormalSampler = sampler_state {
-	Texture = (NormalTexture);
-	MinFilter = Linear;
-	MagFilter = Linear;
-	AddressU = Clamp;
-	AddressV = Clamp;
-};
-
-texture AlbedoTexture;
-sampler2D AlbedoSampler = sampler_state {
-	Texture = (AlbedoTexture);
-	MinFilter = Linear;
-	MagFilter = Linear;
+texture PNATexture;
+sampler PNASampler = sampler_state {
+	Texture = (PNATexture);
+	MinFilter = Point;
+	MagFilter = Point;
 	AddressU = Clamp;
 	AddressV = Clamp;
 };
@@ -57,11 +39,34 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 	return output;
 }
 
+//#define Unpack(f) (frac((f) / float3(16777216, 65536, 256)))
+
+inline float3 Unpack(float v)
+{
+    float3 kEncodeMul = float3(1.0, 255.0, 65025.0);
+    float kEncodeBit = 1.0 / 255.0;
+    float3 enc = kEncodeMul * v;
+    enc = frac(enc);
+    //enc -= enc.yzz * kEncodeBit;
+    return enc;
+}
+
+inline float3 UnpackNormal(float v)
+{
+    float3 kEncodeMul = float3(1.0, 255.0, 65025.0);
+    float kEncodeBit = 1.0 / 255.0;
+    float3 enc = kEncodeMul * v;
+    enc = (frac(enc)-0.5)*3;
+    //enc -= enc.yzz * kEncodeBit;
+    return float3(enc.x,enc.y,sqrt(1-enc.x*enc.x-enc.y*enc.y));
+}
+
 PixelShaderOutput PixelShaderFunction(VertexShaderOutput input)
 {
 	PixelShaderOutput output;
-	float4 bufferPosition = tex2D(PositionSampler, input.TextureCoordinate.xy);
-	float4 bufferNormal = tex2D(NormalSampler, input.TextureCoordinate.xy);
+	float4 bufferPNA = tex2D(PNASampler, input.TextureCoordinate.xy);
+	float4 bufferPosition = float4(input.TextureCoordinate.x * 2 - 1, 1 - input.TextureCoordinate.y * 2, bufferPNA.x, 1);
+	float4 bufferNormal = float4(UnpackNormal(bufferPNA.y), 1);
 	float3 normal = -bufferNormal.xyz;
 	float4 originalPos = mul(bufferPosition, InverseProjection); // gets the position relative to the camera
 	originalPos /= originalPos.w;
@@ -75,13 +80,13 @@ PixelShaderOutput PixelShaderFunction(VertexShaderOutput input)
 		float4 samplePos = originalPos + float4(SphereRadius * offset, 0);
 		float4 projectedSamplePos = mul(samplePos, Projection);
 		projectedSamplePos /= projectedSamplePos.w;
-		float4 sampleBufferPos = tex2D(PositionSampler, projectedSamplePos.xy * float2(0.5, -0.5) + float2(0.5, 0.5));
-		if (sampleBufferPos.z > projectedSamplePos.z) {
+		float4 sampleBufferPos = tex2D(PNASampler, projectedSamplePos.xy * float2(0.5, -0.5) + float2(0.5, 0.5));
+		if (sampleBufferPos.x > projectedSamplePos.z) {
 			occludeCount++;
 		}
 	}
 	float occlude = occludeCount / KERNEL_SIZE * occludeCount / KERNEL_SIZE;
-	output.Color = float4(occlude * tex2D(AlbedoSampler, input.TextureCoordinate.xy).xyz, 1);
+	output.Color = float4(occlude * Unpack(bufferPNA.z), 1);
 	return output;
 }
 
