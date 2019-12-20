@@ -59,7 +59,7 @@ namespace Zenith
                      DepthFormat.Depth24);
         }
 
-        private RenderTarget2D MakeDefaultRenderTarget(SurfaceFormat surfaceFormat)
+        private RenderTarget2D MakeDefaultRenderTarget(SurfaceFormat surfaceFormat, DepthFormat depthFormat)
         {
             return new RenderTarget2D(
                      GraphicsDevice,
@@ -67,17 +67,22 @@ namespace Zenith
                      GraphicsDevice.Viewport.Height,
                      false,
                      surfaceFormat,
-                     DepthFormat.Depth24);
+                     depthFormat);
         }
 
         private void MakeRenderTargets()
         {
             if (DEFERRED_RENDERING)
             {
-                var POSITION_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget(SurfaceFormat.Vector4)); // for now, holds the depth, TODO: why can't I just use Single? adds weird alpha
-                var NORMAL_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget(SurfaceFormat.Vector4)); // for now, holds the normal relative to the camera (after perspective is applid)
+#if WINDOWS
+                var POSITION_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget(SurfaceFormat.Vector4, DepthFormat.Depth24)); // for now, holds the depth, TODO: why can't I just use Single? adds weird alpha
+                var NORMAL_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget(SurfaceFormat.Vector4, DepthFormat.Depth24)); // for now, holds the normal relative to the camera (after perspective is applid)
                 var ALBEDO_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget()); // holds the color
                 G_BUFFER = new[] { POSITION_BUFFER, NORMAL_BUFFER, ALBEDO_BUFFER };
+#else
+                var PNA_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget(SurfaceFormat.Vector4, DepthFormat.Depth24)); // holds everything
+                G_BUFFER = new[] { PNA_BUFFER };
+#endif
             }
             RENDER_BUFFER = new[] { new RenderTargetBinding(MakeDefaultRenderTarget()) };
             TREE_DENSITY_BUFFER = new[] { new RenderTargetBinding(MakeDefaultRenderTarget()) };

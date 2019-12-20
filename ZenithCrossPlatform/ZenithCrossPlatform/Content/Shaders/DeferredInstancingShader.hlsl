@@ -27,9 +27,7 @@ struct VertexShaderOutput
 
 struct PixelShaderOutput
 {
-	float4 Position : COLOR0;
-	float4 Normal : COLOR1;
-	float4 Albedo : COLOR2;
+	float4 PNA : COLOR0;
 };
 
 VertexShaderOutput VertexShaderFunction(VertexShaderInput input, float4x4 instanceTransform : TEXCOORD1)
@@ -46,12 +44,29 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input, float4x4 instan
 	return output;
 }
 
+//#define Pack(c) (dot(round((c) * 255), float3(65536, 256, 1)))
+
+inline float Pack(float3 enc)
+{
+    float3 kDecodeDot = float3(1.0, 1/255.0, 1/65025.0);
+    return dot(enc, kDecodeDot);
+}
+
+inline float PackNormal(float3 e3)
+{
+	float2 enc = e3.xy / 3 + 0.5;
+	enc = round(enc * 255) / 255;
+    float2 kDecodeDot = float2(1.0, 1 / 255.0);
+    return dot(enc, kDecodeDot);
+}
+
 PixelShaderOutput PixelShaderFunction(VertexShaderOutput input)
 {
 	PixelShaderOutput output;
-	output.Position = float4(input.TexPosition.xyz / input.TexPosition.w, 1);
-	output.Normal = float4(normalize(input.Normal), 1);
-	output.Albedo = tex2D(textureSampler, input.TextureCoordinate);
+	float4 position = float4(input.TexPosition.xyz / input.TexPosition.w, 1);
+	float4 normal = float4(normalize(input.Normal), 1);
+	float4 albedo = tex2D(textureSampler, input.TextureCoordinate);
+	output.PNA = float4(position.z, PackNormal(normal.rgb), Pack(albedo.rgb), 1);
 	return output;
 }
 

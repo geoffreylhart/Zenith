@@ -81,9 +81,13 @@ namespace Zenith.EditorGameComponents
                 GlobalContent.SSAOShader.Parameters["offsets"].SetValue(randomOffsets);
                 float distance = 9 * (float)Math.Pow(0.5, Game1.camera.cameraZoom);
                 GlobalContent.SSAOShader.Parameters["SphereRadius"].SetValue(distance / 20);
+#if WINDOWS
                 GlobalContent.SSAOShader.Parameters["AlbedoTexture"].SetValue(Game1.G_BUFFER[2].RenderTarget);
                 GlobalContent.SSAOShader.Parameters["NormalTexture"].SetValue(Game1.G_BUFFER[1].RenderTarget);
                 GlobalContent.SSAOShader.Parameters["PositionTexture"].SetValue(Game1.G_BUFFER[0].RenderTarget);
+#else
+                GlobalContent.SSAOShader.Parameters["PNATexture"].SetValue(Game1.G_BUFFER[0].RenderTarget);
+#endif
                 DrawSquare(GraphicsDevice, GlobalContent.SSAOShader);
 
                 GraphicsDevice.SetRenderTarget(null);

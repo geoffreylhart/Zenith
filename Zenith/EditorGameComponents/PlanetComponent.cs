@@ -32,6 +32,7 @@ namespace Zenith.EditorGameComponents
             this.camera = camera;
             foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
             {
+#if WINDOWS
                 RenderTarget2D renderTarget = new RenderTarget2D(
                      GraphicsDevice,
                      2560,
@@ -39,6 +40,15 @@ namespace Zenith.EditorGameComponents
                      true,
                      GraphicsDevice.PresentationParameters.BackBufferFormat,
                      DepthFormat.Depth24);
+#else
+                RenderTarget2D renderTarget = new RenderTarget2D(
+                     GraphicsDevice,
+                     2560,
+                     1440,
+                     false,
+                     GraphicsDevice.PresentationParameters.BackBufferFormat,
+                     DepthFormat.Depth24);
+#endif
                 renderTargets[rootSector] = renderTarget;
             }
         }
