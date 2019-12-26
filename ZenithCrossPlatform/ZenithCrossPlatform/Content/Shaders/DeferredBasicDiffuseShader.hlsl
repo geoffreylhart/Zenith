@@ -9,7 +9,7 @@ struct VertexShaderInput
 struct VertexShaderOutput
 {
 	float4 Position : POSITION0;
-	float Depth : TEXCOORD0;
+	float2 DepthW : TEXCOORD0;
 };
 
 struct PixelShaderOutput
@@ -21,7 +21,7 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 {
 	VertexShaderOutput output;
 	output.Position = mul(input.Position, WVP);
-	output.Depth = output.Position.z / output.Position.w;
+	output.DepthW = float2(output.Position.z, output.Position.w);
 	return output;
 }
 
@@ -29,7 +29,7 @@ PixelShaderOutput PixelShaderFunction(VertexShaderOutput input)
 {
 	PixelShaderOutput output;
 	float4 albedo = DiffuseColor;
-	output.PNA = float4(albedo.rgb, input.Depth);
+	output.PNA = float4(albedo.rgb, input.DepthW.x / input.DepthW.y);
 	return output;
 }
 

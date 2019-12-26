@@ -300,11 +300,34 @@ namespace Zenith.EditorGameComponents
                 Matrixd view = CameraMatrixManager.GetWorldViewd(distance);
                 Matrixd projection = CameraMatrixManager.GetWorldProjectiond(distance, this.GraphicsDevice.Viewport.AspectRatio);
                 Matrixd transformMatrix = new Matrixd(xAxis.X, xAxis.Y, xAxis.Z, 0, yAxis.X, yAxis.Y, yAxis.Z, 0, zAxis.X, zAxis.Y, zAxis.Z, 0, start.X, start.Y, start.Z, 1); // turns our local coordinates into 3d spherical coordinates, based on the sector
-                basicEffect.World = (transformMatrix * world * view).toMatrix(); // combine them all to allow for higher precision
+                basicEffect.World = (Normalize(transformMatrix * world * view * projection)).toMatrix(); // combine them all to allow for higher precision
                 basicEffect.View = Matrix.Identity;
-                basicEffect.Projection = projection.toMatrix();
+                basicEffect.Projection = Matrix.Identity;
                 buffer.Draw(graphicsDevice, basicEffect, b.minX, b.maxX, b.minY, b.maxY, camera.cameraZoom, targets);
             }
+        }
+
+        private Matrixd Normalize(Matrixd m)
+        {
+            var vals = new double[] { m.M11, m.M12, m.M13, m.M14, m.M21, m.M22, m.M23, m.M24, m.M31, m.M32, m.M33, m.M34, m.M41, m.M42, m.M43, m.M44 };
+            double scaleAmount = 1 / vals.Select(Math.Abs).Average();
+            m.M11 *= scaleAmount;
+            m.M12 *= scaleAmount;
+            m.M13 *= scaleAmount;
+            m.M14 *= scaleAmount;
+            m.M21 *= scaleAmount;
+            m.M22 *= scaleAmount;
+            m.M23 *= scaleAmount;
+            m.M24 *= scaleAmount;
+            m.M31 *= scaleAmount;
+            m.M32 *= scaleAmount;
+            m.M33 *= scaleAmount;
+            m.M34 *= scaleAmount;
+            m.M41 *= scaleAmount;
+            m.M42 *= scaleAmount;
+            m.M43 *= scaleAmount;
+            m.M44 *= scaleAmount;
+            return m;
         }
 
         private SectorBounds GetSectorBounds(ISector rootSector)

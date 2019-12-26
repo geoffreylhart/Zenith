@@ -41,7 +41,7 @@ struct VertexShaderOutput
 {
 	float4 Position : POSITION0;
 	float3 SamplePositionThreshold : TEXCOORD0;
-	float Depth : TEXCOORD1;
+	float2 DepthW : TEXCOORD1;
 	float2 TextureCoordinate : TEXCOORD2;
 };
 
@@ -89,7 +89,7 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 	float2 texPos = (originProjected.xy * float2(1, -1) + float2(1, 1)) / 2;
 	float threshold = seed3 % 83 / 83.0;
 	output.SamplePositionThreshold = float3(texPos, threshold);
-	output.Depth = output.Position.z / output.Position.w;
+	output.DepthW = float2(output.Position.z, output.Position.w);
 	
 	output.TextureCoordinate = input.TextureCoordinate;
 	output.TextureCoordinate.x = (output.TextureCoordinate.x + seed4 % TextureCount) / TextureCount;
@@ -107,7 +107,7 @@ PixelShaderOutput PixelShaderFunction(VertexShaderOutput input)
 	float4 normal = float4(0, 0, 1, 1);
 	float4 albedo = color;
 	clip(color.a - 1);
-	output.PNA = float4(albedo.rgb, input.Depth);
+	output.PNA = float4(albedo.rgb, input.DepthW.x / input.DepthW.y);
 	return output;
 }
 
