@@ -72,6 +72,7 @@ namespace Zenith.EditorGameComponents
             foreach (var targets in new[] { Game1.TREE_DENSITY_BUFFER, Game1.GRASS_DENSITY_BUFFER, Game1.DEFERRED_RENDERING ? Game1.G_BUFFER : Game1.RENDER_BUFFER })
             {
                 GraphicsDevice.SetRenderTargets(targets);
+                GraphicsDevice.BlendState = BlendState.Opaque;
                 if (targets == Game1.RENDER_BUFFER)
                 {
                     var effect = this.GetDefaultEffect();
@@ -102,7 +103,6 @@ namespace Zenith.EditorGameComponents
                     var effect = GlobalContent.DeferredBasicNormalTextureShader;
                     float distance = (float)(9 * Math.Pow(0.5, camera.cameraZoom)); // TODO: this is hacky
                     Matrix view = CameraMatrixManager.GetWorldRelativeView(distance);
-                    effect.Parameters["WV"].SetValue(camera.world * view);
                     effect.Parameters["WVP"].SetValue(camera.world * view * camera.projection);
                     foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
                     {

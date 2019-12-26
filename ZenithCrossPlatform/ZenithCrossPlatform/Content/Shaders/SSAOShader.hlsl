@@ -1,9 +1,11 @@
+float2 PixelSize;
 float4x4 Projection;
 float4x4 InverseProjection;
 float4x4 WVP;
 #define KERNEL_SIZE 16
 float4 offsets[KERNEL_SIZE];
 float SphereRadius;
+float iTime;
 
 texture PNATexture;
 sampler PNASampler = sampler_state {
@@ -39,54 +41,30 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 	return output;
 }
 
-//#define Unpack(f) (frac((f) / float3(16777216, 65536, 256)))
-
-inline float3 Unpack(float v)
-{
-    float3 kEncodeMul = float3(1.0, 255.0, 65025.0);
-    float kEncodeBit = 1.0 / 255.0;
-    float3 enc = kEncodeMul * v;
-    enc = frac(enc);
-    //enc -= enc.yzz * kEncodeBit;
-    return enc;
-}
-
-inline float3 UnpackNormal(float v)
-{
-    float3 kEncodeMul = float3(1.0, 255.0, 65025.0);
-    float kEncodeBit = 1.0 / 255.0;
-    float3 enc = kEncodeMul * v;
-    enc = (frac(enc)-0.5)*3;
-    //enc -= enc.yzz * kEncodeBit;
-    return float3(enc.x,enc.y,sqrt(1-enc.x*enc.x-enc.y*enc.y));
-}
-
 PixelShaderOutput PixelShaderFunction(VertexShaderOutput input)
 {
 	PixelShaderOutput output;
 	float4 bufferPNA = tex2D(PNASampler, input.TextureCoordinate.xy);
-	float4 bufferPosition = float4(input.TextureCoordinate.x * 2 - 1, 1 - input.TextureCoordinate.y * 2, bufferPNA.x, 1);
-	float4 bufferNormal = float4(UnpackNormal(bufferPNA.y), 1);
-	float3 normal = -bufferNormal.xyz;
-	float4 originalPos = mul(bufferPosition, InverseProjection); // gets the position relative to the camera
-	originalPos /= originalPos.w;
+	float4 bufferPosition = float4(input.TextureCoordinate.x * 2 - 1, 1 - input.TextureCoordinate.y * 2, bufferPNA.w, 1);
+	//float4 bufferNormal = float4(UnpackNormal(bufferPNA.y), 1);
+	float x1 = tex2D(PNASampler, input.TextureCoordinate.xy-PixelSize.x).w;
+	float x2 = tex2D(PNASampler, input.TextureCoordinate.xy+PixelSize.x).w;
+	float y1 = tex2D(PNASampler, input.TextureCoordinate.xy-PixelSize.y).w;
+	float y2 = tex2D(PNASampler, input.TextureCoordinate.xy+PixelSize.y).w;
+	float3 dx = float3(2*PixelSize.x,0,x2-x1);
+	float3 dy = float3(0,2*PixelSize.y,y2-y1);
+	
+	float3 normal = normalize(cross(dx,dy)); // TODO: not accurate but lets roll with it
 	float occludeCount = 0;
 	for(int i = 0; i < KERNEL_SIZE; i++) {
-		float3 randomVec = normalize(float3(1, 1, 1));
-		float3 tangent = normalize(cross(normal, randomVec));
-		float3 bitangent = cross(normal, tangent);
-		float3x3 mat = float3x3(tangent, bitangent, normal);
-		float3 offset = offsets[i].z * normal + offsets[i].x * tangent + offsets[i].y * bitangent;
-		float4 samplePos = originalPos + float4(SphereRadius * offset, 0);
-		float4 projectedSamplePos = mul(samplePos, Projection);
-		projectedSamplePos /= projectedSamplePos.w;
-		float4 sampleBufferPos = tex2D(PNASampler, projectedSamplePos.xy * float2(0.5, -0.5) + float2(0.5, 0.5));
-		if (sampleBufferPos.x > projectedSamplePos.z) {
-			occludeCount++;
+		float2 offset = offsets[i].xy*20*PixelSize;
+		float predictedZ = bufferPNA.w+dot(offsets[i].xy*20,float2(x2-x1,y2-y1)/2);
+		if (tex2D(PNASampler, input.TextureCoordinate.xy+offset).w > predictedZ/1.01) {
+			occludeCount+=1.0;
 		}
 	}
-	float occlude = occludeCount / KERNEL_SIZE * occludeCount / KERNEL_SIZE;
-	output.Color = float4(occlude * Unpack(bufferPNA.z), 1);
+	float occlude = occludeCount / KERNEL_SIZE;
+	output.Color = float4(occlude * bufferPNA.rgb, 1);
 	return output;
 }
 

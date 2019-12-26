@@ -80,7 +80,7 @@ namespace Zenith
                 var ALBEDO_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget()); // holds the color
                 G_BUFFER = new[] { POSITION_BUFFER, NORMAL_BUFFER, ALBEDO_BUFFER };
 #else
-                var PNA_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget(SurfaceFormat.Vector4, DepthFormat.Depth24)); // holds everything
+                var PNA_BUFFER = new RenderTargetBinding(MakeDefaultRenderTarget(SurfaceFormat.HalfVector4, DepthFormat.Depth24)); // holds everything
                 G_BUFFER = new[] { PNA_BUFFER };
 #endif
             }

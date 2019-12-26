@@ -68,8 +68,7 @@ namespace Zenith.EditorGameComponents
             if (Game1.DEFERRED_RENDERING)
             {
                 GraphicsDevice.SetRenderTargets(Game1.RENDER_BUFFER);
-                GlobalContent.SSAOShader.Parameters["Projection"].SetValue(Game1.camera.projection);
-                GlobalContent.SSAOShader.Parameters["InverseProjection"].SetValue(Matrix.Invert(Game1.camera.projection));
+                GlobalContent.SSAOShader.Parameters["PixelSize"].SetValue(new Vector2(1.0f / GraphicsDevice.Viewport.Width, 1.0f / GraphicsDevice.Viewport.Height));
                 Vector4[] randomOffsets = new Vector4[16];
                 Random rand = new Random(12345);
                 for (int i = 0; i < 16; i++)
@@ -80,7 +79,6 @@ namespace Zenith.EditorGameComponents
                 }
                 GlobalContent.SSAOShader.Parameters["offsets"].SetValue(randomOffsets);
                 float distance = 9 * (float)Math.Pow(0.5, Game1.camera.cameraZoom);
-                GlobalContent.SSAOShader.Parameters["SphereRadius"].SetValue(distance / 20);
 #if WINDOWS
                 GlobalContent.SSAOShader.Parameters["AlbedoTexture"].SetValue(Game1.G_BUFFER[2].RenderTarget);
                 GlobalContent.SSAOShader.Parameters["NormalTexture"].SetValue(Game1.G_BUFFER[1].RenderTarget);

@@ -47,7 +47,7 @@ namespace Zenith.ZGraphics
                     return Matrix.CreatePerspectiveFieldOfView(Mathf.PI / 2, aspectRatio, distance * 0.1f, distance * 100);
                 case 1:
                     distance *= M_1;
-                    return Matrix.CreatePerspectiveFieldOfView(Mathf.PI / 4, aspectRatio, distance * 0.1f, distance * 100);
+                    return Matrix.CreatePerspectiveFieldOfView(Mathf.PI / 4, aspectRatio, distance * 0.5f, distance * 2);
                 case 2:
                     distance *= M_2;
                     return Matrix.CreateOrthographicOffCenter(-0.2f * distance * aspectRatio, 0.2f * distance * aspectRatio, -0.2f * distance, 0.2f * distance, distance * 0.1f, distance * 100);
@@ -83,7 +83,7 @@ namespace Zenith.ZGraphics
                     return Matrixd.CreatePerspectiveFieldOfView(Math.PI / 2, aspectRatio, distance * 0.1f, distance * 100);
                 case 1:
                     distance *= M_1;
-                    return Matrixd.CreatePerspectiveFieldOfView(Math.PI / 4, aspectRatio, distance * 0.1f, distance * 100);
+                    return Matrixd.CreatePerspectiveFieldOfView(Math.PI / 4, aspectRatio, distance * 0.5f, distance * 2);
                 case 2:
                     distance *= M_2;
                     return Matrixd.CreateOrthographicOffCenter(-0.2 * distance * aspectRatio, 0.2 * distance * aspectRatio, -0.2 * distance, 0.2 * distance, distance * 0.1, distance * 100);

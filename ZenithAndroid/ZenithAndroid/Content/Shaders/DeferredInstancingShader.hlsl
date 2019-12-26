@@ -1,4 +1,3 @@
-float4x4 WV;
 float4x4 WVP;
 
 texture Texture;
@@ -20,9 +19,8 @@ struct VertexShaderInput
 struct VertexShaderOutput
 {
 	float4 Position : POSITION0;
-	float3 Normal : TEXCOORD0;
+	float Depth : TEXCOORD0;
 	float2 TextureCoordinate : TEXCOORD1;
-	float4 TexPosition : TEXCOORD2; // TODO: why does using this work but using position not??
 };
 
 struct PixelShaderOutput
@@ -34,39 +32,16 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input, float4x4 instan
 {
 	VertexShaderOutput output;
 	output.Position = mul(mul(input.Position, transpose(instanceTransform)), WVP);
-	output.TexPosition = mul(mul(input.Position, transpose(instanceTransform)), WVP);
-	float4 pos = mul(mul(input.Position, transpose(instanceTransform)), WV);
-	pos /= pos.w;
-	float4 normalpos = mul(mul(input.Position + float4(input.Normal, 0), transpose(instanceTransform)), WV);
-	normalpos /= normalpos.w;
-	output.Normal = -(normalpos.xyz - pos.xyz);
+	output.Depth = output.Position.z / output.Position.w;
 	output.TextureCoordinate = input.TextureCoordinate;
 	return output;
-}
-
-//#define Pack(c) (dot(round((c) * 255), float3(65536, 256, 1)))
-
-inline float Pack(float3 enc)
-{
-    float3 kDecodeDot = float3(1.0, 1/255.0, 1/65025.0);
-    return dot(enc, kDecodeDot);
-}
-
-inline float PackNormal(float3 e3)
-{
-	float2 enc = e3.xy / 3 + 0.5;
-	enc = round(enc * 255) / 255;
-    float2 kDecodeDot = float2(1.0, 1 / 255.0);
-    return dot(enc, kDecodeDot);
 }
 
 PixelShaderOutput PixelShaderFunction(VertexShaderOutput input)
 {
 	PixelShaderOutput output;
-	float4 position = float4(input.TexPosition.xyz / input.TexPosition.w, 1);
-	float4 normal = float4(normalize(input.Normal), 1);
 	float4 albedo = tex2D(textureSampler, input.TextureCoordinate);
-	output.PNA = float4(position.z, PackNormal(normal.rgb), Pack(albedo.rgb), 1);
+	output.PNA = float4(albedo.rgb, input.Depth);
 	return output;
 }
 

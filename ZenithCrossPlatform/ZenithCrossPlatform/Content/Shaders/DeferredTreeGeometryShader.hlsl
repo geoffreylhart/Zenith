@@ -41,8 +41,8 @@ struct VertexShaderOutput
 {
 	float4 Position : POSITION0;
 	float3 SamplePositionThreshold : TEXCOORD0;
-	float2 TextureCoordinate : TEXCOORD1;
-	float4 TexPosition : TEXCOORD2; // TODO: why does using this work but using position not??
+	float Depth : TEXCOORD1;
+	float2 TextureCoordinate : TEXCOORD2;
 };
 
 struct PixelShaderOutput
@@ -89,27 +89,11 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 	float2 texPos = (originProjected.xy * float2(1, -1) + float2(1, 1)) / 2;
 	float threshold = seed3 % 83 / 83.0;
 	output.SamplePositionThreshold = float3(texPos, threshold);
-	output.TexPosition = output.Position;
+	output.Depth = output.Position.z / output.Position.w;
 	
 	output.TextureCoordinate = input.TextureCoordinate;
 	output.TextureCoordinate.x = (output.TextureCoordinate.x + seed4 % TextureCount) / TextureCount;
 	return output;
-}
-
-//#define Pack(c) (dot(round((c) * 255), float3(65536, 256, 1)))
-
-inline float Pack(float3 enc)
-{
-    float3 kDecodeDot = float3(1.0, 1/255.0, 1/65025.0);
-    return dot(enc, kDecodeDot);
-}
-
-inline float PackNormal(float3 e3)
-{
-	float2 enc = e3.xy / 3 + 0.5;
-	enc = round(enc * 255) / 255;
-    float2 kDecodeDot = float2(1.0, 1 / 255.0);
-    return dot(enc, kDecodeDot);
 }
 
 PixelShaderOutput PixelShaderFunction(VertexShaderOutput input)
@@ -118,12 +102,12 @@ PixelShaderOutput PixelShaderFunction(VertexShaderOutput input)
 	float4 color = tex2D(treeTextureSampler, input.TextureCoordinate);
 	float4 blah = tex2Dlod(textureSampler, float4(input.SamplePositionThreshold.xy, 2, 2));
 	if (blah.r <= input.SamplePositionThreshold.z) {
-		color = float4(0, 0, 0, 0);
+		discard;
 	}
-	float4 position = float4(input.TexPosition.xyz / input.TexPosition.w, 1) * color.a;
-	float4 normal = float4(0, 0, 1, 1) * color.a;
+	float4 normal = float4(0, 0, 1, 1);
 	float4 albedo = color;
-	output.PNA = float4(position.z, PackNormal(normal.rgb), Pack(albedo.rgb), 1) * color.a;
+	clip(color.a - 1);
+	output.PNA = float4(albedo.rgb, input.Depth);
 	return output;
 }
 
