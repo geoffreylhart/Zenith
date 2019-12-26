@@ -18,8 +18,8 @@ struct VertexShaderInput
 struct VertexShaderOutput
 {
 	float4 Position : POSITION0;
-	float Depth : TEXCOORD0;
-	float2 TextureCoordinate : TEXCOORD1;
+	float Depth : TEXCOORD1;
+	float2 TextureCoordinate : TEXCOORD0;
 };
 
 struct PixelShaderOutput
