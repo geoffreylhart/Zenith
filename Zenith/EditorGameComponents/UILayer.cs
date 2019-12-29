@@ -9,6 +9,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Zenith.EditorGameComponents.UIComponents;
 using Zenith.Helpers;
+using Zenith.MathHelpers;
 
 // TODO: likely split up the logic for the UI layer across multiple classes
 // a component manager, which exclusively adds buttons and stuff and turns components on and off
@@ -68,10 +69,13 @@ namespace Zenith.EditorGameComponents
             if (Game1.DEFERRED_RENDERING)
             {
                 GraphicsDevice.SetRenderTargets(Game1.RENDER_BUFFER);
-                GlobalContent.SSAOShader.Parameters["PixelSize"].SetValue(new Vector2(1.0f / GraphicsDevice.Viewport.Width, 1.0f / GraphicsDevice.Viewport.Height));
-                Vector4[] randomOffsets = new Vector4[16];
+                Matrixd projection = Matrixd.CreatePerspectiveFieldOfView(Math.PI / 4, GraphicsDevice.Viewport.AspectRatio, 0.5, 2);
+                GlobalContent.SSAOShader.Parameters["PixelSize"].SetValue(new Vector2(1.0f / GraphicsDevice.Viewport.Width, 2.0f / GraphicsDevice.Viewport.Height));
+                //GlobalContent.SSAOShader.Parameters["Projection"].SetValue(projection.toMatrix());
+                //GlobalContent.SSAOShader.Parameters["InverseProjection"].SetValue(Matrixd.Invert(projection).toMatrix());
+                Vector4[] randomOffsets = new Vector4[32];
                 Random rand = new Random(12345);
-                for (int i = 0; i < 16; i++)
+                for (int i = 0; i < 32; i++)
                 {
                     randomOffsets[i] = new Vector4((float)rand.NextDouble() * 2 - 1, (float)rand.NextDouble() * 2 - 1, -(float)rand.NextDouble(), 0);
                     randomOffsets[i].Normalize();
