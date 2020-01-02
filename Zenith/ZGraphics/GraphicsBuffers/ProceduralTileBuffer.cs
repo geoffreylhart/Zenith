@@ -129,6 +129,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             Console.WriteLine($"Houses generated for {sector} in {sw.Elapsed.TotalSeconds} s");
 #endif
             sw.Restart();
+            debugBuffer = new DebugBuffer(graphicsDevice, sector);
             // dereference
             beachVertices = null;
             lakeVertices = null;
@@ -165,6 +166,11 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             houseBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, targets);
 #endif
             treeBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, targets);
+            if (Game1.DEBUGGING)
+            {
+                graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, graphicsDevice.Viewport.MaxDepth, 0);
+                debugBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, targets);
+            }
         }
 
         public Texture2D GetImage(GraphicsDevice graphicsDevice)
