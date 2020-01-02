@@ -27,10 +27,10 @@ namespace ZenithUnitTests
             sw.Start();
             ProceduralTileBuffer buffer = new ProceduralTileBuffer(sector);
             buffer.LoadLinesFromFile();
-            double loadTimeSecs = sw.Elapsed.TotalSeconds; // 0.842 secs
+            double loadTimeSecs = sw.Elapsed.TotalSeconds; // 0.842 secs (1.781 tablet)
             sw.Restart();
             buffer.GenerateVertices();
-            double vertSecs = sw.Elapsed.TotalSeconds; // 0.404 secs
+            double vertSecs = sw.Elapsed.TotalSeconds; // 0.404 secs (0.773 tablet)
         }
 
         [TestMethod]
