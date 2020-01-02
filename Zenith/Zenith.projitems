@@ -41,7 +41,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\PrimitiveGroup.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\Relation.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\StringTable.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\Way2.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\RawWay.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZGeom\IGeom.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZGeom\LineGraph.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZGeom\PointCollection.cs" />
