@@ -33,6 +33,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         VectorTileBuffer vectorTileBufferUnused;
         TreeGeometryBuffer treeBuffer;
         HouseBuffer houseBuffer;
+        DebugBuffer debugBuffer;
 
         public ProceduralTileBuffer(ISector sector)
         {
@@ -147,6 +148,8 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             treeBuffer = null;
             if (houseBuffer != null) houseBuffer.Dispose();
             houseBuffer = null;
+            if (debugBuffer != null) debugBuffer.Dispose();
+            debugBuffer = null;
         }
 
         public void InitDraw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom)

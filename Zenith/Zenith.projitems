@@ -67,6 +67,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)MathHelpers\Matrixd.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MathHelpers\Rayd.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MathHelpers\RayHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\GraphicsBuffers\DebugBuffer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\GraphicsBuffers\GraphicsBuffer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\GraphicsBuffers\HouseBuffer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\GraphicsBuffers\IGraphicsBuffer.cs" />

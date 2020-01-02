@@ -9,6 +9,11 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Zenith", "..\Zenith\Zenith.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Triangle", "..\Zenith\LibraryWrappers\Triangle.NET\Triangle\Triangle.csproj", "{F7907A0A-B75F-400B-9E78-BFAD00DB4D6B}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{4BF64BB7-079A-4986-A8DD-03482938D1B9}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		..\Zenith\Zenith.projitems*{04cc6827-f642-4bfd-9116-4d2a0405211b}*SharedItemsImports = 4
