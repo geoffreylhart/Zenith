@@ -26,7 +26,8 @@ namespace Zenith
         public static RenderTargetBinding[] RENDER_BUFFER;
         public static RenderTargetBinding[] TREE_DENSITY_BUFFER;
         public static RenderTargetBinding[] GRASS_DENSITY_BUFFER;
-        public static bool recording = false;
+        public static bool RECORDING = false;
+        public static bool DEBUGGING = false;
         public int recordFrame = 0;
 #if WINDOWS || LINUX
         public static string RECORD_PATH = OSMPaths.GetLocalCacheRoot() + @"\LocalCache\Recording";
@@ -142,7 +143,8 @@ namespace Zenith
             {
                 Exit();
             }
-            if (Keyboard.GetState().WasKeyPressed(Keys.R)) recording = !recording;
+            if (Keyboard.GetState().WasKeyPressed(Keys.R)) RECORDING = !RECORDING;
+            if (Keyboard.GetState().WasKeyPressed(Keys.T)) DEBUGGING = !DEBUGGING;
             if (Keyboard.GetState().WasKeyPressed(Keys.C)) CameraMatrixManager.MODE = (CameraMatrixManager.MODE + 1) % CameraMatrixManager.MODE_COUNT;
 
             base.Update(gameTime);
@@ -157,7 +159,7 @@ namespace Zenith
         {
             GraphicsDevice.Clear(Color.Black);
             base.Draw(gameTime);
-            if (recording)
+            if (RECORDING)
             {
                 OSMSectorLoader.SuperSave((Texture2D)RENDER_BUFFER[0].RenderTarget, Path.Combine(RECORD_PATH, $"frame{recordFrame}.png"));
                 recordFrame++;

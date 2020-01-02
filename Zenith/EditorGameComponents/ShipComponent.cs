@@ -20,7 +20,7 @@ namespace Zenith.EditorGameComponents
 
         public override void Update(GameTime gameTime)
         {
-            if (!Game1.recording) MoveShip();
+            if (!Game1.RECORDING) MoveShip();
         }
 
         private void MoveShip()
@@ -161,7 +161,7 @@ namespace Zenith.EditorGameComponents
 
         public override void Draw(GameTime gameTime)
         {
-            if (Game1.recording) MoveShip();
+            if (Game1.RECORDING) MoveShip();
             SphereVector unitPosition = new SphereVector(position.Normalized());
             SphereVector up = unitPosition.WalkNorth(Math.PI / 2);
             SphereVector right = new SphereVector(up.Cross(unitPosition).Normalized());
