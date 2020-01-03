@@ -25,10 +25,11 @@
     <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\UITemp.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Game1.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GlobalContent.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\OSMLineBufferGenerator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\OSMPaths.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\PBF\Node.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\PBF\ChangeSet.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\OSMBufferGenerator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\OSMPolygonBufferGenerator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\PBF\Blob.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\BlobCollection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\PBF\DenseInfo.cs" />

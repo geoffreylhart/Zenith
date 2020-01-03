@@ -22,7 +22,7 @@ using Zenith.ZMath;
 
 namespace Zenith.LibraryWrappers
 {
-    class OSMBufferGenerator
+    class OSMPolygonBufferGenerator
     {
         public static List<VertexPositionColor> GetCoastVertices(LineGraph graph, ISector sector)
         {

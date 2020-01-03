@@ -65,14 +65,14 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         {
             Stopwatch sw = new Stopwatch();
             sw.Start();
-            beachVertices = OSMBufferGenerator.GetCoastVertices(beachGraph, sector);
+            beachVertices = OSMPolygonBufferGenerator.GetCoastVertices(beachGraph, sector);
             Console.WriteLine($"Beach verticies generated for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
             // TODO: break up beach coast into vertex and buffer
-            lakeVertices = OSMBufferGenerator.Tesselate(lakesGraph.ToContours(), Pallete.OCEAN_BLUE);
+            lakeVertices = OSMPolygonBufferGenerator.Tesselate(lakesGraph.ToContours(), Pallete.OCEAN_BLUE);
             Console.WriteLine($"Lake verticies generated for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
-            var multiLakeVertices = OSMBufferGenerator.Tesselate(multiLakesGraph.ToContours(), Pallete.OCEAN_BLUE);
+            var multiLakeVertices = OSMPolygonBufferGenerator.Tesselate(multiLakesGraph.ToContours(), Pallete.OCEAN_BLUE);
             Console.WriteLine($"Multilake vertices generated for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
             lakeVertices.AddRange(multiLakeVertices);
