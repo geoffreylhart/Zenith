@@ -524,9 +524,9 @@ namespace Zenith.LibraryWrappers
         }
     }
 
-    internal class NodeComparer : IComparer<Node>
+    internal class NodeComparer : IComparer<OsmSharp.Node>
     {
-        public int Compare(Node x, Node y)
+        public int Compare(OsmSharp.Node x, OsmSharp.Node y)
         {
             return x.Id.Value.CompareTo(y.Id.Value);
         }

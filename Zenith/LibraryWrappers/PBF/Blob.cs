@@ -84,7 +84,7 @@ namespace Zenith.LibraryWrappers.OSM
 
         internal class RoadInfoVector
         {
-            public List<RawWay> ways = new List<RawWay>();
+            public List<Way> ways = new List<Way>();
         }
     }
 }

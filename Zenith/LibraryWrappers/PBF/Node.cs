@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Zenith.LibraryWrappers.OSM
 {
-    public class RawNode
+    public class Node
     {
     }
 }

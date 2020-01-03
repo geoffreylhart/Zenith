@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Zenith.LibraryWrappers.OSM
 {
-    public class RawWay
+    public class Way
     {
         public long id; // 1
         public List<int> keys = new List<int>(); // 2, packed
@@ -15,9 +15,9 @@ namespace Zenith.LibraryWrappers.OSM
         public Info info; // 4
         public List<long> refs = new List<long>(); // 8, packed, signed, delta coded
 
-        internal static RawWay Read(Stream stream)
+        internal static Way Read(Stream stream)
         {
-            RawWay obj = new RawWay();
+            Way obj = new Way();
             long lengthInBytes = OSMReader.ReadVarInt(stream);
             long end = stream.Position + lengthInBytes;
             int b = stream.ReadByte();

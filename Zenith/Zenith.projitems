@@ -9,7 +9,6 @@
     <Import_RootNamespace>Zenith</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)AdvancedGeometryDataStructures\EditableMesh.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Constants.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\BlenderAxis.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\CityMarker.cs" />
@@ -26,22 +25,21 @@
     <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\UITemp.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Game1.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GlobalContent.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSMBufferGenerator.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\Blob.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\BlobCollection.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\ChangeSet.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\DenseInfo.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\DenseNodes.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\HeaderBlock.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\Info.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\Node.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\OSMReader.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\OSMPaths.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\PrimitiveBlock.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\PrimitiveGroup.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\Relation.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\StringTable.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\RawWay.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\PBF\Node.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\PBF\ChangeSet.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\OSMBufferGenerator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\PBF\Blob.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\BlobCollection.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\PBF\DenseInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\PBF\DenseNodes.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\PBF\Info.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\OSMReader.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\PBF\PrimitiveBlock.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\PBF\PrimitiveGroup.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\PBF\Relation.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\PBF\StringTable.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\PBF\Way.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZGeom\IGeom.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZGeom\LineGraph.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZGeom\PointCollection.cs" />
@@ -51,7 +49,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\GraphicsBasic.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\GraphicsDeviceHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\KeyboardStateHelper.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\Clipper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\Tesselate\Dict.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\Tesselate\Geom.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\Tesselate\Mesh.cs" />
@@ -100,6 +97,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="$(MSBuildThisFileDirectory)Content\" />
+    <Folder Include="$(MSBuildThisFileDirectory)LibraryWrappers\PBF\" />
   </ItemGroup>
   <ItemGroup>
     <MonoGameContentReference Include="$(MSBuildThisFileDirectory)Content\Content.mgcb" />
