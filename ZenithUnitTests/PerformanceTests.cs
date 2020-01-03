@@ -34,29 +34,6 @@ namespace ZenithUnitTests
         }
 
         [TestMethod]
-        public void TestSectorSize()
-        {
-            LongLat longLat = new LongLat(-87.3294527 * Math.PI / 180, 30.4668536 * Math.PI / 180);
-            CubeSector root = new CubeSector(CubeSector.CubeSectorFace.LEFT, 0, 0, 0);
-            Vector2d relativeCoord = root.ProjectToLocalCoordinates(longLat.ToSphereVector());
-            ISector sector = root.GetSectorAt(relativeCoord.X, relativeCoord.Y, 8);
-            string path = OSMPaths.GetSectorPath(sector);
-            long sectorLoadSize = new FileInfo(path).Length; // osm.pbf is 2,316,926 bytes
-            ProceduralTileBuffer buffer = new ProceduralTileBuffer(sector);
-            buffer.LoadLinesFromFile();
-            buffer.GenerateVertices();
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-            byte[] verticesBytes = buffer.GetVerticesBytes();
-            long verticesSize = verticesBytes.Length; // is 3,195,295 bytes
-            double writeSecs = sw.Elapsed.TotalSeconds; // 1.313 secs
-            sw.Restart();
-            buffer.SetVerticesFromBytes(verticesBytes);
-            double readSecs = sw.Elapsed.TotalSeconds; // 2.292 secs
-            // rendered image is 230,981 bytes
-        }
-
-        [TestMethod]
         public void TestParallelPerformance()
         {
             LongLat longLat = new LongLat(-87.3294527 * Math.PI / 180, 30.4668536 * Math.PI / 180);

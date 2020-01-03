@@ -23,11 +23,44 @@ namespace Zenith.LibraryWrappers.OSM
         {
             this.blobs = blobs;
             this.sector = sector;
+            // initialize
+            ISector rootSector = sector.GetRoot();
+            foreach (var blob in blobs)
+            {
+                if (blob.type != "OSMData") continue;
+                // build node data
+                for (int i = 0; i < blob.pBlock.primitivegroup.Count; i++)
+                {
+                    var pGroup = blob.pBlock.primitivegroup[i];
+                    for (int j = 0; j < pGroup.dense.Count; j++)
+                    {
+                        var d = pGroup.dense[j];
+                        for (int k = 0; k < d.id.Count; k++)
+                        {
+                            double longitude = .000000001 * (blob.pBlock.lon_offset + (blob.pBlock.granularity * d.lon[k]));
+                            double latitude = .000000001 * (blob.pBlock.lat_offset + (blob.pBlock.granularity * d.lat[k]));
+                            nodes[d.id[k]] = sector.ProjectToLocalCoordinates(new LongLat(longitude * Math.PI / 180, latitude * Math.PI / 180).ToSphereVector());
+                        }
+                    }
+                }
+            }
         }
 
-        internal void Init()
+        internal IEnumerable<Way> EnumerateWays()
         {
-            // throw new NotImplementedException();
+            foreach (var blob in blobs)
+            {
+                if (blob.type != "OSMData") continue;
+                RoadInfoVector info = new RoadInfoVector();
+                foreach (var pGroup in blob.pBlock.primitivegroup)
+                {
+                    foreach (var way in pGroup.ways)
+                    {
+                        way.InitKeyValues(blob.pBlock.stringtable);
+                        yield return way;
+                    }
+                }
+            }
         }
 
         internal LineGraph GetRoadsFast()

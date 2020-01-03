@@ -54,6 +54,20 @@ namespace Zenith.ZGraphics
             }
         }
 
+        public BasicVertexBuffer(GraphicsDevice graphicsDevice, List<int> indices, List<VertexPositionNormalTexture> vertices, Texture2D texture, bool textureWrap, PrimitiveType primitiveType)
+        {
+            if (vertices.Count > 0)
+            {
+                this.vertices = new VertexBuffer(graphicsDevice, VertexPositionNormalTexture.VertexDeclaration, vertices.Count, BufferUsage.WriteOnly);
+                this.vertices.SetData(vertices.ToArray());
+                this.indices = new IndexBuffer(graphicsDevice, IndexElementSize.ThirtyTwoBits, indices.Count, BufferUsage.WriteOnly);
+                this.indices.SetData(indices.ToArray());
+                this.texture = texture;
+                this.textureWrap = textureWrap;
+                this.primitiveType = primitiveType;
+            }
+        }
+
         public void Dispose()
         {
             if (vertices != null) vertices.Dispose();

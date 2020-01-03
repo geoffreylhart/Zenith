@@ -34,6 +34,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                 double circumEarth = 24901 * 5280;
                 double width = widthInFeet / circumEarth * 2 * Math.PI;
                 BlobCollection blobs = OSMReader.GetAllBlobs(sector);
+                roadsBuffer = OSMLineBufferGenerator.GenerateDebugLines(graphicsDevice, blobs);
                 LineGraph roadGraph = blobs.GetRoadsFast();
                 roadsBuffer = roadGraph.ConstructAsRoads(graphicsDevice, width * 4 / 50, GlobalContent.Error, Microsoft.Xna.Framework.Color.White);
             }
