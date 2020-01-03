@@ -133,36 +133,6 @@ namespace Zenith.LibraryWrappers.OSM
             return value;
         }
 
-        internal static void WriteSignedVarInt(Stream writer, long x)
-        {
-            if (x < 0)
-            {
-                WriteVarInt(writer, x * -2 - 1);
-            }
-            else
-            {
-                WriteVarInt(writer, x * 2);
-            }
-        }
-
-        public static void WriteVarInt(Stream writer, long x)
-        {
-            do
-            {
-                if (x > 127)
-                {
-                    writer.WriteByte((byte)((x & 127) | 128));
-                    x >>= 7;
-                }
-                else
-                {
-                    writer.WriteByte((byte)x);
-                    return;
-                }
-            }
-            while (x > 0);
-        }
-
         internal static List<long> ReadPackedDeltaCodedVarInts(Stream stream)
         {
             long length = ReadVarInt(stream);
@@ -208,9 +178,6 @@ namespace Zenith.LibraryWrappers.OSM
             int? length = ReadInt32UnlessEOF(reader);
             if (!length.HasValue) return null;
             blob.length = length.Value;
-#if WINDOWS || LINUX
-            long endOfHead = blob.length + reader.Position;
-#endif
             byte b = (byte)reader.ReadByte();
             if (b != 10) throw new NotImplementedException();
             blob.type = ReadString(reader);
@@ -222,9 +189,6 @@ namespace Zenith.LibraryWrappers.OSM
             }
             if (b != 24) throw new NotImplementedException();
             blob.datasize = (int)ReadVarInt(reader);
-#if WINDOWS || LINUX
-            if (reader.Position != endOfHead) throw new NotImplementedException();
-#endif
             b = (byte)reader.ReadByte();
             if (b == 16)
             {
@@ -244,26 +208,12 @@ namespace Zenith.LibraryWrappers.OSM
             return bytes;
         }
 
-        public static void WriteBytes(Stream writer, byte[] x)
-        {
-            WriteVarInt(writer, x.Length);
-            writer.Write(x, 0, x.Length);
-        }
-
         public static string ReadString(Stream reader)
         {
             byte[] bytes = ReadBytes(reader);
             char[] chars = new char[bytes.LongLength];
             for (long i = 0; i < bytes.LongLength; i++) chars[i] = (char)bytes[i];
             return new string(chars);
-        }
-
-        public static void WriteString(Stream writer, string x)
-        {
-            char[] chars = x.ToCharArray();
-            byte[] bytes = new byte[chars.Length];
-            for (long i = 0; i < chars.Length; i++) bytes[i] = (byte)chars[i];
-            WriteBytes(writer, bytes);
         }
 
         public static int ReadInt32(Stream reader)
@@ -284,70 +234,6 @@ namespace Zenith.LibraryWrappers.OSM
             int b3 = reader.ReadByte() << 4;
             int b4 = reader.ReadByte();
             return b1 + b2 + b3 + b4;
-        }
-
-        internal static List<VertexPositionColor> GetRoadsSlow(string path)
-        {
-            List<OsmSharp.Node> nodes = new List<OsmSharp.Node>();
-            List<OsmSharp.Way> highways = new List<OsmSharp.Way>();
-            using (var reader = new FileInfo(path).OpenRead())
-            {
-                using (var src = new PBFOsmStreamSource(reader))
-                {
-                    foreach (var element in src)
-                    {
-                        if (element is OsmSharp.Node) nodes.Add((OsmSharp.Node)element);
-                        if (IsHighway(element)) highways.Add((OsmSharp.Way)element);
-                    }
-                }
-            }
-            var shapeAsVertices = new List<VertexPositionColor>();
-            foreach (var highway in highways)
-            {
-                for (int i = 0; i < highway.Nodes.Length - 1; i++)
-                {
-                    OsmSharp.Node node1 = new OsmSharp.Node();
-                    OsmSharp.Node node2 = new OsmSharp.Node();
-                    node1.Id = highway.Nodes[i];
-                    node2.Id = highway.Nodes[i + 1];
-                    int found1 = nodes.BinarySearch(node1, new NodeComparer());
-                    int found2 = nodes.BinarySearch(node2, new NodeComparer());
-                    if (found1 < 0) continue;
-                    if (found2 < 0) continue;
-                    node1 = nodes[found1];
-                    node2 = nodes[found2];
-                    LongLat longlat1 = new LongLat(node1.Longitude.Value * Math.PI / 180, node1.Latitude.Value * Math.PI / 180);
-                    LongLat longlat2 = new LongLat(node2.Longitude.Value * Math.PI / 180, node2.Latitude.Value * Math.PI / 180);
-                    shapeAsVertices.Add(new VertexPositionColor(new Vector3(longlat1, -10f), Microsoft.Xna.Framework.Color.White));
-                    shapeAsVertices.Add(new VertexPositionColor(new Vector3(longlat2, -10f), Microsoft.Xna.Framework.Color.White));
-                }
-            }
-            return shapeAsVertices;
-        }
-
-        public static double ReadDouble(Stream reader)
-        {
-            BinaryReader br = new BinaryReader(reader);
-            return br.ReadDouble();
-        }
-
-        public static void WriteDouble(Stream writer, double x)
-        {
-            BinaryWriter bw = new BinaryWriter(writer);
-            bw.Write(x);
-        }
-
-        private static bool IsHighway(OsmGeo element)
-        {
-            if (!(element is OsmSharp.Way)) return false;
-            foreach (var tag in element.Tags)
-            {
-                if (tag.Key == "highway")
-                {
-                    return true;
-                }
-            }
-            return false;
         }
     }
 }

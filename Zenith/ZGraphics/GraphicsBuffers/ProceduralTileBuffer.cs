@@ -197,52 +197,5 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             texture.Dispose();
             return newtexture;
         }
-
-        // return a compressed stream of the preloaded vertex information
-        public byte[] GetVerticesBytes()
-        {
-            using (var memStream = new MemoryStream())
-            {
-                beachGraph.WriteToStream(memStream);
-                lakesGraph.WriteToStream(memStream);
-                multiLakesGraph.WriteToStream(memStream);
-                roadGraph.WriteToStream(memStream);
-                return Deflate(memStream.ToArray(), CompressionMode.Compress);
-            }
-        }
-
-        public void SetVerticesFromBytes(byte[] bytes)
-        {
-            using (var memStream = new MemoryStream(Deflate(bytes, CompressionMode.Decompress)))
-            {
-                beachGraph = new LineGraph().ReadFromStream(memStream);
-                lakesGraph = new LineGraph().ReadFromStream(memStream);
-                multiLakesGraph = new LineGraph().ReadFromStream(memStream);
-                roadGraph = new LineGraph().ReadFromStream(memStream);
-            }
-        }
-
-        // just an example, right now
-        private static byte[] Deflate(byte[] x, CompressionMode mode)
-        {
-            using (var inStream = new MemoryStream(x))
-            using (var outStream = new MemoryStream())
-            {
-                Deflate(inStream, outStream, mode);
-                return outStream.ToArray();
-            }
-        }
-
-        private static void Deflate(Stream inStream, Stream outStream, CompressionMode mode)
-        {
-            if (mode == CompressionMode.Compress)
-            {
-                using (var deflateStream = new DeflateStream(outStream, mode)) inStream.CopyTo(deflateStream);
-            }
-            else
-            {
-                using (var deflateStream = new DeflateStream(inStream, mode)) deflateStream.CopyTo(outStream);
-            }
-        }
     }
 }

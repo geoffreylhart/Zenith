@@ -57,31 +57,6 @@ namespace ZenithUnitTests
         }
 
         [TestMethod]
-        public void TestReadWrite()
-        {
-            long num = 1000;
-            string str = "geoffrey";
-            double numD = Math.PI;
-            byte[] written;
-            using (var memStream = new MemoryStream())
-            {
-                OSMReader.WriteVarInt(memStream, num);
-                OSMReader.WriteString(memStream, str);
-                OSMReader.WriteDouble(memStream, numD);
-                written = memStream.ToArray();
-            }
-            using (var memStream = new MemoryStream(written))
-            {
-                long readNum = OSMReader.ReadVarInt(memStream);
-                string readStr = OSMReader.ReadString(memStream);
-                double readNumD = OSMReader.ReadDouble(memStream);
-                Assert.AreEqual(readNum, num);
-                Assert.AreEqual(readStr, str);
-                Assert.AreEqual(readNumD, numD);
-            }
-        }
-
-        [TestMethod]
         public void TestParallelPerformance()
         {
             LongLat longLat = new LongLat(-87.3294527 * Math.PI / 180, 30.4668536 * Math.PI / 180);

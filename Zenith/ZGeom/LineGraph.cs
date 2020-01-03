@@ -141,43 +141,6 @@ namespace Zenith.ZGeom
             return this;
         }
 
-        internal void WriteToStream(Stream stream)
-        {
-            Dictionary<GraphNode, int> indices = new Dictionary<GraphNode, int>();
-            for (int i = 0; i < nodes.Count; i++) indices[nodes[i]] = i;
-            OSMReader.WriteVarInt(stream, nodes.Count);
-            foreach (var node in nodes)
-            {
-                OSMReader.WriteVarInt(stream, node.isHole ? 1 : 0);
-                OSMReader.WriteVarInt(stream, node.nextConnections.Count);
-                foreach (var c in node.nextConnections) OSMReader.WriteVarInt(stream, indices[c]);
-                OSMReader.WriteVarInt(stream, node.nextProps.Count);
-                foreach (var prop in node.nextProps)
-                {
-                    OSMReader.WriteVarInt(stream, prop.Count);
-                    foreach (var pair in prop)
-                    {
-                        OSMReader.WriteString(stream, pair.Key);
-                        OSMReader.WriteString(stream, pair.Value);
-                    }
-                }
-                OSMReader.WriteDouble(stream, node.pos.X);
-                OSMReader.WriteDouble(stream, node.pos.Y);
-                OSMReader.WriteVarInt(stream, node.prevConnections.Count);
-                foreach (var c in node.prevConnections) OSMReader.WriteVarInt(stream, indices[c]);
-                OSMReader.WriteVarInt(stream, node.prevProps.Count);
-                foreach (var prop in node.prevProps)
-                {
-                    OSMReader.WriteVarInt(stream, prop.Count);
-                    foreach (var pair in prop)
-                    {
-                        OSMReader.WriteString(stream, pair.Key);
-                        OSMReader.WriteString(stream, pair.Value);
-                    }
-                }
-            }
-        }
-
         internal List<Matrix> ConstructHousePositions()
         {
             var matrices = new List<Matrix>();
@@ -211,47 +174,6 @@ namespace Zenith.ZGeom
                 }
             }
             return matrices;
-        }
-
-        internal LineGraph ReadFromStream(Stream stream)
-        {
-            int nodeCount = (int)OSMReader.ReadVarInt(stream);
-            for (int i = 0; i < nodeCount; i++)
-            {
-                nodes.Add(new GraphNode(null));
-            }
-            foreach (var node in nodes)
-            {
-                node.isHole = OSMReader.ReadVarInt(stream) == 1;
-                int nextConnectionCount = (int)OSMReader.ReadVarInt(stream);
-                for (int i = 0; i < nextConnectionCount; i++)
-                {
-                    node.nextConnections.Add(nodes[(int)OSMReader.ReadVarInt(stream)]);
-                }
-                int nextPropCount = (int)OSMReader.ReadVarInt(stream);
-                for (int i = 0; i < nextPropCount; i++)
-                {
-                    int pairCount = (int)OSMReader.ReadVarInt(stream);
-                    var dict = new Dictionary<string, string>();
-                    node.nextProps.Add(dict);
-                    for (int j = 0; j < pairCount; j++) dict.Add(OSMReader.ReadString(stream), OSMReader.ReadString(stream));
-                }
-                node.pos = new Vector2d(OSMReader.ReadDouble(stream), OSMReader.ReadDouble(stream));
-                int prevConnectionCount = (int)OSMReader.ReadVarInt(stream);
-                for (int i = 0; i < prevConnectionCount; i++)
-                {
-                    node.prevConnections.Add(nodes[(int)OSMReader.ReadVarInt(stream)]);
-                }
-                int prevPropCount = (int)OSMReader.ReadVarInt(stream);
-                for (int i = 0; i < prevPropCount; i++)
-                {
-                    int pairCount = (int)OSMReader.ReadVarInt(stream);
-                    var dict = new Dictionary<string, string>();
-                    node.prevProps.Add(dict);
-                    for (int j = 0; j < pairCount; j++) dict.Add(OSMReader.ReadString(stream), OSMReader.ReadString(stream));
-                }
-            }
-            return this;
         }
 
         internal LineGraph Combine(LineGraph x)
