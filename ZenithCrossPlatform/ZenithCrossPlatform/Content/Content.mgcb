@@ -215,6 +215,12 @@
 /processorParam:DebugMode=Auto
 /build:Shaders/BlurShader.hlsl
 
+#begin Shaders/DebugLinesShader.hlsl
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Shaders/DebugLinesShader.hlsl
+
 #begin Shaders/DeferredBasicColorShader.hlsl
 /importer:EffectImporter
 /processor:EffectProcessor

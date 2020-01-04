@@ -11,6 +11,7 @@ namespace Zenith
     class GlobalContent
     {
         public static Effect BlurShader;
+        public static Effect DebugLinesShader;
         public static Effect DeferredBasicColorShader;
         public static Effect DeferredBasicDiffuseShader;
         public static Effect DeferredBasicNormalTextureShader;
@@ -41,6 +42,7 @@ namespace Zenith
         public static void Init(ContentManager content)
         {
             BlurShader = content.Load<Effect>("Shaders/BlurShader");
+            DebugLinesShader = content.Load<Effect>("Shaders/DebugLinesShader");
             DeferredBasicColorShader = content.Load<Effect>("Shaders/DeferredBasicColorShader");
             DeferredBasicDiffuseShader = content.Load<Effect>("Shaders/DeferredBasicDiffuseShader");
             DeferredBasicNormalTextureShader = content.Load<Effect>("Shaders/DeferredBasicNormalTextureShader");

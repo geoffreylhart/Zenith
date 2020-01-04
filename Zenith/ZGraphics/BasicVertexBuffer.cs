@@ -14,7 +14,7 @@ namespace Zenith.ZGraphics
         public IndexBuffer indices;
         private PrimitiveType primitiveType;
         private GraphicsDevice graphicsDevice;
-        private Texture2D texture;
+        public Texture2D texture;
         private bool textureWrap;
         private PrimitiveType triangleList;
 

@@ -11,6 +11,7 @@ namespace Zenith.LibraryWrappers.OSM
     class OSMLineBufferGenerator
     {
         // generates a zero-width quad for each line in the blob collection, with texture and color
+        // arrow texture will point in the direction the nodes are given in
         internal static BasicVertexBuffer GenerateDebugLines(GraphicsDevice graphicsDevice, BlobCollection blobs)
         {
             List<int> indices = new List<int>();
@@ -25,12 +26,10 @@ namespace Zenith.LibraryWrappers.OSM
                     {
                         Vector2d pos1 = blobs.nodes[prev.Value];
                         Vector2d pos2 = blobs.nodes[v.Value];
-                        Vector3 normalLeft = new Vector3((pos2 - pos1).RotateCCW90(), 0);
-                        Vector3 normalRight = new Vector3((pos2 - pos1).RotateCW90(), 0);
-                        var topLeft = new VertexPositionNormalTexture(new Vector3(pos2, 0), normalLeft, new Vector2(0, 0));
-                        var topRight = new VertexPositionNormalTexture(new Vector3(pos2, 0), normalRight, new Vector2(0, 1));
-                        var bottomLeft = new VertexPositionNormalTexture(new Vector3(pos1, 0), normalLeft, new Vector2(1, 0));
-                        var bottomRight = new VertexPositionNormalTexture(new Vector3(pos1, 0), normalRight, new Vector2(1, 1));
+                        var topLeft = new VertexPositionNormalTexture(new Vector3(pos2, 0), new Vector3(pos1, 0), new Vector2(0, 0));
+                        var topRight = new VertexPositionNormalTexture(new Vector3(pos2, 0), new Vector3(pos1, 0), new Vector2(1, 0));
+                        var bottomLeft = new VertexPositionNormalTexture(new Vector3(pos1, 0), new Vector3(pos2, 0), new Vector2(0, 1));
+                        var bottomRight = new VertexPositionNormalTexture(new Vector3(pos1, 0), new Vector3(pos2, 0), new Vector2(1, 1));
                         vertices.Add(topLeft);
                         vertices.Add(topRight);
                         vertices.Add(bottomLeft);

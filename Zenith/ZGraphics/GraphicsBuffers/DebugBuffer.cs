@@ -13,7 +13,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
     {
         private SpriteBatch spriteBatch;
         private ISector sector;
-        BasicVertexBuffer roadsBuffer;
+        BasicVertexBuffer debugLinesBuffer;
 
         public DebugBuffer(GraphicsDevice graphicsDevice, ISector sector)
         {
@@ -28,17 +28,24 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, RenderTargetBinding[] targets)
         {
             if (targets != Game1.G_BUFFER && targets != Game1.RENDER_BUFFER) return;
-            if (roadsBuffer == null)
+            if (debugLinesBuffer == null)
             {
-                double widthInFeet = 10.7 * 50; // extra thick
-                double circumEarth = 24901 * 5280;
-                double width = widthInFeet / circumEarth * 2 * Math.PI;
                 BlobCollection blobs = OSMReader.GetAllBlobs(sector);
-                roadsBuffer = OSMLineBufferGenerator.GenerateDebugLines(graphicsDevice, blobs);
-                LineGraph roadGraph = blobs.GetRoadsFast();
-                roadsBuffer = roadGraph.ConstructAsRoads(graphicsDevice, width * 4 / 50, GlobalContent.Error, Microsoft.Xna.Framework.Color.White);
+                debugLinesBuffer = OSMLineBufferGenerator.GenerateDebugLines(graphicsDevice, blobs);
             }
-            roadsBuffer.Draw(graphicsDevice, basicEffect, targets);
+            // draw those lines
+            Effect effect = GlobalContent.DebugLinesShader;
+            graphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
+            effect.Parameters["Texture"].SetValue(debugLinesBuffer.texture);
+            effect.Parameters["WVP"].SetValue(basicEffect.World * basicEffect.View * basicEffect.Projection);
+            effect.Parameters["ScreenSize"].SetValue(new Vector2(graphicsDevice.Viewport.Width, graphicsDevice.Viewport.Height));
+            graphicsDevice.Indices = debugLinesBuffer.indices;
+            graphicsDevice.SetVertexBuffer(debugLinesBuffer.vertices);
+            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, debugLinesBuffer.indices.IndexCount / 3);
+            }
             // TODO: need to call this once for all debug buffers somehow
             string text = $"Nothing Selected";
             Vector2 size = GlobalContent.Arial.MeasureString(text);
@@ -54,8 +61,8 @@ namespace Zenith.ZGraphics.GraphicsBuffers
 
         public void Dispose()
         {
-            if (roadsBuffer != null) roadsBuffer.Dispose();
-            roadsBuffer = null;
+            if (debugLinesBuffer != null) debugLinesBuffer.Dispose();
+            debugLinesBuffer = null;
         }
     }
 }
