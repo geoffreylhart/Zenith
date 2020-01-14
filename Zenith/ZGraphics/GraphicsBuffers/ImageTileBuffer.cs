@@ -41,23 +41,24 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             buffer.Dispose();
         }
 
-        public void InitDraw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        public void InitDraw(RenderContext context)
         {
         }
 
-        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, RenderTargetBinding[] targets)
+        public void Draw(RenderContext context)
         {
-            basicEffect = (BasicEffect)basicEffect.Clone();
+            BasicEffect basicEffect = new BasicEffect(context.graphicsDevice);
+            basicEffect.World = context.WVP.toMatrix();
             basicEffect.TextureEnabled = true;
             basicEffect.Texture = buffer.texture;
             foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
             {
                 pass.Apply();
-                graphicsDevice.Indices = buffer.indices;
-                graphicsDevice.SetVertexBuffer(buffer.vertices);
-                graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, buffer.indices.IndexCount / 3);
+                context.graphicsDevice.Indices = buffer.indices;
+                context.graphicsDevice.SetVertexBuffer(buffer.vertices);
+                context.graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, buffer.indices.IndexCount / 3);
             }
-            graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, graphicsDevice.Viewport.MaxDepth, 0);
+            context.graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, context.graphicsDevice.Viewport.MaxDepth, 0);
         }
 
         public Texture2D GetImage(GraphicsDevice graphicsDevice)

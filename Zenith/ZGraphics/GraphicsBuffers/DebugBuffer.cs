@@ -21,36 +21,36 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             this.spriteBatch = new SpriteBatch(graphicsDevice);
         }
 
-        public void InitDraw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        public void InitDraw(RenderContext context)
         {
         }
 
-        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, RenderTargetBinding[] targets)
+        public void Draw(RenderContext context)
         {
-            if (targets != Game1.G_BUFFER && targets != Game1.RENDER_BUFFER) return;
+            if (context.layerPass != RenderContext.LayerPass.MAIN_PASS) return;
             if (debugLinesBuffer == null)
             {
                 BlobCollection blobs = OSMReader.GetAllBlobs(sector);
-                debugLinesBuffer = OSMLineBufferGenerator.GenerateDebugLines(graphicsDevice, blobs);
+                debugLinesBuffer = OSMLineBufferGenerator.GenerateDebugLines(context.graphicsDevice, blobs);
             }
             // draw those lines
             Effect effect = GlobalContent.DebugLinesShader;
-            graphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
+            context.graphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
             effect.Parameters["Texture"].SetValue(debugLinesBuffer.texture);
-            effect.Parameters["WVP"].SetValue(basicEffect.World * basicEffect.View * basicEffect.Projection);
-            effect.Parameters["ScreenSize"].SetValue(new Vector2(graphicsDevice.Viewport.Width, graphicsDevice.Viewport.Height));
-            graphicsDevice.Indices = debugLinesBuffer.indices;
-            graphicsDevice.SetVertexBuffer(debugLinesBuffer.vertices);
+            effect.Parameters["WVP"].SetValue(context.WVP.toMatrix());
+            effect.Parameters["ScreenSize"].SetValue(new Vector2(context.graphicsDevice.Viewport.Width, context.graphicsDevice.Viewport.Height));
+            context.graphicsDevice.Indices = debugLinesBuffer.indices;
+            context.graphicsDevice.SetVertexBuffer(debugLinesBuffer.vertices);
             foreach (EffectPass pass in effect.CurrentTechnique.Passes)
             {
                 pass.Apply();
-                graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, debugLinesBuffer.indices.IndexCount / 3);
+                context.graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, debugLinesBuffer.indices.IndexCount / 3);
             }
             // TODO: need to call this once for all debug buffers somehow
             string text = $"Nothing Selected";
             Vector2 size = GlobalContent.Arial.MeasureString(text);
             spriteBatch.Begin(SpriteSortMode.Deferred, null, null, DepthStencilState.Default, null, null, null);
-            spriteBatch.DrawString(GlobalContent.Arial, text, new Vector2(graphicsDevice.Viewport.Width - 5 - size.X, 5), Color.White);
+            spriteBatch.DrawString(GlobalContent.Arial, text, new Vector2(context.graphicsDevice.Viewport.Width - 5 - size.X, 5), Color.White);
             spriteBatch.End();
         }
 

@@ -46,44 +46,43 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         {
         }
 
-        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, RenderTargetBinding[] targets)
+        public void Draw(RenderContext context)
         {
-            if (targets == Game1.RENDER_BUFFER)
+            if (context.layerPass != RenderContext.LayerPass.MAIN_PASS) return;
+            if (!Game1.DEFERRED_RENDERING)
             {
                 // TODO: we've temporarily flipped the normals on the model
                 var effect = GlobalContent.InstancingShader;
-                effect.Parameters["World"].SetValue(basicEffect.World);
-                effect.Parameters["View"].SetValue(basicEffect.View);
-                effect.Parameters["Projection"].SetValue(basicEffect.Projection);
+                effect.Parameters["WVP"].SetValue(context.WVP.toMatrix());
                 int i = 0;
                 foreach (ModelMesh mesh in GlobalContent.House.Meshes)
                 {
                     foreach (var meshPart in mesh.MeshParts)
                     {
                         effect.Parameters["Texture"].SetValue(((BasicEffect)meshPart.Effect).Texture);
-                        graphicsDevice.Indices = meshPart.IndexBuffer;
+                        context.graphicsDevice.Indices = meshPart.IndexBuffer;
                         effect.CurrentTechnique.Passes[0].Apply();
-                        graphicsDevice.SetVertexBuffers(bindings[i]);
-                        graphicsDevice.DrawInstancedPrimitives(PrimitiveType.TriangleList, meshPart.VertexOffset, meshPart.StartIndex, meshPart.PrimitiveCount, matrices.Count);
+                        context.graphicsDevice.SetVertexBuffers(bindings[i]);
+                        context.graphicsDevice.DrawInstancedPrimitives(PrimitiveType.TriangleList, meshPart.VertexOffset, meshPart.StartIndex, meshPart.PrimitiveCount, matrices.Count);
                         i++;
                     }
                 }
             }
-            if (targets == Game1.G_BUFFER)
+            if (Game1.DEFERRED_RENDERING)
             {
                 // TODO: we've temporarily flipped the normals on the model
                 var effect = GlobalContent.DeferredInstancingShader;
-                effect.Parameters["WVP"].SetValue(basicEffect.World * basicEffect.View * basicEffect.Projection);
+                effect.Parameters["WVP"].SetValue(context.WVP.toMatrix());
                 int i = 0;
                 foreach (ModelMesh mesh in GlobalContent.House.Meshes)
                 {
                     foreach (var meshPart in mesh.MeshParts)
                     {
                         effect.Parameters["Texture"].SetValue(((BasicEffect)meshPart.Effect).Texture);
-                        graphicsDevice.Indices = meshPart.IndexBuffer;
+                        context.graphicsDevice.Indices = meshPart.IndexBuffer;
                         effect.CurrentTechnique.Passes[0].Apply();
-                        graphicsDevice.SetVertexBuffers(bindings[i]);
-                        graphicsDevice.DrawInstancedPrimitives(PrimitiveType.TriangleList, meshPart.VertexOffset, meshPart.StartIndex, meshPart.PrimitiveCount, matrices.Count);
+                        context.graphicsDevice.SetVertexBuffers(bindings[i]);
+                        context.graphicsDevice.DrawInstancedPrimitives(PrimitiveType.TriangleList, meshPart.VertexOffset, meshPart.StartIndex, meshPart.PrimitiveCount, matrices.Count);
                         i++;
                     }
                 }
@@ -95,7 +94,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             throw new NotImplementedException();
         }
 
-        public void InitDraw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        public void InitDraw(RenderContext context)
         {
         }
 

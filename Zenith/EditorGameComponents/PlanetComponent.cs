@@ -69,11 +69,14 @@ namespace Zenith.EditorGameComponents
             {
                 DrawFlat(GraphicsDevice, allBounds[rootSector], rootSector);
             }
-            foreach (var targets in new[] { Game1.TREE_DENSITY_BUFFER, Game1.GRASS_DENSITY_BUFFER, Game1.DEFERRED_RENDERING ? Game1.G_BUFFER : Game1.RENDER_BUFFER })
+            foreach (var layerPass in new[] { RenderContext.LayerPass.TREE_DENSITY_PASS, RenderContext.LayerPass.GRASS_DENSITY_PASS, RenderContext.LayerPass.MAIN_PASS })
             {
-                GraphicsDevice.SetRenderTargets(targets);
+                if(layerPass == RenderContext.LayerPass.TREE_DENSITY_PASS) GraphicsDevice.SetRenderTargets(Game1.TREE_DENSITY_BUFFER);
+                if (layerPass == RenderContext.LayerPass.GRASS_DENSITY_PASS) GraphicsDevice.SetRenderTargets(Game1.GRASS_DENSITY_BUFFER);
+                if (layerPass == RenderContext.LayerPass.MAIN_PASS && Game1.DEFERRED_RENDERING) GraphicsDevice.SetRenderTargets(Game1.G_BUFFER);
+                if (layerPass == RenderContext.LayerPass.MAIN_PASS && !Game1.DEFERRED_RENDERING) GraphicsDevice.SetRenderTargets(Game1.RENDER_BUFFER);
                 GraphicsDevice.BlendState = BlendState.Opaque;
-                if (targets == Game1.RENDER_BUFFER)
+                if (layerPass ==RenderContext.LayerPass.MAIN_PASS && !Game1.DEFERRED_RENDERING)
                 {
                     var effect = this.GetDefaultEffect();
 
@@ -98,7 +101,7 @@ namespace Zenith.EditorGameComponents
                         sphere.indices.Dispose();
                     }
                 }
-                if (targets == Game1.G_BUFFER)
+                if (layerPass == RenderContext.LayerPass.MAIN_PASS && Game1.DEFERRED_RENDERING)
                 {
                     var effect = GlobalContent.DeferredBasicNormalTextureShader;
                     float distance = (float)(9 * Math.Pow(0.5, camera.cameraZoom)); // TODO: this is hacky
@@ -122,7 +125,7 @@ namespace Zenith.EditorGameComponents
                 }
                 foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
                 {
-                    Draw3D(GraphicsDevice, allBounds[rootSector], rootSector, targets);
+                    Draw3D(GraphicsDevice, allBounds[rootSector], rootSector, layerPass);
                 }
             }
             GraphicsDevice.SetRenderTarget(null);
@@ -240,9 +243,9 @@ namespace Zenith.EditorGameComponents
             foreach (var sector in sorted)
             {
                 IGraphicsBuffer buffer = loadedMaps[sector];
-                BasicEffect basicEffect = new BasicEffect(graphicsDevice);
-                basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)(bounds.minX * (1 << sector.Zoom) - sector.X), (float)(bounds.maxX * (1 << sector.Zoom) - sector.X), (float)(bounds.maxY * (1 << sector.Zoom) - sector.Y), (float)(bounds.minY * (1 << sector.Zoom) - sector.Y), -1, 0.01f); // TODO: why negative?
-                buffer.InitDraw(graphicsDevice, basicEffect, bounds.minX * (1 << sector.Zoom) - sector.X, bounds.maxX * (1 << sector.Zoom) - sector.X, bounds.minY * (1 << sector.Zoom) - sector.Y, bounds.maxY * (1 << sector.Zoom) - sector.Y, camera.cameraZoom);
+                Matrixd projection = Matrixd.CreateOrthographicOffCenter(bounds.minX * (1 << sector.Zoom) - sector.X, bounds.maxX * (1 << sector.Zoom) - sector.X, bounds.maxY * (1 << sector.Zoom) - sector.Y, bounds.minY * (1 << sector.Zoom) - sector.Y, -1, 0.01f); // TODO: why negative?
+                RenderContext context = new RenderContext(graphicsDevice, projection, bounds.minX * (1 << sector.Zoom) - sector.X, bounds.maxX * (1 << sector.Zoom) - sector.X, bounds.minY * (1 << sector.Zoom) - sector.Y, bounds.maxY * (1 << sector.Zoom) - sector.Y, camera.cameraZoom, RenderContext.LayerPass.MAIN_PASS);
+                buffer.InitDraw(context);
             }
         }
 
@@ -263,13 +266,13 @@ namespace Zenith.EditorGameComponents
             {
                 IGraphicsBuffer buffer = loadedMaps[sector];
                 if (!(buffer is ImageTileBuffer)) continue;
-                BasicEffect basicEffect = new BasicEffect(graphicsDevice);
-                basicEffect.Projection = Matrix.CreateOrthographicOffCenter((float)(bounds.minX * (1 << sector.Zoom) - sector.X), (float)(bounds.maxX * (1 << sector.Zoom) - sector.X), (float)(bounds.maxY * (1 << sector.Zoom) - sector.Y), (float)(bounds.minY * (1 << sector.Zoom) - sector.Y), -1, 0.01f); // TODO: why negative?
-                buffer.Draw(graphicsDevice, basicEffect, bounds.minX * (1 << sector.Zoom) - sector.X, bounds.maxX * (1 << sector.Zoom) - sector.X, bounds.minY * (1 << sector.Zoom) - sector.Y, bounds.maxY * (1 << sector.Zoom) - sector.Y, camera.cameraZoom, null);
+                Matrixd projection = Matrixd.CreateOrthographicOffCenter(bounds.minX * (1 << sector.Zoom) - sector.X, bounds.maxX * (1 << sector.Zoom) - sector.X, bounds.maxY * (1 << sector.Zoom) - sector.Y, bounds.minY * (1 << sector.Zoom) - sector.Y, -1, 0.01f); // TODO: why negative?
+                RenderContext context = new RenderContext(graphicsDevice, projection, bounds.minX * (1 << sector.Zoom) - sector.X, bounds.maxX * (1 << sector.Zoom) - sector.X, bounds.minY * (1 << sector.Zoom) - sector.Y, bounds.maxY * (1 << sector.Zoom) - sector.Y, camera.cameraZoom, RenderContext.LayerPass.MAIN_PASS);
+                buffer.Draw(context);
             }
         }
 
-        private void Draw3D(GraphicsDevice graphicsDevice, SectorBounds bounds, ISector rootSector, RenderTargetBinding[] targets)
+        private void Draw3D(GraphicsDevice graphicsDevice, SectorBounds bounds, ISector rootSector, RenderContext.LayerPass layerPass)
         {
 
             double relativeCameraZoom = camera.cameraZoom - Math.Log(ZCoords.GetSectorManager().GetTopmostOSMSectors().Count, 4) + (Game1.RECORDING ? 1 : 0);
@@ -300,10 +303,9 @@ namespace Zenith.EditorGameComponents
                 Matrixd view = CameraMatrixManager.GetWorldViewd(distance);
                 Matrixd projection = CameraMatrixManager.GetWorldProjectiond(distance, this.GraphicsDevice.Viewport.AspectRatio);
                 Matrixd transformMatrix = new Matrixd(xAxis.X, xAxis.Y, xAxis.Z, 0, yAxis.X, yAxis.Y, yAxis.Z, 0, zAxis.X, zAxis.Y, zAxis.Z, 0, start.X, start.Y, start.Z, 1); // turns our local coordinates into 3d spherical coordinates, based on the sector
-                basicEffect.World = (Normalize(transformMatrix * world * view * projection)).toMatrix(); // combine them all to allow for higher precision
-                basicEffect.View = Matrix.Identity;
-                basicEffect.Projection = Matrix.Identity;
-                buffer.Draw(graphicsDevice, basicEffect, b.minX, b.maxX, b.minY, b.maxY, camera.cameraZoom, targets);
+                Matrixd WVP = Normalize(transformMatrix * world * view * projection); // combine them all to allow for higher precision
+                RenderContext context = new RenderContext(graphicsDevice, WVP, b.minX, b.maxX, b.minY, b.maxY, camera.cameraZoom, layerPass);
+                buffer.Draw(context);
             }
         }
 

@@ -26,18 +26,18 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             foreach (var buffer in buffers) buffer.Dispose();
         }
 
-        public void InitDraw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        public void InitDraw(RenderContext context)
         {
         }
 
-        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, RenderTargetBinding[] targets)
+        public void Draw(RenderContext context)
         {
-            if (targets == Game1.RENDER_BUFFER || targets == Game1.G_BUFFER)
+            if (context.layerPass == RenderContext.LayerPass.MAIN_PASS)
             {
                 foreach (var buffer in buffers)
                 {
-                    buffer.Draw(graphicsDevice, basicEffect, targets);
-                    graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, graphicsDevice.Viewport.MaxDepth, 0);
+                    buffer.Draw(context);
+                    context.graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, context.graphicsDevice.Viewport.MaxDepth, 0);
                 }
             }
         }

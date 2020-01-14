@@ -73,35 +73,33 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             buffer.Dispose();
         }
 
-        public void InitDraw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        public void InitDraw(RenderContext context)
         {
         }
 
-        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, RenderTargetBinding[] targets)
+        public void Draw(RenderContext context)
         {
-            if (maxX - minX > 0.1 || maxY - minY > 0.1) return;
-            if (targets == Game1.TREE_DENSITY_BUFFER)
+            if (context.maxX - context.minX > 0.1 || context.maxY - context.minY > 0.1) return;
+            if (context.layerPass == RenderContext.LayerPass.TREE_DENSITY_PASS)
             {
-                beachBuffer.Draw(graphicsDevice, basicEffect, targets, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
-                lakesBuffer.Draw(graphicsDevice, basicEffect, targets, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
-                beachCoastBuffer.Draw(graphicsDevice, basicEffect, targets, PrimitiveType.TriangleList, GlobalContent.BeachFlippedTreeDensity, new Vector3(1, 1, 1));
-                lakesCoastBuffer.Draw(graphicsDevice, basicEffect, targets, PrimitiveType.TriangleList, GlobalContent.BeachTreeDensity, new Vector3(0, 0, 0));
-                roadsBufferFat.Draw(graphicsDevice, basicEffect, targets, PrimitiveType.TriangleList, GlobalContent.RoadTreeDensity, new Vector3(0, 0, 0));
-                roadsBuffer.Draw(graphicsDevice, basicEffect, targets, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
+                beachBuffer.Draw(context, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
+                lakesBuffer.Draw(context, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
+                beachCoastBuffer.Draw(context, PrimitiveType.TriangleList, GlobalContent.BeachFlippedTreeDensity, new Vector3(1, 1, 1));
+                lakesCoastBuffer.Draw(context, PrimitiveType.TriangleList, GlobalContent.BeachTreeDensity, new Vector3(0, 0, 0));
+                roadsBufferFat.Draw(context, PrimitiveType.TriangleList, GlobalContent.RoadTreeDensity, new Vector3(0, 0, 0));
+                roadsBuffer.Draw(context, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
             }
-            if (targets == Game1.GRASS_DENSITY_BUFFER)
+            if (context.layerPass == RenderContext.LayerPass.GRASS_DENSITY_PASS)
             {
-                beachBuffer.Draw(graphicsDevice, basicEffect, targets, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
-                lakesBuffer.Draw(graphicsDevice, basicEffect, targets, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
-                roadsBuffer.Draw(graphicsDevice, basicEffect, targets, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
+                beachBuffer.Draw(context, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
+                lakesBuffer.Draw(context, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
+                roadsBuffer.Draw(context, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
             }
-            if (targets == Game1.RENDER_BUFFER || targets == Game1.G_BUFFER)
+            if (context.layerPass == RenderContext.LayerPass.MAIN_PASS)
             {
                 // first grass
                 int size = 64;
-                var effect = targets == Game1.RENDER_BUFFER ? GlobalContent.TreeGeometryShader : GlobalContent.DeferredTreeGeometryShader;
-                effect.Parameters["View"].SetValue(basicEffect.View);
-                effect.Parameters["Projection"].SetValue(basicEffect.Projection);
+                var effect = Game1.DEFERRED_RENDERING ? GlobalContent.DeferredTreeGeometryShader : GlobalContent.TreeGeometryShader;
                 effect.Parameters["TreeTexture"].SetValue(GlobalContent.Grass);
                 effect.Parameters["Texture"].SetValue(Game1.GRASS_DENSITY_BUFFER[0].RenderTarget);
                 effect.Parameters["TreeVariance"].SetValue(new Vector2((float)0.5, (float)0.5));
@@ -110,20 +108,20 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                 effect.Parameters["Resolution"].SetValue(256f);
                 effect.Parameters["TextureCount"].SetValue(4);
 
-                graphicsDevice.Indices = buffer.indices;
-                graphicsDevice.SetVertexBuffer(buffer.vertices);
+                context.graphicsDevice.Indices = buffer.indices;
+                context.graphicsDevice.SetVertexBuffer(buffer.vertices);
                 for (int i = 0; i < size * size; i++)
                 {
                     int x = i % size;
                     int y = i / size;
-                    if (x + 1 < minX * size || x > maxX * size || y + 1 < minY * size || y > maxY * size) continue;
-                    Matrix world = Matrix.CreateScale(1f / size) * Matrix.CreateTranslation((float)x / size, (float)y / size, 0) * basicEffect.World;
-                    effect.Parameters["World"].SetValue(world);
-                    effect.Parameters["Inverse"].SetValue(Matrix.Invert(world * basicEffect.View * basicEffect.Projection));
+                    if (x + 1 < context.minX * size || x > context.maxX * size || y + 1 < context.minY * size || y > context.maxY * size) continue;
+                    Matrix WVP = Matrix.CreateScale(1f / size) * Matrix.CreateTranslation((float)x / size, (float)y / size, 0) * context.WVP.toMatrix();
+                    effect.Parameters["WVP"].SetValue(WVP);
+                    effect.Parameters["Inverse"].SetValue(Matrix.Invert(WVP));
                     foreach (EffectPass pass in effect.CurrentTechnique.Passes)
                     {
                         pass.Apply();
-                        graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, buffer.indices.IndexCount / 3);
+                        context.graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, buffer.indices.IndexCount / 3);
                     }
                 }
                 // now trees
@@ -136,20 +134,20 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                 effect.Parameters["Resolution"].SetValue(256f);
                 effect.Parameters["TextureCount"].SetValue(1);
 
-                graphicsDevice.Indices = buffer.indices;
-                graphicsDevice.SetVertexBuffer(buffer.vertices);
+                context.graphicsDevice.Indices = buffer.indices;
+                context.graphicsDevice.SetVertexBuffer(buffer.vertices);
                 for (int i = 0; i < size * size; i++)
                 {
                     int x = i % size;
                     int y = i / size;
-                    if (x + 1 < minX * size || x > maxX * size || y + 1 < minY * size || y > maxY * size) continue;
-                    Matrix world = Matrix.CreateScale(1f / size) * Matrix.CreateTranslation((float)x / size, (float)y / size, 0) * basicEffect.World;
-                    effect.Parameters["World"].SetValue(world);
-                    effect.Parameters["Inverse"].SetValue(Matrix.Invert(world * basicEffect.View * basicEffect.Projection));
+                    if (x + 1 < context.minX * size || x > context.maxX * size || y + 1 < context.minY * size || y > context.maxY * size) continue;
+                    Matrix WVP = Matrix.CreateScale(1f / size) * Matrix.CreateTranslation((float)x / size, (float)y / size, 0) * context.WVP.toMatrix();
+                    effect.Parameters["WVP"].SetValue(WVP);
+                    effect.Parameters["Inverse"].SetValue(Matrix.Invert(WVP));
                     foreach (EffectPass pass in effect.CurrentTechnique.Passes)
                     {
                         pass.Apply();
-                        graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, buffer.indices.IndexCount / 3);
+                        context.graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, buffer.indices.IndexCount / 3);
                     }
                 }
             }

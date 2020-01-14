@@ -71,10 +71,10 @@
     <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\GraphicsBuffers\IGraphicsBuffer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\GraphicsBuffers\ImageTileBuffer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\GraphicsBuffers\ProceduralTileBuffer.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\GraphicsBuffers\TreeBuffer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\GraphicsBuffers\TreeGeometryBuffer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\GraphicsBuffers\VectorTileBuffer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\Pallete.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\RenderContext.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\SpriteBatchBasic.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZMath\CubeSector.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZMath\CubeSectorManager.cs" />

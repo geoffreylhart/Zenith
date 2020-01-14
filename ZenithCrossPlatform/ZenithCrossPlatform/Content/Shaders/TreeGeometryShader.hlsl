@@ -1,6 +1,4 @@
-float4x4 World;
-float4x4 View;
-float4x4 Projection;
+float4x4 WVP;
 float4x4 Inverse;
 
 float Resolution;
@@ -59,13 +57,13 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 	int seed4 = seed3 % 1273 * 43 + 17;
 	float2 randPos = float2(seed1 % 83 / 83.0 - 0.5, seed2 % 83 / 83.0 - 0.5) * TreeVariance; // random variation off of center
 	input.Position.xy += randPos / Resolution;
-	float4 originProjected = mul(mul(mul(input.Position, World), View), Projection);
+	float4 originProjected = mul(input.Position, WVP);
 	originProjected /= originProjected.w;
 	
 	VertexShaderOutput output;
 	float xAmount = (input.TextureCoordinate.x - TreeCenter.x);
 	float zAmount = (TreeCenter.y - input.TextureCoordinate.y);
-	float4 scCenter = mul(mul(mul(input.Position, World), View), Projection);
+	float4 scCenter = mul(input.Position, WVP);
 	scCenter /= scCenter.w;
 	float3 scRight = scCenter.xyz + float3(0.1, 0, 0);
 	float3 scUp = scCenter.xyz + float3(0, 0.1, 0);
@@ -81,9 +79,7 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 	input.Position.xyz += xAmount * unitRight * TreeSize;
 	input.Position.xyz += zAmount * unitUp * TreeSize;
 	
-	float4 worldPosition = mul(input.Position, World);
-	float4 viewPosition = mul(worldPosition, View);
-	output.Position = mul(viewPosition, Projection);
+	output.Position = mul(input.Position, WVP);
 	
 	float2 texPos = (originProjected.xy * float2(1, -1) + float2(1, 1)) / 2;
 	float threshold = seed3 % 83 / 83.0;

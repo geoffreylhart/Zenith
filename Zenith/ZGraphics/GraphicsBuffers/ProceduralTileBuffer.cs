@@ -10,6 +10,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Zenith.LibraryWrappers;
 using Zenith.LibraryWrappers.OSM;
+using Zenith.MathHelpers;
 using Zenith.ZGeom;
 using Zenith.ZMath;
 
@@ -153,23 +154,23 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             debugBuffer = null;
         }
 
-        public void InitDraw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom)
+        public void InitDraw(RenderContext context)
         {
-            vectorTileBuffer.InitDraw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom);
-            treeBuffer.InitDraw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom);
+            vectorTileBuffer.InitDraw(context);
+            treeBuffer.InitDraw(context);
         }
 
-        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, double minX, double maxX, double minY, double maxY, double cameraZoom, RenderTargetBinding[] targets)
+        public void Draw(RenderContext context)
         {
-            vectorTileBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, targets);
+            vectorTileBuffer.Draw(context);
 #if WINDOWS
-            houseBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, targets);
+            houseBuffer.Draw(context);
 #endif
-            treeBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, targets);
+            treeBuffer.Draw(context);
             if (Game1.DEBUGGING)
             {
-                graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, graphicsDevice.Viewport.MaxDepth, 0);
-                debugBuffer.Draw(graphicsDevice, basicEffect, minX, maxX, minY, maxY, cameraZoom, targets);
+                context.graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, context.graphicsDevice.Viewport.MaxDepth, 0);
+                debugBuffer.Draw(context);
             }
         }
 
@@ -177,14 +178,15 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         {
             Vector2d topLeft = new Vector2d(0, 0);
             Vector2d bottomRight = new Vector2d(1, 1);
-            BasicEffect basicEffect = new BasicEffect(graphicsDevice);
-            basicEffect.Projection = Matrix.CreateOrthographicOffCenter(0, 1, 1, 0, -1, 0.01f); // TODO: why negative?
-            InitDraw(graphicsDevice, basicEffect, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0);
+            Matrixd projection = Matrixd.CreateOrthographicOffCenter(0, 1, 1, 0, -1, 0.01f); // TODO: why negative?
+            RenderContext context = new RenderContext(graphicsDevice, projection, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0, RenderContext.LayerPass.MAIN_PASS);
+            InitDraw(context);
             RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 512 * 16, 512 * 16, true, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
             graphicsDevice.SetRenderTarget(newTarget);
-            foreach (var target in new[] { Game1.TREE_DENSITY_BUFFER, Game1.GRASS_DENSITY_BUFFER, Game1.RENDER_BUFFER })
+            foreach (var pass in new[] { RenderContext.LayerPass.TREE_DENSITY_PASS, RenderContext.LayerPass.GRASS_DENSITY_PASS, RenderContext.LayerPass.MAIN_PASS })
             {
-                Draw(graphicsDevice, basicEffect, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0, target);
+                context.layerPass = pass;
+                Draw(context);
             }
             return DownScale(graphicsDevice, newTarget, 512);
         }

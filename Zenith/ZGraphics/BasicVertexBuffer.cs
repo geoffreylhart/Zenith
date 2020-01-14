@@ -13,7 +13,6 @@ namespace Zenith.ZGraphics
         public VertexBuffer vertices;
         public IndexBuffer indices;
         private PrimitiveType primitiveType;
-        private GraphicsDevice graphicsDevice;
         public Texture2D texture;
         private bool textureWrap;
         private PrimitiveType triangleList;
@@ -73,45 +72,46 @@ namespace Zenith.ZGraphics
             if (vertices != null) vertices.Dispose();
             if (indices != null) indices.Dispose();
         }
-        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, RenderTargetBinding[] targets)
+        public void Draw(RenderContext context)
         {
-            Draw(graphicsDevice, basicEffect, targets, primitiveType, texture, null);
+            Draw(context, primitiveType, texture, null);
         }
 
-        public void Draw(GraphicsDevice graphicsDevice, BasicEffect basicEffect, RenderTargetBinding[] targets, PrimitiveType drawType, Texture2D drawTexture, Vector3? color)
+        public void Draw(RenderContext context, PrimitiveType drawType, Texture2D drawTexture, Vector3? color)
         {
             Effect effect;
-            if (targets == Game1.RENDER_BUFFER || targets == Game1.TREE_DENSITY_BUFFER || targets == Game1.GRASS_DENSITY_BUFFER)
+            if ((context.layerPass == RenderContext.LayerPass.MAIN_PASS && !Game1.DEFERRED_RENDERING) || context.layerPass == RenderContext.LayerPass.TREE_DENSITY_PASS || context.layerPass == RenderContext.LayerPass.GRASS_DENSITY_PASS)
             {
-                BasicEffect clone = (BasicEffect)basicEffect.Clone();
+                BasicEffect basicEffect = new BasicEffect(context.graphicsDevice);
+                basicEffect.World = context.WVP.toMatrix();
                 if (drawTexture == null)
                 {
                     if (color == null)
                     {
-                        clone.VertexColorEnabled = true;
+                        basicEffect.VertexColorEnabled = true;
                     }
                     else
                     {
-                        clone.VertexColorEnabled = false;
-                        clone.DiffuseColor = color.Value;
+                        basicEffect.VertexColorEnabled = false;
+                        basicEffect.DiffuseColor = color.Value;
                     }
                 }
                 else
                 {
                     if (textureWrap)
                     {
-                        graphicsDevice.SamplerStates[0] = SamplerState.PointWrap;
+                        context.graphicsDevice.SamplerStates[0] = SamplerState.PointWrap;
                     }
                     else
                     {
-                        graphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
+                        context.graphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
                     }
-                    clone.Texture = drawTexture;
-                    clone.TextureEnabled = true;
+                    basicEffect.Texture = drawTexture;
+                    basicEffect.TextureEnabled = true;
                 }
-                effect = clone;
+                effect = basicEffect;
             }
-            else if (targets == Game1.G_BUFFER)
+            else if (context.layerPass == RenderContext.LayerPass.MAIN_PASS && Game1.DEFERRED_RENDERING)
             {
                 if (drawTexture == null)
                 {
@@ -130,23 +130,23 @@ namespace Zenith.ZGraphics
                     effect = GlobalContent.DeferredBasicTextureShader;
                     if (textureWrap)
                     {
-                        graphicsDevice.SamplerStates[0] = SamplerState.PointWrap;
+                        context.graphicsDevice.SamplerStates[0] = SamplerState.PointWrap;
                     }
                     else
                     {
-                        graphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
+                        context.graphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
                     }
                     effect.Parameters["Texture"].SetValue(drawTexture);
                 }
-                effect.Parameters["WVP"].SetValue(basicEffect.World * basicEffect.View * basicEffect.Projection);
+                effect.Parameters["WVP"].SetValue(context.WVP.toMatrix());
             }
             else
             {
                 throw new NotImplementedException();
             }
             if (vertices == null) return;
-            if (indices != null) graphicsDevice.Indices = indices;
-            graphicsDevice.SetVertexBuffer(vertices);
+            if (indices != null) context.graphicsDevice.Indices = indices;
+            context.graphicsDevice.SetVertexBuffer(vertices);
             foreach (EffectPass pass in effect.CurrentTechnique.Passes)
             {
                 pass.Apply();
@@ -155,16 +155,16 @@ namespace Zenith.ZGraphics
                     switch (drawType)
                     {
                         case PrimitiveType.LineList:
-                            graphicsDevice.DrawIndexedPrimitives(drawType, 0, 0, indices.IndexCount / 2);
+                            context.graphicsDevice.DrawIndexedPrimitives(drawType, 0, 0, indices.IndexCount / 2);
                             return;
                         case PrimitiveType.LineStrip:
-                            graphicsDevice.DrawIndexedPrimitives(drawType, 0, 0, indices.IndexCount - 1);
+                            context.graphicsDevice.DrawIndexedPrimitives(drawType, 0, 0, indices.IndexCount - 1);
                             return;
                         case PrimitiveType.TriangleList:
-                            graphicsDevice.DrawIndexedPrimitives(drawType, 0, 0, indices.IndexCount / 3);
+                            context.graphicsDevice.DrawIndexedPrimitives(drawType, 0, 0, indices.IndexCount / 3);
                             return;
                         case PrimitiveType.TriangleStrip:
-                            graphicsDevice.DrawIndexedPrimitives(drawType, 0, 0, indices.IndexCount - 2);
+                            context.graphicsDevice.DrawIndexedPrimitives(drawType, 0, 0, indices.IndexCount - 2);
                             return;
                         default:
                             throw new NotImplementedException();
@@ -175,16 +175,16 @@ namespace Zenith.ZGraphics
                     switch (drawType)
                     {
                         case PrimitiveType.LineList:
-                            graphicsDevice.DrawPrimitives(drawType, 0, vertices.VertexCount / 2);
+                            context.graphicsDevice.DrawPrimitives(drawType, 0, vertices.VertexCount / 2);
                             return;
                         case PrimitiveType.LineStrip:
-                            graphicsDevice.DrawPrimitives(drawType, 0, vertices.VertexCount - 1);
+                            context.graphicsDevice.DrawPrimitives(drawType, 0, vertices.VertexCount - 1);
                             return;
                         case PrimitiveType.TriangleList:
-                            graphicsDevice.DrawPrimitives(drawType, 0, vertices.VertexCount / 3);
+                            context.graphicsDevice.DrawPrimitives(drawType, 0, vertices.VertexCount / 3);
                             return;
                         case PrimitiveType.TriangleStrip:
-                            graphicsDevice.DrawPrimitives(drawType, 0, vertices.VertexCount - 2);
+                            context.graphicsDevice.DrawPrimitives(drawType, 0, vertices.VertexCount - 2);
                             return;
                         default:
                             throw new NotImplementedException();
