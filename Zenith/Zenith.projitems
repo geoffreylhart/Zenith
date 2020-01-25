@@ -17,12 +17,9 @@
     <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\PlanetComponent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\ShipComponent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\UIComponents\IUIComponent.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\UILayer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\DebugConsole.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\EditorCamera.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\IEditorGameComponent.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\SphericalGeometryEditor.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\UITemp.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Game1.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GlobalContent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\OSMLineBufferGenerator.cs" />
@@ -41,6 +38,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\PBF\Relation.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\PBF\StringTable.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\PBF\Way.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZGame\ZGameComponent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZGeom\IGeom.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZGeom\LineGraph.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZGeom\PointCollection.cs" />

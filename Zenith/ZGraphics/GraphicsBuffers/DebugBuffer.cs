@@ -27,7 +27,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
 
         public void Draw(RenderContext context)
         {
-            if (context.layerPass != RenderContext.LayerPass.MAIN_PASS) return;
+            if (context.layerPass != RenderContext.LayerPass.UI_PASS) return;
             if (debugLinesBuffer == null)
             {
                 BlobCollection blobs = OSMReader.GetAllBlobs(sector);

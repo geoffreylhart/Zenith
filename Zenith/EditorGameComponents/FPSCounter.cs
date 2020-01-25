@@ -5,27 +5,29 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Zenith.ZGame;
+using Zenith.ZGraphics;
 
 namespace Zenith.EditorGameComponents
 {
-    internal class FPSCounter : DrawableGameComponent
+    internal class FPSCounter : ZGameComponent
     {
         private SpriteBatch spriteBatch;
         List<double> lastUpdateTimes = new List<double>();
         List<double> lastDrawTimes = new List<double>();
 
-        public FPSCounter(Game game) : base(game)
+        public FPSCounter(Game game)
         {
             this.spriteBatch = new SpriteBatch(game.GraphicsDevice);
         }
 
-        public override void Update(GameTime gameTime)
+        public override void Update(GraphicsDevice graphicsDevice, GameTime gameTime)
         {
             lastUpdateTimes.Add(gameTime.ElapsedGameTime.TotalSeconds);
             if (lastUpdateTimes.Count > 5) lastUpdateTimes.RemoveAt(0);
         }
 
-        public override void Draw(GameTime gameTime)
+        public override void Draw(RenderContext renderContext, GameTime gameTime)
         {
             lastDrawTimes.Add(gameTime.ElapsedGameTime.TotalSeconds);
             if (lastDrawTimes.Count > 5) lastDrawTimes.RemoveAt(0);

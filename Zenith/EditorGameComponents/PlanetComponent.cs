@@ -10,6 +10,7 @@ using Microsoft.Xna.Framework.Input;
 using Zenith.EditorGameComponents.FlatComponents;
 using Zenith.MathHelpers;
 using Zenith.PrimitiveBuilder;
+using Zenith.ZGame;
 using Zenith.ZGeom;
 using Zenith.ZGraphics;
 using Zenith.ZGraphics.GraphicsBuffers;
@@ -17,7 +18,7 @@ using Zenith.ZMath;
 
 namespace Zenith.EditorGameComponents
 {
-    internal class PlanetComponent : DrawableGameComponent
+    internal class PlanetComponent : ZGameComponent
     {
         private EditorCamera camera;
         private Dictionary<ISector, RenderTarget2D> renderTargets = new Dictionary<ISector, RenderTarget2D>();
@@ -27,14 +28,14 @@ namespace Zenith.EditorGameComponents
         Dictionary<ISector, IGraphicsBuffer> loadedMaps = new Dictionary<ISector, IGraphicsBuffer>();
         ISector toLoad = null;
 
-        public PlanetComponent(Game game, EditorCamera camera) : base(game)
+        public PlanetComponent(Game game, EditorCamera camera)
         {
             this.camera = camera;
             foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
             {
 #if WINDOWS
                 RenderTarget2D renderTarget = new RenderTarget2D(
-                     GraphicsDevice,
+                     game.GraphicsDevice,
                      2560,
                      1440,
                      true,
@@ -42,98 +43,94 @@ namespace Zenith.EditorGameComponents
                      DepthFormat.Depth24);
 #else
                 RenderTarget2D renderTarget = new RenderTarget2D(
-                     GraphicsDevice,
+                     game.GraphicsDevice,
                      2560,
                      1440,
                      false,
-                     GraphicsDevice.PresentationParameters.BackBufferFormat,
+                     game.GraphicsDevice.PresentationParameters.BackBufferFormat,
                      DepthFormat.Depth24);
 #endif
                 renderTargets[rootSector] = renderTarget;
             }
         }
 
-        public override void Draw(GameTime gameTime)
+        Dictionary<ISector, SectorBounds> allBounds = new Dictionary<ISector, SectorBounds>(); // TODO: refactor this away from static-ness
+        public override void InitDraw(RenderContext renderContext)
         {
-            var allBounds = new Dictionary<ISector, SectorBounds>();
+            allBounds = new Dictionary<ISector, SectorBounds>();
             // precompute this because it depends heavily on the active GraphicsDevice RenderTarget
             foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
             {
-                allBounds[rootSector] = GetSectorBounds(rootSector);
+                allBounds[rootSector] = GetSectorBounds(renderContext.graphicsDevice, rootSector);
             }
             foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
             {
-                InitDraw(GraphicsDevice, allBounds[rootSector], rootSector);
+                InitDraw(renderContext.graphicsDevice, allBounds[rootSector], rootSector);
             }
             foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
             {
-                DrawFlat(GraphicsDevice, allBounds[rootSector], rootSector);
+                DrawFlat(renderContext.graphicsDevice, allBounds[rootSector], rootSector);
             }
-            foreach (var layerPass in new[] { RenderContext.LayerPass.TREE_DENSITY_PASS, RenderContext.LayerPass.GRASS_DENSITY_PASS, RenderContext.LayerPass.MAIN_PASS })
-            {
-                if(layerPass == RenderContext.LayerPass.TREE_DENSITY_PASS) GraphicsDevice.SetRenderTargets(Game1.TREE_DENSITY_BUFFER);
-                if (layerPass == RenderContext.LayerPass.GRASS_DENSITY_PASS) GraphicsDevice.SetRenderTargets(Game1.GRASS_DENSITY_BUFFER);
-                if (layerPass == RenderContext.LayerPass.MAIN_PASS && Game1.DEFERRED_RENDERING) GraphicsDevice.SetRenderTargets(Game1.G_BUFFER);
-                if (layerPass == RenderContext.LayerPass.MAIN_PASS && !Game1.DEFERRED_RENDERING) GraphicsDevice.SetRenderTargets(Game1.RENDER_BUFFER);
-                GraphicsDevice.BlendState = BlendState.Opaque;
-                if (layerPass ==RenderContext.LayerPass.MAIN_PASS && !Game1.DEFERRED_RENDERING)
-                {
-                    var effect = this.GetDefaultEffect();
-
-                    camera.ApplyMatrices(effect);
-                    float distance = (float)(9 * Math.Pow(0.5, camera.cameraZoom)); // TODO: this is hacky
-                    effect.View = CameraMatrixManager.GetWorldRelativeView(distance);
-
-                    effect.TextureEnabled = true;
-                    foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
-                    {
-                        SectorBounds bounds = GetSectorBounds(rootSector);
-                        VertexIndiceBuffer sphere = SphereBuilder.MakeSphereSegExplicit(GraphicsDevice, rootSector, 2, bounds.minX, bounds.minY, bounds.maxX, bounds.maxY, camera);
-                        effect.Texture = renderTargets[rootSector];
-                        foreach (EffectPass pass in effect.CurrentTechnique.Passes)
-                        {
-                            pass.Apply();
-                            GraphicsDevice.Indices = sphere.indices;
-                            GraphicsDevice.SetVertexBuffer(sphere.vertices);
-                            GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, sphere.indices.IndexCount / 3);
-                        }
-                        sphere.vertices.Dispose();
-                        sphere.indices.Dispose();
-                    }
-                }
-                if (layerPass == RenderContext.LayerPass.MAIN_PASS && Game1.DEFERRED_RENDERING)
-                {
-                    var effect = GlobalContent.DeferredBasicNormalTextureShader;
-                    float distance = (float)(9 * Math.Pow(0.5, camera.cameraZoom)); // TODO: this is hacky
-                    Matrix view = CameraMatrixManager.GetWorldRelativeView(distance);
-                    effect.Parameters["WVP"].SetValue(camera.world * view * camera.projection);
-                    foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
-                    {
-                        SectorBounds bounds = GetSectorBounds(rootSector);
-                        VertexIndiceBuffer sphere = SphereBuilder.MakeSphereSegExplicit(GraphicsDevice, rootSector, 2, bounds.minX, bounds.minY, bounds.maxX, bounds.maxY, camera);
-                        effect.Parameters["Texture"].SetValue(renderTargets[rootSector]);
-                        foreach (EffectPass pass in effect.CurrentTechnique.Passes)
-                        {
-                            pass.Apply();
-                            GraphicsDevice.Indices = sphere.indices;
-                            GraphicsDevice.SetVertexBuffer(sphere.vertices);
-                            GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, sphere.indices.IndexCount / 3);
-                        }
-                        sphere.vertices.Dispose();
-                        sphere.indices.Dispose();
-                    }
-                }
-                foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
-                {
-                    Draw3D(GraphicsDevice, allBounds[rootSector], rootSector, layerPass);
-                }
-            }
-            GraphicsDevice.SetRenderTarget(null);
         }
 
-        public override void Update(GameTime gameTime)
+        public override void Draw(RenderContext renderContext, GameTime gameTime)
         {
-            Vector3d circleStart = camera.GetLatLongOfCoord(Mouse.GetState().X, Mouse.GetState().Y);
+            if (renderContext.layerPass == RenderContext.LayerPass.MAIN_PASS && !Game1.DEFERRED_RENDERING)
+            {
+                var effect = this.GetDefaultEffect(renderContext.graphicsDevice);
+
+                camera.ApplyMatrices(effect);
+                float distance = (float)(9 * Math.Pow(0.5, camera.cameraZoom)); // TODO: this is hacky
+                effect.View = CameraMatrixManager.GetWorldRelativeView(distance);
+
+                effect.TextureEnabled = true;
+                foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
+                {
+                    SectorBounds bounds = GetSectorBounds(renderContext.graphicsDevice, rootSector);
+                    VertexIndiceBuffer sphere = SphereBuilder.MakeSphereSegExplicit(renderContext.graphicsDevice, rootSector, 2, bounds.minX, bounds.minY, bounds.maxX, bounds.maxY, camera);
+                    effect.Texture = renderTargets[rootSector];
+                    foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+                    {
+                        pass.Apply();
+                        renderContext.graphicsDevice.Indices = sphere.indices;
+                        renderContext.graphicsDevice.SetVertexBuffer(sphere.vertices);
+                        renderContext.graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, sphere.indices.IndexCount / 3);
+                    }
+                    sphere.vertices.Dispose();
+                    sphere.indices.Dispose();
+                }
+            }
+            if (renderContext.layerPass == RenderContext.LayerPass.MAIN_PASS && Game1.DEFERRED_RENDERING)
+            {
+                var effect = GlobalContent.DeferredBasicNormalTextureShader;
+                float distance = (float)(9 * Math.Pow(0.5, camera.cameraZoom)); // TODO: this is hacky
+                Matrix view = CameraMatrixManager.GetWorldRelativeView(distance);
+                effect.Parameters["WVP"].SetValue(camera.world * view * camera.projection);
+                foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
+                {
+                    SectorBounds bounds = GetSectorBounds(renderContext.graphicsDevice, rootSector);
+                    VertexIndiceBuffer sphere = SphereBuilder.MakeSphereSegExplicit(renderContext.graphicsDevice, rootSector, 2, bounds.minX, bounds.minY, bounds.maxX, bounds.maxY, camera);
+                    effect.Parameters["Texture"].SetValue(renderTargets[rootSector]);
+                    foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+                    {
+                        pass.Apply();
+                        renderContext.graphicsDevice.Indices = sphere.indices;
+                        renderContext.graphicsDevice.SetVertexBuffer(sphere.vertices);
+                        renderContext.graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, sphere.indices.IndexCount / 3);
+                    }
+                    sphere.vertices.Dispose();
+                    sphere.indices.Dispose();
+                }
+            }
+            foreach (var rootSector in ZCoords.GetSectorManager().GetTopmostOSMSectors())
+            {
+                Draw3D(renderContext.graphicsDevice, allBounds[rootSector], rootSector, renderContext.layerPass);
+            }
+        }
+
+        public override void Update(GraphicsDevice graphicsDevice, GameTime gameTime)
+        {
+            Vector3d circleStart = camera.GetLatLongOfCoord(graphicsDevice, Mouse.GetState().X, Mouse.GetState().Y);
             if (circleStart != null)
             {
                 // update in reverse order
@@ -176,9 +173,9 @@ namespace Zenith.EditorGameComponents
             //return 1;
         }
 
-        protected BasicEffect GetDefaultEffect()
+        protected BasicEffect GetDefaultEffect(GraphicsDevice graphicsDevice)
         {
-            var basicEffect = new BasicEffect(Game.GraphicsDevice);
+            var basicEffect = new BasicEffect(graphicsDevice);
             basicEffect.LightingEnabled = true;
             basicEffect.DirectionalLight0.Direction = new Vector3(-1, 1, 0);
             basicEffect.DirectionalLight0.DiffuseColor = new Vector3(0.8f, 0.8f, 0.8f);
@@ -301,7 +298,7 @@ namespace Zenith.EditorGameComponents
                 Matrixd world = Matrixd.CreateRotationZ(-camera.cameraRotX) * Matrixd.CreateRotationX(camera.cameraRotY); // eh.... think hard on this later
                 double distance = 9 * Math.Pow(0.5, camera.cameraZoom);
                 Matrixd view = CameraMatrixManager.GetWorldViewd(distance);
-                Matrixd projection = CameraMatrixManager.GetWorldProjectiond(distance, this.GraphicsDevice.Viewport.AspectRatio);
+                Matrixd projection = CameraMatrixManager.GetWorldProjectiond(distance, graphicsDevice.Viewport.AspectRatio);
                 Matrixd transformMatrix = new Matrixd(xAxis.X, xAxis.Y, xAxis.Z, 0, yAxis.X, yAxis.Y, yAxis.Z, 0, zAxis.X, zAxis.Y, zAxis.Z, 0, start.X, start.Y, start.Z, 1); // turns our local coordinates into 3d spherical coordinates, based on the sector
                 Matrixd WVP = Normalize(transformMatrix * world * view * projection); // combine them all to allow for higher precision
                 RenderContext context = new RenderContext(graphicsDevice, WVP, b.minX, b.maxX, b.minY, b.maxY, camera.cameraZoom, layerPass);
@@ -332,21 +329,21 @@ namespace Zenith.EditorGameComponents
             return m;
         }
 
-        private SectorBounds GetSectorBounds(ISector rootSector)
+        private SectorBounds GetSectorBounds(GraphicsDevice graphicsDevice, ISector rootSector)
         {
             // apparently we don't want to call this after changing our render target
-            double w = GraphicsDevice.Viewport.Width;
-            double h = GraphicsDevice.Viewport.Height;
-            var leftArc = camera.GetArc(0, h, 0, 0);
-            var rightArc = camera.GetArc(w, 0, w, h);
-            var topArc = camera.GetArc(0, 0, w, 0);
-            var bottomArc = camera.GetArc(w, h, 0, h);
+            double w = graphicsDevice.Viewport.Width;
+            double h = graphicsDevice.Viewport.Height;
+            var leftArc = camera.GetArc(graphicsDevice, 0, h, 0, 0);
+            var rightArc = camera.GetArc(graphicsDevice, w, 0, w, h);
+            var topArc = camera.GetArc(graphicsDevice, 0, 0, w, 0);
+            var bottomArc = camera.GetArc(graphicsDevice, w, h, 0, h);
             List<SphereArc> arcs = new List<SphereArc>();
             if (leftArc != null) arcs.Add(leftArc);
             if (topArc != null) arcs.Add(topArc);
             if (rightArc != null) arcs.Add(rightArc);
             if (bottomArc != null) arcs.Add(bottomArc);
-            Circle3 visible = camera.GetUnitSphereVisibleCircle();
+            Circle3 visible = camera.GetUnitSphereVisibleCircle(graphicsDevice);
             double minX, maxX, minY, maxY;
             if (arcs.Count > 0)
             {
@@ -361,7 +358,7 @@ namespace Zenith.EditorGameComponents
                     if ((close1 - close2).Length() > 0.01)
                     {
                         Vector3d halfway = (close1 + close2).Normalized();
-                        if (close1.Cross(halfway).Dot(camera.GetPosition()) > 0) halfway = -halfway;
+                        if (close1.Cross(halfway).Dot(camera.GetPosition(graphicsDevice)) > 0) halfway = -halfway;
                         arcs.Add(new SphereArc(visible, close1, halfway, true));
                         arcs.Add(new SphereArc(visible, halfway, close2, true));
                     }
@@ -380,13 +377,13 @@ namespace Zenith.EditorGameComponents
             }
             if (rootSector is MercatorSector)
             {
-                if (camera.IsUnitSpherePointVisible(new Vector3d(0, 0, 1)))
+                if (camera.IsUnitSpherePointVisible(graphicsDevice, new Vector3d(0, 0, 1)))
                 {
                     minY = 0;
                     minX = 0;
                     maxX = 1;
                 }
-                if (camera.IsUnitSpherePointVisible(new Vector3d(0, 0, -1)))
+                if (camera.IsUnitSpherePointVisible(graphicsDevice, new Vector3d(0, 0, -1)))
                 {
                     maxY = 1;
                     minX = 0;

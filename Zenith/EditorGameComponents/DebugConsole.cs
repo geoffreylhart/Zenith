@@ -1,21 +1,23 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Zenith.ZGame;
+using Zenith.ZGraphics;
 
 namespace Zenith.EditorGameComponents
 {
-    public class DebugConsole : DrawableGameComponent
+    public class DebugConsole : ZGameComponent
     {
         private String strBuffer = "";
         private String strSet = "";
         private SpriteBatch spriteBatch;
 
-        public DebugConsole(Game game) : base(game)
+        public DebugConsole(Game game)
         {
             spriteBatch = new SpriteBatch(game.GraphicsDevice);
         }
 
-        public override void Draw(GameTime gameTime)
+        public override void Draw(RenderContext renderContext, GameTime gameTime)
         {
             // apparently was setting the depthstencialstate to null and it would never get reset
             // this caused me so much confusion!

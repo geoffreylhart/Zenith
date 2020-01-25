@@ -8,7 +8,9 @@ using Zenith.EditorGameComponents;
 using Zenith.EditorGameComponents.FlatComponents;
 using Zenith.Helpers;
 using Zenith.LibraryWrappers.OSM;
+using Zenith.MathHelpers;
 using Zenith.PrimitiveBuilder;
+using Zenith.ZGame;
 using Zenith.ZGraphics;
 #if ANDROID
 using ZenithAndroid;
@@ -18,6 +20,7 @@ namespace Zenith
 {
     public class Game1 : Game
     {
+        public List<ZGameComponent> zComponents = new List<ZGameComponent>();
         public DebugConsole debug;
         public GraphicsDeviceManager graphics;
         public static EditorCamera camera;
@@ -112,23 +115,18 @@ namespace Zenith
 
             IsMouseVisible = true;
             camera = new EditorCamera(this);
-            Components.Add(camera);
+            zComponents.Add(camera);
             var earth = new PlanetComponent(this, camera);
-            Components.Add(earth);
-            var uiLayer = new UILayer(this);
-            Components.Add(uiLayer);
-            uiLayer.UpdateOrder = camera.UpdateOrder - 1;
-            Components.Add(new CityMarker(this, camera, "Pensacola", 30.4668536, -87.3294527));
-            Components.Add(new CityMarker(this, camera, "Anchorage", 61.2008367, -149.8923965));
+            zComponents.Add(earth);
+            zComponents.Add(new CityMarker(this, camera, "Pensacola", 30.4668536, -87.3294527));
+            zComponents.Add(new CityMarker(this, camera, "Anchorage", 61.2008367, -149.8923965));
 #if WINDOWS || LINUX
-            Components.Add(new ShipComponent(this, camera));
+            zComponents.Add(new ShipComponent(this, camera));
 #else
-            Components.Add(new PinchController(this, camera));
+            zComponents.Add(new PinchController(this, camera));
 #endif
-            Components.Add(new FPSCounter(this));
-            //Components.Add(new CityMarker(this, camera, "0, 0", 0, 0));
-            // Components.Add(new BlenderAxis(this, camera));
-            Components.Add(debug = new DebugConsole(this));
+            zComponents.Add(new FPSCounter(this));
+            zComponents.Add(debug = new DebugConsole(this));
             // TODO: just change the ordering to fix this? apparantly setting a render target clears the backbuffer due to Xbox stuff
             GraphicsDevice.PresentationParameters.RenderTargetUsage = RenderTargetUsage.PreserveContents;
 #if WINDOWS || LINUX
@@ -147,7 +145,10 @@ namespace Zenith
             if (Keyboard.GetState().WasKeyPressed(Keys.T)) DEBUGGING = !DEBUGGING;
             if (Keyboard.GetState().WasKeyPressed(Keys.C)) CameraMatrixManager.MODE = (CameraMatrixManager.MODE + 1) % CameraMatrixManager.MODE_COUNT;
 
-            base.Update(gameTime);
+            foreach (var component in zComponents)
+            {
+                component.Update(GraphicsDevice, gameTime);
+            }
         }
 
         protected override void OnExiting(object sender, EventArgs args)
@@ -157,12 +158,112 @@ namespace Zenith
 
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.Black);
-            base.Draw(gameTime);
+            RenderContext renderContext = new RenderContext(GraphicsDevice, Matrixd.Identity(), 0, 0, 0, 0, 0, RenderContext.LayerPass.TREE_DENSITY_PASS);
+            foreach (var component in zComponents)
+            {
+                component.InitDraw(renderContext);
+            }
+            GraphicsDevice.SetRenderTargets(TREE_DENSITY_BUFFER);
+            DrawAllComponents(renderContext, gameTime);
+
+            renderContext.layerPass = RenderContext.LayerPass.GRASS_DENSITY_PASS;
+            GraphicsDevice.SetRenderTargets(GRASS_DENSITY_BUFFER);
+            DrawAllComponents(renderContext, gameTime);
+
+            GraphicsDevice.BlendState = DEFERRED_RENDERING ? BlendState.Opaque : BlendState.AlphaBlend;
+            renderContext.layerPass = RenderContext.LayerPass.MAIN_PASS;
+            GraphicsDevice.SetRenderTargets(DEFERRED_RENDERING ? G_BUFFER : RENDER_BUFFER);
+            DrawAllComponents(renderContext, gameTime);
+            GraphicsDevice.BlendState = BlendState.AlphaBlend;
+
+            renderContext.layerPass = RenderContext.LayerPass.UI_PASS;
+            if (DEFERRED_RENDERING) GraphicsDevice.SetRenderTargets(RENDER_BUFFER);
+            DrawAllComponents(renderContext, gameTime);
+
+            DoComposite();
             if (RECORDING)
             {
                 OSMSectorLoader.SuperSave((Texture2D)RENDER_BUFFER[0].RenderTarget, Path.Combine(RECORD_PATH, $"frame{recordFrame}.png"));
                 recordFrame++;
+            }
+        }
+
+        private void DrawAllComponents(RenderContext renderContext, GameTime gameTime)
+        {
+            foreach (var component in zComponents)
+            {
+                component.Draw(renderContext, gameTime);
+            }
+        }
+
+        private void DoComposite()
+        {
+            Rectangle screenRect = new Rectangle(0, 0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
+
+            SpriteBatch spriteBatch = new SpriteBatch(GraphicsDevice);
+
+            if (DEFERRED_RENDERING)
+            {
+                //GraphicsDevice.SetRenderTargets(Game1.RENDER_BUFFER);
+                Matrixd projection = Matrixd.CreatePerspectiveFieldOfView(Math.PI / 4, GraphicsDevice.Viewport.AspectRatio, 0.5, 2);
+                GlobalContent.SSAOShader.Parameters["PixelSize"].SetValue(new Vector2(1.0f / GraphicsDevice.Viewport.Width, 2.0f / GraphicsDevice.Viewport.Height));
+                //GlobalContent.SSAOShader.Parameters["Projection"].SetValue(projection.toMatrix());
+                //GlobalContent.SSAOShader.Parameters["InverseProjection"].SetValue(Matrixd.Invert(projection).toMatrix());
+                Vector4[] randomOffsets = new Vector4[32];
+                Random rand = new Random(12345);
+                for (int i = 0; i < 32; i++)
+                {
+                    randomOffsets[i] = new Vector4((float)rand.NextDouble() * 2 - 1, (float)rand.NextDouble() * 2 - 1, -(float)rand.NextDouble(), 0);
+                    randomOffsets[i].Normalize();
+                    randomOffsets[i] = randomOffsets[i] * (float)rand.NextDouble();
+                }
+                GlobalContent.SSAOShader.Parameters["offsets"].SetValue(randomOffsets);
+                float distance = 9 * (float)Math.Pow(0.5, Game1.camera.cameraZoom);
+#if WINDOWS
+                GlobalContent.SSAOShader.Parameters["AlbedoTexture"].SetValue(Game1.G_BUFFER[2].RenderTarget);
+                GlobalContent.SSAOShader.Parameters["NormalTexture"].SetValue(Game1.G_BUFFER[1].RenderTarget);
+                GlobalContent.SSAOShader.Parameters["PositionTexture"].SetValue(Game1.G_BUFFER[0].RenderTarget);
+#else
+                GlobalContent.SSAOShader.Parameters["PNATexture"].SetValue(Game1.G_BUFFER[0].RenderTarget);
+#endif
+                DrawSquare(GraphicsDevice, GlobalContent.SSAOShader);
+
+                GraphicsDevice.SetRenderTarget(null);
+                spriteBatch.Begin();
+                spriteBatch.Draw((Texture2D)Game1.RENDER_BUFFER[0].RenderTarget, screenRect, Color.White);
+                spriteBatch.End();
+            }
+            else
+            {
+                GraphicsDevice.SetRenderTarget(null);
+                spriteBatch.Begin();
+                spriteBatch.Draw((Texture2D)Game1.RENDER_BUFFER[0].RenderTarget, screenRect, Color.White);
+                spriteBatch.End();
+            }
+        }
+
+        // TODO: refactor this out
+        VertexBuffer squareVertexBuffer = null;
+        private void DrawSquare(GraphicsDevice graphicsDevice, Effect effect)
+        {
+            if (squareVertexBuffer == null)
+            {
+                List<VertexPositionTexture> vertices = new List<VertexPositionTexture>();
+                vertices.Add(new VertexPositionTexture(new Vector3(0, 0, -10), new Vector2(0, 0)));
+                vertices.Add(new VertexPositionTexture(new Vector3(1, 0, -10), new Vector2(1, 0)));
+                vertices.Add(new VertexPositionTexture(new Vector3(1, 1, -10), new Vector2(1, 1)));
+                vertices.Add(new VertexPositionTexture(new Vector3(0, 0, -10), new Vector2(0, 0)));
+                vertices.Add(new VertexPositionTexture(new Vector3(1, 1, -10), new Vector2(1, 1)));
+                vertices.Add(new VertexPositionTexture(new Vector3(0, 1, -10), new Vector2(0, 1)));
+                squareVertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionTexture.VertexDeclaration, vertices.Count, BufferUsage.WriteOnly);
+                squareVertexBuffer.SetData(vertices.ToArray());
+            }
+            effect.Parameters["WVP"].SetValue(Matrix.CreateOrthographicOffCenter(0, 1, 1, 0, 1, 20));
+            graphicsDevice.SetVertexBuffer(squareVertexBuffer);
+            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                graphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, 2);
             }
         }
     }

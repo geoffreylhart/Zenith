@@ -39,6 +39,9 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 	tempNormal *= (input.TextureCoordinate.x - 0.5) * (input.TextureCoordinate.y - 0.5) * 4;
 	float2 screenNormal = normalize(tempNormal * ScreenSize);
 	output.Position.xy += 10 * screenNormal / ScreenSize;
+	output.Position.z *= 0.01;
+	output.Position.z += 0.2;
+	output.Position.w = 1;
 	output.TextureCoordinate = input.TextureCoordinate;
 	return output;
 }

@@ -4,12 +4,13 @@ using Microsoft.Xna.Framework.Input;
 using System;
 using Zenith.Helpers;
 using Zenith.MathHelpers;
+using Zenith.ZGame;
 using Zenith.ZGraphics;
 using Zenith.ZMath;
 
 namespace Zenith.EditorGameComponents
 {
-    internal class ShipComponent : DrawableGameComponent
+    internal class ShipComponent : ZGameComponent
     {
         public Vector3d velocity = new Vector3d(0, 0, 0);
         public SphereVector forward = new SphereVector(0, 0, 1);
@@ -18,18 +19,18 @@ namespace Zenith.EditorGameComponents
         private EditorCamera camera;
         double rotationSpeed = 0;
 
-        public override void Update(GameTime gameTime)
+        public override void Update(GraphicsDevice graphicsDevice, GameTime gameTime)
         {
-            if (!Game1.RECORDING) MoveShip();
+            if (!Game1.RECORDING) MoveShip(graphicsDevice);
         }
 
-        private void MoveShip()
+        private void MoveShip(GraphicsDevice graphicsDevice)
         {
-            MoveShip1();
+            MoveShip1(graphicsDevice);
             //MoveShip2();
         }
 
-        private void MoveShip1()
+        private void MoveShip1(GraphicsDevice graphicsDevice)
         {
             double rotationAccel = 0;
             double accel = AccelWithKeys();
@@ -64,15 +65,15 @@ namespace Zenith.EditorGameComponents
             SphereVector unitPosition2 = new SphereVector(position.Normalized());
             camera.cameraRotX = unitPosition2.ToLongLat().X;
             camera.cameraRotY = unitPosition2.ToLongLat().Y;
-            camera.UpdateCamera();
+            camera.UpdateCamera(graphicsDevice);
         }
 
         // have the mouse control everything
-        private void MoveShip2()
+        private void MoveShip2(GraphicsDevice graphicsDevice)
         {
-            double accel = AccelerateWithMouse();
+            double accel = AccelerateWithMouse(graphicsDevice);
             //double accel = AccelWithKeys();
-            rotationSpeed = RotateWithMouse();
+            rotationSpeed = RotateWithMouse(graphicsDevice);
             SphereVector right = new SphereVector(forward.Cross(position).Normalized());
             forward = forward.WalkTowards(right, rotationSpeed);
 
@@ -100,10 +101,10 @@ namespace Zenith.EditorGameComponents
             camera.cameraRotY = unitPosition2.ToLongLat().Y;
             BaseZoomOnSpeed();
             //ControlZoomWithKeys();
-            camera.UpdateCamera();
+            camera.UpdateCamera(graphicsDevice);
         }
 
-        public double RotateWithMouse()
+        public double RotateWithMouse(GraphicsDevice graphicsDevice)
         {
             SphereVector unitPosition = new SphereVector(position.Normalized());
             SphereVector up2 = unitPosition.WalkNorth(Math.PI / 2);
@@ -111,7 +112,7 @@ namespace Zenith.EditorGameComponents
             double screenSpaceRotation = Math.Atan2(-forward.Dot(up2), forward.Dot(right2)); // we want up to be 0 and a positive rotation to be cw
 
             Point mousePos = Mouse.GetState().Position;
-            Vector2d mouseV = new Vector2d((mousePos.X / (double)GraphicsDevice.Viewport.Width - 0.5) * GraphicsDevice.Viewport.AspectRatio, mousePos.Y / (double)GraphicsDevice.Viewport.Height - 0.5);
+            Vector2d mouseV = new Vector2d((mousePos.X / (double)graphicsDevice.Viewport.Width - 0.5) * graphicsDevice.Viewport.AspectRatio, mousePos.Y / (double)graphicsDevice.Viewport.Height - 0.5);
             double mouseRotation = Math.Atan2(mouseV.Y, mouseV.X);
             double diff1 = (mouseRotation + 4 * Math.PI - screenSpaceRotation) % (2 * Math.PI);
             double diff2 = (screenSpaceRotation + 4 * Math.PI - mouseRotation) % (2 * Math.PI);
@@ -133,10 +134,10 @@ namespace Zenith.EditorGameComponents
             return accel;
         }
 
-        public double AccelerateWithMouse()
+        public double AccelerateWithMouse(GraphicsDevice graphicsDevice)
         {
             Point mousePos = Mouse.GetState().Position;
-            Vector2d mouseV = new Vector2d((mousePos.X / (double)GraphicsDevice.Viewport.Width - 0.5) * GraphicsDevice.Viewport.AspectRatio, mousePos.Y / (double)GraphicsDevice.Viewport.Height - 0.5);
+            Vector2d mouseV = new Vector2d((mousePos.X / (double)graphicsDevice.Viewport.Width - 0.5) * graphicsDevice.Viewport.AspectRatio, mousePos.Y / (double)graphicsDevice.Viewport.Height - 0.5);
             return (mouseV.Length() - 0.25) / 1000;
         }
 
@@ -154,21 +155,21 @@ namespace Zenith.EditorGameComponents
         }
 
 
-        public ShipComponent(Game game, EditorCamera camera) : base(game)
+        public ShipComponent(Game game, EditorCamera camera)
         {
             this.camera = camera;
         }
 
-        public override void Draw(GameTime gameTime)
+        public override void Draw(RenderContext renderContext, GameTime gameTime)
         {
-            if (Game1.RECORDING) MoveShip();
+            if (Game1.RECORDING) MoveShip(renderContext.graphicsDevice);
             SphereVector unitPosition = new SphereVector(position.Normalized());
             SphereVector up = unitPosition.WalkNorth(Math.PI / 2);
             SphereVector right = new SphereVector(up.Cross(unitPosition).Normalized());
             double rotation = Math.Atan2(forward.Dot(-right), forward.Dot(up)); // we want up to be 0 and a positive rotation to be cw
             Matrix world = Matrix.CreateRotationZ((float)rotation);
             Matrix view = CameraMatrixManager.GetShipView();
-            Matrix projection = CameraMatrixManager.GetShipProjection(this.GraphicsDevice.Viewport.AspectRatio, this.GraphicsDevice.Viewport.Width, this.GraphicsDevice.Viewport.Height);
+            Matrix projection = CameraMatrixManager.GetShipProjection(renderContext.graphicsDevice.Viewport.AspectRatio, renderContext.graphicsDevice.Viewport.Width, renderContext.graphicsDevice.Viewport.Height);
             foreach (ModelMesh mesh in GlobalContent.StartingShuttle.Meshes)
             {
                 foreach (BasicEffect eff in mesh.Effects)
