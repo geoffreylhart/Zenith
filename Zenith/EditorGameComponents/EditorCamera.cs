@@ -27,8 +27,8 @@ namespace Zenith.EditorGameComponents
         {
             world = Matrix.CreateRotationZ(-(float)cameraRotX) * Matrix.CreateRotationX((float)cameraRotY); // eh.... think hard on this later
             float distance = (float)(9 * Math.Pow(0.5, cameraZoom));
-            view = CameraMatrixManager.GetWorldView(distance);
-            projection = CameraMatrixManager.GetWorldProjection(distance, graphicsDevice.Viewport.AspectRatio);
+            view = CameraMatrixManager.GetWorldViewd(distance).toMatrix();
+            projection = CameraMatrixManager.GetWorldProjectiond(distance, graphicsDevice.Viewport.AspectRatio).toMatrix();
         }
 
         private float GetAspectRatio(GraphicsDevice graphicsDevice)

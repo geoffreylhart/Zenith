@@ -21,42 +21,6 @@ namespace Zenith.ZGraphics
         static float M_2 = 4.5f;
         static double angle = Math.PI/4;
 
-        internal static Matrix GetWorldView(float distance)
-        {
-            switch (MODE)
-            {
-                case 0:
-                    return Matrix.CreateLookAt(new Vector3(0, -1 - distance, 0), new Vector3(0, 0, 0), Vector3.UnitZ);
-                case 1:
-                    distance *= M_1;
-                    return Matrix.CreateLookAt(new Vector3(0, -1 - distance * (float)Math.Cos(angle), -distance * (float)Math.Sin(angle)), new Vector3(0, -1, 0), Vector3.UnitZ);
-                case 2:
-                    distance *= M_2;
-                    return Matrix.CreateLookAt(new Vector3(0, -1 - distance * (float)Math.Cos(angle), -distance * (float)Math.Sin(angle)), new Vector3(0, -1, 0), Vector3.UnitZ);
-                case 3:
-                    return Matrix.CreateLookAt(new Vector3(0, -1 - distance * (float)Math.Cos(angle), -distance * (float)Math.Sin(angle)), new Vector3(0, -1, 0), Vector3.UnitZ);
-            }
-            throw new NotImplementedException();
-        }
-
-        internal static Matrix GetWorldProjection(float distance, float aspectRatio)
-        {
-            switch (MODE)
-            {
-                case 0:
-                    return Matrix.CreatePerspectiveFieldOfView(Mathf.PI / 2, aspectRatio, distance * 0.1f, distance * 100);
-                case 1:
-                    distance *= M_1;
-                    return Matrix.CreatePerspectiveFieldOfView(Mathf.PI / 4, aspectRatio, distance * 0.5f, distance * 2);
-                case 2:
-                    distance *= M_2;
-                    return Matrix.CreateOrthographicOffCenter(-0.2f * distance * aspectRatio, 0.2f * distance * aspectRatio, -0.2f * distance, 0.2f * distance, distance * 0.1f, distance * 100);
-                case 3:
-                    return Matrix.CreatePerspectiveFieldOfView(Mathf.PI * 80 / 180, aspectRatio, distance * 0.1f, distance * 100);
-            }
-            throw new NotImplementedException();
-        }
-
         internal static Matrixd GetWorldViewd(double distance)
         {
             switch (MODE)

@@ -87,6 +87,53 @@ namespace Zenith.MathHelpers
             return ((-1.401298E-45f <= num) && (num <= double.Epsilon));
         }
 
+        public static Matrixd CreateTranslation(Vector3d position)
+        {
+            var m11 = 1;
+            var m12 = 0;
+            var m13 = 0;
+            var m14 = 0;
+            var m21 = 0;
+            var m22 = 1;
+            var m23 = 0;
+            var m24 = 0;
+            var m31 = 0;
+            var m32 = 0;
+            var m33 = 1;
+            var m34 = 0;
+            var m41 = position.X;
+            var m42 = position.Y;
+            var m43 = position.Z;
+            var m44 = 1;
+            return new Matrixd(m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34, m41, m42, m43, m44);
+        }
+
+        public static Matrixd CreateScale(double scale)
+        {
+            return CreateScale(scale, scale, scale);
+        }
+
+        public static Matrixd CreateScale(double xScale, double yScale, double zScale)
+        {
+            var m11 = xScale;
+            var m12 = 0;
+            var m13 = 0;
+            var m14 = 0;
+            var m21 = 0;
+            var m22 = yScale;
+            var m23 = 0;
+            var m24 = 0;
+            var m31 = 0;
+            var m32 = 0;
+            var m33 = zScale;
+            var m34 = 0;
+            var m41 = 0;
+            var m42 = 0;
+            var m43 = 0;
+            var m44 = 1;
+            return new Matrixd(m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34, m41, m42, m43, m44);
+        }
+
         public static Matrixd Multiply(Matrixd matrix1, Matrixd matrix2)
         {
             var m11 = (((matrix1.M11 * matrix2.M11) + (matrix1.M12 * matrix2.M21)) + (matrix1.M13 * matrix2.M31)) + (matrix1.M14 * matrix2.M41);
@@ -202,12 +249,26 @@ namespace Zenith.MathHelpers
             return result;
         }
 
+        internal static Matrixd CreateRotationY(double radians)
+        {
+            var result = Matrixd.Identity();
+
+            var val1 = Math.Cos(radians);
+            var val2 = Math.Sin(radians);
+
+            result.M11 = val1;
+            result.M13 = -val2;
+            result.M31 = val2;
+            result.M33 = val1;
+            return result;
+        }
+
         internal static Matrixd CreateRotationZ(double radians)
         {
             var result = Matrixd.Identity();
 
-            var val1 = (float)Math.Cos(radians);
-            var val2 = (float)Math.Sin(radians);
+            var val1 = Math.Cos(radians);
+            var val2 = Math.Sin(radians);
 
             result.M11 = val1;
             result.M12 = val2;
