@@ -167,23 +167,36 @@ namespace Zenith.EditorGameComponents
             SphereVector up = unitPosition.WalkNorth(Math.PI / 2);
             SphereVector right = new SphereVector(up.Cross(unitPosition).Normalized());
             double rotation = Math.Atan2(forward.Dot(-right), forward.Dot(up)); // we want up to be 0 and a positive rotation to be cw
-            Matrix world = Matrix.CreateRotationZ((float)rotation);
-            Matrix view = CameraMatrixManager.GetShipView();
-            Matrix projection = CameraMatrixManager.GetShipProjection(renderContext.graphicsDevice.Viewport.AspectRatio, renderContext.graphicsDevice.Viewport.Width, renderContext.graphicsDevice.Viewport.Height);
+            Matrixd shipWVP = CreateShipWVP(renderContext, rotation);
             foreach (ModelMesh mesh in GlobalContent.StartingShuttle.Meshes)
             {
                 foreach (BasicEffect eff in mesh.Effects)
                 {
                     eff.EnableDefaultLighting();
-                    eff.World = world;
-                    eff.View = view;
-                    eff.Projection = projection;
+                    eff.World = shipWVP.toMatrix();
                     eff.VertexColorEnabled = false;
                     eff.Alpha = 1;
                 }
 
                 mesh.Draw();
             }
+        }
+
+        private Matrixd CreateShipWVP(RenderContext renderContext, double rotation)
+        {
+            double fakeScale = Math.Max(Math.Pow(2, 21 - camera.cameraZoom), 1); // make the ship bigger to account for depth buffer limitations
+            Vector3d shipPos = position;
+            // earth radius 6371 km
+            double shipScale = fakeScale / 6371000;
+            double distanceFromCamera = 30; // in meters
+            Matrixd world = Matrixd.CreateRotationZ(-camera.cameraRotX) * Matrixd.CreateRotationX(camera.cameraRotY); // eh.... think hard on this later
+            double distance = 9 * Math.Pow(0.5, camera.cameraZoom);
+            shipPos += position.WalkNorth(-Math.PI / 4) * (distance * 2 - distanceFromCamera * shipScale); // why distance * 2??
+            Matrixd view = CameraMatrixManager.GetWorldViewd(distance);
+            Matrixd projection = CameraMatrixManager.GetWorldProjectiond(distance, renderContext.graphicsDevice.Viewport.AspectRatio);
+            Matrixd worldWVP = world * view * projection;
+            Matrixd shipRot = Matrixd.CreateRotationZ(rotation + Math.PI) * Matrixd.CreateRotationX(Math.PI / 2 - camera.cameraRotY) * Matrixd.CreateRotationZ(camera.cameraRotX);
+            return shipRot * Matrixd.CreateScale(shipScale) * Matrixd.CreateTranslation(shipPos) * worldWVP;
         }
     }
 }
