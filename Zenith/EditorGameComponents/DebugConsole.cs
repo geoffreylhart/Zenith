@@ -19,6 +19,7 @@ namespace Zenith.EditorGameComponents
 
         public override void Draw(RenderContext renderContext, GameTime gameTime)
         {
+            if (renderContext.layerPass != RenderContext.LayerPass.UI_PASS) return;
             // apparently was setting the depthstencialstate to null and it would never get reset
             // this caused me so much confusion!
             spriteBatch.Begin(SpriteSortMode.Deferred, null, null, DepthStencilState.Default, null, null, null);

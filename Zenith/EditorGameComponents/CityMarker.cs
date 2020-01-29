@@ -30,6 +30,7 @@ namespace Zenith.EditorGameComponents
 
         public override void Draw(RenderContext renderContext, GameTime gameTime)
         {
+            if (renderContext.layerPass != RenderContext.LayerPass.UI_PASS) return;
             var basicEffect = new BasicEffect(renderContext.graphicsDevice);
             camera.ApplyMatrices(basicEffect);
             var basicEffect3 = new BasicEffect(renderContext.graphicsDevice);

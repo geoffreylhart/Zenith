@@ -162,6 +162,7 @@ namespace Zenith.EditorGameComponents
 
         public override void Draw(RenderContext renderContext, GameTime gameTime)
         {
+            if (renderContext.layerPass != RenderContext.LayerPass.MAIN_PASS) return;
             if (Game1.RECORDING) MoveShip(renderContext.graphicsDevice);
             SphereVector unitPosition = new SphereVector(position.Normalized());
             SphereVector up = unitPosition.WalkNorth(Math.PI / 2);

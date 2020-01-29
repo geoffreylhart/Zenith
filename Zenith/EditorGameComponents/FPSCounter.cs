@@ -29,6 +29,7 @@ namespace Zenith.EditorGameComponents
 
         public override void Draw(RenderContext renderContext, GameTime gameTime)
         {
+            if (renderContext.layerPass != RenderContext.LayerPass.UI_PASS) return;
             lastDrawTimes.Add(gameTime.ElapsedGameTime.TotalSeconds);
             if (lastDrawTimes.Count > 5) lastDrawTimes.RemoveAt(0);
             string text = $"{1 / lastUpdateTimes.Average():F2} Update FPS";
