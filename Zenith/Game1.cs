@@ -176,11 +176,13 @@ namespace Zenith
             DrawAllComponents(renderContext, gameTime);
             GraphicsDevice.BlendState = BlendState.AlphaBlend;
 
-            renderContext.layerPass = RenderContext.LayerPass.UI_PASS;
             if (DEFERRED_RENDERING) GraphicsDevice.SetRenderTargets(RENDER_BUFFER);
+            DoComposite();
+
+            // draw UI directly to backbuffer?
+            renderContext.layerPass = RenderContext.LayerPass.UI_PASS;
             DrawAllComponents(renderContext, gameTime);
 
-            DoComposite();
             if (RECORDING)
             {
                 OSMSectorLoader.SuperSave((Texture2D)RENDER_BUFFER[0].RenderTarget, Path.Combine(RECORD_PATH, $"frame{recordFrame}.png"));
