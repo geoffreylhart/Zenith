@@ -26,6 +26,7 @@ namespace Zenith.LibraryWrappers.OSM
                     {
                         Vector2d pos1 = blobs.nodes[prev.Value];
                         Vector2d pos2 = blobs.nodes[v.Value];
+                        // the top of the image will be at the end of the path
                         var topLeft = new VertexPositionNormalTexture(new Vector3(pos2, 0), new Vector3(pos1, 0), new Vector2(0, 0));
                         var topRight = new VertexPositionNormalTexture(new Vector3(pos2, 0), new Vector3(pos1, 0), new Vector2(1, 0));
                         var bottomLeft = new VertexPositionNormalTexture(new Vector3(pos1, 0), new Vector3(pos2, 0), new Vector2(0, 1));
@@ -46,7 +47,7 @@ namespace Zenith.LibraryWrappers.OSM
                     prev = v;
                 }
             }
-            return new BasicVertexBuffer(graphicsDevice, indices, vertices, GlobalContent.Road, true, PrimitiveType.TriangleList);
+            return new BasicVertexBuffer(graphicsDevice, indices, vertices, GlobalContent.CCWArrows, true, PrimitiveType.TriangleList);
         }
     }
 }

@@ -32,6 +32,7 @@ namespace Zenith
         public static Texture2D BeachFlipped;
         public static Texture2D BeachFlippedTreeDensity;
         public static Texture2D BeachTreeDensity;
+        public static Texture2D CCWArrows;
         public static Texture2D CWArrows;
         public static Texture2D Error;
         public static Texture2D Grass;
@@ -63,6 +64,7 @@ namespace Zenith
             BeachFlipped = content.Load<Texture2D>("Images/BeachFlipped");
             BeachFlippedTreeDensity = content.Load<Texture2D>("Images/BeachFlippedTreeDensity");
             BeachTreeDensity = content.Load<Texture2D>("Images/BeachTreeDensity");
+            CCWArrows = content.Load<Texture2D>("Images/CCWArrows");
             CWArrows = content.Load<Texture2D>("Images/CWArrows");
             Error = content.Load<Texture2D>("Images/Error");
             Grass = content.Load<Texture2D>("Images/Grass");

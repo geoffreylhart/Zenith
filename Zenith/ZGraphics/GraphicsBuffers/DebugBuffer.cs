@@ -35,7 +35,6 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             }
             // draw those lines
             Effect effect = GlobalContent.DebugLinesShader;
-            context.graphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
             effect.Parameters["Texture"].SetValue(debugLinesBuffer.texture);
             effect.Parameters["WVP"].SetValue(context.WVP.toMatrix());
             effect.Parameters["ScreenSize"].SetValue(new Vector2(context.graphicsDevice.Viewport.Width, context.graphicsDevice.Viewport.Height));
