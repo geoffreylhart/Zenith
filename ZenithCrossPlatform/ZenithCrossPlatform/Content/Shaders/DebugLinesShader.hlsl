@@ -1,5 +1,5 @@
 float4x4 WVP;
-float2 ScreenSize;
+float LineWidth;
 
 texture Texture;
 sampler2D textureSampler = sampler_state {
@@ -31,20 +31,9 @@ struct PixelShaderOutput
 VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 {
 	VertexShaderOutput output;
-	output.Position = mul(input.Position, WVP);
-	output.Position /= output.Position.w;
-	float4 position2 = mul(input.Normal, WVP);
-	position2 /= position2.w;
-	float len = length((position2.xy - output.Position.xy) * ScreenSize);
-	float2 tempNormal = float2(output.Position.y - position2.y, position2.x - output.Position.x);
-	tempNormal *= (input.TextureCoordinate.x - 0.5) * (input.TextureCoordinate.y - 0.5) * 4;
-	float2 screenNormal = normalize(tempNormal * ScreenSize);
-	output.Position.xy += 10 * screenNormal / ScreenSize;
-	output.Position.z *= 0.01;
-	output.Position.z += 0.2;
-	output.Position.w = 1;
+	output.Position = mul(input.Position + input.Normal * LineWidth, WVP);
 	output.TextureCoordinate = input.TextureCoordinate;
-	output.TextureCoordinate.y *= ceil(len / 20);
+	output.TextureCoordinate.y /= LineWidth * 2;
 	return output;
 }
 

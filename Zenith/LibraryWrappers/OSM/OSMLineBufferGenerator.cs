@@ -26,11 +26,15 @@ namespace Zenith.LibraryWrappers.OSM
                     {
                         Vector2d pos1 = blobs.nodes[prev.Value];
                         Vector2d pos2 = blobs.nodes[v.Value];
+                        float length = (float)(pos2 - pos1).Length();
+                        // unfortunately calculating the normal from the next/prev vertex in the vertexshader has issues, due to WVP inaccuracies of offscreen vertices
+                        Vector2d normalRight = (pos2 - pos1).RotateCW90().Normalized();
+                        Vector2d normalLeft = (pos2 - pos1).RotateCCW90().Normalized();
                         // the top of the image will be at the end of the path
-                        var topLeft = new VertexPositionNormalTexture(new Vector3(pos2, 0), new Vector3(pos1, 0), new Vector2(0, 0));
-                        var topRight = new VertexPositionNormalTexture(new Vector3(pos2, 0), new Vector3(pos1, 0), new Vector2(1, 0));
-                        var bottomLeft = new VertexPositionNormalTexture(new Vector3(pos1, 0), new Vector3(pos2, 0), new Vector2(0, 1));
-                        var bottomRight = new VertexPositionNormalTexture(new Vector3(pos1, 0), new Vector3(pos2, 0), new Vector2(1, 1));
+                        var topLeft = new VertexPositionNormalTexture(new Vector3(pos2, 0), new Vector3(normalLeft, 0), new Vector2(0, 0));
+                        var topRight = new VertexPositionNormalTexture(new Vector3(pos2, 0), new Vector3(normalRight, 0), new Vector2(1, 0));
+                        var bottomLeft = new VertexPositionNormalTexture(new Vector3(pos1, 0), new Vector3(normalLeft, 0), new Vector2(0, length));
+                        var bottomRight = new VertexPositionNormalTexture(new Vector3(pos1, 0), new Vector3(normalRight, 0), new Vector2(1, length));
                         vertices.Add(topLeft);
                         vertices.Add(topRight);
                         vertices.Add(bottomLeft);

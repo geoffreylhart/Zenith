@@ -37,7 +37,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             Effect effect = GlobalContent.DebugLinesShader;
             effect.Parameters["Texture"].SetValue(debugLinesBuffer.texture);
             effect.Parameters["WVP"].SetValue(context.WVP.toMatrix());
-            effect.Parameters["ScreenSize"].SetValue(new Vector2(context.graphicsDevice.Viewport.Width, context.graphicsDevice.Viewport.Height));
+            effect.Parameters["LineWidth"].SetValue((float)Math.Pow(0.5, context.cameraZoom) * 50);
             context.graphicsDevice.Indices = debugLinesBuffer.indices;
             context.graphicsDevice.SetVertexBuffer(debugLinesBuffer.vertices);
             foreach (EffectPass pass in effect.CurrentTechnique.Passes)
