@@ -92,7 +92,9 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             if (context.layerPass == RenderContext.LayerPass.GRASS_DENSITY_PASS)
             {
                 beachBuffer.Draw(context, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
-                lakesBuffer.Draw(context, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
+                Matrixd lakeWVP = Matrixd.CreateTranslation(new Vector3d(0, 0, 0.00001f)) * context.WVP; // TODO: I'm still not 100% why trees and colors have no issue with this 
+                RenderContext lakeContext = new RenderContext(context.graphicsDevice, lakeWVP, context.minX, context.maxX, context.minY, context.maxY, context.cameraZoom, context.layerPass);
+                lakesBuffer.Draw(lakeContext, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
                 roadsBuffer.Draw(context, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
             }
             if (context.layerPass == RenderContext.LayerPass.MAIN_PASS)

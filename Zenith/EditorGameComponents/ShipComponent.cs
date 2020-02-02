@@ -149,8 +149,8 @@ namespace Zenith.EditorGameComponents
 
         private void ControlZoomWithKeys()
         {
-            if (Keyboard.GetState().WasKeyPressed(Keys.LeftShift)) zoom += 3;
-            if (Keyboard.GetState().WasKeyPressed(Keys.Space)) zoom -= 3;
+            if (Keyboard.GetState().WasKeyPressed(Keys.LeftShift)) zoom += 1;
+            if (Keyboard.GetState().WasKeyPressed(Keys.Space)) zoom -= 1;
             camera.cameraZoom = zoom * 0.05 + camera.cameraZoom * 0.95;
         }
 
