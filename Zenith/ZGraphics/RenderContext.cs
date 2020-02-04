@@ -19,6 +19,7 @@ namespace Zenith.ZGraphics
         public bool highQuality = false;
         public RenderTarget2D treeLayer = null;
         public RenderTarget2D grassLayer = null;
+        public bool? deferred = null;
 
         public RenderContext(GraphicsDevice graphicsDevice, Matrixd WVP, double minX, double maxX, double minY, double maxY, double cameraZoom, LayerPass layerPass)
         {

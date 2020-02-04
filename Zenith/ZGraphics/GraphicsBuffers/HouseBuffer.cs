@@ -48,8 +48,9 @@ namespace Zenith.ZGraphics.GraphicsBuffers
 
         public void Draw(RenderContext context)
         {
+            bool actuallyDeferred = context.deferred.HasValue ? context.deferred.Value : Game1.DEFERRED_RENDERING;
             if (context.layerPass != RenderContext.LayerPass.MAIN_PASS) return;
-            if (!Game1.DEFERRED_RENDERING)
+            if (!actuallyDeferred)
             {
                 // TODO: we've temporarily flipped the normals on the model
                 var effect = GlobalContent.InstancingShader;
@@ -68,7 +69,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                     }
                 }
             }
-            if (Game1.DEFERRED_RENDERING)
+            if (actuallyDeferred)
             {
                 // TODO: we've temporarily flipped the normals on the model
                 var effect = GlobalContent.DeferredInstancingShader;

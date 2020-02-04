@@ -182,6 +182,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             Matrixd skew = new Matrixd(1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1); // make trees stand up
             RenderContext context = new RenderContext(graphicsDevice, skew * projection, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0, RenderContext.LayerPass.MAIN_PASS);
             context.highQuality = true;
+            context.deferred = false;
             InitDraw(context);
             RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 512 * 16, 512 * 16, true, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
             RenderTarget2D newGrass = new RenderTarget2D(graphicsDevice, 512 * 16, 512 * 16, true, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
@@ -208,7 +209,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             graphicsDevice.SetRenderTarget((RenderTarget2D)newtexture);
             GraphicsBasic.DrawSpriteRect(graphicsDevice, 0, 0, newsize, newsize, texture, BlendState.AlphaBlend, Microsoft.Xna.Framework.Color.White);
             texture.Dispose();
-            return texture;
+            return newtexture;
         }
     }
 }

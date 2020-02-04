@@ -79,8 +79,9 @@ namespace Zenith.ZGraphics
 
         public void Draw(RenderContext context, PrimitiveType drawType, Texture2D drawTexture, Vector3? color)
         {
+            bool actuallyDeferred = context.deferred.HasValue ? context.deferred.Value : Game1.DEFERRED_RENDERING;
             Effect effect;
-            if ((context.layerPass == RenderContext.LayerPass.MAIN_PASS && !Game1.DEFERRED_RENDERING) || context.layerPass == RenderContext.LayerPass.TREE_DENSITY_PASS || context.layerPass == RenderContext.LayerPass.GRASS_DENSITY_PASS)
+            if ((context.layerPass == RenderContext.LayerPass.MAIN_PASS && !actuallyDeferred) || context.layerPass == RenderContext.LayerPass.TREE_DENSITY_PASS || context.layerPass == RenderContext.LayerPass.GRASS_DENSITY_PASS)
             {
                 BasicEffect basicEffect = new BasicEffect(context.graphicsDevice);
                 basicEffect.World = context.WVP.toMatrix();
@@ -111,7 +112,7 @@ namespace Zenith.ZGraphics
                 }
                 effect = basicEffect;
             }
-            else if (context.layerPass == RenderContext.LayerPass.MAIN_PASS && Game1.DEFERRED_RENDERING)
+            else if (context.layerPass == RenderContext.LayerPass.MAIN_PASS && actuallyDeferred)
             {
                 if (drawTexture == null)
                 {

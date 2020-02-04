@@ -79,6 +79,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
 
         public void Draw(RenderContext context)
         {
+            bool actuallyDeferred = context.deferred.HasValue ? context.deferred.Value : Game1.DEFERRED_RENDERING;
             if (!context.highQuality && (context.maxX - context.minX > 0.1 || context.maxY - context.minY > 0.1)) return;
             if (context.layerPass == RenderContext.LayerPass.TREE_DENSITY_PASS)
             {
@@ -101,7 +102,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             {
                 // first grass
                 int size = 64;
-                var effect = Game1.DEFERRED_RENDERING ? GlobalContent.DeferredTreeGeometryShader : GlobalContent.TreeGeometryShader;
+                var effect = actuallyDeferred ? GlobalContent.DeferredTreeGeometryShader : GlobalContent.TreeGeometryShader;
                 effect.Parameters["TreeTexture"].SetValue(GlobalContent.Grass);
                 effect.Parameters["Texture"].SetValue(context.grassLayer != null ? context.grassLayer : Game1.GRASS_DENSITY_BUFFER[0].RenderTarget);
                 effect.Parameters["TreeVariance"].SetValue(new Vector2((float)0.5, (float)0.5));
