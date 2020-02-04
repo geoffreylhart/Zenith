@@ -179,15 +179,26 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             Vector2d topLeft = new Vector2d(0, 0);
             Vector2d bottomRight = new Vector2d(1, 1);
             Matrixd projection = Matrixd.CreateOrthographicOffCenter(0, 1, 1, 0, -1, 0.01f); // TODO: why negative?
-            RenderContext context = new RenderContext(graphicsDevice, projection, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0, RenderContext.LayerPass.MAIN_PASS);
+            Matrixd skew = new Matrixd(1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1); // make trees stand up
+            RenderContext context = new RenderContext(graphicsDevice, skew * projection, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0, RenderContext.LayerPass.MAIN_PASS);
+            context.highQuality = true;
             InitDraw(context);
             RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 512 * 16, 512 * 16, true, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
+            RenderTarget2D newGrass = new RenderTarget2D(graphicsDevice, 512 * 16, 512 * 16, true, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
+            RenderTarget2D newTree = new RenderTarget2D(graphicsDevice, 512 * 16, 512 * 16, true, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
+            context.treeLayer = newTree;
+            context.grassLayer = newGrass;
+            graphicsDevice.SetRenderTarget(newTree);
+            context.layerPass = RenderContext.LayerPass.TREE_DENSITY_PASS;
+            Draw(context);
+            graphicsDevice.SetRenderTarget(newGrass);
+            context.layerPass = RenderContext.LayerPass.GRASS_DENSITY_PASS;
+            Draw(context);
             graphicsDevice.SetRenderTarget(newTarget);
-            foreach (var pass in new[] { RenderContext.LayerPass.TREE_DENSITY_PASS, RenderContext.LayerPass.GRASS_DENSITY_PASS, RenderContext.LayerPass.MAIN_PASS })
-            {
-                context.layerPass = pass;
-                Draw(context);
-            }
+            context.layerPass = RenderContext.LayerPass.MAIN_PASS;
+            Draw(context);
+            newTree.Dispose();
+            newGrass.Dispose();
             return DownScale(graphicsDevice, newTarget, 512);
         }
 
@@ -197,7 +208,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             graphicsDevice.SetRenderTarget((RenderTarget2D)newtexture);
             GraphicsBasic.DrawSpriteRect(graphicsDevice, 0, 0, newsize, newsize, texture, BlendState.AlphaBlend, Microsoft.Xna.Framework.Color.White);
             texture.Dispose();
-            return newtexture;
+            return texture;
         }
     }
 }

@@ -79,7 +79,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
 
         public void Draw(RenderContext context)
         {
-            if (context.maxX - context.minX > 0.1 || context.maxY - context.minY > 0.1) return;
+            if (!context.highQuality && (context.maxX - context.minX > 0.1 || context.maxY - context.minY > 0.1)) return;
             if (context.layerPass == RenderContext.LayerPass.TREE_DENSITY_PASS)
             {
                 beachBuffer.Draw(context, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
@@ -92,7 +92,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             if (context.layerPass == RenderContext.LayerPass.GRASS_DENSITY_PASS)
             {
                 beachBuffer.Draw(context, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
-                Matrixd lakeWVP = Matrixd.CreateTranslation(new Vector3d(0, 0, 0.00001f)) * context.WVP; // TODO: I'm still not 100% why trees and colors have no issue with this 
+                Matrixd lakeWVP = Matrixd.CreateTranslation(new Vector3d(0, 0, 0.00001f)) * context.WVP; // TODO: I'm still not 100% why trees and colors have no issue with this (for the colors the depth gets cleared, but the trees...?)
                 RenderContext lakeContext = new RenderContext(context.graphicsDevice, lakeWVP, context.minX, context.maxX, context.minY, context.maxY, context.cameraZoom, context.layerPass);
                 lakesBuffer.Draw(lakeContext, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
                 roadsBuffer.Draw(context, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
@@ -103,7 +103,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                 int size = 64;
                 var effect = Game1.DEFERRED_RENDERING ? GlobalContent.DeferredTreeGeometryShader : GlobalContent.TreeGeometryShader;
                 effect.Parameters["TreeTexture"].SetValue(GlobalContent.Grass);
-                effect.Parameters["Texture"].SetValue(Game1.GRASS_DENSITY_BUFFER[0].RenderTarget);
+                effect.Parameters["Texture"].SetValue(context.grassLayer != null ? context.grassLayer : Game1.GRASS_DENSITY_BUFFER[0].RenderTarget);
                 effect.Parameters["TreeVariance"].SetValue(new Vector2((float)0.5, (float)0.5));
                 effect.Parameters["TreeSize"].SetValue(2f);
                 effect.Parameters["TreeCenter"].SetValue(new Vector2((float)0.5, (float)1));
@@ -129,7 +129,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                 // now trees
                 size = 32;
                 effect.Parameters["TreeTexture"].SetValue(GlobalContent.Tree);
-                effect.Parameters["Texture"].SetValue(Game1.TREE_DENSITY_BUFFER[0].RenderTarget);
+                effect.Parameters["Texture"].SetValue(context.treeLayer != null ? context.treeLayer : Game1.TREE_DENSITY_BUFFER[0].RenderTarget);
                 effect.Parameters["TreeVariance"].SetValue(new Vector2((float)0.5, (float)0.5));
                 effect.Parameters["TreeSize"].SetValue(2f);
                 effect.Parameters["TreeCenter"].SetValue(new Vector2((float)0.5, (float)1));
