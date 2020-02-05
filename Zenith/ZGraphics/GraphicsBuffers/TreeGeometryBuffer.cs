@@ -103,6 +103,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                 // first grass
                 int size = 64;
                 var effect = actuallyDeferred ? GlobalContent.DeferredTreeGeometryShader : GlobalContent.TreeGeometryShader;
+                effect.Parameters["TreeExtraPH"].SetValue((float)context.treeExtraPH);
                 effect.Parameters["TreeTexture"].SetValue(GlobalContent.Grass);
                 effect.Parameters["Texture"].SetValue(context.grassLayer != null ? context.grassLayer : Game1.GRASS_DENSITY_BUFFER[0].RenderTarget);
                 effect.Parameters["TreeVariance"].SetValue(new Vector2((float)0.5, (float)0.5));

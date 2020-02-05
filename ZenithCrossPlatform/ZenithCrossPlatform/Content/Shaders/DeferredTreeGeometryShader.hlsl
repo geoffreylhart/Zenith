@@ -1,5 +1,6 @@
 float4x4 WVP;
 float4x4 Inverse;
+float TreeExtraPH;
 
 float Resolution;
 float TreeSize; // the scaling of the tree image, I've usually set this to 2 for healthy amounts of overlap (and because my images have lots of whitespace)
@@ -78,7 +79,7 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 	unitRight *= 1.0 / Resolution / length(unitRight);
 	unitUp *= 1.0 / Resolution / length(unitUp);
 	input.Position.xyz += xAmount * unitRight * TreeSize;
-	input.Position.xyz += zAmount * unitUp * TreeSize;
+	input.Position.xyz += zAmount * unitUp * TreeSize * TreeExtraPH;
 	
 	output.Position = mul(input.Position, WVP);
 	

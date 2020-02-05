@@ -176,13 +176,15 @@ namespace Zenith.ZGraphics.GraphicsBuffers
 
         public Texture2D GetImage(GraphicsDevice graphicsDevice)
         {
+            // TODO: figure out why, in a batch of multiple (4 most often), only the first one does grass/tree depth properly? the rest have grass underneath
             Vector2d topLeft = new Vector2d(0, 0);
             Vector2d bottomRight = new Vector2d(1, 1);
-            Matrixd projection = Matrixd.CreateOrthographicOffCenter(0, 1, 1, 0, -1, 0.01f); // TODO: why negative?
-            Matrixd skew = new Matrixd(1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1); // make trees stand up
+            Matrixd projection = Matrixd.CreateOrthographicOffCenter(0, 1, 0.5, 0, -2, 2); // TODO: why negative?
+            Matrixd skew = Matrixd.CreateRotationX(Math.PI / 3);
             RenderContext context = new RenderContext(graphicsDevice, skew * projection, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0, RenderContext.LayerPass.MAIN_PASS);
             context.highQuality = true;
             context.deferred = false;
+            context.treeExtraPH = 0.5; // undo our stretching when measuring tree height (TODO: very hacky)
             InitDraw(context);
             RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 512 * 16, 512 * 16, true, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
             RenderTarget2D newGrass = new RenderTarget2D(graphicsDevice, 512 * 16, 512 * 16, true, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
