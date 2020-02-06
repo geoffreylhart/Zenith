@@ -63,28 +63,49 @@ namespace Zenith.ZGraphics
         {
             Rectangle destRect = new Rectangle(0, 0, graphicsDevice.Viewport.Width, graphicsDevice.Viewport.Height);
             Rectangle srcRect = new Rectangle((int)(texture.Width * x2), (int)(texture.Height * y2), (int)(texture.Width * w2), (int)(texture.Height * h2));
-            SpriteBatch spriteBatch = new SpriteBatch(graphicsDevice);
-            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.Additive, null, null, null, null);
-            spriteBatch.Draw(texture, destRect, srcRect, Color.White);
-            spriteBatch.End();
+            DoSpriteBatch(graphicsDevice, SpriteSortMode.Deferred, BlendState.Additive, null, null, null, null, texture, destRect, srcRect, Color.White);
         }
 
         internal static void DrawSpriteRect(GraphicsDevice graphicsDevice, int x, int y, int w, int h, Texture2D texture, BlendState blendState, Color color)
         {
             Rectangle destRect = new Rectangle(x, y, w, h);
-            SpriteBatch spriteBatch = new SpriteBatch(graphicsDevice);
-            spriteBatch.Begin(SpriteSortMode.Deferred, blendState, null, null, null, null);
-            spriteBatch.Draw(texture, destRect, color);
-            spriteBatch.End();
+            DoSpriteBatch(graphicsDevice, SpriteSortMode.Deferred, blendState, null, null, null, null, texture, destRect, color);
         }
 
         internal static void DrawSpriteRect(GraphicsDevice graphicsDevice, int x, int y, int w, int h, Texture2D texture, Effect effect, Color color)
         {
             Rectangle destRect = new Rectangle(x, y, w, h);
+            DoSpriteBatch(graphicsDevice, SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.LinearClamp, DepthStencilState.Default, RasterizerState.CullNone, effect, texture, destRect, color); // TODO: why immediate?
+        }
+
+        // does a simple spritebatch invocation, then reverts the graphicsDevice settings
+        private static void DoSpriteBatch(GraphicsDevice graphicsDevice, SpriteSortMode spriteSortMode, BlendState blendState, SamplerState samplerState, DepthStencilState depthStencilState, RasterizerState rasterizerState, Effect effect, Texture2D texture, Rectangle destRect, Color color)
+        {
+            var temp1 = graphicsDevice.BlendState;
+            var temp2 = graphicsDevice.DepthStencilState;
+            var temp3 = graphicsDevice.RasterizerState;
             SpriteBatch spriteBatch = new SpriteBatch(graphicsDevice);
-            spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.LinearClamp, DepthStencilState.Default, RasterizerState.CullNone, effect); // TODO: why immediate?
+            spriteBatch.Begin(spriteSortMode, blendState, samplerState, depthStencilState, rasterizerState, effect);
             spriteBatch.Draw(texture, destRect, color);
             spriteBatch.End();
+            graphicsDevice.BlendState = temp1;
+            graphicsDevice.DepthStencilState = temp2;
+            graphicsDevice.RasterizerState = temp3;
+        }
+
+        // does a simple spritebatch invocation, then reverts the graphicsDevice settings
+        private static void DoSpriteBatch(GraphicsDevice graphicsDevice, SpriteSortMode spriteSortMode, BlendState blendState, SamplerState samplerState, DepthStencilState depthStencilState, RasterizerState rasterizerState, Effect effect, Texture2D texture, Rectangle destRect, Rectangle srcRect, Color color)
+        {
+            var temp1 = graphicsDevice.BlendState;
+            var temp2 = graphicsDevice.DepthStencilState;
+            var temp3 = graphicsDevice.RasterizerState;
+            SpriteBatch spriteBatch = new SpriteBatch(graphicsDevice);
+            spriteBatch.Begin(spriteSortMode, blendState, samplerState, depthStencilState, rasterizerState, effect);
+            spriteBatch.Draw(texture, destRect, srcRect, color);
+            spriteBatch.End();
+            graphicsDevice.BlendState = temp1;
+            graphicsDevice.DepthStencilState = temp2;
+            graphicsDevice.RasterizerState = temp3;
         }
     }
 }
