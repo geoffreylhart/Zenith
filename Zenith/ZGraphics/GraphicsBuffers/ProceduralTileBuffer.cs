@@ -81,7 +81,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             vectorTileBufferUnused.Add(graphicsDevice, roadsBufferFat, sector);
             Console.WriteLine($"Roads buffer generated for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
-            treeBuffer = new TreeGeometryBuffer(graphicsDevice, coastBuffer, roadsBuffer, roadsBufferFat, coastBufferFat, sector);
+            treeBuffer = new TreeGeometryBuffer(graphicsDevice, coastBuffer, roadsBuffer, roadsBufferFat, landBuffer, sector);
             Console.WriteLine($"Trees generated for {sector} in {sw.Elapsed.TotalSeconds} s");
 #if WINDOWS
             sw.Restart();
