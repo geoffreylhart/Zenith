@@ -129,7 +129,7 @@ namespace Zenith.LibraryWrappers
         // do we treat these as straight lines or arc lines?
         // I guess lets do straight lines
         // let's return them in order of intersection
-        private static Vector2d[] GetIntersections(ISector sector, Vector2d start, Vector2d end)
+        public static Vector2d[] GetIntersections(ISector sector, Vector2d start, Vector2d end)
         {
             Vector2d topLeft = new Vector2d(0, 0);
             Vector2d topRight = new Vector2d(1, 0);
@@ -169,7 +169,7 @@ namespace Zenith.LibraryWrappers
         }
 
         // currently doesn't expect loops
-        private static List<List<ContourVertex>> CloseLines(ISector sector, List<List<ContourVertex>> contours)
+        public static List<List<ContourVertex>> CloseLines(ISector sector, List<List<ContourVertex>> contours)
         {
             var loops = contours.Where(x => x.First().Equals(x.Last())).ToList();
             contours = contours.Where(x => !x.First().Equals(x.Last())).ToList();

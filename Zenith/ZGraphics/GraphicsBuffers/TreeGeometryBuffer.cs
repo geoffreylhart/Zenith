@@ -16,21 +16,17 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         ISector sector;
         static VertexIndiceBuffer buffer; // contains tons of squares
         private static int REZ = 2048;
-        BasicVertexBuffer beachBuffer;
-        BasicVertexBuffer lakesBuffer;
+        BasicVertexBuffer coastBuffer;
         BasicVertexBuffer roadsBuffer;
         BasicVertexBuffer roadsBufferFat;
-        BasicVertexBuffer beachCoastBuffer;
-        BasicVertexBuffer lakesCoastBuffer;
+        BasicVertexBuffer landBuffer;
 
-        public TreeGeometryBuffer(GraphicsDevice graphicsDevice, BasicVertexBuffer beachBuffer, BasicVertexBuffer lakesBuffer, BasicVertexBuffer roadsBuffer, BasicVertexBuffer roadsBufferFat, BasicVertexBuffer beachCoastBuffer, BasicVertexBuffer lakesCoastBuffer, ISector sector)
+        public TreeGeometryBuffer(GraphicsDevice graphicsDevice, BasicVertexBuffer coastBuffer, BasicVertexBuffer roadsBuffer, BasicVertexBuffer roadsBufferFat, BasicVertexBuffer landBuffer, ISector sector)
         {
-            this.beachBuffer = beachBuffer;
-            this.lakesBuffer = lakesBuffer;
+            this.coastBuffer = coastBuffer;
             this.roadsBuffer = roadsBuffer;
             this.roadsBufferFat = roadsBufferFat;
-            this.beachCoastBuffer = beachCoastBuffer;
-            this.lakesCoastBuffer = lakesCoastBuffer;
+            this.landBuffer = landBuffer;
             this.sector = sector;
             // make that square, sure
             if (buffer == null)
@@ -83,19 +79,14 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             if (!context.highQuality && (context.maxX - context.minX > 0.1 || context.maxY - context.minY > 0.1)) return;
             if (context.layerPass == RenderContext.LayerPass.TREE_DENSITY_PASS)
             {
-                beachBuffer.Draw(context, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
-                lakesBuffer.Draw(context, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
-                beachCoastBuffer.Draw(context, PrimitiveType.TriangleList, GlobalContent.BeachFlippedTreeDensity, new Vector3(1, 1, 1));
-                lakesCoastBuffer.Draw(context, PrimitiveType.TriangleList, GlobalContent.BeachTreeDensity, new Vector3(0, 0, 0));
+                landBuffer.Draw(context, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
+                coastBuffer.Draw(context, PrimitiveType.TriangleList, GlobalContent.BeachTreeDensity, new Vector3(1, 1, 1));
                 roadsBufferFat.Draw(context, PrimitiveType.TriangleList, GlobalContent.RoadTreeDensity, new Vector3(0, 0, 0));
                 roadsBuffer.Draw(context, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
             }
             if (context.layerPass == RenderContext.LayerPass.GRASS_DENSITY_PASS)
             {
-                beachBuffer.Draw(context, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
-                Matrixd lakeWVP = Matrixd.CreateTranslation(new Vector3d(0, 0, 0.00001f)) * context.WVP; // TODO: I'm still not 100% why trees and colors have no issue with this (for the colors the depth gets cleared, but the trees...?)
-                RenderContext lakeContext = new RenderContext(context.graphicsDevice, lakeWVP, context.minX, context.maxX, context.minY, context.maxY, context.cameraZoom, context.layerPass);
-                lakesBuffer.Draw(lakeContext, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
+                landBuffer.Draw(context, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
                 roadsBuffer.Draw(context, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
             }
             if (context.layerPass == RenderContext.LayerPass.MAIN_PASS)

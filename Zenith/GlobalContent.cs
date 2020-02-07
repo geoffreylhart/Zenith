@@ -29,11 +29,8 @@ namespace Zenith
         public static SpriteFont Arial;
         public static SpriteFont ArialBold;
         public static Texture2D Beach;
-        public static Texture2D BeachFlipped;
-        public static Texture2D BeachFlippedTreeDensity;
         public static Texture2D BeachTreeDensity;
         public static Texture2D CCWArrows;
-        public static Texture2D CWArrows;
         public static Texture2D Error;
         public static Texture2D Grass;
         public static Texture2D Road;
@@ -61,11 +58,8 @@ namespace Zenith
             Arial = content.Load<SpriteFont>("Fonts/Arial");
             ArialBold = content.Load<SpriteFont>("Fonts/ArialBold");
             Beach = content.Load<Texture2D>("Images/Beach");
-            BeachFlipped = content.Load<Texture2D>("Images/BeachFlipped");
-            BeachFlippedTreeDensity = content.Load<Texture2D>("Images/BeachFlippedTreeDensity");
             BeachTreeDensity = content.Load<Texture2D>("Images/BeachTreeDensity");
             CCWArrows = content.Load<Texture2D>("Images/CCWArrows");
-            CWArrows = content.Load<Texture2D>("Images/CWArrows");
             Error = content.Load<Texture2D>("Images/Error");
             Grass = content.Load<Texture2D>("Images/Grass");
             Road = content.Load<Texture2D>("Images/Road");
