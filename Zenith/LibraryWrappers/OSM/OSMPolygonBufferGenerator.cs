@@ -71,7 +71,7 @@ namespace Zenith.LibraryWrappers
         // cut off the lines hanging outside of the sector
         // we call this before closing lines to prevent any possible confusion on how lines should connect
         // TODO: this currently breaks aparts closed loops
-        private static List<List<ContourVertex>> TrimLines(ISector sector, List<List<ContourVertex>> contours)
+        public static List<List<ContourVertex>> TrimLines(ISector sector, List<List<ContourVertex>> contours)
         {
             List<List<ContourVertex>> answer = new List<List<ContourVertex>>();
             foreach (var contour in contours)
