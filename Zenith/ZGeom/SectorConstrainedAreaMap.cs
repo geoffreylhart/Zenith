@@ -84,19 +84,24 @@ namespace Zenith.ZGeom
         internal BasicVertexBuffer Tesselate(GraphicsDevice graphicsDevice, Microsoft.Xna.Framework.Color color)
         {
             var fakeSector = new CubeSector(CubeSector.CubeSectorFace.FRONT, 0, 0, 8);
-            List<List<ContourVertex>> contours = paths.Select(x => x.Select(Vector2DToContourVertex).ToList()).ToList();
+            List<List<ContourVertex>> contours = paths.Select(x => x.Select(y => Vector2DToContourVertex(y)).ToList()).ToList();
             var vertices = OSMPolygonBufferGenerator.Tesselate(OSMPolygonBufferGenerator.CloseLines(fakeSector, contours), color);
             foreach (var outer in outers)
             {
-                var outerContours = new List<List<ContourVertex>>() { outer.Skip(1).Select(Vector2DToContourVertex).ToList() }; // skip 1 since our loops end in a duplicate
+                var outerContours = new List<List<ContourVertex>>() { outer.Skip(1).Select(y => Vector2DToContourVertex(y)).ToList() }; // skip 1 since our loops end in a duplicate
                 vertices.AddRange(OSMPolygonBufferGenerator.Tesselate(outerContours, color));
+            }
+            foreach (var inner in inners)
+            {
+                var innerContours = new List<List<ContourVertex>>() { inner.Skip(1).Select(x => Vector2DToContourVertex(x, true)).ToList() }; // skip 1 since our loops end in a duplicate
+                vertices.AddRange(OSMPolygonBufferGenerator.Tesselate(innerContours, color));
             }
             return new BasicVertexBuffer(graphicsDevice, vertices, PrimitiveType.TriangleList);
         }
 
-        private ContourVertex Vector2DToContourVertex(Vector2d v)
+        private ContourVertex Vector2DToContourVertex(Vector2d v, bool isHole = false)
         {
-            return new ContourVertex() { Position = new Vec3() { X = (float)v.X, Y = (float)v.Y, Z = 0 } };
+            return new ContourVertex() { Position = new Vec3() { X = (float)v.X, Y = (float)v.Y, Z = 0 }, Data = isHole };
         }
     }
 }
