@@ -86,7 +86,6 @@ namespace Zenith.ZGeom
             var fakeSector = new CubeSector(CubeSector.CubeSectorFace.FRONT, 0, 0, 8);
             List<List<ContourVertex>> contours = paths.Select(x => x.Select(Vector2DToContourVertex).ToList()).ToList();
             var vertices = OSMPolygonBufferGenerator.Tesselate(OSMPolygonBufferGenerator.CloseLines(fakeSector, contours), color);
-            // TODO: why don't all of the islands close?
             foreach (var outer in outers)
             {
                 var outerContours = new List<List<ContourVertex>>() { outer.Skip(1).Select(Vector2DToContourVertex).ToList() }; // skip 1 since our loops end in a duplicate

@@ -126,15 +126,16 @@ namespace Zenith.LibraryWrappers.OSM
             {
                 double area = 0;
                 // calculate that area
-                Vector2d baseLine = nodes[superLoop.First().refs[1]] - nodes[superLoop.First().refs[0]];
+                Vector2d basePoint = nodes[superLoop.First().refs[0]];
                 for (int i = 0; i < superLoop.Count; i++)
                 {
                     for (int j = 1; j < superLoop[i].refs.Count; j++)
                     {
                         long prev = superLoop[i].refs[j - 1];
                         long next = superLoop[i].refs[j];
+                        Vector2d line1 = nodes[prev] - basePoint;
                         Vector2d line2 = nodes[next] - nodes[prev];
-                        area += (line2.X * baseLine.Y - line2.Y * baseLine.X) / 2; // random cross-product logic
+                        area += (line2.X * line1.Y - line2.Y * line1.X) / 2; // random cross-product logic
                     }
                 }
                 bool isCW = area < 0; // based on the coordinate system we're using, with X right and Y down
@@ -154,12 +155,12 @@ namespace Zenith.LibraryWrappers.OSM
                                 newWay.refs = superLoop[i].refs.Skip(j - 1).ToList();
                                 superLoop[i].refs = superLoop[i].refs.Take(j).ToList();
                                 superLoop.Insert(i + 1, newWay);
-                                superLoop.AddRange(superLoop.Take(i + 1));
+                                superLoop.AddRange(superLoop.Take(i + 1).ToList());
                                 superLoop.RemoveRange(0, i + 1);
                             }
                             else
                             {
-                                superLoop.AddRange(superLoop.Take(i));
+                                superLoop.AddRange(superLoop.Take(i).ToList());
                                 superLoop.RemoveRange(0, i);
                             }
                             AddConstrainedPaths(map, superLoop);
