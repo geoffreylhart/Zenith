@@ -13,9 +13,9 @@ namespace Zenith.ZGeom
         public List<List<long>> inners = new List<List<long>>(); // holes
         public List<List<long>> outers = new List<List<long>>(); // islands
 
-        internal SectorConstrainedOSMAreaMap Subtract(SectorConstrainedOSMAreaMap areaMap)
+        internal SectorConstrainedOSMAreaMap Subtract(SectorConstrainedOSMAreaMap map)
         {
-            throw new NotImplementedException();
+            return this;
         }
 
         internal SectorConstrainedAreaMap Finalize(BlobCollection blobs)

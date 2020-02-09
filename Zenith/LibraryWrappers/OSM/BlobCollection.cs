@@ -48,147 +48,38 @@ namespace Zenith.LibraryWrappers.OSM
 
         internal SectorConstrainedOSMAreaMap GetAreaMap(string key, string value)
         {
-            throw new NotImplementedException();
+            return new SectorConstrainedOSMAreaMap();
         }
 
         internal SectorConstrainedOSMAreaMap GetCoastAreaMap(string key, string value)
         {
             // remember: "If you regard this as tracing around an area of land, then the coastline way should be running counterclockwise."
-            List<List<Way>> linkedWays = null; // gather ways with matching starts/ends to form a super-way, coast ways should always run the same direction, so this becomes easier
-            List<List<Way>> loopedWays = new List<List<Way>>(); // fully closed loops
-            Dictionary<long, List<Way>> startsWith = new Dictionary<long, List<Way>>();
-            Dictionary<long, List<Way>> endsWith = new Dictionary<long, List<Way>>();
-            // first, we construct our linkedWays and loopedWays
-            foreach (var ourWay in EnumerateWays())
-            {
-                if (ourWay.keyValues.ContainsKey(key) && ourWay.keyValues[key] == value)
-                {
-                    long ourFirstNode = ourWay.refs.First();
-                    long ourLastNode = ourWay.refs.Last();
-                    if (endsWith.ContainsKey(ourFirstNode) && startsWith.ContainsKey(ourLastNode)) // first, try to insert between A & B
-                    {
-                        var lineA = endsWith[ourFirstNode];
-                        var lineB = startsWith[ourLastNode];
-                        var lineBLastNode = lineB.Last().refs.Last();
-                        if (lineA == lineB) // we've got a closed loop here
-                        {
-                            lineA.Add(ourWay);
-                            loopedWays.Add(lineA);
-                            endsWith.Remove(ourFirstNode);
-                            startsWith.Remove(ourLastNode);
-                        }
-                        else
-                        {
-                            lineA.Add(ourWay);
-                            lineA.AddRange(lineB);
-                            endsWith[lineBLastNode] = lineA;
-                            endsWith.Remove(ourFirstNode);
-                            startsWith.Remove(ourLastNode);
-                        }
-                    }
-                    else if (endsWith.ContainsKey(ourFirstNode)) // now, try to append it to something
-                    {
-                        var lineA = endsWith[ourFirstNode];
-                        lineA.Add(ourWay);
-                        endsWith[ourLastNode] = lineA;
-                        endsWith.Remove(ourFirstNode);
-                    }
-                    else if (startsWith.ContainsKey(ourLastNode)) // now, try to prepend it to something
-                    {
-                        var lineB = startsWith[ourLastNode];
-                        lineB.Insert(0, ourWay);
-                        startsWith[ourFirstNode] = lineB;
-                        startsWith.Remove(ourLastNode);
-                    }
-                    else // it's completely new and disconnected
-                    {
-                        List<Way> us = new List<Way>() { ourWay };
-                        if (ourFirstNode == ourLastNode)
-                        {
-                            loopedWays.Add(us);
-                        }
-                        else
-                        {
-                            startsWith[ourFirstNode] = us;
-                            endsWith[ourLastNode] = us;
-                        }
-                    }
-                }
-            }
-            linkedWays = startsWith.Values.ToList();
+            // gather ways with matching starts/ends to form a super-way, coast ways should always run the same direction, so this becomes easier
+            SuperWayCollection superWays = GenerateSuperWayCollection(EnumerateWays().Where(x => x.keyValues.ContainsKey(key) && x.keyValues[key] == value), false);
             // now we actually construct that Sector Constrained OSM Area Map
             SectorConstrainedOSMAreaMap map = new SectorConstrainedOSMAreaMap();
-            foreach (var superWay in linkedWays) // we expect these to always start and end outside the sector
+            foreach (var superWay in superWays.linkedWays) // we expect these to always start and end outside the sector
             {
                 AddConstrainedPaths(map, superWay);
             }
-            foreach (var superLoop in loopedWays)
+            foreach (var superLoop in superWays.loopedWays)
             {
-                double area = 0;
-                // calculate that area
-                Vector2d basePoint = nodes[superLoop.First().refs[0]];
-                for (int i = 0; i < superLoop.Count; i++)
-                {
-                    for (int j = 1; j < superLoop[i].refs.Count; j++)
-                    {
-                        long prev = superLoop[i].refs[j - 1];
-                        long next = superLoop[i].refs[j];
-                        Vector2d line1 = nodes[prev] - basePoint;
-                        Vector2d line2 = nodes[next] - nodes[prev];
-                        area += (line2.X * line1.Y - line2.Y * line1.X) / 2; // random cross-product logic
-                    }
-                }
-                bool isCW = area < 0; // based on the coordinate system we're using, with X right and Y down
-                bool untouchedLoop = true;
-                for (int i = 0; i < superLoop.Count; i++)
-                {
-                    for (int j = 1; j < superLoop[i].refs.Count; j++)
-                    {
-                        long prev = superLoop[i].refs[j - 1];
-                        if (!sector.ContainsCoord(nodes[prev]))
-                        {
-                            untouchedLoop = false;
-                            if (j > 1)
-                            {
-                                // split this way, and add that duplicate node
-                                var newWay = new Way();
-                                newWay.refs = superLoop[i].refs.Skip(j - 1).ToList();
-                                superLoop[i].refs = superLoop[i].refs.Take(j).ToList();
-                                superLoop.Insert(i + 1, newWay);
-                                superLoop.AddRange(superLoop.Take(i + 1).ToList());
-                                superLoop.RemoveRange(0, i + 1);
-                            }
-                            else
-                            {
-                                superLoop.AddRange(superLoop.Take(i).ToList());
-                                superLoop.RemoveRange(0, i);
-                            }
-                            AddConstrainedPaths(map, superLoop);
-                            break;
-                        }
-                    }
-                    if (!untouchedLoop) break;
-                }
+                bool isCW = ApproximateCW(superLoop);
+                bool untouchedLoop = CheckIfUntouchedAndSpin(superLoop);
                 if (untouchedLoop)
                 {
-                    List<long> refs = new List<long>();
-                    refs.Add(superLoop.First().refs.First());
-                    for (int i = 0; i < superLoop.Count; i++)
-                    {
-                        for (int j = 1; j < superLoop[i].refs.Count; j++)
-                        {
-                            long next = superLoop[i].refs[j];
-                            refs.Add(next);
-                        }
-                    }
                     if (isCW)
                     {
-                        map.inners.Add(refs);
+                        map.inners.Add(BreakDownSuperLoop(superLoop));
                     }
                     else
                     {
-                        map.outers.Add(refs);
+                        map.outers.Add(BreakDownSuperLoop(superLoop));
                     }
+                }
+                else
+                {
+                    AddConstrainedPaths(map, superLoop);
                 }
             }
             // done, wow, so much work
@@ -227,6 +118,161 @@ namespace Zenith.LibraryWrappers.OSM
                     }
                 }
             }
+        }
+
+        public class SuperWayCollection
+        {
+            public List<List<Way>> linkedWays = null; // gather ways with matching starts/ends to form a super-way, unlike with the coast, multipolygons say outright if a way is inside or outside
+            public List<List<Way>> loopedWays = new List<List<Way>>(); // fully closed loops
+        }
+
+        // TODO: temporary states are passed around with incorrect metadata on the ways at times (ref reversing and fake ways), ignore this for now since the final product lacks these issues
+        private SuperWayCollection GenerateSuperWayCollection(IEnumerable<Way> ways, bool ignoreDirection)
+        {
+            SuperWayCollection collection = new SuperWayCollection();
+            Dictionary<long, List<Way>> startsWith = new Dictionary<long, List<Way>>();
+            Dictionary<long, List<Way>> endsWith = new Dictionary<long, List<Way>>();
+            // first, we construct our linkedWays and loopedWays
+            foreach (var ourWay in ways)
+            {
+                long ourFirstNode = ourWay.refs.First();
+                long ourLastNode = ourWay.refs.Last();
+                if (ignoreDirection)
+                {
+                    // force existing superWays to align with ourWay
+                    if (endsWith.ContainsKey(ourLastNode))
+                    {
+                        endsWith[ourLastNode].Reverse();
+                        foreach (var way in endsWith[ourLastNode]) way.refs.Reverse(); // TODO: if this turns out to be expensive, we can optimize this later
+                        startsWith[ourLastNode] = endsWith[ourLastNode];
+                        endsWith.Remove(ourLastNode);
+                    }
+                    if (startsWith.ContainsKey(ourFirstNode))
+                    {
+                        startsWith[ourFirstNode].Reverse();
+                        foreach (var way in startsWith[ourFirstNode]) way.refs.Reverse(); // TODO: if this turns out to be expensive, we can optimize this later
+                        endsWith[ourFirstNode] = startsWith[ourFirstNode];
+                        startsWith.Remove(ourFirstNode);
+                    }
+                }
+                if (endsWith.ContainsKey(ourFirstNode) && startsWith.ContainsKey(ourLastNode)) // first, try to insert between A & B
+                {
+                    var lineA = endsWith[ourFirstNode];
+                    var lineB = startsWith[ourLastNode];
+                    var lineBLastNode = lineB.Last().refs.Last();
+                    if (lineA == lineB) // we've got a closed loop here
+                    {
+                        lineA.Add(ourWay);
+                        collection.loopedWays.Add(lineA);
+                        endsWith.Remove(ourFirstNode);
+                        startsWith.Remove(ourLastNode);
+                    }
+                    else
+                    {
+                        lineA.Add(ourWay);
+                        lineA.AddRange(lineB);
+                        endsWith[lineBLastNode] = lineA;
+                        endsWith.Remove(ourFirstNode);
+                        startsWith.Remove(ourLastNode);
+                    }
+                }
+                else if (endsWith.ContainsKey(ourFirstNode)) // now, try to append it to something
+                {
+                    var lineA = endsWith[ourFirstNode];
+                    lineA.Add(ourWay);
+                    endsWith[ourLastNode] = lineA;
+                    endsWith.Remove(ourFirstNode);
+                }
+                else if (startsWith.ContainsKey(ourLastNode)) // now, try to prepend it to something
+                {
+                    var lineB = startsWith[ourLastNode];
+                    lineB.Insert(0, ourWay);
+                    startsWith[ourFirstNode] = lineB;
+                    startsWith.Remove(ourLastNode);
+                }
+                else // it's completely new and disconnected
+                {
+                    List<Way> us = new List<Way>() { ourWay };
+                    if (ourFirstNode == ourLastNode)
+                    {
+                        collection.loopedWays.Add(us);
+                    }
+                    else
+                    {
+                        startsWith[ourFirstNode] = us;
+                        endsWith[ourLastNode] = us;
+                    }
+                }
+            }
+            collection.linkedWays = startsWith.Values.ToList();
+            return collection;
+        }
+
+        private bool ApproximateCW(List<Way> superLoop)
+        {
+            double area = 0;
+            // calculate that area
+            Vector2d basePoint = nodes[superLoop.First().refs[0]];
+            for (int i = 0; i < superLoop.Count; i++)
+            {
+                for (int j = 1; j < superLoop[i].refs.Count; j++)
+                {
+                    long prev = superLoop[i].refs[j - 1];
+                    long next = superLoop[i].refs[j];
+                    Vector2d line1 = nodes[prev] - basePoint;
+                    Vector2d line2 = nodes[next] - nodes[prev];
+                    area += (line2.X * line1.Y - line2.Y * line1.X) / 2; // random cross-product logic
+                }
+            }
+            bool isCW = area < 0; // based on the coordinate system we're using, with X right and Y down
+            return isCW;
+        }
+
+        private bool CheckIfUntouchedAndSpin(List<Way> superLoop)
+        {
+
+            for (int i = 0; i < superLoop.Count; i++)
+            {
+                for (int j = 1; j < superLoop[i].refs.Count; j++)
+                {
+                    long prev = superLoop[i].refs[j - 1];
+                    if (!sector.ContainsCoord(nodes[prev]))
+                    {
+                        if (j > 1)
+                        {
+                            // split this way, and add that duplicate node
+                            var newWay = new Way();
+                            newWay.refs = superLoop[i].refs.Skip(j - 1).ToList();
+                            superLoop[i].refs = superLoop[i].refs.Take(j).ToList();
+                            superLoop.Insert(i + 1, newWay);
+                            superLoop.AddRange(superLoop.Take(i + 1).ToList());
+                            superLoop.RemoveRange(0, i + 1);
+                        }
+                        else
+                        {
+                            superLoop.AddRange(superLoop.Take(i).ToList());
+                            superLoop.RemoveRange(0, i);
+                        }
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        private List<long> BreakDownSuperLoop(List<Way> superLoop)
+        {
+            List<long> refs = new List<long>();
+            refs.Add(superLoop.First().refs.First());
+            for (int i = 0; i < superLoop.Count; i++)
+            {
+                for (int j = 1; j < superLoop[i].refs.Count; j++)
+                {
+                    long next = superLoop[i].refs[j];
+                    refs.Add(next);
+                }
+            }
+            return refs;
         }
 
         internal IEnumerable<Way> EnumerateWays()

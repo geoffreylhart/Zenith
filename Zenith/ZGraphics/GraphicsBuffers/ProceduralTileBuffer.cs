@@ -43,8 +43,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             BlobCollection blobs = OSMReader.GetAllBlobs(sector);
             Console.WriteLine($"Blobs read for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
-            // landAreaMap = blobs.GetCoastAreaMap("natural", "coastline").Subtract(blobs.GetAreaMap("natural", "water")).Finalize();
-            landAreaMap = blobs.GetCoastAreaMap("natural", "coastline").Finalize(blobs);
+            landAreaMap = blobs.GetCoastAreaMap("natural", "coastline").Subtract(blobs.GetAreaMap("natural", "water")).Finalize(blobs);
             Console.WriteLine($"Land area map generated for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
             roadGraph = blobs.GetRoadsFast();
@@ -69,9 +68,9 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             vectorTileBuffer.Add(graphicsDevice, landBuffer, sector);
             Console.WriteLine($"Land buffer generated for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
-            BasicVertexBuffer coastBuffer = landAreaMap.ConstructAsRoads(graphicsDevice, width, GlobalContent.Beach, Color.White);
+            BasicVertexBuffer coastBuffer = landAreaMap.ConstructAsRoads(graphicsDevice, width/10.0, GlobalContent.Beach, Color.White);
             vectorTileBuffer.Add(graphicsDevice, coastBuffer, sector);
-            BasicVertexBuffer coastBufferFat = landAreaMap.ConstructAsRoads(graphicsDevice, width * 2, GlobalContent.Beach, Color.White);
+            BasicVertexBuffer coastBufferFat = landAreaMap.ConstructAsRoads(graphicsDevice, width * 2/10.0, GlobalContent.Beach, Color.White);
             vectorTileBufferUnused.Add(graphicsDevice, coastBufferFat, sector);
             Console.WriteLine($"Coast buffer generated for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
