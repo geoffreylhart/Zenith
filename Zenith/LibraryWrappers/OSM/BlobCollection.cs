@@ -46,18 +46,47 @@ namespace Zenith.LibraryWrappers.OSM
             }
         }
 
-        internal SectorConstrainedOSMAreaMap GetAreaMap(string key, string value)
+        internal SectorConstrainedOSMAreaGraph GetAreaMap(string key, string value)
         {
-            return new SectorConstrainedOSMAreaMap();
+            var simpleWays = EnumerateWays().Where(x => x.keyValues.ContainsKey(key) && x.keyValues[key] == value); // we expect all of these to be closed loops
+            SectorConstrainedOSMAreaGraph map = new SectorConstrainedOSMAreaGraph();
+            // add each simple way, flipping them where necessary
+            foreach (var way in simpleWays)
+            {
+                SectorConstrainedOSMAreaGraph simpleMap = new SectorConstrainedOSMAreaGraph();
+                var superLoop = new List<Way>() { way };
+                bool isCW = ApproximateCW(superLoop);
+                if (isCW) way.refs.Reverse(); // the simple polygons are always "outers"
+                bool untouchedLoop = CheckIfUntouchedAndSpin(superLoop);
+                if (untouchedLoop)
+                {
+                    var broken = BreakDownSuperLoop(superLoop);
+                    for (int i = 0; i < broken.Count - 1; i++) // since our loops end in a duplicate
+                    {
+                        map.nodes[broken[i]] = new AreaNode() { id = broken[i] };
+                    }
+                    for (int i = 0; i < broken.Count - 1; i++) // since our loops end in a duplicate
+                    {
+                        map.nodes[broken[i]].next = map.nodes[broken[(i + 1) % (broken.Count - 1)]];
+                        map.nodes[broken[i]].prev = map.nodes[broken[(i + broken.Count - 1) % (broken.Count - 1)]];
+                    }
+                }
+                else
+                {
+                    AddConstrainedPaths(map, superLoop);
+                }
+                map.Add(simpleMap);
+            }
+            return map;
         }
 
-        internal SectorConstrainedOSMAreaMap GetCoastAreaMap(string key, string value)
+        internal SectorConstrainedOSMAreaGraph GetCoastAreaMap(string key, string value)
         {
             // remember: "If you regard this as tracing around an area of land, then the coastline way should be running counterclockwise."
             // gather ways with matching starts/ends to form a super-way, coast ways should always run the same direction, so this becomes easier
             SuperWayCollection superWays = GenerateSuperWayCollection(EnumerateWays().Where(x => x.keyValues.ContainsKey(key) && x.keyValues[key] == value), false);
             // now we actually construct that Sector Constrained OSM Area Map
-            SectorConstrainedOSMAreaMap map = new SectorConstrainedOSMAreaMap();
+            SectorConstrainedOSMAreaGraph map = new SectorConstrainedOSMAreaGraph();
             foreach (var superWay in superWays.linkedWays) // we expect these to always start and end outside the sector
             {
                 AddConstrainedPaths(map, superWay);
@@ -68,13 +97,15 @@ namespace Zenith.LibraryWrappers.OSM
                 bool untouchedLoop = CheckIfUntouchedAndSpin(superLoop);
                 if (untouchedLoop)
                 {
-                    if (isCW)
+                    var broken = BreakDownSuperLoop(superLoop);
+                    for (int i = 0; i < broken.Count - 1; i++) // since our loops end in a duplicate
                     {
-                        map.inners.Add(BreakDownSuperLoop(superLoop));
+                        map.nodes[broken[i]] = new AreaNode() { id = broken[i] };
                     }
-                    else
+                    for (int i = 0; i < broken.Count - 1; i++) // since our loops end in a duplicate
                     {
-                        map.outers.Add(BreakDownSuperLoop(superLoop));
+                        map.nodes[broken[i]].next = map.nodes[broken[(i + 1) % (broken.Count - 1)]];
+                        map.nodes[broken[i]].prev = map.nodes[broken[(i + broken.Count - 1) % (broken.Count - 1)]];
                     }
                 }
                 else
@@ -86,11 +117,12 @@ namespace Zenith.LibraryWrappers.OSM
             return map;
         }
 
-        private void AddConstrainedPaths(SectorConstrainedOSMAreaMap map, List<Way> superWay)
+        private void AddConstrainedPaths(SectorConstrainedOSMAreaGraph map, List<Way> superWay)
         {
             bool prevIsInside = false;
             if (sector.ContainsCoord(nodes[superWay.First().refs.First()])) throw new NotImplementedException();
             if (sector.ContainsCoord(nodes[superWay.Last().refs.Last()])) throw new NotImplementedException();
+            AreaNode lastNodeAdded = null;
             for (int i = 0; i < superWay.Count; i++)
             {
                 for (int j = 1; j < superWay[i].refs.Count; j++)
@@ -102,19 +134,20 @@ namespace Zenith.LibraryWrappers.OSM
                     {
                         if (prevIsInside) // close-out a line
                         {
-                            map.paths.Last().end = intersection;
+                            lastNodeAdded.next = new AreaNode() { v = intersection, prev = lastNodeAdded };
                         }
                         else // start up a new line
                         {
-                            SectorConstrainedOSMPath newPath = new SectorConstrainedOSMPath();
-                            newPath.start = intersection;
-                            map.paths.Add(newPath);
+                            lastNodeAdded = new AreaNode { v = intersection };
+                            map.startPoints.Add(lastNodeAdded);
                         }
                         prevIsInside = !prevIsInside;
                     }
                     if (prevIsInside)
                     {
-                        map.paths.Last().nodeRefs.Add(next);
+                        lastNodeAdded = new AreaNode() { id = next, prev = lastNodeAdded };
+                        lastNodeAdded.prev.next = lastNodeAdded;
+                        map.nodes[next] = lastNodeAdded;
                     }
                 }
             }

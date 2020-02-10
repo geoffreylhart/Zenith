@@ -43,8 +43,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)ZGeom\LineGraph.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZGeom\PointCollection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZGeom\SectorConstrainedAreaMap.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ZGeom\SectorConstrainedOSMAreaMap.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ZGeom\SectorConstrainedOSMPath.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ZGeom\SectorConstrainedOSMAreaGraph.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZGeom\ZCoords.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\BasicVertexBuffer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZGraphics\CameraMatrixManager.cs" />
