@@ -13,7 +13,7 @@ using static Zenith.ZGeom.LineGraph;
 namespace Zenith.LibraryWrappers.OSM
 {
     // responsible for lots of stuff
-    class BlobCollection
+    public class BlobCollection
     {
         public Dictionary<long, Vector2d> nodes = new Dictionary<long, Vector2d>();
         private List<Blob> blobs;
@@ -46,6 +46,10 @@ namespace Zenith.LibraryWrappers.OSM
             }
         }
 
+        public BlobCollection()
+        {
+        }
+
         internal SectorConstrainedOSMAreaGraph GetAreaMap(string key, string value)
         {
             var simpleWays = EnumerateWays().Where(x => x.keyValues.ContainsKey(key) && x.keyValues[key] == value); // we expect all of these to be closed loops
@@ -75,7 +79,7 @@ namespace Zenith.LibraryWrappers.OSM
                 {
                     AddConstrainedPaths(map, superLoop);
                 }
-                map.Add(simpleMap);
+                map.Add(simpleMap, this);
             }
             return map;
         }
