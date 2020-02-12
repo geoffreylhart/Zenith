@@ -12,7 +12,7 @@ using Zenith.ZMath;
 
 namespace Zenith.ZGeom
 {
-    class SectorConstrainedAreaMap
+    public class SectorConstrainedAreaMap
     {
         public List<List<Vector2d>> paths = new List<List<Vector2d>>();
         public List<List<Vector2d>> inners = new List<List<Vector2d>>(); // holes
@@ -81,7 +81,12 @@ namespace Zenith.ZGeom
             return lineGraph.ConstructAsRoads(graphicsDevice, width, texture, color);
         }
 
-        internal BasicVertexBuffer Tesselate(GraphicsDevice graphicsDevice, Microsoft.Xna.Framework.Color color)
+        internal BasicVertexBuffer Tesselate(GraphicsDevice graphicsDevice, Color color)
+        {
+            return new BasicVertexBuffer(graphicsDevice, GetTesselationVertices(color), PrimitiveType.TriangleList);
+        }
+
+        public List<VertexPositionColor> GetTesselationVertices(Color color)
         {
             var fakeSector = new CubeSector(CubeSector.CubeSectorFace.FRONT, 0, 0, 8);
             List<List<ContourVertex>> contours = paths.Select(x => x.Select(y => Vector2DToContourVertex(y)).ToList()).ToList();
@@ -96,7 +101,7 @@ namespace Zenith.ZGeom
                 var innerContours = new List<List<ContourVertex>>() { inner.Skip(1).Select(x => Vector2DToContourVertex(x, true)).ToList() }; // skip 1 since our loops end in a duplicate
                 vertices.AddRange(OSMPolygonBufferGenerator.Tesselate(innerContours, color));
             }
-            return new BasicVertexBuffer(graphicsDevice, vertices, PrimitiveType.TriangleList);
+            return vertices;
         }
 
         private ContourVertex Vector2DToContourVertex(Vector2d v, bool isHole = false)

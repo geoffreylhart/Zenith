@@ -431,7 +431,7 @@ namespace Zenith.ZGeom
             return node.IsEdge() ? node.v : blobs.nodes[node.id];
         }
 
-        internal SectorConstrainedAreaMap Finalize(BlobCollection blobs)
+        public SectorConstrainedAreaMap Finalize(BlobCollection blobs)
         {
             HashSet<AreaNode> explored = new HashSet<AreaNode>();
             SectorConstrainedAreaMap map = new SectorConstrainedAreaMap();

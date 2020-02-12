@@ -1,4 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -49,11 +51,23 @@ namespace ZenithUnitTests
                 // test some coastline stuff
                 SectorConstrainedOSMAreaGraph square1 = MakeOpenRect(blobs.nodes, 0, 0, size1, size1, true); // leave left open
                 SectorConstrainedOSMAreaGraph square2 = MakeOpenRect(blobs.nodes, offsetX, offsetY, offsetX + size2, offsetY + size2, false); // leave right open
-                // if (square1.Clone().Add(square2, blobs).Area(blobs) != addArea) throw new NotImplementedException();
-                // if (square1.Clone().Subtract(square2, blobs).Area(blobs) != subArea) throw new NotImplementedException();
-                square1.Clone().Add(square2, blobs).Area(blobs);
-                square1.Clone().Subtract(square2, blobs).Area(blobs);
+                double area1 = GetArea(square1.Clone().Add(square2, blobs).Finalize(blobs).GetTesselationVertices(Color.White));
+                double area2 = GetArea(square1.Clone().Subtract(square2, blobs).Finalize(blobs).GetTesselationVertices(Color.White));
+                if (area1 != addArea) throw new NotImplementedException();
+                if (area2 != subArea) throw new NotImplementedException();
             }
+        }
+
+        private static double GetArea(List<VertexPositionColor> list)
+        {
+            double area = 0;
+            for (int i = 0; i < list.Count / 3; i++)
+            {
+                Vector3 v1 = list[i * 3 + 2].Position - list[i * 3 + 1].Position;
+                Vector3 v2 = list[i * 3 + 1].Position - list[i * 3].Position;
+                area += v1.X * v2.Y - v1.Y * v2.X;
+            }
+            return -area / 2;
         }
 
         private static SectorConstrainedOSMAreaGraph MakeRect(Dictionary<long, Vector2d> nodes, int x1, int y1, int x2, int y2)
