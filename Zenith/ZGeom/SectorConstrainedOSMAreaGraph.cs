@@ -19,6 +19,7 @@ namespace Zenith.ZGeom
             // remember, counterclockwise makes an island
             List<AreaNode> doAdd = new List<AreaNode>();
             List<AreaNode> doDelete = new List<AreaNode>();
+            List<AreaNode> singularDelete = new List<AreaNode>();
             foreach (var pair in map.nodes)
             {
                 if (nodes.ContainsKey(pair.Key))
@@ -50,16 +51,10 @@ namespace Zenith.ZGeom
                     // first, deal with super degenerate cases
                     if (ACSame && BDSame)
                     {
-                        // it's a tie, but let's junk the map version
-                        mapNode.next = null;
-                        mapNode.prev = null;
                     }
                     else if (ADSame && BCSame)
                     {
-                        srcNode.next = null;
-                        srcNode.prev = null;
-                        mapNode.next = null;
-                        mapNode.prev = null;
+                        singularDelete.Add(srcNode);
                     } // now, slightly less degenerate
                     else if (ACSame)
                     {
@@ -72,8 +67,6 @@ namespace Zenith.ZGeom
                         }
                         else
                         {
-                            mapNode.next = null;
-                            mapNode.prev = null;
                         }
                     }
                     else if (BDSame)
@@ -87,26 +80,21 @@ namespace Zenith.ZGeom
                         }
                         else
                         {
-                            mapNode.next = null;
-                            mapNode.prev = null;
                         }
                     }
                     else if (ADSame)
                     {
                         if (AtoBAngle < AtoCAngle)
                         {
-                            doDelete.Add(B);
+                            doDelete.Add(A);
                             doAdd.Add(C);
                             C.next = srcNode;
                             srcNode.prev = C;
                         }
                         else
                         {
+                            doDelete.Add(A);
                             doDelete.Add(B);
-                            srcNode.next = null;
-                            srcNode.prev = null;
-                            mapNode.next = null;
-                            mapNode.prev = null;
                         }
                     }
                     else if (BCSame)
@@ -121,10 +109,7 @@ namespace Zenith.ZGeom
                         else
                         {
                             doDelete.Add(A);
-                            srcNode.next = null;
-                            srcNode.prev = null;
-                            mapNode.next = null;
-                            mapNode.prev = null;
+                            doDelete.Add(B);
                         }
                     } // now, non-degenerate
                     else
@@ -142,17 +127,18 @@ namespace Zenith.ZGeom
                         }
                         else if (AtoCAngle < AtoDAngle && AtoDAngle < AtoBAngle)
                         {
-                            mapNode.next = null;
-                            mapNode.prev = null;
                         }
                         else if (AtoBAngle < AtoDAngle && AtoDAngle < AtoCAngle)
                         {
-                            doAdd.Add(D);
-                            doAdd.Add(C);
                             doDelete.Add(B);
+                            doAdd.Add(D);
+                            D.prev = srcNode;
+                            srcNode.next = D;
+
                             doDelete.Add(A);
-                            srcNode.next = null;
-                            srcNode.prev = null;
+                            doAdd.Add(C);
+                            C.next = srcNode;
+                            srcNode.prev = C;
                         }
                         else if (AtoDAngle < AtoBAngle && AtoBAngle < AtoCAngle)
                         {
@@ -165,49 +151,49 @@ namespace Zenith.ZGeom
                         {
                             doDelete.Add(A);
                             doDelete.Add(B);
-                            srcNode.next = null;
-                            srcNode.prev = null;
-                            mapNode.next = null;
-                            mapNode.prev = null;
                         }
                     }
                 }
             }
+            // delete until you reach the next critical point
             foreach (var d in doDelete)
             {
-                bool forwards = d.next != null;
+                bool forwards = d.next != null && (!nodes.ContainsKey(d.next.id) || !map.nodes.ContainsKey(d.next.id));
                 var temp = d;
-                while (temp != null)
+                while (temp != null && (temp.IsEdge() || !nodes.ContainsKey(temp.id) || !map.nodes.ContainsKey(temp.id)))
                 {
-                    if (d.IsEdge())
+                    if (!nodes.ContainsKey(temp.id)) break;
+                    if (temp.IsEdge())
                     {
-                        if (!forwards) startPoints.Remove(d);
+                        if (!forwards) startPoints.Remove(temp);
                     }
                     else
                     {
-                        nodes.Remove(d.id);
+                        nodes.Remove(temp.id);
                     }
-                    temp = forwards ? d.next : d.prev;
+                    temp = forwards ? temp.next : temp.prev;
                 }
             }
+            // add until you reach the next critical point
             foreach (var d in doAdd)
             {
-                bool forwards = d.next != null;
+                bool forwards = d.next != null && (!nodes.ContainsKey(d.next.id) || !map.nodes.ContainsKey(d.next.id));
                 var temp = d;
-                while (temp != null)
+                while (temp != null && (temp.IsEdge() || !nodes.ContainsKey(temp.id) || !map.nodes.ContainsKey(temp.id)))
                 {
-                    if (nodes.ContainsKey(d.id)) break;
-                    if (d.IsEdge())
+                    if (nodes.ContainsKey(temp.id)) break;
+                    if (temp.IsEdge())
                     {
-                        if (!forwards) startPoints.Add(d);
+                        if (!forwards) startPoints.Add(temp);
                     }
                     else
                     {
-                        nodes[d.id] = d;
+                        nodes[temp.id] = temp;
                     }
-                    temp = forwards ? d.next : d.prev;
+                    temp = forwards ? temp.next : temp.prev;
                 }
             }
+            foreach (var d in singularDelete) nodes.Remove(d.id);
             return this;
         }
 
@@ -218,6 +204,7 @@ namespace Zenith.ZGeom
             // remember, counterclockwise makes an island
             List<AreaNode> doAdd = new List<AreaNode>();
             List<AreaNode> doDelete = new List<AreaNode>();
+            List<AreaNode> singularDelete = new List<AreaNode>();
             foreach (var pair in map.nodes)
             {
                 if (nodes.ContainsKey(pair.Key))
@@ -258,6 +245,7 @@ namespace Zenith.ZGeom
                         srcNode.prev = null;
                         mapNode.next = null;
                         mapNode.prev = null;
+                        doDelete.Add(mapNode);
                     } // now, slightly less degenerate
                     else if (ACSame)
                     {
@@ -364,41 +352,45 @@ namespace Zenith.ZGeom
                     }
                 }
             }
+            // delete until you reach the next critical point
             foreach (var d in doDelete)
             {
-                bool forwards = d.next != null;
+                bool forwards = d.next != null && (!nodes.ContainsKey(d.next.id) || !map.nodes.ContainsKey(d.next.id));
                 var temp = d;
-                while (temp != null)
+                while (temp != null && (temp.IsEdge() || !nodes.ContainsKey(temp.id) || !map.nodes.ContainsKey(temp.id)))
                 {
-                    if (d.IsEdge())
+                    if (!nodes.ContainsKey(temp.id)) break;
+                    if (temp.IsEdge())
                     {
-                        if (!forwards) startPoints.Remove(d);
+                        if (!forwards) startPoints.Remove(temp);
                     }
                     else
                     {
-                        nodes.Remove(d.id);
+                        nodes.Remove(temp.id);
                     }
-                    temp = forwards ? d.next : d.prev;
+                    temp = forwards ? temp.next : temp.prev;
                 }
             }
+            // add until you reach the next critical point
             foreach (var d in doAdd)
             {
-                bool forwards = d.next != null;
+                bool forwards = d.next != null && (!nodes.ContainsKey(d.next.id) || !map.nodes.ContainsKey(d.next.id));
                 var temp = d;
-                while (temp != null)
+                while (temp != null && (temp.IsEdge() || !nodes.ContainsKey(temp.id) || !map.nodes.ContainsKey(temp.id)))
                 {
-                    if (nodes.ContainsKey(d.id)) break;
-                    if (d.IsEdge())
+                    if (nodes.ContainsKey(temp.id)) break;
+                    if (temp.IsEdge())
                     {
-                        if (!forwards) startPoints.Add(d);
+                        if (!forwards) startPoints.Add(temp);
                     }
                     else
                     {
-                        nodes[d.id] = d;
+                        nodes[temp.id] = temp;
                     }
-                    temp = forwards ? d.next : d.prev;
+                    temp = forwards ? temp.next : temp.prev;
                 }
             }
+            foreach (var d in singularDelete) nodes.Remove(d.id);
             return this;
         }
 
@@ -424,7 +416,7 @@ namespace Zenith.ZGeom
             return Math.Atan2(-sin, cos) + Math.PI;
         }
 
-        private SectorConstrainedOSMAreaGraph Clone()
+        public SectorConstrainedOSMAreaGraph Clone()
         {
             SectorConstrainedOSMAreaGraph map = new SectorConstrainedOSMAreaGraph();
             foreach (var node in nodes.Values)
@@ -510,7 +502,46 @@ namespace Zenith.ZGeom
             return map;
         }
 
+        public double Area(BlobCollection blobs)
+        {
+            double area = 0;
+            HashSet<AreaNode> explored = new HashSet<AreaNode>();
+            foreach (var startPoint in startPoints)
+            {
+                AreaNode curr = startPoint;
+                while (true)
+                {
+                    explored.Add(curr);
+                    if (curr.next == null) break;
+                    curr = curr.next;
+                }
+                // TODO: also calculate area for the startpoint stuff
+            }
+            foreach (var node in nodes.Values)
+            {
+                if (explored.Contains(node)) continue;
+                // just loops can be found at this point
+                List<Vector2d> newLoop = new List<Vector2d>();
+                AreaNode curr = node;
+                while (true)
+                {
+                    newLoop.Add(blobs.nodes[curr.id]);
+                    explored.Add(curr);
+                    if (curr.next == node) break;
+                    curr = curr.next;
+                }
+                newLoop.Add(blobs.nodes[node.id]); // finish off the loop;
+                area += AreaOf(newLoop);
+            }
+            return area;
+        }
+
         private static bool ApproximateCW(List<Vector2d> loop)
+        {
+            return AreaOf(loop) < 0; // based on the coordinate system we're using, with X right and Y down
+        }
+
+        private static double AreaOf(List<Vector2d> loop)
         {
             double area = 0;
             // calculate that area
@@ -523,8 +554,8 @@ namespace Zenith.ZGeom
                 Vector2d line2 = next - prev;
                 area += (line2.X * line1.Y - line2.Y * line1.X) / 2; // random cross-product logic
             }
-            bool isCW = area < 0; // based on the coordinate system we're using, with X right and Y down
-            return isCW;
+            // based on the coordinate system we're using, with X right and Y down
+            return area;
         }
     }
 

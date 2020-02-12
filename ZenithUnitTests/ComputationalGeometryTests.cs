@@ -17,12 +17,28 @@ namespace ZenithUnitTests
         public void BasicTest()
         {
             var blobs = new BlobCollection();
-            SectorConstrainedOSMAreaGraph square1 = MakeRect(blobs.nodes, 0, 0, 2, 2);
-            SectorConstrainedOSMAreaGraph square2 = MakeRect(blobs.nodes, 2, 0, 3, 1);
-            square1.Subtract(square2, blobs);
+            TestAddAndSubtractAndScale(2, 1, 0, 1, blobs, 4, 3); // test with 2nd square inside corner of 1st
+            TestAddAndSubtractAndScale(2, 2, 0, 1, blobs, 5, 4); // test test with 2nd square just outside/against corner of 1st
+            TestAddAndSubtractAndScale(3, 2, 1, 1, blobs, 9, 8); // test with 2nd square inside side of 1st
+            TestAddAndSubtractAndScale(3, 3, 1, 1, blobs, 10, 9); // test with 2nd square just outside/against side of 1st
+            TestAddAndSubtractAndScale(4, 3, 1, 2, blobs, 18, 14); // test with 2nd square overlapping side
         }
 
-        private SectorConstrainedOSMAreaGraph MakeRect(Dictionary<long, Vector2d> nodes, int x1, int y1, int x2, int y2)
+        private static void TestAddAndSubtractAndScale(int size1, int offsetX, int offsetY, int size2, BlobCollection blobs, int addArea, int subArea)
+        {
+            TestAddAndSubtract(size1, offsetX, offsetY, size2, blobs, addArea, subArea);
+            TestAddAndSubtract(size1 * 5, offsetX * 5, offsetY * 5, size2 * 5, blobs, addArea * 25, subArea * 25);
+        }
+
+        private static void TestAddAndSubtract(int size1, int offsetX, int offsetY, int size2, BlobCollection blobs, int addArea, int subArea)
+        {
+            SectorConstrainedOSMAreaGraph square1 = MakeRect(blobs.nodes, 0, 0, size1, size1);
+            SectorConstrainedOSMAreaGraph square2 = MakeRect(blobs.nodes, offsetX, offsetY, offsetX + size2, offsetY + size2);
+            if (square1.Clone().Add(square2, blobs).Area(blobs) != addArea) throw new NotImplementedException();
+            //if (square1.Clone().Subtract(square2, blobs).Area(blobs) != subArea) throw new NotImplementedException();
+        }
+
+        private static SectorConstrainedOSMAreaGraph MakeRect(Dictionary<long, Vector2d> nodes, int x1, int y1, int x2, int y2)
         {
             SectorConstrainedOSMAreaGraph graph = new SectorConstrainedOSMAreaGraph();
             AddLine(nodes, graph, x1, y1, x1, y2); // down
@@ -32,7 +48,7 @@ namespace ZenithUnitTests
             return graph;
         }
 
-        private void AddLine(Dictionary<long, Vector2d> nodes, SectorConstrainedOSMAreaGraph graph, int x1, int y1, int x2, int y2)
+        private static void AddLine(Dictionary<long, Vector2d> nodes, SectorConstrainedOSMAreaGraph graph, int x1, int y1, int x2, int y2)
         {
             if (x1 == x2)
             {
@@ -59,7 +75,7 @@ namespace ZenithUnitTests
             }
         }
 
-        private void AddLineSeg(Dictionary<long, Vector2d> nodes, SectorConstrainedOSMAreaGraph graph, int x1, int y1, int x2, int y2)
+        private static void AddLineSeg(Dictionary<long, Vector2d> nodes, SectorConstrainedOSMAreaGraph graph, int x1, int y1, int x2, int y2)
         {
             long n1 = (x1 + 500) * 1000 + (y1 + 500);
             long n2 = (x2 + 500) * 1000 + (y2 + 500);
