@@ -477,7 +477,6 @@ namespace Zenith.ZGeom
                 {
                     map.outers.Add(newLoop);
                 }
-                map.paths.Add(newLoop);
             }
             return map;
         }

@@ -45,6 +45,10 @@ namespace ZenithUnitTests
                 SectorConstrainedOSMAreaGraph square2 = MakeRect(blobs.nodes, offsetX, offsetY, offsetX + size2, offsetY + size2);
                 if (square1.Clone().Add(square2, blobs).Area(blobs) != addArea) throw new NotImplementedException();
                 if (square1.Clone().Subtract(square2, blobs).Area(blobs) != subArea) throw new NotImplementedException();
+                double area1 = GetArea(square1.Clone().Add(square2, blobs).Finalize(blobs).GetTesselationVertices(Color.White));
+                double area2 = GetArea(square1.Clone().Subtract(square2, blobs).Finalize(blobs).GetTesselationVertices(Color.White));
+                if (area1 != addArea) throw new NotImplementedException();
+                if (area2 != subArea) throw new NotImplementedException();
             }
             else
             {
