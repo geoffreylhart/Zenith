@@ -488,14 +488,23 @@ namespace Zenith.ZGeom
             HashSet<AreaNode> explored = new HashSet<AreaNode>();
             foreach (var startPoint in startPoints)
             {
+                List<Vector2d> newPath = new List<Vector2d>();
                 AreaNode curr = startPoint;
                 while (true)
                 {
+                    if (curr.v == null)
+                    {
+                        newPath.Add(blobs.nodes[curr.id]);
+                    }
+                    else
+                    {
+                        newPath.Add(curr.v);
+                    }
                     explored.Add(curr);
                     if (curr.next == null) break;
                     curr = curr.next;
                 }
-                // TODO: also calculate area for the startpoint stuff
+                area += AreaOf(newPath); // TODO: this is fake area, but sure
             }
             foreach (var node in nodes.Values)
             {
