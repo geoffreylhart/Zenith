@@ -35,7 +35,7 @@ namespace ZenithUnitTests
             SectorConstrainedOSMAreaGraph square1 = MakeRect(blobs.nodes, 0, 0, size1, size1);
             SectorConstrainedOSMAreaGraph square2 = MakeRect(blobs.nodes, offsetX, offsetY, offsetX + size2, offsetY + size2);
             if (square1.Clone().Add(square2, blobs).Area(blobs) != addArea) throw new NotImplementedException();
-            //if (square1.Clone().Subtract(square2, blobs).Area(blobs) != subArea) throw new NotImplementedException();
+            if (square1.Clone().Subtract(square2, blobs).Area(blobs) != subArea) throw new NotImplementedException();
         }
 
         private static SectorConstrainedOSMAreaGraph MakeRect(Dictionary<long, Vector2d> nodes, int x1, int y1, int x2, int y2)

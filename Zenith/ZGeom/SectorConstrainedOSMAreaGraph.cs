@@ -236,23 +236,15 @@ namespace Zenith.ZGeom
                     // first, deal with super degenerate cases
                     if (ACSame && BDSame)
                     {
-                        mapNode.next = null;
-                        mapNode.prev = null;
                     }
                     else if (ADSame && BCSame)
                     {
-                        srcNode.next = null;
-                        srcNode.prev = null;
-                        mapNode.next = null;
-                        mapNode.prev = null;
-                        doDelete.Add(mapNode);
+                        singularDelete.Add(srcNode);
                     } // now, slightly less degenerate
                     else if (ACSame)
                     {
                         if (AtoBAngle < AtoDAngle)
                         {
-                            mapNode.next = null;
-                            mapNode.prev = null;
                         }
                         else
                         {
@@ -266,8 +258,6 @@ namespace Zenith.ZGeom
                     {
                         if (AtoBAngle < AtoCAngle)
                         {
-                            mapNode.next = null;
-                            mapNode.prev = null;
                         }
                         else
                         {
@@ -281,11 +271,8 @@ namespace Zenith.ZGeom
                     {
                         if (AtoBAngle < AtoCAngle)
                         {
+                            doDelete.Add(A);
                             doDelete.Add(B);
-                            srcNode.next = null;
-                            srcNode.prev = null;
-                            mapNode.next = null;
-                            mapNode.prev = null;
                         }
                         else
                         {
@@ -300,10 +287,7 @@ namespace Zenith.ZGeom
                         if (AtoBAngle < AtoDAngle)
                         {
                             doDelete.Add(A);
-                            srcNode.next = null;
-                            srcNode.prev = null;
-                            mapNode.next = null;
-                            mapNode.prev = null;
+                            doDelete.Add(B);
                         }
                         else
                         {
@@ -319,10 +303,6 @@ namespace Zenith.ZGeom
                         {
                             doDelete.Add(A);
                             doDelete.Add(B);
-                            srcNode.next = null;
-                            srcNode.prev = null;
-                            mapNode.next = null;
-                            mapNode.prev = null;
                         }
                         else if (AtoCAngle < AtoBAngle && AtoBAngle < AtoDAngle)
                         {
@@ -337,13 +317,13 @@ namespace Zenith.ZGeom
                         }
                         else if (AtoBAngle < AtoDAngle && AtoDAngle < AtoCAngle)
                         {
-                            mapNode.next = null;
-                            mapNode.prev = null;
                         }
                         else if (AtoDAngle < AtoBAngle && AtoBAngle < AtoCAngle)
                         {
-                            mapNode.next = null;
-                            mapNode.prev = null;
+                            doDelete.Add(B);
+                            doAdd.Add(D);
+                            D.prev = srcNode;
+                            srcNode.next = D;
                         }
                         else if (AtoDAngle < AtoCAngle && AtoCAngle < AtoBAngle)
                         {
