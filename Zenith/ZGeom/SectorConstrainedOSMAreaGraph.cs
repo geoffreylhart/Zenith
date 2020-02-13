@@ -16,6 +16,7 @@ namespace Zenith.ZGeom
         public SectorConstrainedOSMAreaGraph Add(SectorConstrainedOSMAreaGraph map, BlobCollection blobs)
         {
             map = map.Clone(); // now we're allowed to junk it
+            DoLoops(map, blobs);
             // remember, counterclockwise makes an island
             List<AreaNode> doAdd = new List<AreaNode>();
             List<AreaNode> doDelete = new List<AreaNode>();
@@ -201,6 +202,7 @@ namespace Zenith.ZGeom
         {
             map = map.Clone(); // now we're allowed to junk it
             map.Reverse();
+            DoLoops(map, blobs);
             // remember, counterclockwise makes an island
             List<AreaNode> doAdd = new List<AreaNode>();
             List<AreaNode> doDelete = new List<AreaNode>();
@@ -374,15 +376,62 @@ namespace Zenith.ZGeom
             return this;
         }
 
+        private void DoLoops(SectorConstrainedOSMAreaGraph map, BlobCollection blobs)
+        {
+            // first, find those loops
+            HashSet<AreaNode> explored = new HashSet<AreaNode>();
+            foreach (var startPoint in map.startPoints)
+            {
+                AreaNode curr = startPoint;
+                while (true)
+                {
+                    explored.Add(curr);
+                    if (curr.next == null) break;
+                    curr = curr.next;
+                }
+            }
+            foreach (var node in map.nodes.Values)
+            {
+                if (explored.Contains(node)) continue;
+                // just loops can be found at this point
+                List<AreaNode> newLoop = new List<AreaNode>();
+                bool loopHasConnections = false;
+                AreaNode curr = node;
+                while (true)
+                {
+                    if (nodes.ContainsKey(curr.id)) loopHasConnections = true;
+                    newLoop.Add(curr);
+                    explored.Add(curr);
+                    if (curr.next == node) break;
+                    curr = curr.next;
+                }
+                if (!loopHasConnections)
+                {
+                    // TODO: use winding rule
+                    foreach (var n in newLoop) nodes[n.id] = n;
+                }
+            }
+        }
+
         private void Reverse()
         {
-            startPoints = new HashSet<AreaNode>();
+            var newStartPoints = new HashSet<AreaNode>();
+            foreach (var startPoint in startPoints)
+            {
+                var temp = startPoint;
+                while (temp.next != null) temp = temp.next;
+                newStartPoints.Add(temp);
+                startPoint.prev = startPoint.next;
+                startPoint.next = null;
+                temp.next = temp.prev;
+                temp.prev = null;
+            }
+            startPoints = newStartPoints;
             foreach (var node in nodes.Values)
             {
                 var temp = node.next;
                 node.next = node.prev;
                 node.prev = temp;
-                if (node.prev.IsEdge()) startPoints.Add(node.prev);
             }
         }
 

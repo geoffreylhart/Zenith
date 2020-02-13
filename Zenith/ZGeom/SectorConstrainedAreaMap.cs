@@ -90,17 +90,18 @@ namespace Zenith.ZGeom
         {
             var fakeSector = new CubeSector(CubeSector.CubeSectorFace.FRONT, 0, 0, 8);
             List<List<ContourVertex>> contours = paths.Select(x => x.Select(y => Vector2DToContourVertex(y)).ToList()).ToList();
-            var vertices = OSMPolygonBufferGenerator.Tesselate(OSMPolygonBufferGenerator.CloseLines(fakeSector, contours), color);
-            foreach (var outer in outers)
-            {
-                var outerContours = new List<List<ContourVertex>>() { outer.Skip(1).Select(y => Vector2DToContourVertex(y)).ToList() }; // skip 1 since our loops end in a duplicate
-                vertices.AddRange(OSMPolygonBufferGenerator.Tesselate(outerContours, color));
-            }
+            contours = OSMPolygonBufferGenerator.CloseLines(fakeSector, contours);
             foreach (var inner in inners)
             {
                 var innerContours = new List<List<ContourVertex>>() { inner.Skip(1).Select(x => Vector2DToContourVertex(x, true)).ToList() }; // skip 1 since our loops end in a duplicate
-                vertices.AddRange(OSMPolygonBufferGenerator.Tesselate(innerContours, color));
+                contours.AddRange(innerContours);
             }
+            foreach (var outer in outers)
+            {
+                var outerContours = new List<List<ContourVertex>>() { outer.Skip(1).Select(y => Vector2DToContourVertex(y)).ToList() }; // skip 1 since our loops end in a duplicate
+                contours.AddRange(outerContours);
+            }
+            var vertices = OSMPolygonBufferGenerator.Tesselate(contours, color);
             return vertices;
         }
 
