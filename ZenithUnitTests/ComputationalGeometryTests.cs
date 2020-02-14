@@ -30,6 +30,13 @@ namespace ZenithUnitTests
             // TestAddAndSubtractAndScale(3, 2, 1, 1, blobs, 9, 8, true);
             TestAddAndSubtractAndScale(3, 3, 1, 1, blobs, 10, 9, true);
             TestAddAndSubtractAndScale(4, 3, 1, 2, blobs, 18, 14, true);
+            TestAddThenSubtractAndScale(5, 1, 1, 1, 3, 1, 1, 23, blobs); // double donut test
+        }
+
+        private void TestAddThenSubtractAndScale(int size1, int offsetX1, int offsetY1, int size2, int offsetX2, int offsetY2, int size3, int area, BlobCollection blobs)
+        {
+            TestAddThenSubtract(size1, offsetX1, offsetY1, size2, offsetX2, offsetY2, size3, area, blobs);
+            TestAddThenSubtract(size1 * 5, offsetX1 * 5, offsetY1 * 5, size2 * 5, offsetX2 * 5, offsetY2 * 5, size3 * 5, area * 25, blobs);
         }
 
         private static void TestAddAndSubtractAndScale(int size1, int offsetX, int offsetY, int size2, BlobCollection blobs, int addArea, int subArea, bool testOpen)
@@ -61,6 +68,15 @@ namespace ZenithUnitTests
                 if (area1 != addArea) throw new NotImplementedException();
                 if (area2 != subArea) throw new NotImplementedException();
             }
+        }
+
+        private static void TestAddThenSubtract(int size1, int offsetX1, int offsetY1, int size2, int offsetX2, int offsetY2, int size3, int area, BlobCollection blobs)
+        {
+            SectorConstrainedOSMAreaGraph square1 = MakeRect(blobs.nodes, 0, 0, size1, size1);
+            SectorConstrainedOSMAreaGraph square2 = MakeRect(blobs.nodes, offsetX1, offsetY1, offsetX1 + size2, offsetY1 + size2);
+            SectorConstrainedOSMAreaGraph square3 = MakeRect(blobs.nodes, offsetX2, offsetY2, offsetX2 + size3, offsetY2 + size3);
+            double areaAns = GetArea(square1.Subtract(square2.Add(square3, blobs), blobs).Finalize(blobs).GetTesselationVertices(Color.White));
+            if (areaAns != area) throw new NotImplementedException();
         }
 
         private static double GetArea(List<VertexPositionColor> list)

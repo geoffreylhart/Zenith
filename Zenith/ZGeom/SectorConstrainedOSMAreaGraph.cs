@@ -512,6 +512,7 @@ namespace Zenith.ZGeom
                 AreaNode curr = node;
                 while (true)
                 {
+                    if (curr.next == null || curr.next.prev != curr || curr.prev == null || curr.prev.next != curr) throw new NotImplementedException(); // validity check
                     newLoop.Add(blobs.nodes[curr.id]);
                     explored.Add(curr);
                     if (curr.next == node) break;
