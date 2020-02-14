@@ -413,26 +413,66 @@ namespace Zenith.ZGeom
             }
         }
 
-        private void Reverse()
+        public void CheckValid()
         {
-            var newStartPoints = new HashSet<AreaNode>();
+            HashSet<AreaNode> explored = new HashSet<AreaNode>();
             foreach (var startPoint in startPoints)
             {
-                var temp = startPoint;
-                while (temp.next != null) temp = temp.next;
-                newStartPoints.Add(temp);
-                startPoint.prev = startPoint.next;
-                startPoint.next = null;
-                temp.next = temp.prev;
-                temp.prev = null;
+                if (startPoint.prev != null || startPoint.next == null || startPoint.id != -1 || startPoint.v == null) throw new NotImplementedException();
+                AreaNode curr = startPoint.next;
+                while (true)
+                {
+                    explored.Add(curr);
+                    if (curr.next == null) // endpoint
+                    {
+                        if (curr.next != null || curr.prev == null || curr.id != -1 || curr.v == null || curr.prev.next != curr) throw new NotImplementedException();
+                        break;
+                    }
+                    else
+                    {
+                        if (curr.id == -1 || curr.v != null || curr.next == null || curr.prev == null || curr.prev.next != curr || curr.next.prev != curr) throw new NotImplementedException();
+                    }
+                    curr = curr.next;
+                }
             }
-            startPoints = newStartPoints;
             foreach (var node in nodes.Values)
             {
-                var temp = node.next;
-                node.next = node.prev;
-                node.prev = temp;
+                if (explored.Contains(node)) continue;
+                // just loops can be found at this point
+                AreaNode curr = node;
+                while (true)
+                {
+                    if (curr.id == -1 || curr.v != null || curr.next == null || curr.prev == null || curr.prev.next != curr || curr.next.prev != curr) throw new NotImplementedException();
+                    explored.Add(curr);
+                    if (curr.next == node) break;
+                    curr = curr.next;
+                }
             }
+        }
+
+        private void Reverse()
+        {
+            // fully reverse, even the bad parts
+            HashSet<AreaNode> explored = new HashSet<AreaNode>();
+            Queue<AreaNode> bfs = new Queue<AreaNode>();
+            foreach (var startPoint in startPoints) bfs.Enqueue(startPoint);
+            foreach (var node in nodes.Values) bfs.Enqueue(node);
+            while (bfs.Count > 0)
+            {
+                var head = bfs.Dequeue();
+                if (explored.Contains(head)) continue;
+                explored.Add(head);
+                if (head.next != null) bfs.Enqueue(head.next);
+                if (head.prev != null) bfs.Enqueue(head.prev);
+            }
+            foreach (var x in explored)
+            {
+                var temp = x.next;
+                x.next = x.prev;
+                x.prev = temp;
+            }
+            startPoints = new HashSet<AreaNode>();
+            foreach (var start in explored.Where(x => x.prev == null)) startPoints.Add(start);
         }
 
         private static double ComputeInnerAngle(Vector2d v1, Vector2d v2)
@@ -447,30 +487,39 @@ namespace Zenith.ZGeom
 
         public SectorConstrainedOSMAreaGraph Clone()
         {
+            CheckValid();
+            // TODO: make vector2d a struct?
             SectorConstrainedOSMAreaGraph map = new SectorConstrainedOSMAreaGraph();
-            foreach (var node in nodes.Values)
+            Dictionary<AreaNode, AreaNode> mapper = new Dictionary<AreaNode, AreaNode>();
+            // fully clone, even the bad parts
+            HashSet<AreaNode> explored = new HashSet<AreaNode>();
+            Queue<AreaNode> bfs = new Queue<AreaNode>();
+            foreach (var startPoint in startPoints) bfs.Enqueue(startPoint);
+            foreach (var node in nodes.Values) bfs.Enqueue(node);
+            while (bfs.Count > 0)
             {
-                map.nodes[node.id] = new AreaNode() { id = node.id };
+                var head = bfs.Dequeue();
+                if (explored.Contains(head)) continue;
+                explored.Add(head);
+                if (head.next != null) bfs.Enqueue(head.next);
+                if (head.prev != null) bfs.Enqueue(head.prev);
             }
-            foreach (var node in nodes.Values)
+            foreach (var x in explored)
             {
-                if (node.prev.IsEdge())
-                {
-                    map.nodes[node.id].prev = new AreaNode() { v = node.prev.v, next = map.nodes[node.id] }; // TODO: make vector2d a struct?
-                    map.startPoints.Add(map.nodes[node.id].prev);
-                }
-                else
-                {
-                    map.nodes[node.id].prev = map.nodes[node.prev.id];
-                }
-                if (node.next.IsEdge())
-                {
-                    map.nodes[node.id].next = new AreaNode() { v = node.next.v, prev = map.nodes[node.id] }; // TODO: make vector2d a struct?
-                }
-                else
-                {
-                    map.nodes[node.id].next = map.nodes[node.next.id];
-                }
+                mapper[x] = new AreaNode() { id = x.id, v = x.v };
+            }
+            foreach (var x in explored)
+            {
+                mapper[x].prev = x.prev == null ? null : mapper[x.prev];
+                mapper[x].next = x.next == null ? null : mapper[x.next];
+            }
+            foreach (var startPoint in startPoints)
+            {
+                map.startPoints.Add(mapper[startPoint]);
+            }
+            foreach (var pair in nodes)
+            {
+                map.nodes[pair.Key] = mapper[pair.Value];
             }
             return map;
         }

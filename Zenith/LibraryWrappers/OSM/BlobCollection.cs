@@ -57,6 +57,7 @@ namespace Zenith.LibraryWrappers.OSM
             // add each simple way, flipping them where necessary
             foreach (var way in simpleWays)
             {
+                if (way.id == 557314319) continue; // TODO: not working on this problematic guy
                 SectorConstrainedOSMAreaGraph simpleMap = new SectorConstrainedOSMAreaGraph();
                 var superLoop = new List<Way>() { way };
                 bool isCW = ApproximateCW(superLoop);
@@ -72,7 +73,7 @@ namespace Zenith.LibraryWrappers.OSM
                     for (int i = 0; i < broken.Count - 1; i++) // since our loops end in a duplicate
                     {
                         map.nodes[broken[i]].next = map.nodes[broken[(i + 1) % (broken.Count - 1)]];
-                        map.nodes[broken[i]].prev = map.nodes[broken[(i + broken.Count - 1) % (broken.Count - 1)]];
+                        map.nodes[broken[i]].prev = map.nodes[broken[(i - 1 + broken.Count - 1) % (broken.Count - 1)]];
                     }
                 }
                 else
@@ -109,7 +110,7 @@ namespace Zenith.LibraryWrappers.OSM
                     for (int i = 0; i < broken.Count - 1; i++) // since our loops end in a duplicate
                     {
                         map.nodes[broken[i]].next = map.nodes[broken[(i + 1) % (broken.Count - 1)]];
-                        map.nodes[broken[i]].prev = map.nodes[broken[(i + broken.Count - 1) % (broken.Count - 1)]];
+                        map.nodes[broken[i]].prev = map.nodes[broken[(i - 1 + broken.Count - 1) % (broken.Count - 1)]];
                     }
                 }
                 else
