@@ -53,6 +53,53 @@ namespace Zenith.LibraryWrappers.OSM
         internal SectorConstrainedOSMAreaGraph GetAreaMap(string key, string value)
         {
             var simpleWays = EnumerateWays().Where(x => x.keyValues.ContainsKey(key) && x.keyValues[key] == value); // we expect all of these to be closed loops
+            // copy this dang multipolygon way id gathering logic
+            Dictionary<long, Way> wayLookup = new Dictionary<long, Way>();
+            foreach (var way in EnumerateWays()) wayLookup[way.id] = way;
+            List<List<long>> inners = new List<List<long>>();
+            List<List<long>> outers = new List<List<long>>();
+            foreach (var blob in blobs)
+            {
+                if (blob.type != "OSMData") continue;
+                int typeIndex = blob.pBlock.stringtable.vals.IndexOf("type");
+                int multipolygonIndex = blob.pBlock.stringtable.vals.IndexOf("multipolygon");
+                int outerIndex = blob.pBlock.stringtable.vals.IndexOf("outer");
+                int innerIndex = blob.pBlock.stringtable.vals.IndexOf("inner");
+                int keyIndex = blob.pBlock.stringtable.vals.IndexOf(key);
+                int valueIndex = blob.pBlock.stringtable.vals.IndexOf(value);
+                if (new[] { typeIndex, multipolygonIndex, outerIndex, innerIndex, keyIndex, valueIndex }.Contains(-1)) continue;
+                foreach (var pGroup in blob.pBlock.primitivegroup)
+                {
+                    foreach (var relation in pGroup.relations)
+                    {
+                        if (relation.id == 2189404) continue; // TODO: not working on this problematic guy
+                        bool isKeyValue = false;
+                        bool isTypeMultipolygon = false;
+                        for (int i = 0; i < relation.keys.Count; i++)
+                        {
+                            if (relation.keys[i] == keyIndex && relation.vals[i] == valueIndex) isKeyValue = true;
+                            if (relation.keys[i] == typeIndex && relation.vals[i] == multipolygonIndex) isTypeMultipolygon = true;
+                        }
+                        if (isKeyValue && isTypeMultipolygon)
+                        {
+                            List<long> innerWayIds = new List<long>();
+                            List<long> outerWayIds = new List<long>();
+                            for (int i = 0; i < relation.roles_sid.Count; i++)
+                            {
+                                // just outer for now
+                                if (relation.types[i] == 1)
+                                {
+                                    if (relation.roles_sid[i] == innerIndex) innerWayIds.Add(relation.memids[i]);
+                                    if (relation.roles_sid[i] == outerIndex) outerWayIds.Add(relation.memids[i]);
+                                }
+                            }
+                            inners.Add(innerWayIds);
+                            outers.Add(outerWayIds);
+                        }
+                    }
+                }
+            }
+            // end gathering logic
             SectorConstrainedOSMAreaGraph map = new SectorConstrainedOSMAreaGraph();
             // add each simple way, flipping them where necessary
             foreach (var way in simpleWays)
@@ -81,6 +128,71 @@ namespace Zenith.LibraryWrappers.OSM
                     AddConstrainedPaths(map, superLoop);
                 }
                 map.Add(simpleMap, this);
+            }
+            // construct each multipolygon to add separately
+            for (int i = 0; i < inners.Count; i++) // foreach multipolygon, basically
+            {
+                // TODO: with islands inside of ponds inside of islands inside of ponds, etc. we wouldn't expect this to work
+                // however, we're taking advantage of the fact that Add/Subtract doesn't check for that for now (until Finalize)
+                SuperWayCollection superInnerWays = GenerateSuperWayCollection(inners[i].Where(x => wayLookup.ContainsKey(x)).Select(x => Copy(wayLookup[x])), true);
+                SuperWayCollection superOuterWays = GenerateSuperWayCollection(outers[i].Where(x => wayLookup.ContainsKey(x)).Select(x => Copy(wayLookup[x])), true);
+                SectorConstrainedOSMAreaGraph innerMap = DoMultipolygon(superInnerWays);
+                SectorConstrainedOSMAreaGraph outerMap = DoMultipolygon(superOuterWays);
+                map.Add(outerMap.Subtract(innerMap, this), this);
+            }
+            return map;
+        }
+
+        // TODO: get rid of this dupe logic
+        private Way Copy(Way way)
+        {
+            Way newway = new Way();
+            newway.id = way.id;
+            newway.refs = new List<long>();
+            newway.refs.AddRange(way.refs);
+            return newway;
+        }
+
+        // note: this is very very similar to the GetCoastAreaMap (copy-pasted even) - find some way to intuitively combine them
+        private SectorConstrainedOSMAreaGraph DoMultipolygon(SuperWayCollection superWays)
+        {
+            SectorConstrainedOSMAreaGraph map = new SectorConstrainedOSMAreaGraph();
+            foreach (var superWay in superWays.linkedWays) // we expect these to always start and end outside the sector
+            {
+                SectorConstrainedOSMAreaGraph temp = new SectorConstrainedOSMAreaGraph();
+                bool isCW = ApproximateCW(superWay); // definitely an approximation, we don't actually know without loading nearby sectors
+                if (isCW)
+                {
+                    // force to be an "outer"
+                    superWay.Reverse();
+                    foreach (var way in superWay) way.refs.Reverse();
+                }
+                AddConstrainedPaths(temp, superWay);
+                map.Add(temp, this);
+            }
+            foreach (var superLoop in superWays.loopedWays)
+            {
+                SectorConstrainedOSMAreaGraph temp = new SectorConstrainedOSMAreaGraph();
+                bool isCW = ApproximateCW(superLoop);
+                bool untouchedLoop = CheckIfUntouchedAndSpin(superLoop);
+                if (untouchedLoop)
+                {
+                    var broken = BreakDownSuperLoop(superLoop);
+                    for (int i = 0; i < broken.Count - 1; i++) // since our loops end in a duplicate
+                    {
+                        temp.nodes[broken[i]] = new AreaNode() { id = broken[i] };
+                    }
+                    for (int i = 0; i < broken.Count - 1; i++) // since our loops end in a duplicate
+                    {
+                        temp.nodes[broken[i]].next = temp.nodes[broken[(i + 1) % (broken.Count - 1)]];
+                        temp.nodes[broken[i]].prev = temp.nodes[broken[(i - 1 + broken.Count - 1) % (broken.Count - 1)]];
+                    }
+                }
+                else
+                {
+                    AddConstrainedPaths(temp, superLoop);
+                }
+                map.Add(temp, this);
             }
             return map;
         }
@@ -324,7 +436,7 @@ namespace Zenith.LibraryWrappers.OSM
                     foreach (var way in pGroup.ways)
                     {
                         way.InitKeyValues(blob.pBlock.stringtable);
-                        yield return way;
+                        yield return Copy(way);
                     }
                 }
             }
