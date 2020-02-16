@@ -31,11 +31,11 @@ namespace ZenithUnitTests
             TestAddAndSubtractAndScale(4, 3, 1, 2, 18, 14, true);
             TestAddThenSubtractAndScale(5, 1, 1, 1, 3, 1, 1, 23); // double donut test
             Random rand = new Random(123);
-            for (int i = 0; i < 1000; i++)
+            for (int i = 0; i < 10000; i++)
             {
                 RandomAddTest(rand);
             }
-            for (int i = 0; i < 1000; i++)
+            for (int i = 0; i < 10000; i++)
             {
                 RandomSubtractTest(rand);
             }
@@ -44,7 +44,7 @@ namespace ZenithUnitTests
         private void RandomAddTest(Random rand)
         {
             var blobs = new BlobCollection();
-            int size = 2;
+            int size = 3;
             bool[,] grid1 = RandomGrid(rand, size);
             bool[,] grid2 = RandomGrid(rand, size);
             bool[,] grid3 = AddGrids(grid1, grid2, size);
@@ -61,7 +61,7 @@ namespace ZenithUnitTests
         private void RandomSubtractTest(Random rand)
         {
             var blobs = new BlobCollection();
-            int size = 2;
+            int size = 3;
             bool[,] grid1 = RandomGrid(rand, size);
             bool[,] grid2 = RandomGrid(rand, size);
             bool[,] grid3 = SubtractGrids(grid1, grid2, size);

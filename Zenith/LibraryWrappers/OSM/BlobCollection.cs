@@ -179,6 +179,12 @@ namespace Zenith.LibraryWrappers.OSM
             {
                 SectorConstrainedOSMAreaGraph temp = new SectorConstrainedOSMAreaGraph();
                 bool isCW = ApproximateCW(superLoop);
+                if (isCW)
+                {
+                    // force to be an "outer"
+                    superLoop.Reverse();
+                    foreach (var way in superLoop) way.refs.Reverse();
+                }
                 bool untouchedLoop = CheckIfUntouchedAndSpin(superLoop);
                 if (untouchedLoop)
                 {
@@ -295,19 +301,31 @@ namespace Zenith.LibraryWrappers.OSM
                 if (ignoreDirection)
                 {
                     // force existing superWays to align with ourWay
-                    if (endsWith.ContainsKey(ourLastNode))
+                    if (endsWith.ContainsKey(ourLastNode) && startsWith.ContainsKey(ourFirstNode) && endsWith[ourLastNode] == startsWith[ourFirstNode]) // actually very common
                     {
                         endsWith[ourLastNode].Reverse();
                         foreach (var way in endsWith[ourLastNode]) way.refs.Reverse(); // TODO: if this turns out to be expensive, we can optimize this later
                         startsWith[ourLastNode] = endsWith[ourLastNode];
                         endsWith.Remove(ourLastNode);
-                    }
-                    if (startsWith.ContainsKey(ourFirstNode))
-                    {
-                        startsWith[ourFirstNode].Reverse();
-                        foreach (var way in startsWith[ourFirstNode]) way.refs.Reverse(); // TODO: if this turns out to be expensive, we can optimize this later
                         endsWith[ourFirstNode] = startsWith[ourFirstNode];
                         startsWith.Remove(ourFirstNode);
+                    }
+                    else
+                    {
+                        if (endsWith.ContainsKey(ourLastNode))
+                        {
+                            endsWith[ourLastNode].Reverse();
+                            foreach (var way in endsWith[ourLastNode]) way.refs.Reverse(); // TODO: if this turns out to be expensive, we can optimize this later
+                            startsWith[ourLastNode] = endsWith[ourLastNode];
+                            endsWith.Remove(ourLastNode);
+                        }
+                        if (startsWith.ContainsKey(ourFirstNode))
+                        {
+                            startsWith[ourFirstNode].Reverse();
+                            foreach (var way in startsWith[ourFirstNode]) way.refs.Reverse(); // TODO: if this turns out to be expensive, we can optimize this later
+                            endsWith[ourFirstNode] = startsWith[ourFirstNode];
+                            startsWith.Remove(ourFirstNode);
+                        }
                     }
                 }
                 if (endsWith.ContainsKey(ourFirstNode) && startsWith.ContainsKey(ourLastNode)) // first, try to insert between A & B
