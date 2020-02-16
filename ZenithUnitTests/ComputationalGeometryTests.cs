@@ -35,6 +35,10 @@ namespace ZenithUnitTests
             {
                 RandomAddTest(rand);
             }
+            for (int i = 0; i < 1000; i++)
+            {
+                RandomSubtractTest(rand);
+            }
         }
 
         private void RandomAddTest(Random rand)
@@ -51,6 +55,23 @@ namespace ZenithUnitTests
             SectorConstrainedOSMAreaGraph asGraph1 = GridToArea(grid1, size, blobs);
             SectorConstrainedOSMAreaGraph asGraph2 = GridToArea(grid2, size, blobs);
             double area = GetArea(asGraph1.Add(asGraph2, blobs).Finalize(blobs).GetTesselationVertices(Color.White));
+            if (expectedArea != area) throw new NotImplementedException();
+        }
+
+        private void RandomSubtractTest(Random rand)
+        {
+            var blobs = new BlobCollection();
+            int size = 2;
+            bool[,] grid1 = RandomGrid(rand, size);
+            bool[,] grid2 = RandomGrid(rand, size);
+            bool[,] grid3 = SubtractGrids(grid1, grid2, size);
+            if (!IsValidGrid(grid1, size)) return;
+            if (!IsValidGrid(grid2, size)) return;
+            if (!IsValidGrid(grid3, size)) return;
+            int expectedArea = AreaOfGrid(grid3, size);
+            SectorConstrainedOSMAreaGraph asGraph1 = GridToArea(grid1, size, blobs);
+            SectorConstrainedOSMAreaGraph asGraph2 = GridToArea(grid2, size, blobs);
+            double area = GetArea(asGraph1.Subtract(asGraph2, blobs).Finalize(blobs).GetTesselationVertices(Color.White));
             if (expectedArea != area) throw new NotImplementedException();
         }
 

@@ -321,7 +321,15 @@ namespace Zenith.ZGeom
                         }
                         else if (AtoCAngle < AtoDAngle && AtoDAngle < AtoBAngle)
                         {
-                            throw new NotImplementedException();
+                            doDelete.Add(A);
+                            doAdd.Add(C);
+                            C.next = srcNode;
+                            srcNode.prev = C;
+
+                            doDelete.Add(B);
+                            doAdd.Add(D);
+                            D.prev = srcNode;
+                            srcNode.next = D;
                         }
                         else if (AtoBAngle < AtoDAngle && AtoDAngle < AtoCAngle)
                         {
