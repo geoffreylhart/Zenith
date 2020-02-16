@@ -138,7 +138,8 @@ namespace Zenith.LibraryWrappers.OSM
                 SuperWayCollection superOuterWays = GenerateSuperWayCollection(outers[i].Where(x => wayLookup.ContainsKey(x)).Select(x => Copy(wayLookup[x])), true);
                 SectorConstrainedOSMAreaGraph innerMap = DoMultipolygon(superInnerWays);
                 SectorConstrainedOSMAreaGraph outerMap = DoMultipolygon(superOuterWays);
-                map.Add(outerMap.Subtract(innerMap, this), this);
+                SectorConstrainedOSMAreaGraph multiPolygon = outerMap.Subtract(innerMap, this);
+                map.Add(multiPolygon, this);
             }
             return map;
         }
@@ -150,6 +151,10 @@ namespace Zenith.LibraryWrappers.OSM
             newway.id = way.id;
             newway.refs = new List<long>();
             newway.refs.AddRange(way.refs);
+            newway.info = way.info;
+            newway.keys = way.keys;
+            newway.keyValues = way.keyValues;
+            newway.vals = way.vals;
             return newway;
         }
 

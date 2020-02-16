@@ -18,29 +18,120 @@ namespace ZenithUnitTests
         [TestMethod]
         public void BasicTest()
         {
-            var blobs = new BlobCollection();
-            TestAddAndSubtractAndScale(2, 1, 0, 1, blobs, 4, 3, false); // test with 2nd square inside corner of 1st
-            TestAddAndSubtractAndScale(2, 2, 0, 1, blobs, 5, 4, false); // test test with 2nd square just outside/against corner of 1st
-            TestAddAndSubtractAndScale(3, 2, 1, 1, blobs, 9, 8, false); // test with 2nd square inside side of 1st
-            TestAddAndSubtractAndScale(3, 3, 1, 1, blobs, 10, 9, false); // test with 2nd square just outside/against side of 1st
-            TestAddAndSubtractAndScale(4, 3, 1, 2, blobs, 18, 14, false); // test with 2nd square overlapping side
-            TestAddAndSubtractAndScale(3, 1, 1, 1, blobs, 9, 8, false); // test donut TODO: fix the add test for this (though the tesselator does it for us)
+            TestAddAndSubtractAndScale(2, 1, 0, 1, 4, 3, false); // test with 2nd square inside corner of 1st
+            TestAddAndSubtractAndScale(2, 2, 0, 1, 5, 4, false); // test test with 2nd square just outside/against corner of 1st
+            TestAddAndSubtractAndScale(3, 2, 1, 1, 9, 8, false); // test with 2nd square inside side of 1st
+            TestAddAndSubtractAndScale(3, 3, 1, 1, 10, 9, false); // test with 2nd square just outside/against side of 1st
+            TestAddAndSubtractAndScale(4, 3, 1, 2, 18, 14, false); // test with 2nd square overlapping side
+            TestAddAndSubtractAndScale(3, 1, 1, 1, 9, 8, false); // test donut TODO: fix the add test for this (though the tesselator does it for us)
             // TestAddAndSubtractAndScale(2, 1, 0, 1, blobs, 4, 3, true);
-            TestAddAndSubtractAndScale(2, 2, 0, 1, blobs, 5, 4, true);
+            TestAddAndSubtractAndScale(2, 2, 0, 1, 5, 4, true);
             // TestAddAndSubtractAndScale(3, 2, 1, 1, blobs, 9, 8, true);
-            TestAddAndSubtractAndScale(3, 3, 1, 1, blobs, 10, 9, true);
-            TestAddAndSubtractAndScale(4, 3, 1, 2, blobs, 18, 14, true);
-            TestAddThenSubtractAndScale(5, 1, 1, 1, 3, 1, 1, 23, blobs); // double donut test
+            TestAddAndSubtractAndScale(3, 3, 1, 1, 10, 9, true);
+            TestAddAndSubtractAndScale(4, 3, 1, 2, 18, 14, true);
+            TestAddThenSubtractAndScale(5, 1, 1, 1, 3, 1, 1, 23); // double donut test
+            Random rand = new Random(123);
+            RandomAddTest(rand);
         }
 
-        private void TestAddThenSubtractAndScale(int size1, int offsetX1, int offsetY1, int size2, int offsetX2, int offsetY2, int size3, int area, BlobCollection blobs)
+        private void RandomAddTest(Random rand)
         {
+            var blobs = new BlobCollection();
+            int size = 2;
+            bool[,] grid1 = RandomGrid(rand, size);
+            bool[,] grid2 = RandomGrid(rand, size);
+            bool[,] grid3 = AddGrids(grid1, grid2, size);
+            if (!IsValidGrid(grid1, size)) return;
+            if (!IsValidGrid(grid2, size)) return;
+            if (!IsValidGrid(grid3, size)) return;
+            int expectedArea = AreaOfGrid(grid3, size);
+            SectorConstrainedOSMAreaGraph asGraph1 = GridToArea(grid1, size, blobs);
+            SectorConstrainedOSMAreaGraph asGraph2 = GridToArea(grid2, size, blobs);
+            double area = GetArea(asGraph1.Add(asGraph2, blobs).Finalize(blobs).GetTesselationVertices(Color.White));
+            if (expectedArea != area) throw new NotImplementedException();
+        }
+
+        private int AreaOfGrid(bool[,] grid, int size)
+        {
+            int area = 0;
+            for (int i = 0; i < size * size; i++)
+            {
+                if (grid[i / size, i % size]) area++;
+            }
+            return area;
+        }
+
+        private bool[,] AddGrids(bool[,] grid1, bool[,] grid2, int size)
+        {
+            var grid3 = new bool[size, size];
+            for (int i = 0; i < size * size; i++)
+            {
+                grid3[i / size, i % size] = grid1[i / size, i % size] || grid2[i / size, i % size];
+            }
+            return grid3;
+        }
+
+        private bool[,] SubtractGrids(bool[,] grid1, bool[,] grid2, int size)
+        {
+            var grid3 = new bool[size, size];
+            for (int i = 0; i < size * size; i++)
+            {
+                grid3[i / size, i % size] = grid1[i / size, i % size] && !grid2[i / size, i % size];
+            }
+            return grid3;
+        }
+
+        private bool IsValidGrid(bool[,] grid, int size)
+        {
+            for (int i = 0; i < (size - 1) * (size - 1); i++)
+            {
+                bool cell1 = grid[i / (size - 1), i % (size - 1)];
+                bool cell2 = grid[i / (size - 1) + 1, i % (size - 1)];
+                bool cell3 = grid[i / (size - 1), i % (size - 1) + 1];
+                bool cell4 = grid[i / (size - 1) + 1, i % (size - 1) + 1];
+                if (cell1 && !cell2 && !cell3 && cell4) return false;
+                if (!cell1 && cell2 && cell3 && !cell4) return false;
+            }
+            return true;
+        }
+
+        private SectorConstrainedOSMAreaGraph GridToArea(bool[,] grid, int size, BlobCollection blobs)
+        {
+            SectorConstrainedOSMAreaGraph newMap = new SectorConstrainedOSMAreaGraph();
+            for (int i = 0; i < size * size; i++)
+            {
+                if (grid[i / size, i % size])
+                {
+                    int x1 = i / size;
+                    int y1 = i % size;
+                    int x2 = i / size + 1;
+                    int y2 = i % size + 1;
+                    if (x1 == 0 || !grid[x1 - 1, y1]) AddLine(blobs.nodes, newMap, x1, y1, x1, y2); // down
+                    if (y2 == size || !grid[x1, y2]) AddLine(blobs.nodes, newMap, x1, y2, x2, y2); // right
+                    if (x2 == size || !grid[x2, y1]) AddLine(blobs.nodes, newMap, x2, y2, x2, y1); // up
+                    if (y1 == 0 || !grid[x1, y1 - 1]) AddLine(blobs.nodes, newMap, x2, y1, x1, y1); // left
+                }
+            }
+            return newMap;
+        }
+
+        private bool[,] RandomGrid(Random rand, int size)
+        {
+            var grid = new bool[size, size];
+            for (int i = 0; i < size * size; i++) grid[i / size, i % size] = rand.Next(2) == 0;
+            return grid;
+        }
+
+        private void TestAddThenSubtractAndScale(int size1, int offsetX1, int offsetY1, int size2, int offsetX2, int offsetY2, int size3, int area)
+        {
+            var blobs = new BlobCollection();
             TestAddThenSubtract(size1, offsetX1, offsetY1, size2, offsetX2, offsetY2, size3, area, blobs);
             TestAddThenSubtract(size1 * 5, offsetX1 * 5, offsetY1 * 5, size2 * 5, offsetX2 * 5, offsetY2 * 5, size3 * 5, area * 25, blobs);
         }
 
-        private static void TestAddAndSubtractAndScale(int size1, int offsetX, int offsetY, int size2, BlobCollection blobs, int addArea, int subArea, bool testOpen)
+        private static void TestAddAndSubtractAndScale(int size1, int offsetX, int offsetY, int size2, int addArea, int subArea, bool testOpen)
         {
+            var blobs = new BlobCollection();
             TestAddAndSubtract(size1, offsetX, offsetY, size2, blobs, addArea, subArea, testOpen);
             TestAddAndSubtract(size1 * 5, offsetX * 5, offsetY * 5, size2 * 5, blobs, addArea * 25, subArea * 25, testOpen);
         }
