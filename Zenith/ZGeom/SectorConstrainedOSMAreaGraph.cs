@@ -96,6 +96,7 @@ namespace Zenith.ZGeom
                         {
                             doDelete.Add(A);
                             doDelete.Add(B);
+                            singularDelete.Add(srcNode);
                         }
                     }
                     else if (BCSame)
@@ -111,6 +112,7 @@ namespace Zenith.ZGeom
                         {
                             doDelete.Add(A);
                             doDelete.Add(B);
+                            singularDelete.Add(srcNode);
                         }
                     } // now, non-degenerate
                     else
@@ -152,6 +154,7 @@ namespace Zenith.ZGeom
                         {
                             doDelete.Add(A);
                             doDelete.Add(B);
+                            singularDelete.Add(srcNode);
                         }
                     }
                 }
@@ -275,6 +278,7 @@ namespace Zenith.ZGeom
                         {
                             doDelete.Add(A);
                             doDelete.Add(B);
+                            singularDelete.Add(srcNode);
                         }
                         else
                         {
@@ -290,6 +294,7 @@ namespace Zenith.ZGeom
                         {
                             doDelete.Add(A);
                             doDelete.Add(B);
+                            singularDelete.Add(srcNode);
                         }
                         else
                         {
@@ -305,6 +310,7 @@ namespace Zenith.ZGeom
                         {
                             doDelete.Add(A);
                             doDelete.Add(B);
+                            singularDelete.Add(srcNode);
                         }
                         else if (AtoCAngle < AtoBAngle && AtoBAngle < AtoDAngle)
                         {

@@ -31,7 +31,10 @@ namespace ZenithUnitTests
             TestAddAndSubtractAndScale(4, 3, 1, 2, 18, 14, true);
             TestAddThenSubtractAndScale(5, 1, 1, 1, 3, 1, 1, 23); // double donut test
             Random rand = new Random(123);
-            RandomAddTest(rand);
+            for (int i = 0; i < 1000; i++)
+            {
+                RandomAddTest(rand);
+            }
         }
 
         private void RandomAddTest(Random rand)
