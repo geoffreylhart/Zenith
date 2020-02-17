@@ -107,6 +107,7 @@ namespace Zenith.LibraryWrappers.OSM
                 if (way.id == 557314319) continue; // TODO: not working on this problematic guy
                 SectorConstrainedOSMAreaGraph simpleMap = new SectorConstrainedOSMAreaGraph();
                 var superLoop = new List<Way>() { way };
+                if (way.refs.Last() != way.refs.First()) way.refs.Add(way.refs.First()); // some folks forget to close a simple way, or perhaps the mistake is tagging subcomponents of a relation
                 bool isCW = ApproximateCW(superLoop);
                 if (isCW) way.refs.Reverse(); // the simple polygons are always "outers"
                 bool untouchedLoop = CheckIfUntouchedAndSpin(superLoop);
@@ -303,28 +304,17 @@ namespace Zenith.LibraryWrappers.OSM
                     // force existing superWays to align with ourWay
                     if (endsWith.ContainsKey(ourLastNode) && startsWith.ContainsKey(ourFirstNode) && endsWith[ourLastNode] == startsWith[ourFirstNode]) // actually very common
                     {
-                        endsWith[ourLastNode].Reverse();
-                        foreach (var way in endsWith[ourLastNode]) way.refs.Reverse(); // TODO: if this turns out to be expensive, we can optimize this later
-                        startsWith[ourLastNode] = endsWith[ourLastNode];
-                        endsWith.Remove(ourLastNode);
-                        endsWith[ourFirstNode] = startsWith[ourFirstNode];
-                        startsWith.Remove(ourFirstNode);
+                        JustFlipIt(endsWith[ourLastNode], startsWith, endsWith);
                     }
                     else
                     {
                         if (endsWith.ContainsKey(ourLastNode))
                         {
-                            endsWith[ourLastNode].Reverse();
-                            foreach (var way in endsWith[ourLastNode]) way.refs.Reverse(); // TODO: if this turns out to be expensive, we can optimize this later
-                            startsWith[ourLastNode] = endsWith[ourLastNode];
-                            endsWith.Remove(ourLastNode);
+                            JustFlipIt(endsWith[ourLastNode], startsWith, endsWith);
                         }
                         if (startsWith.ContainsKey(ourFirstNode))
                         {
-                            startsWith[ourFirstNode].Reverse();
-                            foreach (var way in startsWith[ourFirstNode]) way.refs.Reverse(); // TODO: if this turns out to be expensive, we can optimize this later
-                            endsWith[ourFirstNode] = startsWith[ourFirstNode];
-                            startsWith.Remove(ourFirstNode);
+                            JustFlipIt(startsWith[ourFirstNode], startsWith, endsWith);
                         }
                     }
                 }
@@ -379,6 +369,18 @@ namespace Zenith.LibraryWrappers.OSM
             }
             collection.linkedWays = startsWith.Values.ToList();
             return collection;
+        }
+
+        private void JustFlipIt(List<Way> superWay, Dictionary<long, List<Way>> startsWith, Dictionary<long, List<Way>> endsWith)
+        {
+            long initialEnd = superWay.Last().refs.Last();
+            long initialStart = superWay.First().refs.First();
+            superWay.Reverse();
+            foreach (var way in superWay) way.refs.Reverse(); // TODO: if this turns out to be expensive, we can optimize this later
+            startsWith.Remove(initialStart);
+            endsWith.Remove(initialEnd);
+            startsWith[initialEnd] = superWay;
+            endsWith[initialStart] = superWay;
         }
 
         private bool ApproximateCW(List<Way> superLoop)
