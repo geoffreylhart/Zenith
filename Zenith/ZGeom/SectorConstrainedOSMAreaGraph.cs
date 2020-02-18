@@ -21,145 +21,120 @@ namespace Zenith.ZGeom
             // remember, counterclockwise makes an island
             List<AreaNode> doAdd = new List<AreaNode>();
             List<AreaNode> doDelete = new List<AreaNode>();
-            List<AreaNode> singularDelete = new List<AreaNode>();
+            List<long> singularDelete = new List<long>();
             foreach (var pair in map.nodes)
             {
                 if (nodes.ContainsKey(pair.Key))
                 {
-                    if (nodes[pair.Key].Count != 1 || map.nodes[pair.Key].Count != 1) throw new NotImplementedException();
-                    AreaNode srcNode = nodes[pair.Key].Single();
-                    AreaNode mapNode = map.nodes[pair.Key].Single();
-                    Vector2d src1 = GetPos(srcNode.prev, blobs);
-                    Vector2d src2 = GetPos(srcNode, blobs);
-                    Vector2d src3 = GetPos(srcNode.next, blobs);
-                    Vector2d new1 = GetPos(mapNode.prev, blobs);
-                    Vector2d new2 = GetPos(mapNode, blobs);
-                    Vector2d new3 = GetPos(mapNode.next, blobs);
-                    Vector2d srcInto = src2 - src1;
-                    Vector2d srcOutof = src3 - src2;
-                    Vector2d newInto = new2 - new1;
-                    Vector2d newOutof = new3 - new2;
-                    AreaNode A = srcNode.prev;
-                    AreaNode B = srcNode.next;
-                    AreaNode C = mapNode.prev;
-                    AreaNode D = mapNode.next;
-                    double AtoBAngle = ComputeInnerAngle(srcInto, srcOutof);
-                    double AtoCAngle = ComputeInnerAngle(srcInto, -newInto);
-                    double AtoDAngle = ComputeInnerAngle(srcInto, newOutof);
-                    bool ACSame = !srcNode.prev.IsEdge() && srcNode.prev.id == mapNode.prev.id;
-                    bool BDSame = !srcNode.next.IsEdge() && srcNode.next.id == mapNode.next.id;
-                    bool ADSame = !srcNode.prev.IsEdge() && srcNode.prev.id == mapNode.next.id;
-                    bool BCSame = !srcNode.next.IsEdge() && srcNode.next.id == mapNode.prev.id;
-                    // Note: I've drawn all these on pen & pad
-                    // first, deal with super degenerate cases
-                    if (ACSame && BDSame)
+                    List<AreaNode> srcInitialLines = new List<AreaNode>();
+                    List<AreaNode> mapInitialLines = new List<AreaNode>();
+                    List<AreaNode> initialLines = new List<AreaNode>();
+                    foreach (var n in nodes[pair.Key])
                     {
+                        srcInitialLines.Add(n.prev);
+                        srcInitialLines.Add(n.next);
                     }
-                    else if (ADSame && BCSame)
+                    foreach (var n in map.nodes[pair.Key])
                     {
-                        singularDelete.Add(srcNode);
-                    } // now, slightly less degenerate
-                    else if (ACSame)
+                        mapInitialLines.Add(n.prev);
+                        mapInitialLines.Add(n.next);
+                    }
+                    initialLines.AddRange(srcInitialLines);
+                    initialLines.AddRange(mapInitialLines);
+                    List<AreaNode> finalLines = initialLines.ToList();
+                    // sort clockwise
+                    finalLines = finalLines.OrderBy(x => ComputeInnerAngle(new Vector2d(1, 0), (x.prev.id == pair.Key) ? (GetPos(x, blobs) - blobs.nodes[pair.Key]) : (blobs.nodes[pair.Key] - GetPos(x, blobs)))).ToList();
+                    bool[] sectors = new bool[finalLines.Count]; // first sector means the area just ccw of the first finalLine
+                    foreach (var n in srcInitialLines)
                     {
-                        if (AtoBAngle < AtoDAngle)
+                        int from = finalLines.IndexOf(n.prev);
+                        int to = finalLines.IndexOf(n.next);
+                        if (to <= from) to += finalLines.Count;
+                        for (int i = from + 1; i <= to; i++)
                         {
-                            doDelete.Add(B);
-                            doAdd.Add(D);
-                            D.prev = srcNode;
-                            srcNode.next = D;
-                        }
-                        else
-                        {
+                            sectors[i % sectors.Length] = true;
                         }
                     }
-                    else if (BDSame)
+                    foreach (var n in mapInitialLines)
                     {
-                        if (AtoBAngle < AtoCAngle)
+                        int from = finalLines.IndexOf(n.prev);
+                        int to = finalLines.IndexOf(n.next);
+                        if (to <= from) to += finalLines.Count;
+                        for (int i = from + 1; i <= to; i++)
                         {
-                            doDelete.Add(A);
-                            doAdd.Add(C);
-                            C.next = srcNode;
-                            srcNode.prev = C;
-                        }
-                        else
-                        {
+                            sectors[i % sectors.Length] = true;
                         }
                     }
-                    else if (ADSame)
+                    // make sure zero-width areas match one of their neighbors so they get cleaned up
+                    bool[] zeroWidth = new bool[sectors.Length];
+                    for (int i = 0; i < sectors.Length; i++)
                     {
-                        if (AtoBAngle < AtoCAngle)
+                        AreaNode p = finalLines[(i - 1 + finalLines.Count) % finalLines.Count];
+                        AreaNode n = finalLines[i];
+                        if (p.prev.id == pair.Key ? (p.next.id == n.prev.id) : (p.prev.id == n.next.id))
                         {
-                            doDelete.Add(A);
-                            doAdd.Add(C);
-                            C.next = srcNode;
-                            srcNode.prev = C;
-                        }
-                        else
-                        {
-                            doDelete.Add(A);
-                            doDelete.Add(B);
-                            singularDelete.Add(srcNode);
+                            zeroWidth[i] = true;
                         }
                     }
-                    else if (BCSame)
+                    int start = zeroWidth.ToList().IndexOf(false);
+                    if (start < 0) throw new NotImplementedException();
+                    for (int i = 0; i < zeroWidth.Length; i++)
                     {
-                        if (AtoBAngle < AtoDAngle)
+                        if (zeroWidth[(i + start) % zeroWidth.Length])
                         {
-                            doDelete.Add(B);
-                            doAdd.Add(D);
-                            D.prev = srcNode;
-                            srcNode.next = D;
+                            sectors[(i + start) % sectors.Length] = sectors[(i - 1 + start) % sectors.Length];
                         }
-                        else
+                    }
+                    List<int> remove = new List<int>();
+                    for (int i = 0; i < finalLines.Count; i++)
+                    {
+                        // i and i + 1 surround this line
+                        // get rid of any line that doesn't act as a border
+                        if (sectors[i] == sectors[(i + 1) % sectors.Length])
                         {
-                            doDelete.Add(A);
-                            doDelete.Add(B);
-                            singularDelete.Add(srcNode);
+                            remove.Add(i);
                         }
-                    } // now, non-degenerate
+                    }
+                    remove.Reverse();
+                    foreach (var i in remove) finalLines.RemoveAt(i);
+                    // we should only have an even number of things in finalLine now
+                    if (finalLines.Count % 2 != 0) throw new NotImplementedException();
+                    // let's make sure the first one points in
+                    if (finalLines.Count > 0)
+                    {
+                        if (finalLines.First().next.id != pair.Key)
+                        {
+                            finalLines.Add(finalLines.First());
+                            finalLines.RemoveAt(0);
+                        }
+                    }
+                    foreach (var line in srcInitialLines)
+                    {
+                        if (!finalLines.Contains(line)) doDelete.Add(line);
+                    }
+                    foreach (var line in mapInitialLines)
+                    {
+                        if (finalLines.Contains(line)) doAdd.Add(line);
+                    }
+                    List<AreaNode> newSrcNodes = new List<AreaNode>();
+                    for (int i = 0; i < finalLines.Count % 2; i++)
+                    {
+                        AreaNode into = finalLines[i * 2];
+                        AreaNode outof = finalLines[i * 2 + 1];
+                        AreaNode newSrcNode = new AreaNode() { id = pair.Key };
+                        into.next = newSrcNode;
+                        outof.prev = newSrcNode;
+                        newSrcNode.prev = into;
+                        newSrcNode.next = outof;
+                        newSrcNodes.Add(newSrcNode);
+                    }
+                    if (newSrcNodes.Count > 0)
+                    {
+                        nodes[pair.Key] = newSrcNodes;
+                    }
                     else
                     {
-                        if (AtoBAngle < AtoCAngle && AtoCAngle < AtoDAngle)
-                        {
-                            doAdd.Add(C);
-                            doAdd.Add(D);
-                            nodes[pair.Key].Add(mapNode);
-                        }
-                        else if (AtoCAngle < AtoBAngle && AtoBAngle < AtoDAngle)
-                        {
-                            doDelete.Add(B);
-                            doAdd.Add(D);
-                            D.prev = srcNode;
-                            srcNode.next = D;
-                        }
-                        else if (AtoCAngle < AtoDAngle && AtoDAngle < AtoBAngle)
-                        {
-                        }
-                        else if (AtoBAngle < AtoDAngle && AtoDAngle < AtoCAngle)
-                        {
-                            doDelete.Add(B);
-                            doAdd.Add(D);
-                            D.prev = srcNode;
-                            srcNode.next = D;
-
-                            doDelete.Add(A);
-                            doAdd.Add(C);
-                            C.next = srcNode;
-                            srcNode.prev = C;
-                        }
-                        else if (AtoDAngle < AtoBAngle && AtoBAngle < AtoCAngle)
-                        {
-                            doDelete.Add(A);
-                            doAdd.Add(C);
-                            C.next = srcNode;
-                            srcNode.prev = C;
-                        }
-                        else if (AtoDAngle < AtoCAngle && AtoCAngle < AtoBAngle)
-                        {
-                            doDelete.Add(A);
-                            doDelete.Add(B);
-                            singularDelete.Add(srcNode);
-                        }
+                        singularDelete.Add(pair.Key);
                     }
                 }
             }
@@ -201,7 +176,7 @@ namespace Zenith.ZGeom
                     temp = forwards ? temp.next : temp.prev;
                 }
             }
-            foreach (var d in singularDelete) nodes.Remove(d.id);
+            foreach (var d in singularDelete) nodes.Remove(d);
             return this;
         }
 
@@ -214,145 +189,120 @@ namespace Zenith.ZGeom
             // remember, counterclockwise makes an island
             List<AreaNode> doAdd = new List<AreaNode>();
             List<AreaNode> doDelete = new List<AreaNode>();
-            List<AreaNode> singularDelete = new List<AreaNode>();
+            List<long> singularDelete = new List<long>();
             foreach (var pair in map.nodes)
             {
                 if (nodes.ContainsKey(pair.Key))
                 {
-                    if (nodes[pair.Key].Count != 1 || map.nodes[pair.Key].Count != 1) throw new NotImplementedException();
-                    AreaNode srcNode = nodes[pair.Key].Single();
-                    AreaNode mapNode = map.nodes[pair.Key].Single();
-                    Vector2d src1 = GetPos(srcNode.prev, blobs);
-                    Vector2d src2 = GetPos(srcNode, blobs);
-                    Vector2d src3 = GetPos(srcNode.next, blobs);
-                    Vector2d new1 = GetPos(mapNode.prev, blobs);
-                    Vector2d new2 = GetPos(mapNode, blobs);
-                    Vector2d new3 = GetPos(mapNode.next, blobs);
-                    Vector2d srcInto = src2 - src1;
-                    Vector2d srcOutof = src3 - src2;
-                    Vector2d newInto = new2 - new1;
-                    Vector2d newOutof = new3 - new2;
-                    AreaNode A = srcNode.prev;
-                    AreaNode B = srcNode.next;
-                    AreaNode C = mapNode.prev;
-                    AreaNode D = mapNode.next;
-                    double AtoBAngle = ComputeInnerAngle(srcInto, srcOutof);
-                    double AtoCAngle = ComputeInnerAngle(srcInto, -newInto);
-                    double AtoDAngle = ComputeInnerAngle(srcInto, newOutof);
-                    bool ACSame = !srcNode.prev.IsEdge() && srcNode.prev.id == mapNode.prev.id;
-                    bool BDSame = !srcNode.next.IsEdge() && srcNode.next.id == mapNode.next.id;
-                    bool ADSame = !srcNode.prev.IsEdge() && srcNode.prev.id == mapNode.next.id;
-                    bool BCSame = !srcNode.next.IsEdge() && srcNode.next.id == mapNode.prev.id;
-                    // Note: I've drawn all these on pen & pad
-                    // first, deal with super degenerate cases
-                    if (ACSame && BDSame)
+                    List<AreaNode> srcInitialLines = new List<AreaNode>();
+                    List<AreaNode> mapInitialLines = new List<AreaNode>();
+                    List<AreaNode> initialLines = new List<AreaNode>();
+                    foreach (var n in nodes[pair.Key])
                     {
+                        srcInitialLines.Add(n.prev);
+                        srcInitialLines.Add(n.next);
                     }
-                    else if (ADSame && BCSame)
+                    foreach (var n in map.nodes[pair.Key])
                     {
-                        singularDelete.Add(srcNode);
-                    } // now, slightly less degenerate
-                    else if (ACSame)
+                        mapInitialLines.Add(n.prev);
+                        mapInitialLines.Add(n.next);
+                    }
+                    initialLines.AddRange(srcInitialLines);
+                    initialLines.AddRange(mapInitialLines);
+                    List<AreaNode> finalLines = initialLines.ToList();
+                    // sort clockwise
+                    finalLines = finalLines.OrderBy(x => ComputeInnerAngle(new Vector2d(1, 0), (x.prev.id == pair.Key) ? (GetPos(x, blobs) - blobs.nodes[pair.Key]) : (blobs.nodes[pair.Key] - GetPos(x, blobs)))).ToList();
+                    bool[] sectors = new bool[finalLines.Count]; // first sector means the area just ccw of the first finalLine
+                    foreach (var n in srcInitialLines)
                     {
-                        if (AtoBAngle < AtoDAngle)
+                        int from = finalLines.IndexOf(n.prev);
+                        int to = finalLines.IndexOf(n.next);
+                        if (to <= from) to += finalLines.Count;
+                        for (int i = from + 1; i <= to; i++)
                         {
-                        }
-                        else
-                        {
-                            doDelete.Add(B);
-                            doAdd.Add(D);
-                            D.prev = srcNode;
-                            srcNode.next = D;
+                            sectors[i % sectors.Length] = true;
                         }
                     }
-                    else if (BDSame)
+                    foreach (var n in mapInitialLines)
                     {
-                        if (AtoBAngle < AtoCAngle)
+                        int from = finalLines.IndexOf(n.prev);
+                        int to = finalLines.IndexOf(n.next);
+                        if (to <= from) to += finalLines.Count;
+                        for (int i = from + 1; i <= to; i++)
                         {
-                        }
-                        else
-                        {
-                            doDelete.Add(A);
-                            doAdd.Add(C);
-                            C.next = srcNode;
-                            srcNode.prev = C;
+                            sectors[i % sectors.Length] = false; // this is the only difference for a subtraction, as it should be
                         }
                     }
-                    else if (ADSame)
+                    // make sure zero-width areas match one of their neighbors so they get cleaned up
+                    bool[] zeroWidth = new bool[sectors.Length];
+                    for (int i = 0; i < sectors.Length; i++)
                     {
-                        if (AtoBAngle < AtoCAngle)
+                        AreaNode p = finalLines[(i - 1 + finalLines.Count) % finalLines.Count];
+                        AreaNode n = finalLines[i];
+                        if (p.prev.id == pair.Key ? (p.next.id == n.prev.id) : (p.prev.id == n.next.id))
                         {
-                            doDelete.Add(A);
-                            doDelete.Add(B);
-                            singularDelete.Add(srcNode);
-                        }
-                        else
-                        {
-                            doDelete.Add(A);
-                            doAdd.Add(C);
-                            C.next = srcNode;
-                            srcNode.prev = C;
+                            zeroWidth[i] = true;
                         }
                     }
-                    else if (BCSame)
+                    int start = zeroWidth.ToList().IndexOf(false);
+                    if (start < 0) throw new NotImplementedException();
+                    for (int i = 0; i < zeroWidth.Length; i++)
                     {
-                        if (AtoBAngle < AtoDAngle)
+                        if (zeroWidth[(i + start) % zeroWidth.Length])
                         {
-                            doDelete.Add(A);
-                            doDelete.Add(B);
-                            singularDelete.Add(srcNode);
+                            sectors[(i + start) % sectors.Length] = sectors[(i - 1 + start) % sectors.Length];
                         }
-                        else
+                    }
+                    List<int> remove = new List<int>();
+                    for (int i = 0; i < finalLines.Count; i++)
+                    {
+                        // i and i + 1 surround this line
+                        // get rid of any line that doesn't act as a border
+                        if (sectors[i] == sectors[(i + 1) % sectors.Length])
                         {
-                            doDelete.Add(B);
-                            doAdd.Add(D);
-                            D.prev = srcNode;
-                            srcNode.next = D;
+                            remove.Add(i);
                         }
-                    } // now, non-degenerate
+                    }
+                    remove.Reverse();
+                    foreach (var i in remove) finalLines.RemoveAt(i);
+                    // we should only have an even number of things in finalLine now
+                    if (finalLines.Count % 2 != 0) throw new NotImplementedException();
+                    // let's make sure the first one points in
+                    if (finalLines.Count > 0)
+                    {
+                        if (finalLines.First().next.id != pair.Key)
+                        {
+                            finalLines.Add(finalLines.First());
+                            finalLines.RemoveAt(0);
+                        }
+                    }
+                    foreach (var line in srcInitialLines)
+                    {
+                        if (!finalLines.Contains(line)) doDelete.Add(line);
+                    }
+                    foreach (var line in mapInitialLines)
+                    {
+                        if (finalLines.Contains(line)) doAdd.Add(line);
+                    }
+                    List<AreaNode> newSrcNodes = new List<AreaNode>();
+                    for (int i = 0; i < finalLines.Count % 2; i++)
+                    {
+                        AreaNode into = finalLines[i * 2];
+                        AreaNode outof = finalLines[i * 2 + 1];
+                        AreaNode newSrcNode = new AreaNode() { id = pair.Key };
+                        into.next = newSrcNode;
+                        outof.prev = newSrcNode;
+                        newSrcNode.prev = into;
+                        newSrcNode.next = outof;
+                        newSrcNodes.Add(newSrcNode);
+                    }
+                    if (newSrcNodes.Count > 0)
+                    {
+                        nodes[pair.Key] = newSrcNodes;
+                    }
                     else
                     {
-                        if (AtoBAngle < AtoCAngle && AtoCAngle < AtoDAngle)
-                        {
-                            doDelete.Add(A);
-                            doDelete.Add(B);
-                            singularDelete.Add(srcNode);
-                        }
-                        else if (AtoCAngle < AtoBAngle && AtoBAngle < AtoDAngle)
-                        {
-                            doDelete.Add(A);
-                            doAdd.Add(C);
-                            C.next = srcNode;
-                            srcNode.prev = C;
-                        }
-                        else if (AtoCAngle < AtoDAngle && AtoDAngle < AtoBAngle)
-                        {
-                            doDelete.Add(A);
-                            doAdd.Add(C);
-                            C.next = srcNode;
-                            srcNode.prev = C;
-
-                            doDelete.Add(B);
-                            doAdd.Add(D);
-                            D.prev = srcNode;
-                            srcNode.next = D;
-                        }
-                        else if (AtoBAngle < AtoDAngle && AtoDAngle < AtoCAngle)
-                        {
-                        }
-                        else if (AtoDAngle < AtoBAngle && AtoBAngle < AtoCAngle)
-                        {
-                            doDelete.Add(B);
-                            doAdd.Add(D);
-                            D.prev = srcNode;
-                            srcNode.next = D;
-                        }
-                        else if (AtoDAngle < AtoCAngle && AtoCAngle < AtoBAngle)
-                        {
-                            doAdd.Add(C);
-                            doAdd.Add(D);
-                            nodes[pair.Key].Add(mapNode);
-                        }
+                        singularDelete.Add(pair.Key);
                     }
                 }
             }
@@ -394,7 +344,7 @@ namespace Zenith.ZGeom
                     temp = forwards ? temp.next : temp.prev;
                 }
             }
-            foreach (var d in singularDelete) nodes.Remove(d.id);
+            foreach (var d in singularDelete) nodes.Remove(d);
             return this;
         }
 
@@ -541,6 +491,7 @@ namespace Zenith.ZGeom
             return a + (b - a) * t;
         }
 
+        // TODO: apparently we've been adding loops twice this entire time, basically
         private void DoLoops(SectorConstrainedOSMAreaGraph map, BlobCollection blobs)
         {
             // first, find those loops
