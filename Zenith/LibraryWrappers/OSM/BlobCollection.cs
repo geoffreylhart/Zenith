@@ -72,7 +72,6 @@ namespace Zenith.LibraryWrappers.OSM
                 {
                     foreach (var relation in pGroup.relations)
                     {
-                        if (relation.id == 2189404) continue; // TODO: not working on this problematic guy
                         bool isKeyValue = false;
                         bool isTypeMultipolygon = false;
                         for (int i = 0; i < relation.keys.Count; i++)

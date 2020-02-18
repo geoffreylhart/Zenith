@@ -9,6 +9,7 @@ namespace Zenith.ZGeom
 {
     public class SectorConstrainedOSMAreaGraph
     {
+        // TODO: that thing going on near way 553880275, node 5534127050 still doesn't look resolved
         public Dictionary<long, List<AreaNode>> nodes = new Dictionary<long, List<AreaNode>>();
         public HashSet<AreaNode> startPoints = new HashSet<AreaNode>();
 
