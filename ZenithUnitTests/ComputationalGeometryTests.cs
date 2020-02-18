@@ -239,17 +239,17 @@ namespace ZenithUnitTests
         private static void MarkEndPoint(SectorConstrainedOSMAreaGraph graph, int x, int y)
         {
             long n = (x + 500) * 1000 + (y + 500);
-            graph.nodes[n].id = -1;
-            graph.nodes[n].v = new Vector2d(x, y);
+            graph.nodes[n].Single().id = -1;
+            graph.nodes[n].Single().v = new Vector2d(x, y);
             graph.nodes.Remove(n);
         }
 
         private static void MarkStartPoint(SectorConstrainedOSMAreaGraph graph, int x, int y)
         {
             long n = (x + 500) * 1000 + (y + 500);
-            graph.nodes[n].id = -1;
-            graph.nodes[n].v = new Vector2d(x, y);
-            graph.startPoints.Add(graph.nodes[n]);
+            graph.nodes[n].Single().id = -1;
+            graph.nodes[n].Single().v = new Vector2d(x, y);
+            graph.startPoints.Add(graph.nodes[n].Single());
             graph.nodes.Remove(n);
         }
 
@@ -284,12 +284,12 @@ namespace ZenithUnitTests
         {
             long n1 = (x1 + 500) * 1000 + (y1 + 500);
             long n2 = (x2 + 500) * 1000 + (y2 + 500);
-            if (!graph.nodes.ContainsKey(n1)) graph.nodes.Add(n1, new AreaNode() { id = n1 });
+            if (!graph.nodes.ContainsKey(n1)) graph.nodes.Add(n1, new List<AreaNode>() { new AreaNode() { id = n1 } });
             if (!nodes.ContainsKey(n1)) nodes[n1] = new Vector2d(x1, y1);
-            if (!graph.nodes.ContainsKey(n2)) graph.nodes.Add(n2, new AreaNode() { id = n2 });
+            if (!graph.nodes.ContainsKey(n2)) graph.nodes.Add(n2, new List<AreaNode>() { new AreaNode() { id = n2 } });
             if (!nodes.ContainsKey(n2)) nodes[n2] = new Vector2d(x2, y2);
-            graph.nodes[n1].next = graph.nodes[n2];
-            graph.nodes[n2].prev = graph.nodes[n1];
+            graph.nodes[n1].Single().next = graph.nodes[n2].Single();
+            graph.nodes[n2].Single().prev = graph.nodes[n1].Single();
         }
     }
 }

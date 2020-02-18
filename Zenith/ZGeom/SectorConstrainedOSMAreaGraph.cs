@@ -9,7 +9,7 @@ namespace Zenith.ZGeom
 {
     public class SectorConstrainedOSMAreaGraph
     {
-        public Dictionary<long, AreaNode> nodes = new Dictionary<long, AreaNode>();
+        public Dictionary<long, List<AreaNode>> nodes = new Dictionary<long, List<AreaNode>>();
         public HashSet<AreaNode> startPoints = new HashSet<AreaNode>();
 
         // TODO: for now we're assuming no arbitrary intersections or multiple branching intersections - this is probably naive
@@ -26,8 +26,9 @@ namespace Zenith.ZGeom
             {
                 if (nodes.ContainsKey(pair.Key))
                 {
-                    AreaNode srcNode = nodes[pair.Key];
-                    AreaNode mapNode = map.nodes[pair.Key];
+                    if (nodes[pair.Key].Count != 1 || map.nodes[pair.Key].Count != 1) throw new NotImplementedException();
+                    AreaNode srcNode = nodes[pair.Key].Single();
+                    AreaNode mapNode = map.nodes[pair.Key].Single();
                     Vector2d src1 = GetPos(srcNode.prev, blobs);
                     Vector2d src2 = GetPos(srcNode, blobs);
                     Vector2d src3 = GetPos(srcNode.next, blobs);
@@ -120,7 +121,9 @@ namespace Zenith.ZGeom
                     {
                         if (AtoBAngle < AtoCAngle && AtoCAngle < AtoDAngle)
                         {
-                            throw new NotImplementedException();
+                            doAdd.Add(C);
+                            doAdd.Add(D);
+                            nodes[pair.Key].Add(mapNode);
                         }
                         else if (AtoCAngle < AtoBAngle && AtoBAngle < AtoDAngle)
                         {
@@ -193,7 +196,7 @@ namespace Zenith.ZGeom
                     }
                     else
                     {
-                        nodes[temp.id] = temp;
+                        nodes[temp.id] = new List<AreaNode>() { temp };
                     }
                     temp = forwards ? temp.next : temp.prev;
                 }
@@ -216,8 +219,9 @@ namespace Zenith.ZGeom
             {
                 if (nodes.ContainsKey(pair.Key))
                 {
-                    AreaNode srcNode = nodes[pair.Key];
-                    AreaNode mapNode = map.nodes[pair.Key];
+                    if (nodes[pair.Key].Count != 1 || map.nodes[pair.Key].Count != 1) throw new NotImplementedException();
+                    AreaNode srcNode = nodes[pair.Key].Single();
+                    AreaNode mapNode = map.nodes[pair.Key].Single();
                     Vector2d src1 = GetPos(srcNode.prev, blobs);
                     Vector2d src2 = GetPos(srcNode, blobs);
                     Vector2d src3 = GetPos(srcNode.next, blobs);
@@ -345,7 +349,9 @@ namespace Zenith.ZGeom
                         }
                         else if (AtoDAngle < AtoCAngle && AtoCAngle < AtoBAngle)
                         {
-                            throw new NotImplementedException();
+                            doAdd.Add(C);
+                            doAdd.Add(D);
+                            nodes[pair.Key].Add(mapNode);
                         }
                     }
                 }
@@ -383,7 +389,7 @@ namespace Zenith.ZGeom
                     }
                     else
                     {
-                        nodes[temp.id] = temp;
+                        nodes[temp.id] = new List<AreaNode>() { temp };
                     }
                     temp = forwards ? temp.next : temp.prev;
                 }
@@ -396,9 +402,9 @@ namespace Zenith.ZGeom
         // note, actual intersections should be exceedingly rare, like 1 in 6 sectors or something
         private void DoIntersections(SectorConstrainedOSMAreaGraph map, BlobCollection blobs)
         {
-            var nodes1 = nodes.Values.ToList();
+            var nodes1 = nodes.Values.Where(x => x.Count == 1).Select(x => x.Single()).ToList();
             nodes1.AddRange(startPoints);
-            var nodes2 = map.nodes.Values.ToList();
+            var nodes2 = map.nodes.Values.Where(x => x.Count == 1).Select(x => x.Single()).ToList();
             nodes2.AddRange(map.startPoints);
             foreach (var n1 in nodes1)
             {
@@ -509,13 +515,13 @@ namespace Zenith.ZGeom
                             AreaNode newNode1 = new AreaNode() { id = randID };
                             AreaNode newNode2 = new AreaNode() { id = randID };
                             blobs.nodes[randID] = intersection;
-                            nodes[randID] = newNode1;
+                            nodes[randID] = new List<AreaNode>() { newNode1 };
                             newNode1.prev = n1;
                             newNode1.next = n1.next;
                             n1.next.prev = newNode1;
                             n1.next = newNode1;
 
-                            map.nodes[randID] = newNode2;
+                            map.nodes[randID] = new List<AreaNode>() { newNode2 };
                             newNode2.prev = n2;
                             newNode2.next = n2.next;
                             n2.next.prev = newNode2;
@@ -549,25 +555,32 @@ namespace Zenith.ZGeom
                     curr = curr.next;
                 }
             }
-            foreach (var node in map.nodes.Values)
+            foreach (var nodeList in map.nodes.Values)
             {
-                if (explored.Contains(node)) continue;
-                // just loops can be found at this point
-                List<AreaNode> newLoop = new List<AreaNode>();
-                bool loopHasConnections = false;
-                AreaNode curr = node;
-                while (true)
+                foreach (var node in nodeList)
                 {
-                    if (nodes.ContainsKey(curr.id)) loopHasConnections = true;
-                    newLoop.Add(curr);
-                    explored.Add(curr);
-                    if (curr.next == node) break;
-                    curr = curr.next;
-                }
-                if (!loopHasConnections)
-                {
-                    // TODO: use winding rule
-                    foreach (var n in newLoop) nodes[n.id] = n;
+                    if (explored.Contains(node)) continue;
+                    // just loops can be found at this point
+                    List<AreaNode> newLoop = new List<AreaNode>();
+                    bool loopHasConnections = false;
+                    AreaNode curr = node;
+                    while (true)
+                    {
+                        if (nodes.ContainsKey(curr.id)) loopHasConnections = true;
+                        newLoop.Add(curr);
+                        explored.Add(curr);
+                        if (curr.next == node) break;
+                        curr = curr.next;
+                    }
+                    if (!loopHasConnections)
+                    {
+                        // TODO: use winding rule
+                        foreach (var n in newLoop)
+                        {
+                            if (!nodes.ContainsKey(n.id)) nodes[n.id] = new List<AreaNode>();
+                            nodes[n.id].Add(n);
+                        }
+                    }
                 }
             }
         }
@@ -594,17 +607,20 @@ namespace Zenith.ZGeom
                     curr = curr.next;
                 }
             }
-            foreach (var node in nodes.Values)
+            foreach (var nodeList in nodes.Values)
             {
-                if (explored.Contains(node)) continue;
-                // just loops can be found at this point
-                AreaNode curr = node;
-                while (true)
+                foreach (var node in nodeList)
                 {
-                    if (curr.id == -1 || curr.v != null || curr.next == null || curr.prev == null || curr.prev.next != curr || curr.next.prev != curr) throw new NotImplementedException();
-                    explored.Add(curr);
-                    if (curr.next == node) break;
-                    curr = curr.next;
+                    if (explored.Contains(node)) continue;
+                    // just loops can be found at this point
+                    AreaNode curr = node;
+                    while (true)
+                    {
+                        if (curr.id == -1 || curr.v != null || curr.next == null || curr.prev == null || curr.prev.next != curr || curr.next.prev != curr) throw new NotImplementedException();
+                        explored.Add(curr);
+                        if (curr.next == node) break;
+                        curr = curr.next;
+                    }
                 }
             }
         }
@@ -615,7 +631,10 @@ namespace Zenith.ZGeom
             HashSet<AreaNode> explored = new HashSet<AreaNode>();
             Queue<AreaNode> bfs = new Queue<AreaNode>();
             foreach (var startPoint in startPoints) bfs.Enqueue(startPoint);
-            foreach (var node in nodes.Values) bfs.Enqueue(node);
+            foreach (var nodeList in nodes.Values)
+            {
+                foreach (var node in nodeList) bfs.Enqueue(node);
+            }
             while (bfs.Count > 0)
             {
                 var head = bfs.Dequeue();
@@ -654,7 +673,10 @@ namespace Zenith.ZGeom
             HashSet<AreaNode> explored = new HashSet<AreaNode>();
             Queue<AreaNode> bfs = new Queue<AreaNode>();
             foreach (var startPoint in startPoints) bfs.Enqueue(startPoint);
-            foreach (var node in nodes.Values) bfs.Enqueue(node);
+            foreach (var nodeList in nodes.Values)
+            {
+                foreach (var node in nodeList) bfs.Enqueue(node);
+            }
             while (bfs.Count > 0)
             {
                 var head = bfs.Dequeue();
@@ -678,7 +700,7 @@ namespace Zenith.ZGeom
             }
             foreach (var pair in nodes)
             {
-                map.nodes[pair.Key] = mapper[pair.Value];
+                map.nodes[pair.Key] = pair.Value.Select(x => mapper[x]).ToList();
             }
             return map;
         }
@@ -712,28 +734,31 @@ namespace Zenith.ZGeom
                 }
                 map.paths.Add(newPath);
             }
-            foreach (var node in nodes.Values)
+            foreach (var nodeList in nodes.Values)
             {
-                if (explored.Contains(node)) continue;
-                // just loops can be found at this point
-                List<Vector2d> newLoop = new List<Vector2d>();
-                AreaNode curr = node;
-                while (true)
+                foreach (var node in nodeList)
                 {
-                    if (curr.next == null || curr.next.prev != curr || curr.prev == null || curr.prev.next != curr) throw new NotImplementedException(); // validity check
-                    newLoop.Add(blobs.nodes[curr.id]);
-                    explored.Add(curr);
-                    if (curr.next == node) break;
-                    curr = curr.next;
-                }
-                newLoop.Add(blobs.nodes[node.id]); // finish off the loop;
-                if (ApproximateCW(newLoop))
-                {
-                    map.inners.Add(newLoop);
-                }
-                else
-                {
-                    map.outers.Add(newLoop);
+                    if (explored.Contains(node)) continue;
+                    // just loops can be found at this point
+                    List<Vector2d> newLoop = new List<Vector2d>();
+                    AreaNode curr = node;
+                    while (true)
+                    {
+                        if (curr.next == null || curr.next.prev != curr || curr.prev == null || curr.prev.next != curr) throw new NotImplementedException(); // validity check
+                        newLoop.Add(blobs.nodes[curr.id]);
+                        explored.Add(curr);
+                        if (curr.next == node) break;
+                        curr = curr.next;
+                    }
+                    newLoop.Add(blobs.nodes[node.id]); // finish off the loop;
+                    if (ApproximateCW(newLoop))
+                    {
+                        map.inners.Add(newLoop);
+                    }
+                    else
+                    {
+                        map.outers.Add(newLoop);
+                    }
                 }
             }
             return map;
@@ -763,21 +788,24 @@ namespace Zenith.ZGeom
                 }
                 area += AreaOf(newPath); // TODO: this is fake area, but sure
             }
-            foreach (var node in nodes.Values)
+            foreach (var nodeList in nodes.Values)
             {
-                if (explored.Contains(node)) continue;
-                // just loops can be found at this point
-                List<Vector2d> newLoop = new List<Vector2d>();
-                AreaNode curr = node;
-                while (true)
+                foreach (var node in nodeList)
                 {
-                    newLoop.Add(blobs.nodes[curr.id]);
-                    explored.Add(curr);
-                    if (curr.next == node) break;
-                    curr = curr.next;
+                    if (explored.Contains(node)) continue;
+                    // just loops can be found at this point
+                    List<Vector2d> newLoop = new List<Vector2d>();
+                    AreaNode curr = node;
+                    while (true)
+                    {
+                        newLoop.Add(blobs.nodes[curr.id]);
+                        explored.Add(curr);
+                        if (curr.next == node) break;
+                        curr = curr.next;
+                    }
+                    newLoop.Add(blobs.nodes[node.id]); // finish off the loop;
+                    area += AreaOf(newLoop);
                 }
-                newLoop.Add(blobs.nodes[node.id]); // finish off the loop;
-                area += AreaOf(newLoop);
             }
             return area;
         }
