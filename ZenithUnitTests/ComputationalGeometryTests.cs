@@ -44,7 +44,7 @@ namespace ZenithUnitTests
         private void RandomAddTest(Random rand)
         {
             var blobs = new BlobCollection();
-            int size = 3;
+            int size = 2;
             bool[,] grid1 = RandomGrid(rand, size);
             bool[,] grid2 = RandomGrid(rand, size);
             bool[,] grid3 = AddGrids(grid1, grid2, size);
@@ -61,7 +61,7 @@ namespace ZenithUnitTests
         private void RandomSubtractTest(Random rand)
         {
             var blobs = new BlobCollection();
-            int size = 3;
+            int size = 2;
             bool[,] grid1 = RandomGrid(rand, size);
             bool[,] grid2 = RandomGrid(rand, size);
             bool[,] grid3 = SubtractGrids(grid1, grid2, size);

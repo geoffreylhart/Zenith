@@ -15,6 +15,7 @@ namespace Zenith.ZGeom
         // TODO: for now we're assuming no arbitrary intersections or multiple branching intersections - this is probably naive
         public SectorConstrainedOSMAreaGraph Add(SectorConstrainedOSMAreaGraph map, BlobCollection blobs)
         {
+            DoIntersections(map, blobs);
             map = map.Clone(); // now we're allowed to junk it
             DoLoops(map, blobs);
             // remember, counterclockwise makes an island
@@ -203,6 +204,7 @@ namespace Zenith.ZGeom
 
         public SectorConstrainedOSMAreaGraph Subtract(SectorConstrainedOSMAreaGraph map, BlobCollection blobs)
         {
+            DoIntersections(map, blobs);
             map = map.Clone(); // now we're allowed to junk it
             map.Reverse();
             DoLoops(map, blobs);
@@ -388,6 +390,149 @@ namespace Zenith.ZGeom
             }
             foreach (var d in singularDelete) nodes.Remove(d.id);
             return this;
+        }
+
+        // TODO: speedup later, for now use naive n^2 search
+        // note, actual intersections should be exceedingly rare, like 1 in 6 sectors or something
+        private void DoIntersections(SectorConstrainedOSMAreaGraph map, BlobCollection blobs)
+        {
+            var nodes1 = nodes.Values.ToList();
+            nodes1.AddRange(startPoints);
+            var nodes2 = map.nodes.Values.ToList();
+            nodes2.AddRange(map.startPoints);
+            foreach (var n1 in nodes1)
+            {
+                foreach (var n2 in nodes2)
+                {
+                    Vector2d A = GetPos(n1, blobs);
+                    Vector2d B = GetPos(n1.next, blobs);
+                    Vector2d C = GetPos(n2, blobs);
+                    Vector2d D = GetPos(n2.next, blobs);
+                    long randID = -(n1.id ^ n2.id); // TODO: get rid of hack
+                    // TODO: we're going to treat -1 as always matching for now
+                    bool ACSame = n1.id == n2.id;
+                    bool ADSame = n1.id == n2.next.id;
+                    bool BCSame = n1.next.id == n2.id;
+                    bool BDSame = n1.next.id == n2.next.id;
+                    // a subset of possible tiny angles that can cause rounding errors
+                    // only thing that changes between these is the condition, line direction, and the newpoint id
+                    // TODO: is this really what fixed the nonsense at 240202043? the angleDiff was only 0.009, which seems too big to cause an issue
+                    if (ACSame && !ADSame && !BCSame && !BDSame)
+                    {
+                        Vector2d line1 = B - A;
+                        Vector2d line2 = D - C;
+                        double angleDiff = Math.Atan2(line1.Y, line1.X) - Math.Atan2(line2.Y, line2.X);
+                        angleDiff = (angleDiff + 2 * Math.PI) % (2 * Math.PI);
+                        if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
+                        if (angleDiff < 0.01)
+                        {
+                            if (line1.Length() < line2.Length())
+                            {
+                                n2.next.prev = new AreaNode { id = n1.next.id, prev = n2, next = n2.next };
+                                n2.next = n2.next.prev;
+                            }
+                            else
+                            {
+                                n1.next.prev = new AreaNode { id = n2.next.id, prev = n1, next = n1.next };
+                                n1.next = n1.next.prev;
+                            }
+                        }
+                    }
+                    if (!ACSame && ADSame && !BCSame && !BDSame)
+                    {
+                        Vector2d line1 = B - A;
+                        Vector2d line2 = C - D;
+                        double angleDiff = Math.Atan2(line1.Y, line1.X) - Math.Atan2(line2.Y, line2.X);
+                        angleDiff = (angleDiff + 2 * Math.PI) % (2 * Math.PI);
+                        if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
+                        if (angleDiff < 0.01)
+                        {
+                            if (line1.Length() < line2.Length())
+                            {
+                                n2.next.prev = new AreaNode { id = n1.next.id, prev = n2, next = n2.next };
+                                n2.next = n2.next.prev;
+                            }
+                            else
+                            {
+                                n1.next.prev = new AreaNode { id = n2.id, prev = n1, next = n1.next };
+                                n1.next = n1.next.prev;
+                            }
+                        }
+                    }
+                    if (!ACSame && !ADSame && BCSame && !BDSame)
+                    {
+                        Vector2d line1 = A - B;
+                        Vector2d line2 = D - C;
+                        double angleDiff = Math.Atan2(line1.Y, line1.X) - Math.Atan2(line2.Y, line2.X);
+                        angleDiff = (angleDiff + 2 * Math.PI) % (2 * Math.PI);
+                        if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
+                        if (angleDiff < 0.01)
+                        {
+                            if (line1.Length() < line2.Length())
+                            {
+                                n2.next.prev = new AreaNode { id = n1.id, prev = n2, next = n2.next };
+                                n2.next = n2.next.prev;
+                            }
+                            else
+                            {
+                                n1.next.prev = new AreaNode { id = n2.next.id, prev = n1, next = n1.next };
+                                n1.next = n1.next.prev;
+                            }
+                        }
+                    }
+                    if (!ACSame && !ADSame && !BCSame && BDSame)
+                    {
+                        Vector2d line1 = A - B;
+                        Vector2d line2 = C - D;
+                        double angleDiff = Math.Atan2(line1.Y, line1.X) - Math.Atan2(line2.Y, line2.X);
+                        angleDiff = (angleDiff + 2 * Math.PI) % (2 * Math.PI);
+                        if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
+                        if (angleDiff < 0.01)
+                        {
+                            if (line1.Length() < line2.Length())
+                            {
+                                n2.next.prev = new AreaNode { id = n1.id, prev = n2, next = n2.next };
+                                n2.next = n2.next.prev;
+                            }
+                            else
+                            {
+                                n1.next.prev = new AreaNode { id = n2.id, prev = n1, next = n1.next };
+                                n1.next = n1.next.prev;
+                            }
+                        }
+                    }
+                    if (!ACSame && !ADSame && !BCSame && !BDSame) // proper intersection
+                    {
+                        Vector2d intersection = Intersect(A, B, C, D);
+                        if (intersection != null)
+                        {
+                            AreaNode newNode1 = new AreaNode() { id = randID };
+                            AreaNode newNode2 = new AreaNode() { id = randID };
+                            blobs.nodes[randID] = intersection;
+                            nodes[randID] = newNode1;
+                            newNode1.prev = n1;
+                            newNode1.next = n1.next;
+                            n1.next.prev = newNode1;
+                            n1.next = newNode1;
+
+                            map.nodes[randID] = newNode2;
+                            newNode2.prev = n2;
+                            newNode2.next = n2.next;
+                            n2.next.prev = newNode2;
+                            n2.next = newNode2;
+                        }
+                    }
+                }
+            }
+        }
+
+        private Vector2d Intersect(Vector2d a, Vector2d b, Vector2d c, Vector2d d)
+        {
+            // copied from wiki, sure
+            double t = ((a.X - c.X) * (c.Y - d.Y) - (a.Y - c.Y) * (c.X - d.X)) / ((a.X - b.X) * (c.Y - d.Y) - (a.Y - b.Y) * (c.X - d.X));
+            double u = -((a.X - b.X) * (a.Y - c.Y) - (a.Y - b.Y) * (a.X - c.X)) / ((a.X - b.X) * (c.Y - d.Y) - (a.Y - b.Y) * (c.X - d.X));
+            if (t < 0 || t > 1 || u < 0 || u > 1) return null;
+            return a + (b - a) * t;
         }
 
         private void DoLoops(SectorConstrainedOSMAreaGraph map, BlobCollection blobs)
