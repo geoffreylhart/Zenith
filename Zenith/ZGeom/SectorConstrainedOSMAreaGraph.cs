@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NetTopologySuite.Index.Strtree;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -405,7 +406,7 @@ namespace Zenith.ZGeom
         // note, actual intersections should be exceedingly rare, like 1 in 6 sectors or something
         private void DoIntersections(SectorConstrainedOSMAreaGraph map, BlobCollection blobs)
         {
-            return;
+            Dictionary<AreaNode, List<AreaNode>> intersections = new Dictionary<AreaNode, List<AreaNode>>();
             var nodes1 = nodes.Values.Where(x => x.Count == 1).Select(x => x.Single()).ToList();
             nodes1.AddRange(startPoints);
             var nodes2 = map.nodes.Values.Where(x => x.Count == 1).Select(x => x.Single()).ToList();
@@ -418,10 +419,10 @@ namespace Zenith.ZGeom
                 Vector2d B = GetPos(n1.next, blobs);
                 Vector2d C = GetPos(n2, blobs);
                 Vector2d D = GetPos(n2.next, blobs);
-                if (Math.Min(A.X, B.X) > Math.Max(C.X, C.X)) continue;
-                if (Math.Max(A.X, B.X) < Math.Min(C.X, C.X)) continue;
-                if (Math.Min(A.Y, B.Y) > Math.Max(C.Y, C.Y)) continue;
-                if (Math.Max(A.Y, B.Y) < Math.Min(C.Y, C.Y)) continue;
+                if (Math.Min(A.X, B.X) > Math.Max(C.X, D.X)) continue;
+                if (Math.Max(A.X, B.X) < Math.Min(C.X, D.X)) continue;
+                if (Math.Min(A.Y, B.Y) > Math.Max(C.Y, D.Y)) continue;
+                if (Math.Max(A.Y, B.Y) < Math.Min(C.Y, D.Y)) continue;
                 long randID = -(n1.id ^ n2.id); // TODO: get rid of hack
                                                 // TODO: we're going to treat -1 as always matching for now
                 bool ACSame = n1.id == n2.id;
@@ -431,90 +432,6 @@ namespace Zenith.ZGeom
                 // a subset of possible tiny angles that can cause rounding errors
                 // only thing that changes between these is the condition, line direction, and the newpoint id
                 // TODO: is this really what fixed the nonsense at 240202043? the angleDiff was only 0.009, which seems too big to cause an issue
-                if (ACSame && !ADSame && !BCSame && !BDSame)
-                {
-                    Vector2d line1 = B - A;
-                    Vector2d line2 = D - C;
-                    double angleDiff = Math.Atan2(line1.Y, line1.X) - Math.Atan2(line2.Y, line2.X);
-                    angleDiff = (angleDiff + 2 * Math.PI) % (2 * Math.PI);
-                    if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
-                    if (angleDiff < 0.01)
-                    {
-                        if (line1.Length() < line2.Length())
-                        {
-                            n2.next.prev = new AreaNode { id = n1.next.id, prev = n2, next = n2.next };
-                            n2.next = n2.next.prev;
-                        }
-                        else
-                        {
-                            n1.next.prev = new AreaNode { id = n2.next.id, prev = n1, next = n1.next };
-                            n1.next = n1.next.prev;
-                        }
-                    }
-                }
-                if (!ACSame && ADSame && !BCSame && !BDSame)
-                {
-                    Vector2d line1 = B - A;
-                    Vector2d line2 = C - D;
-                    double angleDiff = Math.Atan2(line1.Y, line1.X) - Math.Atan2(line2.Y, line2.X);
-                    angleDiff = (angleDiff + 2 * Math.PI) % (2 * Math.PI);
-                    if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
-                    if (angleDiff < 0.01)
-                    {
-                        if (line1.Length() < line2.Length())
-                        {
-                            n2.next.prev = new AreaNode { id = n1.next.id, prev = n2, next = n2.next };
-                            n2.next = n2.next.prev;
-                        }
-                        else
-                        {
-                            n1.next.prev = new AreaNode { id = n2.id, prev = n1, next = n1.next };
-                            n1.next = n1.next.prev;
-                        }
-                    }
-                }
-                if (!ACSame && !ADSame && BCSame && !BDSame)
-                {
-                    Vector2d line1 = A - B;
-                    Vector2d line2 = D - C;
-                    double angleDiff = Math.Atan2(line1.Y, line1.X) - Math.Atan2(line2.Y, line2.X);
-                    angleDiff = (angleDiff + 2 * Math.PI) % (2 * Math.PI);
-                    if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
-                    if (angleDiff < 0.01)
-                    {
-                        if (line1.Length() < line2.Length())
-                        {
-                            n2.next.prev = new AreaNode { id = n1.id, prev = n2, next = n2.next };
-                            n2.next = n2.next.prev;
-                        }
-                        else
-                        {
-                            n1.next.prev = new AreaNode { id = n2.next.id, prev = n1, next = n1.next };
-                            n1.next = n1.next.prev;
-                        }
-                    }
-                }
-                if (!ACSame && !ADSame && !BCSame && BDSame)
-                {
-                    Vector2d line1 = A - B;
-                    Vector2d line2 = C - D;
-                    double angleDiff = Math.Atan2(line1.Y, line1.X) - Math.Atan2(line2.Y, line2.X);
-                    angleDiff = (angleDiff + 2 * Math.PI) % (2 * Math.PI);
-                    if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
-                    if (angleDiff < 0.01)
-                    {
-                        if (line1.Length() < line2.Length())
-                        {
-                            n2.next.prev = new AreaNode { id = n1.id, prev = n2, next = n2.next };
-                            n2.next = n2.next.prev;
-                        }
-                        else
-                        {
-                            n1.next.prev = new AreaNode { id = n2.id, prev = n1, next = n1.next };
-                            n1.next = n1.next.prev;
-                        }
-                    }
-                }
                 if (!ACSame && !ADSame && !BCSame && !BDSame) // proper intersection
                 {
                     Vector2d intersection = Intersect(A, B, C, D);
@@ -524,50 +441,52 @@ namespace Zenith.ZGeom
                         AreaNode newNode2 = new AreaNode() { id = randID };
                         blobs.nodes[randID] = intersection;
                         nodes[randID] = new List<AreaNode>() { newNode1 };
-                        newNode1.prev = n1;
-                        newNode1.next = n1.next;
-                        n1.next.prev = newNode1;
-                        n1.next = newNode1;
-
                         map.nodes[randID] = new List<AreaNode>() { newNode2 };
-                        newNode2.prev = n2;
-                        newNode2.next = n2.next;
-                        n2.next.prev = newNode2;
-                        n2.next = newNode2;
+                        if (!intersections.ContainsKey(n1)) intersections.Add(n1, new List<AreaNode>());
+                        intersections[n1].Add(newNode1);
+                        if (!intersections.ContainsKey(n2)) intersections.Add(n2, new List<AreaNode>());
+                        intersections[n2].Add(newNode2);
                     }
+                }
+            }
+            foreach (var pair in intersections)
+            {
+                AreaNode start = pair.Key;
+                AreaNode end = pair.Key.next;
+                var sorted = pair.Value.OrderBy(x => (GetPos(x, blobs) - GetPos(start, blobs)).Length()).ToList();
+                sorted.Insert(0, start);
+                sorted.Add(end);
+                // chain them all together
+                for (int i = 1; i < sorted.Count; i++)
+                {
+                    sorted[i - 1].next = sorted[i];
+                    sorted[i].prev = sorted[i - 1];
                 }
             }
         }
 
-        // most naive possible speedup
+        // just give up and use the library
         private IEnumerable<PotentialIntersection> FindPotentialIntersections(List<AreaNode> nodes1, List<AreaNode> nodes2, BlobCollection blobs)
         {
-            foreach (var n1 in nodes1)
+            var rtree = new STRtree<AreaNode>();
+            foreach (var node in nodes1)
             {
-                foreach (var n2 in nodes2)
+                Vector2d pos1 = GetPos(node, blobs);
+                Vector2d pos2 = GetPos(node.next, blobs);
+                var env = new GeoAPI.Geometries.Envelope(Math.Min(pos1.X, pos2.X), Math.Max(pos1.X, pos2.X), Math.Min(pos1.Y, pos2.Y), Math.Max(pos1.Y, pos2.Y));
+                rtree.Insert(env, node);
+            }
+            rtree.Build();
+            foreach (var node in nodes2)
+            {
+                Vector2d pos1 = GetPos(node, blobs);
+                Vector2d pos2 = GetPos(node.next, blobs);
+                var env = new GeoAPI.Geometries.Envelope(Math.Min(pos1.X, pos2.X), Math.Max(pos1.X, pos2.X), Math.Min(pos1.Y, pos2.Y), Math.Max(pos1.Y, pos2.Y));
+                foreach (var n2 in rtree.Query(env))
                 {
-                    yield return new PotentialIntersection() { n1 = n1, n2 = n2 };
+                    yield return new PotentialIntersection() { n1 = n2, n2 = node };
                 }
             }
-            //nodes1 = nodes1.OrderBy(x => Math.Min(GetPos(x, blobs).X, GetPos(x.next, blobs).X)).ToList();
-            //nodes2 = nodes2.OrderBy(x => Math.Min(GetPos(x, blobs).X, GetPos(x.next, blobs).X)).ToList();
-            //int jStart = 0;
-            //for (int i = 0; i < nodes1.Count; i++)
-            //{
-            //    double xStart1 = Math.Min(GetPos(nodes1[i], blobs).X, GetPos(nodes1[i].next, blobs).X);
-            //    double xEnd1 = Math.Max(GetPos(nodes1[i], blobs).X, GetPos(nodes1[i].next, blobs).X);
-            //    for (int j = jStart; j < nodes2.Count; j++)
-            //    {
-            //        double xStart2 = Math.Min(GetPos(nodes2[j], blobs).X, GetPos(nodes2[j].next, blobs).X);
-            //        double xEnd2 = Math.Max(GetPos(nodes2[j], blobs).X, GetPos(nodes2[j].next, blobs).X);
-            //        if (xStart2 <= xEnd1 && xEnd2 >= xStart1)
-            //        {
-            //            yield return new PotentialIntersection() { n1 = nodes1[i], n2 = nodes2[j] };
-            //        }
-            //        if (xStart2 > xEnd1) break;
-            //        if (xEnd2 < xStart1) jStart = j + 1;
-            //    }
-            //}
         }
 
         public class PotentialIntersection

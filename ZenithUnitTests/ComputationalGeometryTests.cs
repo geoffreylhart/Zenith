@@ -50,7 +50,6 @@ namespace ZenithUnitTests
             bool[,] grid3 = AddGrids(grid1, grid2, size);
             if (!IsValidGrid(grid1, size)) return;
             if (!IsValidGrid(grid2, size)) return;
-            if (!IsValidGrid(grid3, size)) return;
             int expectedArea = AreaOfGrid(grid3, size);
             SectorConstrainedOSMAreaGraph asGraph1 = GridToArea(grid1, size, blobs);
             SectorConstrainedOSMAreaGraph asGraph2 = GridToArea(grid2, size, blobs);
@@ -67,7 +66,6 @@ namespace ZenithUnitTests
             bool[,] grid3 = SubtractGrids(grid1, grid2, size);
             if (!IsValidGrid(grid1, size)) return;
             if (!IsValidGrid(grid2, size)) return;
-            if (!IsValidGrid(grid3, size)) return;
             int expectedArea = AreaOfGrid(grid3, size);
             SectorConstrainedOSMAreaGraph asGraph1 = GridToArea(grid1, size, blobs);
             SectorConstrainedOSMAreaGraph asGraph2 = GridToArea(grid2, size, blobs);
