@@ -18,7 +18,7 @@ namespace Zenith.ZGeom
         {
             DoIntersections(map, blobs);
             map = map.Clone(); // now we're allowed to junk it
-            DoLoops(map, blobs);
+            var loopNodes = DoLoops(map, blobs);
             // remember, counterclockwise makes an island
             List<AreaNode> doAdd = new List<AreaNode>();
             List<AreaNode> doDelete = new List<AreaNode>();
@@ -44,9 +44,9 @@ namespace Zenith.ZGeom
                     initialLines.AddRange(mapInitialLines);
                     List<AreaNode> finalLines = initialLines.ToList();
                     // sort clockwise
-                    finalLines = finalLines.OrderBy(x => ComputeInnerAngle(new Vector2d(1, 0), (x.prev.id == pair.Key) ? (GetPos(x, blobs) - blobs.nodes[pair.Key]) : (blobs.nodes[pair.Key] - GetPos(x, blobs)))).ToList();
+                    finalLines = finalLines.OrderBy(x => ComputeInnerAngle(new Vector2d(1, 0), GetPos(x, blobs) - blobs.nodes[pair.Key])).ToList();
                     bool[] sectors = new bool[finalLines.Count]; // first sector means the area just ccw of the first finalLine
-                    foreach (var n in srcInitialLines)
+                    foreach (var n in nodes[pair.Key])
                     {
                         int from = finalLines.IndexOf(n.prev);
                         int to = finalLines.IndexOf(n.next);
@@ -56,7 +56,7 @@ namespace Zenith.ZGeom
                             sectors[i % sectors.Length] = true;
                         }
                     }
-                    foreach (var n in mapInitialLines)
+                    foreach (var n in map.nodes[pair.Key])
                     {
                         int from = finalLines.IndexOf(n.prev);
                         int to = finalLines.IndexOf(n.next);
@@ -67,23 +67,36 @@ namespace Zenith.ZGeom
                         }
                     }
                     // make sure zero-width areas match one of their neighbors so they get cleaned up
-                    bool[] zeroWidth = new bool[sectors.Length];
+                    // correction: make sure zero-width somehow prioritize getting rid of new map lines like our original code
+                    // turns out, even in our first test case, being inconsistent with this is just wrong (to see, treat this test case as one of two non-degenerate cases)
+                    int[] makeMatch = new int[sectors.Length]; // -1 means, make match left, etc. TODO: I'm really winging it here, no clue if this makes any sense at all (basically, just test it!)
                     for (int i = 0; i < sectors.Length; i++)
                     {
                         AreaNode p = finalLines[(i - 1 + finalLines.Count) % finalLines.Count];
                         AreaNode n = finalLines[i];
-                        if (p.prev.id == pair.Key ? (p.next.id == n.prev.id) : (p.prev.id == n.next.id))
+                        if (!p.IsEdge() && !n.IsEdge())
                         {
-                            zeroWidth[i] = true;
+                            if (p.id == n.id)
+                            {
+                                makeMatch[i] = mapInitialLines.Contains(p) ? -1 : 1; // make sector before this match this one to eliminate p
+                            }
                         }
                     }
-                    int start = zeroWidth.ToList().IndexOf(false);
-                    if (start < 0) throw new NotImplementedException();
-                    for (int i = 0; i < zeroWidth.Length; i++)
+                    if (!makeMatch.Contains(0)) throw new NotImplementedException();
+                    for (int i = 0; i < makeMatch.Length; i++)
                     {
-                        if (zeroWidth[(i + start) % zeroWidth.Length])
+                        HashSet<int> explored = new HashSet<int>();
+                        int curr = i;
+                        while (true)
                         {
-                            sectors[(i + start) % sectors.Length] = sectors[(i - 1 + start) % sectors.Length];
+                            if (makeMatch[curr] == 0)
+                            {
+                                sectors[i] = sectors[curr];
+                                break;
+                            }
+                            if (explored.Contains(curr)) throw new NotImplementedException(); // some kind of rare loop
+                            explored.Add(curr);
+                            curr = (curr + makeMatch[curr] + makeMatch.Length) % makeMatch.Length;
                         }
                     }
                     List<int> remove = new List<int>();
@@ -103,7 +116,7 @@ namespace Zenith.ZGeom
                     // let's make sure the first one points in
                     if (finalLines.Count > 0)
                     {
-                        if (finalLines.First().next.id != pair.Key)
+                        if (finalLines.First().next == null || finalLines.First().next.id != pair.Key)
                         {
                             finalLines.Add(finalLines.First());
                             finalLines.RemoveAt(0);
@@ -118,11 +131,19 @@ namespace Zenith.ZGeom
                         if (finalLines.Contains(line)) doAdd.Add(line);
                     }
                     List<AreaNode> newSrcNodes = new List<AreaNode>();
-                    for (int i = 0; i < finalLines.Count % 2; i++)
+                    for (int i = 0; i < finalLines.Count / 2; i++)
                     {
                         AreaNode into = finalLines[i * 2];
                         AreaNode outof = finalLines[i * 2 + 1];
-                        AreaNode newSrcNode = new AreaNode() { id = pair.Key };
+                        AreaNode newSrcNode;
+                        if (i == 0) // mimic our original code for debugging?
+                        {
+                            newSrcNode = nodes[pair.Key].First();
+                        }
+                        else
+                        {
+                            newSrcNode = new AreaNode() { id = pair.Key };
+                        }
                         into.next = newSrcNode;
                         outof.prev = newSrcNode;
                         newSrcNode.prev = into;
@@ -178,6 +199,11 @@ namespace Zenith.ZGeom
                 }
             }
             foreach (var d in singularDelete) nodes.Remove(d);
+            foreach (var n in loopNodes)
+            {
+                if (!nodes.ContainsKey(n.id)) nodes[n.id] = new List<AreaNode>();
+                nodes[n.id].Add(n);
+            }
             return this;
         }
 
@@ -186,7 +212,7 @@ namespace Zenith.ZGeom
             DoIntersections(map, blobs);
             map = map.Clone(); // now we're allowed to junk it
             map.Reverse();
-            DoLoops(map, blobs);
+            var loopNodes = DoLoops(map, blobs);
             // remember, counterclockwise makes an island
             List<AreaNode> doAdd = new List<AreaNode>();
             List<AreaNode> doDelete = new List<AreaNode>();
@@ -212,9 +238,9 @@ namespace Zenith.ZGeom
                     initialLines.AddRange(mapInitialLines);
                     List<AreaNode> finalLines = initialLines.ToList();
                     // sort clockwise
-                    finalLines = finalLines.OrderBy(x => ComputeInnerAngle(new Vector2d(1, 0), (x.prev.id == pair.Key) ? (GetPos(x, blobs) - blobs.nodes[pair.Key]) : (blobs.nodes[pair.Key] - GetPos(x, blobs)))).ToList();
+                    finalLines = finalLines.OrderBy(x => ComputeInnerAngle(new Vector2d(1, 0), GetPos(x, blobs) - blobs.nodes[pair.Key])).ToList();
                     bool[] sectors = new bool[finalLines.Count]; // first sector means the area just ccw of the first finalLine
-                    foreach (var n in srcInitialLines)
+                    foreach (var n in nodes[pair.Key])
                     {
                         int from = finalLines.IndexOf(n.prev);
                         int to = finalLines.IndexOf(n.next);
@@ -224,10 +250,10 @@ namespace Zenith.ZGeom
                             sectors[i % sectors.Length] = true;
                         }
                     }
-                    foreach (var n in mapInitialLines)
+                    foreach (var n in map.nodes[pair.Key])
                     {
-                        int from = finalLines.IndexOf(n.prev);
-                        int to = finalLines.IndexOf(n.next);
+                        int from = finalLines.IndexOf(n.next); // swapped because subtraction
+                        int to = finalLines.IndexOf(n.prev);
                         if (to <= from) to += finalLines.Count;
                         for (int i = from + 1; i <= to; i++)
                         {
@@ -235,23 +261,36 @@ namespace Zenith.ZGeom
                         }
                     }
                     // make sure zero-width areas match one of their neighbors so they get cleaned up
-                    bool[] zeroWidth = new bool[sectors.Length];
+                    // correction: make sure zero-width somehow prioritize getting rid of new map lines like our original code
+                    // turns out, even in our first test case, being inconsistent with this is just wrong (to see, treat this test case as one of two non-degenerate cases)
+                    int[] makeMatch = new int[sectors.Length]; // -1 means, make match left, etc. TODO: I'm really winging it here, no clue if this makes any sense at all (basically, just test it!)
                     for (int i = 0; i < sectors.Length; i++)
                     {
                         AreaNode p = finalLines[(i - 1 + finalLines.Count) % finalLines.Count];
                         AreaNode n = finalLines[i];
-                        if (p.prev.id == pair.Key ? (p.next.id == n.prev.id) : (p.prev.id == n.next.id))
+                        if (!p.IsEdge() && !n.IsEdge())
                         {
-                            zeroWidth[i] = true;
+                            if (p.id == n.id)
+                            {
+                                makeMatch[i] = mapInitialLines.Contains(p) ? -1 : 1; // make sector before this match this one to eliminate p
+                            }
                         }
                     }
-                    int start = zeroWidth.ToList().IndexOf(false);
-                    if (start < 0) throw new NotImplementedException();
-                    for (int i = 0; i < zeroWidth.Length; i++)
+                    if (!makeMatch.Contains(0)) throw new NotImplementedException();
+                    for (int i = 0; i < makeMatch.Length; i++)
                     {
-                        if (zeroWidth[(i + start) % zeroWidth.Length])
+                        HashSet<int> explored = new HashSet<int>();
+                        int curr = i;
+                        while (true)
                         {
-                            sectors[(i + start) % sectors.Length] = sectors[(i - 1 + start) % sectors.Length];
+                            if (makeMatch[curr] == 0)
+                            {
+                                sectors[i] = sectors[curr];
+                                break;
+                            }
+                            if (explored.Contains(curr)) throw new NotImplementedException(); // some kind of rare loop
+                            explored.Add(curr);
+                            curr = (curr + makeMatch[curr] + makeMatch.Length) % makeMatch.Length;
                         }
                     }
                     List<int> remove = new List<int>();
@@ -271,7 +310,7 @@ namespace Zenith.ZGeom
                     // let's make sure the first one points in
                     if (finalLines.Count > 0)
                     {
-                        if (finalLines.First().next.id != pair.Key)
+                        if (finalLines.First().next == null || finalLines.First().next.id != pair.Key)
                         {
                             finalLines.Add(finalLines.First());
                             finalLines.RemoveAt(0);
@@ -286,11 +325,19 @@ namespace Zenith.ZGeom
                         if (finalLines.Contains(line)) doAdd.Add(line);
                     }
                     List<AreaNode> newSrcNodes = new List<AreaNode>();
-                    for (int i = 0; i < finalLines.Count % 2; i++)
+                    for (int i = 0; i < finalLines.Count / 2; i++)
                     {
                         AreaNode into = finalLines[i * 2];
                         AreaNode outof = finalLines[i * 2 + 1];
-                        AreaNode newSrcNode = new AreaNode() { id = pair.Key };
+                        AreaNode newSrcNode;
+                        if (i == 0) // mimic our original code for debugging?
+                        {
+                            newSrcNode = nodes[pair.Key].First();
+                        }
+                        else
+                        {
+                            newSrcNode = new AreaNode() { id = pair.Key };
+                        }
                         into.next = newSrcNode;
                         outof.prev = newSrcNode;
                         newSrcNode.prev = into;
@@ -346,6 +393,11 @@ namespace Zenith.ZGeom
                 }
             }
             foreach (var d in singularDelete) nodes.Remove(d);
+            foreach (var n in loopNodes)
+            {
+                if (!nodes.ContainsKey(n.id)) nodes[n.id] = new List<AreaNode>();
+                nodes[n.id].Add(n);
+            }
             return this;
         }
 
@@ -353,134 +405,175 @@ namespace Zenith.ZGeom
         // note, actual intersections should be exceedingly rare, like 1 in 6 sectors or something
         private void DoIntersections(SectorConstrainedOSMAreaGraph map, BlobCollection blobs)
         {
+            return;
             var nodes1 = nodes.Values.Where(x => x.Count == 1).Select(x => x.Single()).ToList();
             nodes1.AddRange(startPoints);
             var nodes2 = map.nodes.Values.Where(x => x.Count == 1).Select(x => x.Single()).ToList();
             nodes2.AddRange(map.startPoints);
+            foreach (var potentialIntersection in FindPotentialIntersections(nodes1, nodes2, blobs))
+            {
+                var n1 = potentialIntersection.n1;
+                var n2 = potentialIntersection.n2;
+                Vector2d A = GetPos(n1, blobs);
+                Vector2d B = GetPos(n1.next, blobs);
+                Vector2d C = GetPos(n2, blobs);
+                Vector2d D = GetPos(n2.next, blobs);
+                if (Math.Min(A.X, B.X) > Math.Max(C.X, C.X)) continue;
+                if (Math.Max(A.X, B.X) < Math.Min(C.X, C.X)) continue;
+                if (Math.Min(A.Y, B.Y) > Math.Max(C.Y, C.Y)) continue;
+                if (Math.Max(A.Y, B.Y) < Math.Min(C.Y, C.Y)) continue;
+                long randID = -(n1.id ^ n2.id); // TODO: get rid of hack
+                                                // TODO: we're going to treat -1 as always matching for now
+                bool ACSame = n1.id == n2.id;
+                bool ADSame = n1.id == n2.next.id;
+                bool BCSame = n1.next.id == n2.id;
+                bool BDSame = n1.next.id == n2.next.id;
+                // a subset of possible tiny angles that can cause rounding errors
+                // only thing that changes between these is the condition, line direction, and the newpoint id
+                // TODO: is this really what fixed the nonsense at 240202043? the angleDiff was only 0.009, which seems too big to cause an issue
+                if (ACSame && !ADSame && !BCSame && !BDSame)
+                {
+                    Vector2d line1 = B - A;
+                    Vector2d line2 = D - C;
+                    double angleDiff = Math.Atan2(line1.Y, line1.X) - Math.Atan2(line2.Y, line2.X);
+                    angleDiff = (angleDiff + 2 * Math.PI) % (2 * Math.PI);
+                    if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
+                    if (angleDiff < 0.01)
+                    {
+                        if (line1.Length() < line2.Length())
+                        {
+                            n2.next.prev = new AreaNode { id = n1.next.id, prev = n2, next = n2.next };
+                            n2.next = n2.next.prev;
+                        }
+                        else
+                        {
+                            n1.next.prev = new AreaNode { id = n2.next.id, prev = n1, next = n1.next };
+                            n1.next = n1.next.prev;
+                        }
+                    }
+                }
+                if (!ACSame && ADSame && !BCSame && !BDSame)
+                {
+                    Vector2d line1 = B - A;
+                    Vector2d line2 = C - D;
+                    double angleDiff = Math.Atan2(line1.Y, line1.X) - Math.Atan2(line2.Y, line2.X);
+                    angleDiff = (angleDiff + 2 * Math.PI) % (2 * Math.PI);
+                    if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
+                    if (angleDiff < 0.01)
+                    {
+                        if (line1.Length() < line2.Length())
+                        {
+                            n2.next.prev = new AreaNode { id = n1.next.id, prev = n2, next = n2.next };
+                            n2.next = n2.next.prev;
+                        }
+                        else
+                        {
+                            n1.next.prev = new AreaNode { id = n2.id, prev = n1, next = n1.next };
+                            n1.next = n1.next.prev;
+                        }
+                    }
+                }
+                if (!ACSame && !ADSame && BCSame && !BDSame)
+                {
+                    Vector2d line1 = A - B;
+                    Vector2d line2 = D - C;
+                    double angleDiff = Math.Atan2(line1.Y, line1.X) - Math.Atan2(line2.Y, line2.X);
+                    angleDiff = (angleDiff + 2 * Math.PI) % (2 * Math.PI);
+                    if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
+                    if (angleDiff < 0.01)
+                    {
+                        if (line1.Length() < line2.Length())
+                        {
+                            n2.next.prev = new AreaNode { id = n1.id, prev = n2, next = n2.next };
+                            n2.next = n2.next.prev;
+                        }
+                        else
+                        {
+                            n1.next.prev = new AreaNode { id = n2.next.id, prev = n1, next = n1.next };
+                            n1.next = n1.next.prev;
+                        }
+                    }
+                }
+                if (!ACSame && !ADSame && !BCSame && BDSame)
+                {
+                    Vector2d line1 = A - B;
+                    Vector2d line2 = C - D;
+                    double angleDiff = Math.Atan2(line1.Y, line1.X) - Math.Atan2(line2.Y, line2.X);
+                    angleDiff = (angleDiff + 2 * Math.PI) % (2 * Math.PI);
+                    if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
+                    if (angleDiff < 0.01)
+                    {
+                        if (line1.Length() < line2.Length())
+                        {
+                            n2.next.prev = new AreaNode { id = n1.id, prev = n2, next = n2.next };
+                            n2.next = n2.next.prev;
+                        }
+                        else
+                        {
+                            n1.next.prev = new AreaNode { id = n2.id, prev = n1, next = n1.next };
+                            n1.next = n1.next.prev;
+                        }
+                    }
+                }
+                if (!ACSame && !ADSame && !BCSame && !BDSame) // proper intersection
+                {
+                    Vector2d intersection = Intersect(A, B, C, D);
+                    if (intersection != null)
+                    {
+                        AreaNode newNode1 = new AreaNode() { id = randID };
+                        AreaNode newNode2 = new AreaNode() { id = randID };
+                        blobs.nodes[randID] = intersection;
+                        nodes[randID] = new List<AreaNode>() { newNode1 };
+                        newNode1.prev = n1;
+                        newNode1.next = n1.next;
+                        n1.next.prev = newNode1;
+                        n1.next = newNode1;
+
+                        map.nodes[randID] = new List<AreaNode>() { newNode2 };
+                        newNode2.prev = n2;
+                        newNode2.next = n2.next;
+                        n2.next.prev = newNode2;
+                        n2.next = newNode2;
+                    }
+                }
+            }
+        }
+
+        // most naive possible speedup
+        private IEnumerable<PotentialIntersection> FindPotentialIntersections(List<AreaNode> nodes1, List<AreaNode> nodes2, BlobCollection blobs)
+        {
             foreach (var n1 in nodes1)
             {
                 foreach (var n2 in nodes2)
                 {
-                    Vector2d A = GetPos(n1, blobs);
-                    Vector2d B = GetPos(n1.next, blobs);
-                    Vector2d C = GetPos(n2, blobs);
-                    Vector2d D = GetPos(n2.next, blobs);
-                    long randID = -(n1.id ^ n2.id); // TODO: get rid of hack
-                    // TODO: we're going to treat -1 as always matching for now
-                    bool ACSame = n1.id == n2.id;
-                    bool ADSame = n1.id == n2.next.id;
-                    bool BCSame = n1.next.id == n2.id;
-                    bool BDSame = n1.next.id == n2.next.id;
-                    // a subset of possible tiny angles that can cause rounding errors
-                    // only thing that changes between these is the condition, line direction, and the newpoint id
-                    // TODO: is this really what fixed the nonsense at 240202043? the angleDiff was only 0.009, which seems too big to cause an issue
-                    if (ACSame && !ADSame && !BCSame && !BDSame)
-                    {
-                        Vector2d line1 = B - A;
-                        Vector2d line2 = D - C;
-                        double angleDiff = Math.Atan2(line1.Y, line1.X) - Math.Atan2(line2.Y, line2.X);
-                        angleDiff = (angleDiff + 2 * Math.PI) % (2 * Math.PI);
-                        if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
-                        if (angleDiff < 0.01)
-                        {
-                            if (line1.Length() < line2.Length())
-                            {
-                                n2.next.prev = new AreaNode { id = n1.next.id, prev = n2, next = n2.next };
-                                n2.next = n2.next.prev;
-                            }
-                            else
-                            {
-                                n1.next.prev = new AreaNode { id = n2.next.id, prev = n1, next = n1.next };
-                                n1.next = n1.next.prev;
-                            }
-                        }
-                    }
-                    if (!ACSame && ADSame && !BCSame && !BDSame)
-                    {
-                        Vector2d line1 = B - A;
-                        Vector2d line2 = C - D;
-                        double angleDiff = Math.Atan2(line1.Y, line1.X) - Math.Atan2(line2.Y, line2.X);
-                        angleDiff = (angleDiff + 2 * Math.PI) % (2 * Math.PI);
-                        if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
-                        if (angleDiff < 0.01)
-                        {
-                            if (line1.Length() < line2.Length())
-                            {
-                                n2.next.prev = new AreaNode { id = n1.next.id, prev = n2, next = n2.next };
-                                n2.next = n2.next.prev;
-                            }
-                            else
-                            {
-                                n1.next.prev = new AreaNode { id = n2.id, prev = n1, next = n1.next };
-                                n1.next = n1.next.prev;
-                            }
-                        }
-                    }
-                    if (!ACSame && !ADSame && BCSame && !BDSame)
-                    {
-                        Vector2d line1 = A - B;
-                        Vector2d line2 = D - C;
-                        double angleDiff = Math.Atan2(line1.Y, line1.X) - Math.Atan2(line2.Y, line2.X);
-                        angleDiff = (angleDiff + 2 * Math.PI) % (2 * Math.PI);
-                        if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
-                        if (angleDiff < 0.01)
-                        {
-                            if (line1.Length() < line2.Length())
-                            {
-                                n2.next.prev = new AreaNode { id = n1.id, prev = n2, next = n2.next };
-                                n2.next = n2.next.prev;
-                            }
-                            else
-                            {
-                                n1.next.prev = new AreaNode { id = n2.next.id, prev = n1, next = n1.next };
-                                n1.next = n1.next.prev;
-                            }
-                        }
-                    }
-                    if (!ACSame && !ADSame && !BCSame && BDSame)
-                    {
-                        Vector2d line1 = A - B;
-                        Vector2d line2 = C - D;
-                        double angleDiff = Math.Atan2(line1.Y, line1.X) - Math.Atan2(line2.Y, line2.X);
-                        angleDiff = (angleDiff + 2 * Math.PI) % (2 * Math.PI);
-                        if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
-                        if (angleDiff < 0.01)
-                        {
-                            if (line1.Length() < line2.Length())
-                            {
-                                n2.next.prev = new AreaNode { id = n1.id, prev = n2, next = n2.next };
-                                n2.next = n2.next.prev;
-                            }
-                            else
-                            {
-                                n1.next.prev = new AreaNode { id = n2.id, prev = n1, next = n1.next };
-                                n1.next = n1.next.prev;
-                            }
-                        }
-                    }
-                    if (!ACSame && !ADSame && !BCSame && !BDSame) // proper intersection
-                    {
-                        Vector2d intersection = Intersect(A, B, C, D);
-                        if (intersection != null)
-                        {
-                            AreaNode newNode1 = new AreaNode() { id = randID };
-                            AreaNode newNode2 = new AreaNode() { id = randID };
-                            blobs.nodes[randID] = intersection;
-                            nodes[randID] = new List<AreaNode>() { newNode1 };
-                            newNode1.prev = n1;
-                            newNode1.next = n1.next;
-                            n1.next.prev = newNode1;
-                            n1.next = newNode1;
-
-                            map.nodes[randID] = new List<AreaNode>() { newNode2 };
-                            newNode2.prev = n2;
-                            newNode2.next = n2.next;
-                            n2.next.prev = newNode2;
-                            n2.next = newNode2;
-                        }
-                    }
+                    yield return new PotentialIntersection() { n1 = n1, n2 = n2 };
                 }
             }
+            //nodes1 = nodes1.OrderBy(x => Math.Min(GetPos(x, blobs).X, GetPos(x.next, blobs).X)).ToList();
+            //nodes2 = nodes2.OrderBy(x => Math.Min(GetPos(x, blobs).X, GetPos(x.next, blobs).X)).ToList();
+            //int jStart = 0;
+            //for (int i = 0; i < nodes1.Count; i++)
+            //{
+            //    double xStart1 = Math.Min(GetPos(nodes1[i], blobs).X, GetPos(nodes1[i].next, blobs).X);
+            //    double xEnd1 = Math.Max(GetPos(nodes1[i], blobs).X, GetPos(nodes1[i].next, blobs).X);
+            //    for (int j = jStart; j < nodes2.Count; j++)
+            //    {
+            //        double xStart2 = Math.Min(GetPos(nodes2[j], blobs).X, GetPos(nodes2[j].next, blobs).X);
+            //        double xEnd2 = Math.Max(GetPos(nodes2[j], blobs).X, GetPos(nodes2[j].next, blobs).X);
+            //        if (xStart2 <= xEnd1 && xEnd2 >= xStart1)
+            //        {
+            //            yield return new PotentialIntersection() { n1 = nodes1[i], n2 = nodes2[j] };
+            //        }
+            //        if (xStart2 > xEnd1) break;
+            //        if (xEnd2 < xStart1) jStart = j + 1;
+            //    }
+            //}
+        }
+
+        public class PotentialIntersection
+        {
+            public AreaNode n1;
+            public AreaNode n2;
         }
 
         private Vector2d Intersect(Vector2d a, Vector2d b, Vector2d c, Vector2d d)
@@ -493,9 +586,11 @@ namespace Zenith.ZGeom
         }
 
         // TODO: apparently we've been adding loops twice this entire time, basically
-        private void DoLoops(SectorConstrainedOSMAreaGraph map, BlobCollection blobs)
+        // I see, I never did loops at the end before because map was modified at that point
+        private List<AreaNode> DoLoops(SectorConstrainedOSMAreaGraph map, BlobCollection blobs)
         {
             // first, find those loops
+            List<AreaNode> loopNodes = new List<AreaNode>();
             HashSet<AreaNode> explored = new HashSet<AreaNode>();
             foreach (var startPoint in map.startPoints)
             {
@@ -529,12 +624,12 @@ namespace Zenith.ZGeom
                         // TODO: use winding rule
                         foreach (var n in newLoop)
                         {
-                            if (!nodes.ContainsKey(n.id)) nodes[n.id] = new List<AreaNode>();
-                            nodes[n.id].Add(n);
+                            loopNodes.Add(n);
                         }
                     }
                 }
             }
+            return loopNodes;
         }
 
         public void CheckValid()
@@ -617,7 +712,6 @@ namespace Zenith.ZGeom
 
         public SectorConstrainedOSMAreaGraph Clone()
         {
-            CheckValid();
             // TODO: make vector2d a struct?
             SectorConstrainedOSMAreaGraph map = new SectorConstrainedOSMAreaGraph();
             Dictionary<AreaNode, AreaNode> mapper = new Dictionary<AreaNode, AreaNode>();

@@ -103,6 +103,7 @@ namespace Zenith.LibraryWrappers.OSM
             // add each simple way, flipping them where necessary
             foreach (var way in simpleWays)
             {
+                if (way.refs.Count < 3) continue; // sometimes multipolygon straight lines get flagged
                 SectorConstrainedOSMAreaGraph simpleMap = new SectorConstrainedOSMAreaGraph();
                 var superLoop = new List<Way>() { way };
                 if (way.refs.Last() != way.refs.First()) way.refs.Add(way.refs.First()); // some folks forget to close a simple way, or perhaps the mistake is tagging subcomponents of a relation
