@@ -169,11 +169,11 @@ namespace Zenith.ZGeom
                 while (temp != null && (temp.IsEdge() || !nodes.ContainsKey(temp.id) || !map.nodes.ContainsKey(temp.id)))
                 {
                     if (!nodes.ContainsKey(temp.id)) break;
-                    if (temp.IsEdge())
+                    if (temp.IsEdge() && temp.prev == null)
                     {
-                        if (!forwards) startPoints.Remove(temp);
+                        startPoints.Remove(temp);
                     }
-                    else
+                    else if (temp.id != -1)
                     {
                         nodes.Remove(temp.id);
                     }
@@ -188,11 +188,11 @@ namespace Zenith.ZGeom
                 while (temp != null && (temp.IsEdge() || !nodes.ContainsKey(temp.id) || !map.nodes.ContainsKey(temp.id)))
                 {
                     if (nodes.ContainsKey(temp.id)) break;
-                    if (temp.IsEdge())
+                    if (temp.IsEdge() && temp.prev == null)
                     {
-                        if (!forwards) startPoints.Add(temp);
+                        startPoints.Add(temp);
                     }
-                    else
+                    else if (temp.id != -1)
                     {
                         nodes[temp.id] = new List<AreaNode>() { temp };
                     }
@@ -363,11 +363,11 @@ namespace Zenith.ZGeom
                 while (temp != null && (temp.IsEdge() || !nodes.ContainsKey(temp.id) || !map.nodes.ContainsKey(temp.id)))
                 {
                     if (!nodes.ContainsKey(temp.id)) break;
-                    if (temp.IsEdge())
+                    if (temp.IsEdge() && temp.prev == null)
                     {
-                        if (!forwards) startPoints.Remove(temp);
+                        startPoints.Remove(temp);
                     }
-                    else
+                    else if (temp.id != -1)
                     {
                         nodes.Remove(temp.id);
                     }
@@ -382,11 +382,11 @@ namespace Zenith.ZGeom
                 while (temp != null && (temp.IsEdge() || !nodes.ContainsKey(temp.id) || !map.nodes.ContainsKey(temp.id)))
                 {
                     if (nodes.ContainsKey(temp.id)) break;
-                    if (temp.IsEdge())
+                    if (temp.IsEdge() && temp.prev == null)
                     {
-                        if (!forwards) startPoints.Add(temp);
+                        startPoints.Add(temp);
                     }
-                    else
+                    else if (temp.id != -1)
                     {
                         nodes[temp.id] = new List<AreaNode>() { temp };
                     }
@@ -432,6 +432,98 @@ namespace Zenith.ZGeom
                 // a subset of possible tiny angles that can cause rounding errors
                 // only thing that changes between these is the condition, line direction, and the newpoint id
                 // TODO: is this really what fixed the nonsense at 240202043? the angleDiff was only 0.009, which seems too big to cause an issue
+                if (ACSame && !ADSame && !BCSame && !BDSame)
+                {
+                    Vector2d line1 = B - A;
+                    Vector2d line2 = D - C;
+                    double angleDiff = Math.Atan2(line1.Y, line1.X) - Math.Atan2(line2.Y, line2.X);
+                    angleDiff = (angleDiff + 2 * Math.PI) % (2 * Math.PI);
+                    if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
+                    if (angleDiff < 0.001)
+                    {
+                        if (line1.Length() < line2.Length())
+                        {
+                            AreaNode newNode = new AreaNode { id = n1.next.id };
+                            if (!intersections.ContainsKey(n2)) intersections.Add(n2, new List<AreaNode>());
+                            intersections[n2].Add(newNode);
+                        }
+                        else
+                        {
+                            AreaNode newNode = new AreaNode { id = n2.next.id };
+                            if (!intersections.ContainsKey(n1)) intersections.Add(n1, new List<AreaNode>());
+                            intersections[n1].Add(newNode);
+                        }
+                    }
+                }
+                if (!ACSame && ADSame && !BCSame && !BDSame)
+                {
+                    Vector2d line1 = B - A;
+                    Vector2d line2 = C - D;
+                    double angleDiff = Math.Atan2(line1.Y, line1.X) - Math.Atan2(line2.Y, line2.X);
+                    angleDiff = (angleDiff + 2 * Math.PI) % (2 * Math.PI);
+                    if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
+                    if (angleDiff < 0.001)
+                    {
+                        if (line1.Length() < line2.Length())
+                        {
+                            AreaNode newNode = new AreaNode { id = n1.next.id };
+                            if (!intersections.ContainsKey(n2)) intersections.Add(n2, new List<AreaNode>());
+                            intersections[n2].Add(newNode);
+                        }
+                        else
+                        {
+                            AreaNode newNode = new AreaNode { id = n2.id };
+                            if (!intersections.ContainsKey(n1)) intersections.Add(n1, new List<AreaNode>());
+                            intersections[n1].Add(newNode);
+                        }
+                    }
+                }
+                if (!ACSame && !ADSame && BCSame && !BDSame)
+                {
+                    Vector2d line1 = A - B;
+                    Vector2d line2 = D - C;
+                    double angleDiff = Math.Atan2(line1.Y, line1.X) - Math.Atan2(line2.Y, line2.X);
+                    angleDiff = (angleDiff + 2 * Math.PI) % (2 * Math.PI);
+                    if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
+                    if (angleDiff < 0.001)
+                    {
+                        if (line1.Length() < line2.Length())
+                        {
+                            AreaNode newNode = new AreaNode { id = n1.id };
+                            if (!intersections.ContainsKey(n2)) intersections.Add(n2, new List<AreaNode>());
+                            intersections[n2].Add(newNode);
+                        }
+                        else
+                        {
+                            AreaNode newNode = new AreaNode { id = n2.next.id };
+                            if (!intersections.ContainsKey(n1)) intersections.Add(n1, new List<AreaNode>());
+                            intersections[n1].Add(newNode);
+                        }
+                    }
+                }
+                if (!ACSame && !ADSame && !BCSame && BDSame)
+                {
+                    Vector2d line1 = A - B;
+                    Vector2d line2 = C - D;
+                    double angleDiff = Math.Atan2(line1.Y, line1.X) - Math.Atan2(line2.Y, line2.X);
+                    angleDiff = (angleDiff + 2 * Math.PI) % (2 * Math.PI);
+                    if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
+                    if (angleDiff < 0.001)
+                    {
+                        if (line1.Length() < line2.Length())
+                        {
+                            AreaNode newNode = new AreaNode { id = n1.id };
+                            if (!intersections.ContainsKey(n2)) intersections.Add(n2, new List<AreaNode>());
+                            intersections[n2].Add(newNode);
+                        }
+                        else
+                        {
+                            AreaNode newNode = new AreaNode { id = n2.id };
+                            if (!intersections.ContainsKey(n1)) intersections.Add(n1, new List<AreaNode>());
+                            intersections[n1].Add(newNode);
+                        }
+                    }
+                }
                 if (!ACSame && !ADSame && !BCSame && !BDSame) // proper intersection
                 {
                     Vector2d intersection = Intersect(A, B, C, D);
@@ -454,6 +546,11 @@ namespace Zenith.ZGeom
                 AreaNode start = pair.Key;
                 AreaNode end = pair.Key.next;
                 var sorted = pair.Value.OrderBy(x => (GetPos(x, blobs) - GetPos(start, blobs)).Length()).ToList();
+                // get rid of duplicates
+                for (int i = sorted.Count - 1; i > 0; i--)
+                {
+                    if (sorted[i].id == sorted[i - 1].id) sorted.RemoveAt(i);
+                }
                 sorted.Insert(0, start);
                 sorted.Add(end);
                 // chain them all together
