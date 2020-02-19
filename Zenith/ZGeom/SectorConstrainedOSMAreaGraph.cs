@@ -17,8 +17,8 @@ namespace Zenith.ZGeom
         // TODO: for now we're assuming no arbitrary intersections or multiple branching intersections - this is probably naive
         public SectorConstrainedOSMAreaGraph Add(SectorConstrainedOSMAreaGraph map, BlobCollection blobs)
         {
-            DoIntersections(map, blobs);
             map = map.Clone(); // now we're allowed to junk it
+            DoIntersections(map, blobs);
             var loopNodes = DoLoops(map, blobs);
             // remember, counterclockwise makes an island
             List<AreaNode> doAdd = new List<AreaNode>();
@@ -210,8 +210,8 @@ namespace Zenith.ZGeom
 
         public SectorConstrainedOSMAreaGraph Subtract(SectorConstrainedOSMAreaGraph map, BlobCollection blobs)
         {
-            DoIntersections(map, blobs);
             map = map.Clone(); // now we're allowed to junk it
+            DoIntersections(map, blobs);
             map.Reverse();
             var loopNodes = DoLoops(map, blobs);
             // remember, counterclockwise makes an island
@@ -423,8 +423,8 @@ namespace Zenith.ZGeom
                 if (Math.Max(A.X, B.X) < Math.Min(C.X, D.X)) continue;
                 if (Math.Min(A.Y, B.Y) > Math.Max(C.Y, D.Y)) continue;
                 if (Math.Max(A.Y, B.Y) < Math.Min(C.Y, D.Y)) continue;
-                long randID = -(n1.id ^ n2.id); // TODO: get rid of hack
-                                                // TODO: we're going to treat -1 as always matching for now
+                long randID = -((n1.id * 3) ^ n2.id); // TODO: get rid of hack
+                                                      // TODO: we're going to treat -1 as always matching for now
                 bool ACSame = n1.id == n2.id;
                 bool ADSame = n1.id == n2.next.id;
                 bool BCSame = n1.next.id == n2.id;
@@ -432,99 +432,12 @@ namespace Zenith.ZGeom
                 // a subset of possible tiny angles that can cause rounding errors
                 // only thing that changes between these is the condition, line direction, and the newpoint id
                 // TODO: is this really what fixed the nonsense at 240202043? the angleDiff was only 0.009, which seems too big to cause an issue
-                if (ACSame && !ADSame && !BCSame && !BDSame)
-                {
-                    Vector2d line1 = B - A;
-                    Vector2d line2 = D - C;
-                    double angleDiff = Math.Atan2(line1.Y, line1.X) - Math.Atan2(line2.Y, line2.X);
-                    angleDiff = (angleDiff + 2 * Math.PI) % (2 * Math.PI);
-                    if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
-                    if (angleDiff < 0.001)
-                    {
-                        if (line1.Length() < line2.Length())
-                        {
-                            AreaNode newNode = new AreaNode { id = n1.next.id };
-                            if (!intersections.ContainsKey(n2)) intersections.Add(n2, new List<AreaNode>());
-                            intersections[n2].Add(newNode);
-                        }
-                        else
-                        {
-                            AreaNode newNode = new AreaNode { id = n2.next.id };
-                            if (!intersections.ContainsKey(n1)) intersections.Add(n1, new List<AreaNode>());
-                            intersections[n1].Add(newNode);
-                        }
-                    }
-                }
-                if (!ACSame && ADSame && !BCSame && !BDSame)
-                {
-                    Vector2d line1 = B - A;
-                    Vector2d line2 = C - D;
-                    double angleDiff = Math.Atan2(line1.Y, line1.X) - Math.Atan2(line2.Y, line2.X);
-                    angleDiff = (angleDiff + 2 * Math.PI) % (2 * Math.PI);
-                    if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
-                    if (angleDiff < 0.001)
-                    {
-                        if (line1.Length() < line2.Length())
-                        {
-                            AreaNode newNode = new AreaNode { id = n1.next.id };
-                            if (!intersections.ContainsKey(n2)) intersections.Add(n2, new List<AreaNode>());
-                            intersections[n2].Add(newNode);
-                        }
-                        else
-                        {
-                            AreaNode newNode = new AreaNode { id = n2.id };
-                            if (!intersections.ContainsKey(n1)) intersections.Add(n1, new List<AreaNode>());
-                            intersections[n1].Add(newNode);
-                        }
-                    }
-                }
-                if (!ACSame && !ADSame && BCSame && !BDSame)
-                {
-                    Vector2d line1 = A - B;
-                    Vector2d line2 = D - C;
-                    double angleDiff = Math.Atan2(line1.Y, line1.X) - Math.Atan2(line2.Y, line2.X);
-                    angleDiff = (angleDiff + 2 * Math.PI) % (2 * Math.PI);
-                    if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
-                    if (angleDiff < 0.001)
-                    {
-                        if (line1.Length() < line2.Length())
-                        {
-                            AreaNode newNode = new AreaNode { id = n1.id };
-                            if (!intersections.ContainsKey(n2)) intersections.Add(n2, new List<AreaNode>());
-                            intersections[n2].Add(newNode);
-                        }
-                        else
-                        {
-                            AreaNode newNode = new AreaNode { id = n2.next.id };
-                            if (!intersections.ContainsKey(n1)) intersections.Add(n1, new List<AreaNode>());
-                            intersections[n1].Add(newNode);
-                        }
-                    }
-                }
-                if (!ACSame && !ADSame && !BCSame && BDSame)
-                {
-                    Vector2d line1 = A - B;
-                    Vector2d line2 = C - D;
-                    double angleDiff = Math.Atan2(line1.Y, line1.X) - Math.Atan2(line2.Y, line2.X);
-                    angleDiff = (angleDiff + 2 * Math.PI) % (2 * Math.PI);
-                    if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
-                    if (angleDiff < 0.001)
-                    {
-                        if (line1.Length() < line2.Length())
-                        {
-                            AreaNode newNode = new AreaNode { id = n1.id };
-                            if (!intersections.ContainsKey(n2)) intersections.Add(n2, new List<AreaNode>());
-                            intersections[n2].Add(newNode);
-                        }
-                        else
-                        {
-                            AreaNode newNode = new AreaNode { id = n2.id };
-                            if (!intersections.ContainsKey(n1)) intersections.Add(n1, new List<AreaNode>());
-                            intersections[n1].Add(newNode);
-                        }
-                    }
-                }
-                if (!ACSame && !ADSame && !BCSame && !BDSame) // proper intersection
+                bool someCollinear = false;
+                someCollinear |= CheckCollinear(n1, n2, n2.next, map.nodes, intersections, blobs, true);
+                someCollinear |= CheckCollinear(n1.next, n2, n2.next, map.nodes, intersections, blobs, n1.next.next == null);
+                someCollinear |= CheckCollinear(n2, n1, n1.next, nodes, intersections, blobs, true);
+                someCollinear |= CheckCollinear(n2.next, n1, n1.next, nodes, intersections, blobs, n2.next.next == null);
+                if (!ACSame && !ADSame && !BCSame && !BDSame && !someCollinear) // proper intersection
                 {
                     Vector2d intersection = Intersect(A, B, C, D);
                     if (intersection != null)
@@ -562,6 +475,36 @@ namespace Zenith.ZGeom
             }
         }
 
+        // also setup the collinearness
+        private bool CheckCollinear(AreaNode v, AreaNode a, AreaNode b, Dictionary<long, List<AreaNode>> nodesAB, Dictionary<AreaNode, List<AreaNode>> intersections, BlobCollection blobs, bool doCollinearness)
+        {
+            if (v.IsEdge() || v.id == a.id || v.id == b.id) return false; // points are already shared, so we'll ignore it
+            double angle1 = CalcAngleDiff(a, b, a, v, blobs);
+            double angle2 = CalcAngleDiff(b, a, b, v, blobs);
+            if (angle1 < 0.01 && angle2 < 0.01)
+            {
+                if (doCollinearness)
+                {
+                    AreaNode newNode = new AreaNode { id = v.id };
+                    if (!intersections.ContainsKey(a)) intersections.Add(a, new List<AreaNode>());
+                    intersections[a].Add(newNode);
+                    nodesAB[v.id] = new List<AreaNode>() { newNode };
+                }
+                return true;
+            }
+            return false;
+        }
+
+        private double CalcAngleDiff(AreaNode A, AreaNode B, AreaNode C, AreaNode D, BlobCollection blobs)
+        {
+            Vector2d line1 = GetPos(B, blobs) - GetPos(A, blobs);
+            Vector2d line2 = GetPos(D, blobs) - GetPos(C, blobs);
+            double angleDiff = Math.Atan2(line1.Y, line1.X) - Math.Atan2(line2.Y, line2.X);
+            angleDiff = (angleDiff + 2 * Math.PI) % (2 * Math.PI);
+            if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
+            return angleDiff;
+        }
+
         // just give up and use the library
         private IEnumerable<PotentialIntersection> FindPotentialIntersections(List<AreaNode> nodes1, List<AreaNode> nodes2, BlobCollection blobs)
         {
@@ -597,6 +540,7 @@ namespace Zenith.ZGeom
             // copied from wiki, sure
             double t = ((a.X - c.X) * (c.Y - d.Y) - (a.Y - c.Y) * (c.X - d.X)) / ((a.X - b.X) * (c.Y - d.Y) - (a.Y - b.Y) * (c.X - d.X));
             double u = -((a.X - b.X) * (a.Y - c.Y) - (a.Y - b.Y) * (a.X - c.X)) / ((a.X - b.X) * (c.Y - d.Y) - (a.Y - b.Y) * (c.X - d.X));
+            if (double.IsNaN(t) || double.IsNaN(u)) return null;
             if (t < 0 || t > 1 || u < 0 || u > 1) return null;
             return a + (b - a) * t;
         }

@@ -128,10 +128,10 @@ namespace ZenithUnitTests
                     int y1 = i % size;
                     int x2 = i / size + 1;
                     int y2 = i % size + 1;
-                    if (x1 == 0 || !grid[x1 - 1, y1]) AddLine(blobs.nodes, newMap, x1, y1, x1, y2); // down
-                    if (y2 == size || !grid[x1, y2]) AddLine(blobs.nodes, newMap, x1, y2, x2, y2); // right
-                    if (x2 == size || !grid[x2, y1]) AddLine(blobs.nodes, newMap, x2, y2, x2, y1); // up
-                    if (y1 == 0 || !grid[x1, y1 - 1]) AddLine(blobs.nodes, newMap, x2, y1, x1, y1); // left
+                    if (x1 == 0 || !grid[x1 - 1, y1]) AddLine(blobs.nodes, newMap, x1, y1, x1, y2, true); // down
+                    if (y2 == size || !grid[x1, y2]) AddLine(blobs.nodes, newMap, x1, y2, x2, y2, true); // right
+                    if (x2 == size || !grid[x2, y1]) AddLine(blobs.nodes, newMap, x2, y2, x2, y1, true); // up
+                    if (y1 == 0 || !grid[x1, y1 - 1]) AddLine(blobs.nodes, newMap, x2, y1, x1, y1, true); // left
                 }
             }
             return newMap;
@@ -147,47 +147,60 @@ namespace ZenithUnitTests
         private void TestAddThenSubtractAndScale(int size1, int offsetX1, int offsetY1, int size2, int offsetX2, int offsetY2, int size3, int area)
         {
             var blobs = new BlobCollection();
-            TestAddThenSubtract(size1, offsetX1, offsetY1, size2, offsetX2, offsetY2, size3, area, blobs);
-            TestAddThenSubtract(size1 * 5, offsetX1 * 5, offsetY1 * 5, size2 * 5, offsetX2 * 5, offsetY2 * 5, size3 * 5, area * 25, blobs);
+            TestAddThenSubtract(size1, offsetX1, offsetY1, size2, offsetX2, offsetY2, size3, area, blobs, false);
+            TestAddThenSubtract(size1 * 5, offsetX1 * 5, offsetY1 * 5, size2 * 5, offsetX2 * 5, offsetY2 * 5, size3 * 5, area * 25, blobs, false);
+            TestAddThenSubtract(size1, offsetX1, offsetY1, size2, offsetX2, offsetY2, size3, area, blobs, true);
+            TestAddThenSubtract(size1 * 5, offsetX1 * 5, offsetY1 * 5, size2 * 5, offsetX2 * 5, offsetY2 * 5, size3 * 5, area * 25, blobs, true);
         }
 
         private static void TestAddAndSubtractAndScale(int size1, int offsetX, int offsetY, int size2, int addArea, int subArea, bool testOpen)
         {
             var blobs = new BlobCollection();
-            TestAddAndSubtract(size1, offsetX, offsetY, size2, blobs, addArea, subArea, testOpen);
-            TestAddAndSubtract(size1 * 5, offsetX * 5, offsetY * 5, size2 * 5, blobs, addArea * 25, subArea * 25, testOpen);
+            TestAddAndSubtract(size1, offsetX, offsetY, size2, blobs, addArea, subArea, testOpen, false);
+            TestAddAndSubtract(size1 * 5, offsetX * 5, offsetY * 5, size2 * 5, blobs, addArea * 25, subArea * 25, testOpen, false);
+            TestAddAndSubtract(size1, offsetX, offsetY, size2, blobs, addArea, subArea, testOpen, true);
+            TestAddAndSubtract(size1 * 5, offsetX * 5, offsetY * 5, size2 * 5, blobs, addArea * 25, subArea * 25, testOpen, true);
         }
 
-        private static void TestAddAndSubtract(int size1, int offsetX, int offsetY, int size2, BlobCollection blobs, int addArea, int subArea, bool testOpen)
+        private static void TestAddAndSubtract(int size1, int offsetX, int offsetY, int size2, BlobCollection blobs, int addArea, int subArea, bool testOpen, bool cornersOnly)
         {
             if (!testOpen)
             {
-                SectorConstrainedOSMAreaGraph square1 = MakeRect(blobs.nodes, 0, 0, size1, size1);
-                SectorConstrainedOSMAreaGraph square2 = MakeRect(blobs.nodes, offsetX, offsetY, offsetX + size2, offsetY + size2);
+                SectorConstrainedOSMAreaGraph square1 = MakeRect(blobs.nodes, 0, 0, size1, size1, cornersOnly);
+                SectorConstrainedOSMAreaGraph square2 = MakeRect(blobs.nodes, offsetX, offsetY, offsetX + size2, offsetY + size2, cornersOnly);
+                var blobs2 = Clone(blobs); // clone since we modify blobs now
                 //if (square1.Clone().Add(square2, blobs).Area(blobs) != addArea) throw new NotImplementedException();
                 //if (square1.Clone().Subtract(square2, blobs).Area(blobs) != subArea) throw new NotImplementedException();
                 double area1 = GetArea(square1.Clone().Add(square2, blobs).Finalize(blobs).GetTesselationVertices(Color.White));
-                double area2 = GetArea(square1.Clone().Subtract(square2, blobs).Finalize(blobs).GetTesselationVertices(Color.White));
+                double area2 = GetArea(square1.Clone().Subtract(square2, blobs2).Finalize(blobs2).GetTesselationVertices(Color.White));
                 if (area1 != addArea) throw new NotImplementedException();
                 if (area2 != subArea) throw new NotImplementedException();
             }
             else
             {
                 // test some coastline stuff
-                SectorConstrainedOSMAreaGraph square1 = MakeOpenRect(blobs.nodes, 0, 0, size1, size1, true); // leave left open
-                SectorConstrainedOSMAreaGraph square2 = MakeOpenRect(blobs.nodes, offsetX, offsetY, offsetX + size2, offsetY + size2, false); // leave right open
+                SectorConstrainedOSMAreaGraph square1 = MakeOpenRect(blobs.nodes, 0, 0, size1, size1, true, cornersOnly); // leave left open
+                SectorConstrainedOSMAreaGraph square2 = MakeOpenRect(blobs.nodes, offsetX, offsetY, offsetX + size2, offsetY + size2, false, cornersOnly); // leave right open
+                var blobs2 = Clone(blobs); // clone since we modify blobs now
                 double area1 = GetArea(square1.Clone().Add(square2, blobs).Finalize(blobs).GetTesselationVertices(Color.White));
-                double area2 = GetArea(square1.Clone().Subtract(square2, blobs).Finalize(blobs).GetTesselationVertices(Color.White));
+                double area2 = GetArea(square1.Clone().Subtract(square2, blobs2).Finalize(blobs2).GetTesselationVertices(Color.White));
                 if (area1 != addArea) throw new NotImplementedException();
                 if (area2 != subArea) throw new NotImplementedException();
             }
         }
 
-        private static void TestAddThenSubtract(int size1, int offsetX1, int offsetY1, int size2, int offsetX2, int offsetY2, int size3, int area, BlobCollection blobs)
+        private static BlobCollection Clone(BlobCollection blobs)
         {
-            SectorConstrainedOSMAreaGraph square1 = MakeRect(blobs.nodes, 0, 0, size1, size1);
-            SectorConstrainedOSMAreaGraph square2 = MakeRect(blobs.nodes, offsetX1, offsetY1, offsetX1 + size2, offsetY1 + size2);
-            SectorConstrainedOSMAreaGraph square3 = MakeRect(blobs.nodes, offsetX2, offsetY2, offsetX2 + size3, offsetY2 + size3);
+            var clone = new BlobCollection();
+            foreach (var pair in blobs.nodes) clone.nodes[pair.Key] = pair.Value;
+            return clone;
+        }
+
+        private static void TestAddThenSubtract(int size1, int offsetX1, int offsetY1, int size2, int offsetX2, int offsetY2, int size3, int area, BlobCollection blobs, bool cornersOnly)
+        {
+            SectorConstrainedOSMAreaGraph square1 = MakeRect(blobs.nodes, 0, 0, size1, size1, cornersOnly);
+            SectorConstrainedOSMAreaGraph square2 = MakeRect(blobs.nodes, offsetX1, offsetY1, offsetX1 + size2, offsetY1 + size2, cornersOnly);
+            SectorConstrainedOSMAreaGraph square3 = MakeRect(blobs.nodes, offsetX2, offsetY2, offsetX2 + size3, offsetY2 + size3, cornersOnly);
             double areaAns = GetArea(square1.Subtract(square2.Add(square3, blobs), blobs).Finalize(blobs).GetTesselationVertices(Color.White));
             if (areaAns != area) throw new NotImplementedException();
         }
@@ -204,23 +217,23 @@ namespace ZenithUnitTests
             return -area / 2;
         }
 
-        private static SectorConstrainedOSMAreaGraph MakeRect(Dictionary<long, Vector2d> nodes, int x1, int y1, int x2, int y2)
+        private static SectorConstrainedOSMAreaGraph MakeRect(Dictionary<long, Vector2d> nodes, int x1, int y1, int x2, int y2, bool cornersOnly)
         {
             SectorConstrainedOSMAreaGraph graph = new SectorConstrainedOSMAreaGraph();
-            AddLine(nodes, graph, x1, y1, x1, y2); // down
-            AddLine(nodes, graph, x1, y2, x2, y2); // right
-            AddLine(nodes, graph, x2, y2, x2, y1); // up
-            AddLine(nodes, graph, x2, y1, x1, y1); // left
+            AddLine(nodes, graph, x1, y1, x1, y2, cornersOnly); // down
+            AddLine(nodes, graph, x1, y2, x2, y2, cornersOnly); // right
+            AddLine(nodes, graph, x2, y2, x2, y1, cornersOnly); // up
+            AddLine(nodes, graph, x2, y1, x1, y1, cornersOnly); // left
             return graph;
         }
 
-        private static SectorConstrainedOSMAreaGraph MakeOpenRect(Dictionary<long, Vector2d> nodes, int x1, int y1, int x2, int y2, bool leftOpen)
+        private static SectorConstrainedOSMAreaGraph MakeOpenRect(Dictionary<long, Vector2d> nodes, int x1, int y1, int x2, int y2, bool leftOpen, bool cornersOnly)
         {
             SectorConstrainedOSMAreaGraph graph = new SectorConstrainedOSMAreaGraph();
-            if (!leftOpen) AddLine(nodes, graph, x1, y1, x1, y2); // down
-            AddLine(nodes, graph, x1, y2, x2, y2); // right
-            if (leftOpen) AddLine(nodes, graph, x2, y2, x2, y1); // up
-            AddLine(nodes, graph, x2, y1, x1, y1); // left
+            if (!leftOpen) AddLine(nodes, graph, x1, y1, x1, y2, cornersOnly); // down
+            AddLine(nodes, graph, x1, y2, x2, y2, cornersOnly); // right
+            if (leftOpen) AddLine(nodes, graph, x2, y2, x2, y1, cornersOnly); // up
+            AddLine(nodes, graph, x2, y1, x1, y1, cornersOnly); // left
             if (leftOpen)
             {
                 MarkStartPoint(graph, x1, y2);
@@ -251,30 +264,37 @@ namespace ZenithUnitTests
             graph.nodes.Remove(n);
         }
 
-        private static void AddLine(Dictionary<long, Vector2d> nodes, SectorConstrainedOSMAreaGraph graph, int x1, int y1, int x2, int y2)
+        private static void AddLine(Dictionary<long, Vector2d> nodes, SectorConstrainedOSMAreaGraph graph, int x1, int y1, int x2, int y2, bool cornersOnly)
         {
-            if (x1 == x2)
+            if (cornersOnly)
             {
-                int length = Math.Abs(y2 - y1);
-                int inc = (y2 - y1) / length;
-                for (int i = 0; i < length; i++)
-                {
-                    AddLineSeg(nodes, graph, x1, y1 + i * inc, x2, y1 + (i + 1) * inc);
-                }
-            }
-            else if (y1 == y2)
-            {
-
-                int length = Math.Abs(x2 - x1);
-                int inc = (x2 - x1) / length;
-                for (int i = 0; i < length; i++)
-                {
-                    AddLineSeg(nodes, graph, x1 + i * inc, y1, x1 + (i + 1) * inc, y2);
-                }
+                AddLineSeg(nodes, graph, x1, y1, x2, y2);
             }
             else
             {
-                throw new NotImplementedException();
+                if (x1 == x2)
+                {
+                    int length = Math.Abs(y2 - y1);
+                    int inc = (y2 - y1) / length;
+                    for (int i = 0; i < length; i++)
+                    {
+                        AddLineSeg(nodes, graph, x1, y1 + i * inc, x2, y1 + (i + 1) * inc);
+                    }
+                }
+                else if (y1 == y2)
+                {
+
+                    int length = Math.Abs(x2 - x1);
+                    int inc = (x2 - x1) / length;
+                    for (int i = 0; i < length; i++)
+                    {
+                        AddLineSeg(nodes, graph, x1 + i * inc, y1, x1 + (i + 1) * inc, y2);
+                    }
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
             }
         }
 
