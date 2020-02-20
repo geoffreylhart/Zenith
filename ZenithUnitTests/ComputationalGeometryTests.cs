@@ -30,6 +30,7 @@ namespace ZenithUnitTests
             TestAddAndSubtractAndScale(3, 3, 1, 1, 10, 9, true);
             TestAddAndSubtractAndScale(4, 3, 1, 2, 18, 14, true);
             TestAddThenSubtractAndScale(5, 1, 1, 1, 3, 1, 1, 23); // double donut test
+            ToughTest(); // emulate the situation around node 240202043
             Random rand = new Random(123);
             for (int i = 0; i < 10000; i++)
             {
@@ -39,6 +40,50 @@ namespace ZenithUnitTests
             {
                 RandomSubtractTest(rand);
             }
+        }
+
+        private void ToughTest()
+        {
+            var blobs = new BlobCollection();
+            SectorConstrainedOSMAreaGraph coast = new SectorConstrainedOSMAreaGraph();
+            AddLineSeg(blobs.nodes, coast, 6, 6, 6, 5);
+            AddLineSeg(blobs.nodes, coast, 6, 5, 6, 4);
+            AddLineSeg(blobs.nodes, coast, 6, 4, 6, 3);
+            AddLineSeg(blobs.nodes, coast, 6, 3, 5, 2);
+            AddLineSeg(blobs.nodes, coast, 5, 2, 3, 2);
+            AddLineSeg(blobs.nodes, coast, 3, 2, 2, 2);
+            AddLineSeg(blobs.nodes, coast, 2, 2, 1, 2);
+            MarkStartPoint(coast, 6, 6);
+            MarkEndPoint(coast, 1, 2);
+            SectorConstrainedOSMAreaGraph bigLake = new SectorConstrainedOSMAreaGraph();
+            AddLineSeg(blobs.nodes, bigLake, 7, 0, 3, 0);
+            AddLineSeg(blobs.nodes, bigLake, 3, 0, 3, 1);
+            AddLineSeg(blobs.nodes, bigLake, 3, 1, 4, 1);
+            AddLineSeg(blobs.nodes, bigLake, 4, 1, 5, 2);
+            AddLineSeg(blobs.nodes, bigLake, 5, 2, 6, 3);
+            AddLineSeg(blobs.nodes, bigLake, 6, 3, 6, 4);
+            AddLineSeg(blobs.nodes, bigLake, 6, 4, 6, 5);
+            AddLineSeg(blobs.nodes, bigLake, 6, 5, 7, 5);
+            AddLineSeg(blobs.nodes, bigLake, 7, 5, 7, 0);
+            SectorConstrainedOSMAreaGraph smallLake = new SectorConstrainedOSMAreaGraph();
+            AddLineSeg(blobs.nodes, smallLake, 2, 1, 2, 2);
+            AddLineSeg(blobs.nodes, smallLake, 2, 2, 3, 2);
+            AddLineSeg(blobs.nodes, smallLake, 3, 2, 5, 4);
+            AddLineSeg(blobs.nodes, smallLake, 5, 4, 6, 4);
+            AddLineSeg(blobs.nodes, smallLake, 6, 4, 3, 1);
+            AddLineSeg(blobs.nodes, smallLake, 3, 1, 2, 1);
+            double coastArea = GetArea(coast.Finalize(blobs).GetTesselationVertices(Color.White));
+            if (coastArea != 19.5 - 10) throw new NotImplementedException(); // sure, minus 10 because everything's scaled up and we can't properly close
+            double bigLakeArea = GetArea(bigLake.Finalize(blobs).GetTesselationVertices(Color.White));
+            if (bigLakeArea != 10) throw new NotImplementedException();
+            double smallLakeArea = GetArea(smallLake.Finalize(blobs).GetTesselationVertices(Color.White));
+            if (smallLakeArea != 3.5) throw new NotImplementedException();
+            var lakes = bigLake.Clone().Add(smallLake, blobs);
+            double lakesArea = GetArea(lakes.Finalize(blobs).GetTesselationVertices(Color.White));
+            // if (lakesArea != 13.5) throw new NotImplementedException(); // looks like the tesselator is filling in the hole?
+            var final = coast.Clone().Subtract(lakes, blobs);
+            double finalArea = GetArea(final.Finalize(blobs).GetTesselationVertices(Color.White));
+            if (finalArea != 17.5 - 10) throw new NotImplementedException(); // sure, minus 10 because everything's scaled up and we can't properly close
         }
 
         private void RandomAddTest(Random rand)
