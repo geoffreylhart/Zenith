@@ -407,9 +407,11 @@ namespace Zenith.ZGeom
         private void DoIntersections(SectorConstrainedOSMAreaGraph map, BlobCollection blobs)
         {
             Dictionary<AreaNode, List<AreaNode>> intersections = new Dictionary<AreaNode, List<AreaNode>>();
-            var nodes1 = nodes.Values.Where(x => x.Count == 1).Select(x => x.Single()).ToList();
+            var nodes1 = new List<AreaNode>();
+            foreach (var nodeList in nodes.Values) nodes1.AddRange(nodeList);
             nodes1.AddRange(startPoints);
-            var nodes2 = map.nodes.Values.Where(x => x.Count == 1).Select(x => x.Single()).ToList();
+            var nodes2 = new List<AreaNode>();
+            foreach (var nodeList in map.nodes.Values) nodes2.AddRange(nodeList);
             nodes2.AddRange(map.startPoints);
             foreach (var potentialIntersection in FindPotentialIntersections(nodes1, nodes2, blobs))
             {
