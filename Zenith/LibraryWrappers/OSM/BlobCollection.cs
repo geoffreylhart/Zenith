@@ -98,12 +98,22 @@ namespace Zenith.LibraryWrappers.OSM
                     }
                 }
             }
+            HashSet<long> innersAndOuters = new HashSet<long>();
+            foreach (var innerList in inners)
+            {
+                foreach (var inner in innerList) innersAndOuters.Add(inner);
+            }
+            foreach (var outerList in outers)
+            {
+                foreach (var outer in outerList) innersAndOuters.Add(outer);
+            }
             // end gathering logic
             SectorConstrainedOSMAreaGraph map = new SectorConstrainedOSMAreaGraph();
             // add each simple way, flipping them where necessary
             foreach (var way in simpleWays)
             {
-                if (way.refs.Count < 3) continue; // sometimes multipolygon straight lines get flagged
+                if (innersAndOuters.Contains(way.id)) continue; // sometimes lake multipolygons also tag several pieces - at best this is redundant, and at worst causes errors
+                if (way.refs.Count < 3) continue; // we -usually- only ever see lines with multipolygons, but I found a weird way like 43435045
                 SectorConstrainedOSMAreaGraph simpleMap = new SectorConstrainedOSMAreaGraph();
                 var superLoop = new List<Way>() { way };
                 if (way.refs.Last() != way.refs.First()) way.refs.Add(way.refs.First()); // some folks forget to close a simple way, or perhaps the mistake is tagging subcomponents of a relation
