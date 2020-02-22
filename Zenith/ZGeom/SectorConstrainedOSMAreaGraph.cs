@@ -15,10 +15,10 @@ namespace Zenith.ZGeom
         public HashSet<AreaNode> startPoints = new HashSet<AreaNode>();
 
         // TODO: for now we're assuming no arbitrary intersections or multiple branching intersections - this is probably naive
-        public SectorConstrainedOSMAreaGraph Add(SectorConstrainedOSMAreaGraph map, BlobCollection blobs)
+        public SectorConstrainedOSMAreaGraph Add(SectorConstrainedOSMAreaGraph map, BlobCollection blobs, bool checkIntersections = true)
         {
             map = map.Clone(); // now we're allowed to junk it
-            DoIntersections(map, blobs);
+            if (checkIntersections) DoIntersections(new List<SectorConstrainedOSMAreaGraph>() { this, map }, blobs);
             var loopNodes = DoLoops(map, blobs);
             // remember, counterclockwise makes an island
             List<AreaNode> doAdd = new List<AreaNode>();
@@ -208,10 +208,10 @@ namespace Zenith.ZGeom
             return this;
         }
 
-        public SectorConstrainedOSMAreaGraph Subtract(SectorConstrainedOSMAreaGraph map, BlobCollection blobs)
+        public SectorConstrainedOSMAreaGraph Subtract(SectorConstrainedOSMAreaGraph map, BlobCollection blobs, bool checkIntersections = true)
         {
             map = map.Clone(); // now we're allowed to junk it
-            DoIntersections(map, blobs);
+            if (checkIntersections) DoIntersections(new List<SectorConstrainedOSMAreaGraph>() { this, map }, blobs);
             map.Reverse();
             var loopNodes = DoLoops(map, blobs);
             // remember, counterclockwise makes an island
@@ -402,83 +402,97 @@ namespace Zenith.ZGeom
             return this;
         }
 
-        // TODO: speedup later, for now use naive n^2 search
         // note, actual intersections should be exceedingly rare, like 1 in 6 sectors or something
-        private void DoIntersections(SectorConstrainedOSMAreaGraph map, BlobCollection blobs)
+        public static void DoIntersections(List<SectorConstrainedOSMAreaGraph> maps, BlobCollection blobs)
         {
-            Dictionary<AreaNode, List<AreaNode>> intersections = new Dictionary<AreaNode, List<AreaNode>>();
-            var nodes1 = new List<AreaNode>();
-            foreach (var nodeList in nodes.Values) nodes1.AddRange(nodeList);
-            nodes1.AddRange(startPoints);
-            var nodes2 = new List<AreaNode>();
-            foreach (var nodeList in map.nodes.Values) nodes2.AddRange(nodeList);
-            nodes2.AddRange(map.startPoints);
-            foreach (var potentialIntersection in FindPotentialIntersections(nodes1, nodes2, blobs))
+            var allNodes = new List<List<AreaNode>>();
+            var allTrees = new List<STRtree<AreaNode>>();
+            foreach (var map in maps)
             {
-                var n1 = potentialIntersection.n1;
-                var n2 = potentialIntersection.n2;
-                Vector2d A = GetPos(n1, blobs);
-                Vector2d B = GetPos(n1.next, blobs);
-                Vector2d C = GetPos(n2, blobs);
-                Vector2d D = GetPos(n2.next, blobs);
-                if (Math.Min(A.X, B.X) > Math.Max(C.X, D.X)) continue;
-                if (Math.Max(A.X, B.X) < Math.Min(C.X, D.X)) continue;
-                if (Math.Min(A.Y, B.Y) > Math.Max(C.Y, D.Y)) continue;
-                if (Math.Max(A.Y, B.Y) < Math.Min(C.Y, D.Y)) continue;
-                long randID = -((n1.id * 3) ^ n2.id); // TODO: get rid of hack
-                                                      // TODO: we're going to treat -1 as always matching for now
-                bool ACSame = n1.id == n2.id;
-                bool ADSame = n1.id == n2.next.id;
-                bool BCSame = n1.next.id == n2.id;
-                bool BDSame = n1.next.id == n2.next.id;
-                // a subset of possible tiny angles that can cause rounding errors
-                // only thing that changes between these is the condition, line direction, and the newpoint id
-                // TODO: is this really what fixed the nonsense at 240202043? the angleDiff was only 0.009, which seems too big to cause an issue
-                bool someCollinear = false;
-                someCollinear |= CheckCollinear(n1, n2, n2.next, map.nodes, intersections, blobs, true);
-                someCollinear |= CheckCollinear(n1.next, n2, n2.next, map.nodes, intersections, blobs, n1.next.next == null);
-                someCollinear |= CheckCollinear(n2, n1, n1.next, nodes, intersections, blobs, true);
-                someCollinear |= CheckCollinear(n2.next, n1, n1.next, nodes, intersections, blobs, n2.next.next == null);
-                if (!ACSame && !ADSame && !BCSame && !BDSame && !someCollinear) // proper intersection
-                {
-                    Vector2d intersection = Intersect(A, B, C, D);
-                    if (intersection != null)
-                    {
-                        AreaNode newNode1 = new AreaNode() { id = randID };
-                        AreaNode newNode2 = new AreaNode() { id = randID };
-                        blobs.nodes[randID] = intersection;
-                        nodes[randID] = new List<AreaNode>() { newNode1 };
-                        map.nodes[randID] = new List<AreaNode>() { newNode2 };
-                        if (!intersections.ContainsKey(n1)) intersections.Add(n1, new List<AreaNode>());
-                        intersections[n1].Add(newNode1);
-                        if (!intersections.ContainsKey(n2)) intersections.Add(n2, new List<AreaNode>());
-                        intersections[n2].Add(newNode2);
-                    }
-                }
+                List<AreaNode> nodes = new List<AreaNode>();
+                foreach (var nodeList in map.nodes.Values) nodes.AddRange(nodeList);
+                nodes.AddRange(map.startPoints);
+                allNodes.Add(nodes);
+                allTrees.Add(MakeRTree(nodes, blobs));
             }
-            foreach (var pair in intersections)
+            for (int j = 0; j < maps.Count; j++)
             {
-                AreaNode start = pair.Key;
-                AreaNode end = pair.Key.next;
-                var sorted = pair.Value.OrderBy(x => (GetPos(x, blobs) - GetPos(start, blobs)).Length()).ToList();
-                // get rid of duplicates
-                for (int i = sorted.Count - 1; i > 0; i--)
+                for (int k = j + 1; k < maps.Count; k++)
                 {
-                    if (sorted[i].id == sorted[i - 1].id) sorted.RemoveAt(i);
-                }
-                sorted.Insert(0, start);
-                sorted.Add(end);
-                // chain them all together
-                for (int i = 1; i < sorted.Count; i++)
-                {
-                    sorted[i - 1].next = sorted[i];
-                    sorted[i].prev = sorted[i - 1];
+                    Dictionary<AreaNode, List<AreaNode>> intersections = new Dictionary<AreaNode, List<AreaNode>>();
+                    var map1 = maps[j];
+                    var map2 = maps[k];
+                    var nodes1 = allNodes[j];
+                    var nodes2 = allNodes[k];
+                    var tree1 = allTrees[j];
+                    foreach (var potentialIntersection in FindPotentialIntersections(tree1, nodes2, blobs))
+                    {
+                        var n1 = potentialIntersection.n1;
+                        var n2 = potentialIntersection.n2;
+                        Vector2d A = GetPos(n1, blobs);
+                        Vector2d B = GetPos(n1.next, blobs);
+                        Vector2d C = GetPos(n2, blobs);
+                        Vector2d D = GetPos(n2.next, blobs);
+                        if (Math.Min(A.X, B.X) > Math.Max(C.X, D.X)) continue;
+                        if (Math.Max(A.X, B.X) < Math.Min(C.X, D.X)) continue;
+                        if (Math.Min(A.Y, B.Y) > Math.Max(C.Y, D.Y)) continue;
+                        if (Math.Max(A.Y, B.Y) < Math.Min(C.Y, D.Y)) continue;
+                        long randID = -((n1.id * 3) ^ n2.id); // TODO: get rid of hack
+                                                              // TODO: we're going to treat -1 as always matching for now
+                        bool ACSame = n1.id == n2.id;
+                        bool ADSame = n1.id == n2.next.id;
+                        bool BCSame = n1.next.id == n2.id;
+                        bool BDSame = n1.next.id == n2.next.id;
+                        // a subset of possible tiny angles that can cause rounding errors
+                        // only thing that changes between these is the condition, line direction, and the newpoint id
+                        // TODO: is this really what fixed the nonsense at 240202043? the angleDiff was only 0.009, which seems too big to cause an issue
+                        bool someCollinear = false;
+                        someCollinear |= CheckCollinear(n1, n2, n2.next, map2.nodes, intersections, blobs, true);
+                        someCollinear |= CheckCollinear(n1.next, n2, n2.next, map2.nodes, intersections, blobs, n1.next.next == null);
+                        someCollinear |= CheckCollinear(n2, n1, n1.next, map1.nodes, intersections, blobs, true);
+                        someCollinear |= CheckCollinear(n2.next, n1, n1.next, map1.nodes, intersections, blobs, n2.next.next == null);
+                        if (!ACSame && !ADSame && !BCSame && !BDSame && !someCollinear) // proper intersection
+                        {
+                            Vector2d intersection = Intersect(A, B, C, D);
+                            if (intersection != null)
+                            {
+                                AreaNode newNode1 = new AreaNode() { id = randID };
+                                AreaNode newNode2 = new AreaNode() { id = randID };
+                                blobs.nodes[randID] = intersection;
+                                map1.nodes[randID] = new List<AreaNode>() { newNode1 };
+                                map2.nodes[randID] = new List<AreaNode>() { newNode2 };
+                                if (!intersections.ContainsKey(n1)) intersections.Add(n1, new List<AreaNode>());
+                                intersections[n1].Add(newNode1);
+                                if (!intersections.ContainsKey(n2)) intersections.Add(n2, new List<AreaNode>());
+                                intersections[n2].Add(newNode2);
+                            }
+                        }
+                    }
+                    foreach (var pair in intersections)
+                    {
+                        AreaNode start = pair.Key;
+                        AreaNode end = pair.Key.next;
+                        var sorted = pair.Value.OrderBy(x => (GetPos(x, blobs) - GetPos(start, blobs)).Length()).ToList();
+                        // get rid of duplicates
+                        for (int i = sorted.Count - 1; i > 0; i--)
+                        {
+                            if (sorted[i].id == sorted[i - 1].id) sorted.RemoveAt(i);
+                        }
+                        sorted.Insert(0, start);
+                        sorted.Add(end);
+                        // chain them all together
+                        for (int i = 1; i < sorted.Count; i++)
+                        {
+                            sorted[i - 1].next = sorted[i];
+                            sorted[i].prev = sorted[i - 1];
+                        }
+                    }
                 }
             }
         }
 
         // also setup the collinearness
-        private bool CheckCollinear(AreaNode v, AreaNode a, AreaNode b, Dictionary<long, List<AreaNode>> nodesAB, Dictionary<AreaNode, List<AreaNode>> intersections, BlobCollection blobs, bool doCollinearness)
+        private static bool CheckCollinear(AreaNode v, AreaNode a, AreaNode b, Dictionary<long, List<AreaNode>> nodesAB, Dictionary<AreaNode, List<AreaNode>> intersections, BlobCollection blobs, bool doCollinearness)
         {
             if (v.IsEdge() || v.id == a.id || v.id == b.id) return false; // points are already shared, so we'll ignore it
             double angle1 = CalcAngleDiff(a, b, a, v, blobs);
@@ -497,7 +511,7 @@ namespace Zenith.ZGeom
             return false;
         }
 
-        private double CalcAngleDiff(AreaNode A, AreaNode B, AreaNode C, AreaNode D, BlobCollection blobs)
+        private static double CalcAngleDiff(AreaNode A, AreaNode B, AreaNode C, AreaNode D, BlobCollection blobs)
         {
             Vector2d line1 = GetPos(B, blobs) - GetPos(A, blobs);
             Vector2d line2 = GetPos(D, blobs) - GetPos(C, blobs);
@@ -508,18 +522,9 @@ namespace Zenith.ZGeom
         }
 
         // just give up and use the library
-        private IEnumerable<PotentialIntersection> FindPotentialIntersections(List<AreaNode> nodes1, List<AreaNode> nodes2, BlobCollection blobs)
+        private static IEnumerable<PotentialIntersection> FindPotentialIntersections(STRtree<AreaNode> rtree, List<AreaNode> nodes, BlobCollection blobs)
         {
-            var rtree = new STRtree<AreaNode>();
-            foreach (var node in nodes1)
-            {
-                Vector2d pos1 = GetPos(node, blobs);
-                Vector2d pos2 = GetPos(node.next, blobs);
-                var env = new GeoAPI.Geometries.Envelope(Math.Min(pos1.X, pos2.X), Math.Max(pos1.X, pos2.X), Math.Min(pos1.Y, pos2.Y), Math.Max(pos1.Y, pos2.Y));
-                rtree.Insert(env, node);
-            }
-            rtree.Build();
-            foreach (var node in nodes2)
+            foreach (var node in nodes)
             {
                 Vector2d pos1 = GetPos(node, blobs);
                 Vector2d pos2 = GetPos(node.next, blobs);
@@ -531,13 +536,27 @@ namespace Zenith.ZGeom
             }
         }
 
+        private static STRtree<AreaNode> MakeRTree(List<AreaNode> nodes, BlobCollection blobs)
+        {
+            var rtree = new STRtree<AreaNode>();
+            foreach (var node in nodes)
+            {
+                Vector2d pos1 = GetPos(node, blobs);
+                Vector2d pos2 = GetPos(node.next, blobs);
+                var env = new GeoAPI.Geometries.Envelope(Math.Min(pos1.X, pos2.X), Math.Max(pos1.X, pos2.X), Math.Min(pos1.Y, pos2.Y), Math.Max(pos1.Y, pos2.Y));
+                rtree.Insert(env, node);
+            }
+            rtree.Build();
+            return rtree;
+        }
+
         public class PotentialIntersection
         {
             public AreaNode n1;
             public AreaNode n2;
         }
 
-        private Vector2d Intersect(Vector2d a, Vector2d b, Vector2d c, Vector2d d)
+        private static Vector2d Intersect(Vector2d a, Vector2d b, Vector2d c, Vector2d d)
         {
             // copied from wiki, sure
             double t = ((a.X - c.X) * (c.Y - d.Y) - (a.Y - c.Y) * (c.X - d.X)) / ((a.X - b.X) * (c.Y - d.Y) - (a.Y - b.Y) * (c.X - d.X));
@@ -713,7 +732,7 @@ namespace Zenith.ZGeom
             return map;
         }
 
-        private Vector2d GetPos(AreaNode node, BlobCollection blobs)
+        private static Vector2d GetPos(AreaNode node, BlobCollection blobs)
         {
             return node.IsEdge() ? node.v : blobs.nodes[node.id];
         }

@@ -108,8 +108,8 @@ namespace Zenith.LibraryWrappers.OSM
                 foreach (var outer in outerList) innersAndOuters.Add(outer);
             }
             // end gathering logic
-            SectorConstrainedOSMAreaGraph map = new SectorConstrainedOSMAreaGraph();
             // add each simple way, flipping them where necessary
+            List<SectorConstrainedOSMAreaGraph> addingMaps = new List<SectorConstrainedOSMAreaGraph>();
             foreach (var way in simpleWays)
             {
                 if (innersAndOuters.Contains(way.id)) continue; // sometimes lake multipolygons also tag several pieces - at best this is redundant, and at worst causes errors
@@ -137,7 +137,7 @@ namespace Zenith.LibraryWrappers.OSM
                 {
                     AddConstrainedPaths(simpleMap, superLoop);
                 }
-                map.Add(simpleMap, this);
+                addingMaps.Add(simpleMap);
             }
             // construct each multipolygon to add separately
             for (int i = 0; i < inners.Count; i++) // foreach multipolygon, basically
@@ -148,9 +148,12 @@ namespace Zenith.LibraryWrappers.OSM
                 SuperWayCollection superOuterWays = GenerateSuperWayCollection(outers[i].Where(x => wayLookup.ContainsKey(x)).Select(x => Copy(wayLookup[x])), true);
                 SectorConstrainedOSMAreaGraph innerMap = DoMultipolygon(superInnerWays);
                 SectorConstrainedOSMAreaGraph outerMap = DoMultipolygon(superOuterWays);
-                SectorConstrainedOSMAreaGraph multiPolygon = outerMap.Subtract(innerMap, this);
-                map.Add(multiPolygon, this);
+                SectorConstrainedOSMAreaGraph multiPolygon = outerMap.Subtract(innerMap, this, true);
+                addingMaps.Add(multiPolygon);
             }
+            SectorConstrainedOSMAreaGraph map = new SectorConstrainedOSMAreaGraph();
+            SectorConstrainedOSMAreaGraph.DoIntersections(addingMaps, this);
+            foreach (var adding in addingMaps) map.Add(adding, this, false);
             return map;
         }
 
