@@ -43,7 +43,8 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             BlobCollection blobs = OSMReader.GetAllBlobs(sector);
             Console.WriteLine($"Blobs read for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
-            landAreaMap = blobs.GetCoastAreaMap("natural", "coastline").Subtract(blobs.GetAreaMap("natural", "water"), blobs).Finalize(blobs);
+            BlobsIntersector.DoIntersections(blobs);
+            landAreaMap = blobs.GetCoastAreaMap("natural", "coastline").Subtract(blobs.GetAreaMap("natural", "water"), blobs, false).Finalize(blobs);
             Console.WriteLine($"Land area map generated for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
             roadGraph = blobs.GetRoadsFast();

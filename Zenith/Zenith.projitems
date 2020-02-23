@@ -22,6 +22,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)EditorGameComponents\IEditorGameComponent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Game1.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GlobalContent.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\BlobsIntersector.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\OSMLineBufferGenerator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\OSMPaths.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\PBF\Node.cs" />

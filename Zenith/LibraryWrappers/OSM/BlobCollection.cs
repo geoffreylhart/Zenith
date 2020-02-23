@@ -16,7 +16,7 @@ namespace Zenith.LibraryWrappers.OSM
     public class BlobCollection
     {
         public Dictionary<long, Vector2d> nodes = new Dictionary<long, Vector2d>();
-        private List<Blob> blobs;
+        public List<Blob> blobs;
         private ISector sector;
 
         public BlobCollection(List<Blob> blobs, ISector sector)
@@ -148,11 +148,10 @@ namespace Zenith.LibraryWrappers.OSM
                 SuperWayCollection superOuterWays = GenerateSuperWayCollection(outers[i].Where(x => wayLookup.ContainsKey(x)).Select(x => Copy(wayLookup[x])), true);
                 SectorConstrainedOSMAreaGraph innerMap = DoMultipolygon(superInnerWays);
                 SectorConstrainedOSMAreaGraph outerMap = DoMultipolygon(superOuterWays);
-                SectorConstrainedOSMAreaGraph multiPolygon = outerMap.Subtract(innerMap, this, true);
+                SectorConstrainedOSMAreaGraph multiPolygon = outerMap.Subtract(innerMap, this, false);
                 addingMaps.Add(multiPolygon);
             }
             SectorConstrainedOSMAreaGraph map = new SectorConstrainedOSMAreaGraph();
-            SectorConstrainedOSMAreaGraph.DoIntersections(addingMaps, this);
             foreach (var adding in addingMaps) map.Add(adding, this, false);
             return map;
         }
@@ -186,7 +185,7 @@ namespace Zenith.LibraryWrappers.OSM
                     foreach (var way in superWay) way.refs.Reverse();
                 }
                 AddConstrainedPaths(temp, superWay);
-                map.Add(temp, this);
+                map.Add(temp, this, false);
             }
             foreach (var superLoop in superWays.loopedWays)
             {
@@ -216,7 +215,7 @@ namespace Zenith.LibraryWrappers.OSM
                 {
                     AddConstrainedPaths(temp, superLoop);
                 }
-                map.Add(temp, this);
+                map.Add(temp, this, false);
             }
             return map;
         }
@@ -462,7 +461,7 @@ namespace Zenith.LibraryWrappers.OSM
             return refs;
         }
 
-        internal IEnumerable<Way> EnumerateWays()
+        internal IEnumerable<Way> EnumerateWays(bool clone = true)
         {
             foreach (var blob in blobs)
             {
@@ -473,7 +472,7 @@ namespace Zenith.LibraryWrappers.OSM
                     foreach (var way in pGroup.ways)
                     {
                         way.InitKeyValues(blob.pBlock.stringtable);
-                        yield return Copy(way);
+                        yield return clone ? Copy(way) : way;
                     }
                 }
             }
