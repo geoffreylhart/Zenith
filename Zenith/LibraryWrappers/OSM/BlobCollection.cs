@@ -114,6 +114,7 @@ namespace Zenith.LibraryWrappers.OSM
             {
                 if (innersAndOuters.Contains(way.id)) continue; // sometimes lake multipolygons also tag several pieces - at best this is redundant, and at worst causes errors
                 if (way.refs.Count < 3) continue; // we -usually- only ever see lines with multipolygons, but I found a weird way like 43435045
+                if (way.selfIntersects) continue; // just ignore ways like 43410874 to keep you sane
                 SectorConstrainedOSMAreaGraph simpleMap = new SectorConstrainedOSMAreaGraph();
                 var superLoop = new List<Way>() { way };
                 if (way.refs.Last() != way.refs.First()) way.refs.Add(way.refs.First()); // some folks forget to close a simple way, or perhaps the mistake is tagging subcomponents of a relation
@@ -167,6 +168,7 @@ namespace Zenith.LibraryWrappers.OSM
             newway.keys = way.keys;
             newway.keyValues = way.keyValues;
             newway.vals = way.vals;
+            newway.selfIntersects = way.selfIntersects;
             return newway;
         }
 

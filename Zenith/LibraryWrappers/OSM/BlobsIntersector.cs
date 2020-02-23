@@ -96,6 +96,10 @@ namespace Zenith.LibraryWrappers.OSM
                 // now insert them
                 for (int i = sorted.Count - 1; i >= 0; i--)
                 {
+                    if (sorted[i].wayRef.id == pair.Key.id)
+                    {
+                        pair.Key.selfIntersects = true; // mark for destruction, probably
+                    }
                     pair.Key.refs.Insert(sorted[i].nodePos, sorted[i].nodeID);
                 }
             }
@@ -116,9 +120,23 @@ namespace Zenith.LibraryWrappers.OSM
             Dictionary<long, Way> wayLookup = new Dictionary<long, Way>();
             foreach (var way in blobs.EnumerateWays(false)) wayLookup[way.id] = way;
             HashSet<long> ways = new HashSet<long>();
+            HashSet<long> innersOuters = new HashSet<long>();
+            foreach (var way in TempGetRelationWays("natural", "water", blobs))
+            {
+                ways.Add(way);
+                innersOuters.Add(way);
+            }
             foreach (var way in TempGetWays("natural", "coastline", blobs)) ways.Add(way);
-            foreach (var way in TempGetWays("natural", "water", blobs)) ways.Add(way);
-            foreach (var way in TempGetRelationWays("natural", "water", blobs)) ways.Add(way);
+            foreach (var way in TempGetWays("natural", "water", blobs))
+            {
+                if (!innersOuters.Contains(way) && wayLookup[way].refs.Count > 2)
+                {
+                    // some folks forget to close a simple way, or perhaps the mistake is tagging subcomponents of a relation
+                    // then there's just straight up errors like way 43291726
+                    if (wayLookup[way].refs.Last() != wayLookup[way].refs.First()) wayLookup[way].refs.Add(wayLookup[way].refs.First());
+                }
+                ways.Add(way);
+            }
             return ways.Where(x => wayLookup.ContainsKey(x)).Select(x => wayLookup[x]).ToList();
         }
 

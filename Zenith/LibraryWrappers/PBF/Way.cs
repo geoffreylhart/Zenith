@@ -57,6 +57,7 @@ namespace Zenith.LibraryWrappers.OSM
         }
 
         public Dictionary<string, string> keyValues = new Dictionary<string, string>();
+        public bool selfIntersects = false;
 
         internal void InitKeyValues(StringTable stringtable)
         {
