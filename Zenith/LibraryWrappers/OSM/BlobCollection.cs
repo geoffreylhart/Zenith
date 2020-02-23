@@ -88,8 +88,17 @@ namespace Zenith.LibraryWrappers.OSM
                                 // just outer for now
                                 if (relation.types[i] == 1)
                                 {
-                                    if (relation.roles_sid[i] == innerIndex) innerWayIds.Add(relation.memids[i]);
-                                    if (relation.roles_sid[i] == outerIndex) outerWayIds.Add(relation.memids[i]);
+                                    if (relation.roles_sid[i] == 0 && innerIndex != 0 && outerIndex != 0)
+                                    {
+                                        // some ways are in a relation without any inner/outer tag
+                                        // ex: 359181377 in relation 304768
+                                        outerWayIds.Add(relation.memids[i]);
+                                    }
+                                    else
+                                    {
+                                        if (relation.roles_sid[i] == innerIndex) innerWayIds.Add(relation.memids[i]);
+                                        if (relation.roles_sid[i] == outerIndex) outerWayIds.Add(relation.memids[i]);
+                                    }
                                 }
                             }
                             inners.Add(innerWayIds);
@@ -126,12 +135,21 @@ namespace Zenith.LibraryWrappers.OSM
                     var broken = BreakDownSuperLoop(superLoop);
                     for (int i = 0; i < broken.Count - 1; i++) // since our loops end in a duplicate
                     {
-                        simpleMap.nodes[broken[i]] = new List<AreaNode> { new AreaNode() { id = broken[i] } };
-                    }
-                    for (int i = 0; i < broken.Count - 1; i++) // since our loops end in a duplicate
-                    {
-                        simpleMap.nodes[broken[i]].Single().next = simpleMap.nodes[broken[(i + 1) % (broken.Count - 1)]].Single();
-                        simpleMap.nodes[broken[i]].Single().prev = simpleMap.nodes[broken[(i - 1 + broken.Count - 1) % (broken.Count - 1)]].Single();
+                        AreaNode curr = new AreaNode() { id = broken[i] };
+                        if (!simpleMap.nodes.ContainsKey(broken[i])) simpleMap.nodes[broken[i]] = new List<AreaNode>();
+                        simpleMap.nodes[broken[i]].Add(curr);
+                        if (i > 0)
+                        {
+                            AreaNode prev = simpleMap.nodes[broken[i - 1]].Last();
+                            curr.prev = prev;
+                            prev.next = curr;
+                        }
+                        // close the loop
+                        if (i == broken.Count - 2)
+                        {
+                            simpleMap.nodes[broken[0]].First().prev = curr;
+                            curr.next = simpleMap.nodes[broken[0]].First();
+                        }
                     }
                 }
                 else
@@ -205,12 +223,21 @@ namespace Zenith.LibraryWrappers.OSM
                     var broken = BreakDownSuperLoop(superLoop);
                     for (int i = 0; i < broken.Count - 1; i++) // since our loops end in a duplicate
                     {
-                        temp.nodes[broken[i]] = new List<AreaNode>() { new AreaNode() { id = broken[i] } };
-                    }
-                    for (int i = 0; i < broken.Count - 1; i++) // since our loops end in a duplicate
-                    {
-                        temp.nodes[broken[i]].Single().next = temp.nodes[broken[(i + 1) % (broken.Count - 1)]].Single();
-                        temp.nodes[broken[i]].Single().prev = temp.nodes[broken[(i - 1 + broken.Count - 1) % (broken.Count - 1)]].Single();
+                        AreaNode curr = new AreaNode() { id = broken[i] };
+                        if (!temp.nodes.ContainsKey(broken[i])) temp.nodes[broken[i]] = new List<AreaNode>();
+                        temp.nodes[broken[i]].Add(curr);
+                        if (i > 0)
+                        {
+                            AreaNode prev = temp.nodes[broken[i - 1]].Last();
+                            curr.prev = prev;
+                            prev.next = curr;
+                        }
+                        // close the loop
+                        if (i == broken.Count - 2)
+                        {
+                            temp.nodes[broken[0]].First().prev = curr;
+                            curr.next = temp.nodes[broken[0]].First();
+                        }
                     }
                 }
                 else
@@ -242,12 +269,21 @@ namespace Zenith.LibraryWrappers.OSM
                     var broken = BreakDownSuperLoop(superLoop);
                     for (int i = 0; i < broken.Count - 1; i++) // since our loops end in a duplicate
                     {
-                        map.nodes[broken[i]] = new List<AreaNode>() { new AreaNode() { id = broken[i] } };
-                    }
-                    for (int i = 0; i < broken.Count - 1; i++) // since our loops end in a duplicate
-                    {
-                        map.nodes[broken[i]].Single().next = map.nodes[broken[(i + 1) % (broken.Count - 1)]].Single();
-                        map.nodes[broken[i]].Single().prev = map.nodes[broken[(i - 1 + broken.Count - 1) % (broken.Count - 1)]].Single();
+                        AreaNode curr = new AreaNode() { id = broken[i] };
+                        if (!map.nodes.ContainsKey(broken[i])) map.nodes[broken[i]] = new List<AreaNode>();
+                        map.nodes[broken[i]].Add(curr);
+                        if (i > 0)
+                        {
+                            AreaNode prev = map.nodes[broken[i - 1]].Last();
+                            curr.prev = prev;
+                            prev.next = curr;
+                        }
+                        // close the loop
+                        if (i == broken.Count - 2)
+                        {
+                            map.nodes[broken[0]].First().prev = curr;
+                            curr.next = map.nodes[broken[0]].First();
+                        }
                     }
                 }
                 else
