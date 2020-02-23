@@ -49,7 +49,7 @@ namespace Zenith.LibraryWrappers.OSM
                     if (Math.Max(A.X, B.X) < Math.Min(C.X, D.X)) continue;
                     if (Math.Min(A.Y, B.Y) > Math.Max(C.Y, D.Y)) continue;
                     if (Math.Max(A.Y, B.Y) < Math.Min(C.Y, D.Y)) continue;
-                    long randID = -((Aid * 3) ^ Bid); // TODO: get rid of hack
+                    long randID = -((Aid * 3) ^ Cid); // TODO: get rid of hack
                                                       // TODO: we're going to treat -1 as always matching for now
                     bool ACSame = Aid == Cid;
                     bool ADSame = Aid == Did;
