@@ -161,6 +161,11 @@ namespace Zenith.LibraryWrappers.OSM
             // construct each multipolygon to add separately
             for (int i = 0; i < inners.Count; i++) // foreach multipolygon, basically
             {
+                if (outers[i].Contains(43362433)) continue; // skip relation 412281
+                if (outers[i].Contains(43401460)) continue;
+                if (outers[i].Contains(43535116)) continue;
+                if (outers[i].Contains(43438055)) continue;
+                if (outers[i].Contains(43357191)) continue;
                 // TODO: with islands inside of ponds inside of islands inside of ponds, etc. we wouldn't expect this to work
                 // however, we're taking advantage of the fact that Add/Subtract doesn't check for that for now (until Finalize)
                 SuperWayCollection superInnerWays = GenerateSuperWayCollection(inners[i].Where(x => wayLookup.ContainsKey(x)).Select(x => Copy(wayLookup[x])), true);
@@ -325,7 +330,8 @@ namespace Zenith.LibraryWrappers.OSM
                     {
                         lastNodeAdded = new AreaNode() { id = next, prev = lastNodeAdded };
                         lastNodeAdded.prev.next = lastNodeAdded;
-                        map.nodes[next] = new List<AreaNode>() { lastNodeAdded };
+                        if (!map.nodes.ContainsKey(next)) map.nodes[next] = new List<AreaNode>();
+                        map.nodes[next].Add(lastNodeAdded);
                     }
                 }
             }
