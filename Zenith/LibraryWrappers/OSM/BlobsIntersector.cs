@@ -12,6 +12,8 @@ namespace Zenith.LibraryWrappers.OSM
     {
         internal static void DoIntersections(BlobCollection blobs)
         {
+            Dictionary<string, long> uids = new Dictionary<string, long>(); // finally decided I needed something to guarantee uniqueness like this TODO: can probably eliminate this
+            long uidCounter = -1000;
             List<Way> ways = TempGetWays(blobs);
             List<WayRef> wayRefs = new List<WayRef>();
             STRtree<WayRef> rtree = new STRtree<WayRef>();
@@ -49,8 +51,8 @@ namespace Zenith.LibraryWrappers.OSM
                     if (Math.Max(A.X, B.X) < Math.Min(C.X, D.X)) continue;
                     if (Math.Min(A.Y, B.Y) > Math.Max(C.Y, D.Y)) continue;
                     if (Math.Max(A.Y, B.Y) < Math.Min(C.Y, D.Y)) continue;
-                    long randID = -((Aid * 3) ^ Cid); // TODO: get rid of hack
-                                                      // TODO: we're going to treat -1 as always matching for now
+                    string intersectionKey = Aid + "," + Cid;
+                    // TODO: we're going to treat -1 as always matching for now
                     bool ACSame = Aid == Cid;
                     bool ADSame = Aid == Did;
                     bool BCSame = Bid == Cid;
@@ -68,9 +70,19 @@ namespace Zenith.LibraryWrappers.OSM
                         Vector2d intersection = Intersect(A, B, C, D);
                         if (intersection != null)
                         {
-                            NewIntersection newNode1 = new NewIntersection() { nodeID = randID, wayRef = n1.wayRef, nodePos = n1.nodePos + 1 };
-                            NewIntersection newNode2 = new NewIntersection() { nodeID = randID, wayRef = n2.wayRef, nodePos = n2.nodePos + 1 };
-                            blobs.nodes[randID] = intersection;
+                            long intersectionID;
+                            if (uids.ContainsKey(intersectionKey))
+                            {
+                                intersectionID = uids[intersectionKey];
+                            }
+                            else
+                            {
+                                intersectionID = uidCounter--;
+                                uids[intersectionKey] = intersectionID;
+                            }
+                            NewIntersection newNode1 = new NewIntersection() { nodeID = intersectionID, wayRef = n1.wayRef, nodePos = n1.nodePos + 1 };
+                            NewIntersection newNode2 = new NewIntersection() { nodeID = intersectionID, wayRef = n2.wayRef, nodePos = n2.nodePos + 1 };
+                            blobs.nodes[intersectionID] = intersection;
                             if (!intersections.ContainsKey(n1.wayRef)) intersections.Add(n1.wayRef, new List<NewIntersection>());
                             intersections[n1.wayRef].Add(newNode1);
                             if (!intersections.ContainsKey(n2.wayRef)) intersections.Add(n2.wayRef, new List<NewIntersection>());

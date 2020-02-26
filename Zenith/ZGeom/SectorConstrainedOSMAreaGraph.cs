@@ -24,10 +24,12 @@ namespace Zenith.ZGeom
             List<AreaNode> doAdd = new List<AreaNode>();
             List<AreaNode> doDelete = new List<AreaNode>();
             List<long> singularDelete = new List<long>();
+            HashSet<long> criticalPoints = new HashSet<long>();
             foreach (var pair in map.nodes)
             {
                 if (nodes.ContainsKey(pair.Key))
                 {
+                    criticalPoints.Add(pair.Key);
                     List<AreaNode> srcInitialLines = new List<AreaNode>();
                     List<AreaNode> mapInitialLines = new List<AreaNode>();
                     List<AreaNode> initialLines = new List<AreaNode>();
@@ -164,18 +166,19 @@ namespace Zenith.ZGeom
             // delete until you reach the next critical point
             foreach (var d in doDelete)
             {
-                bool forwards = d.next != null && (!nodes.ContainsKey(d.next.id) || !map.nodes.ContainsKey(d.next.id));
+                bool forwards = d.next != null && (!criticalPoints.Contains(d.next.id));
                 var temp = d;
-                while (temp != null && (temp.IsEdge() || !nodes.ContainsKey(temp.id) || !map.nodes.ContainsKey(temp.id)))
+                while (temp != null && (temp.IsEdge() || !criticalPoints.Contains(temp.id)))
                 {
-                    if (!nodes.ContainsKey(temp.id)) break;
+                    if (!ContainsNode(temp)) break;
                     if (temp.IsEdge() && temp.prev == null)
                     {
                         startPoints.Remove(temp);
                     }
                     else if (temp.id != -1)
                     {
-                        nodes.Remove(temp.id);
+                        nodes[temp.id].Remove(temp);
+                        if (nodes[temp.id].Count == 0) nodes.Remove(temp.id);
                     }
                     temp = forwards ? temp.next : temp.prev;
                 }
@@ -183,18 +186,19 @@ namespace Zenith.ZGeom
             // add until you reach the next critical point
             foreach (var d in doAdd)
             {
-                bool forwards = d.next != null && (!nodes.ContainsKey(d.next.id) || !map.nodes.ContainsKey(d.next.id));
+                bool forwards = d.next != null && (!criticalPoints.Contains(d.next.id));
                 var temp = d;
-                while (temp != null && (temp.IsEdge() || !nodes.ContainsKey(temp.id) || !map.nodes.ContainsKey(temp.id)))
+                while (temp != null && (temp.IsEdge() || !criticalPoints.Contains(temp.id)))
                 {
-                    if (nodes.ContainsKey(temp.id)) break;
+                    if (ContainsNode(temp)) break;
                     if (temp.IsEdge() && temp.prev == null)
                     {
                         startPoints.Add(temp);
                     }
                     else if (temp.id != -1)
                     {
-                        nodes[temp.id] = new List<AreaNode>() { temp };
+                        if (!nodes.ContainsKey(temp.id)) nodes[temp.id] = new List<AreaNode>();
+                        nodes[temp.id].Add(temp);
                     }
                     temp = forwards ? temp.next : temp.prev;
                 }
@@ -218,10 +222,12 @@ namespace Zenith.ZGeom
             List<AreaNode> doAdd = new List<AreaNode>();
             List<AreaNode> doDelete = new List<AreaNode>();
             List<long> singularDelete = new List<long>();
+            HashSet<long> criticalPoints = new HashSet<long>();
             foreach (var pair in map.nodes)
             {
                 if (nodes.ContainsKey(pair.Key))
                 {
+                    criticalPoints.Add(pair.Key);
                     List<AreaNode> srcInitialLines = new List<AreaNode>();
                     List<AreaNode> mapInitialLines = new List<AreaNode>();
                     List<AreaNode> initialLines = new List<AreaNode>();
@@ -358,18 +364,19 @@ namespace Zenith.ZGeom
             // delete until you reach the next critical point
             foreach (var d in doDelete)
             {
-                bool forwards = d.next != null && (!nodes.ContainsKey(d.next.id) || !map.nodes.ContainsKey(d.next.id));
+                bool forwards = d.next != null && (!criticalPoints.Contains(d.next.id));
                 var temp = d;
-                while (temp != null && (temp.IsEdge() || !nodes.ContainsKey(temp.id) || !map.nodes.ContainsKey(temp.id)))
+                while (temp != null && (temp.IsEdge() || !criticalPoints.Contains(temp.id)))
                 {
-                    if (!nodes.ContainsKey(temp.id)) break;
+                    if (!ContainsNode(temp)) break;
                     if (temp.IsEdge() && temp.prev == null)
                     {
                         startPoints.Remove(temp);
                     }
                     else if (temp.id != -1)
                     {
-                        nodes.Remove(temp.id);
+                        nodes[temp.id].Remove(temp);
+                        if (nodes[temp.id].Count == 0) nodes.Remove(temp.id);
                     }
                     temp = forwards ? temp.next : temp.prev;
                 }
@@ -377,18 +384,19 @@ namespace Zenith.ZGeom
             // add until you reach the next critical point
             foreach (var d in doAdd)
             {
-                bool forwards = d.next != null && (!nodes.ContainsKey(d.next.id) || !map.nodes.ContainsKey(d.next.id));
+                bool forwards = d.next != null && (!criticalPoints.Contains(d.next.id));
                 var temp = d;
-                while (temp != null && (temp.IsEdge() || !nodes.ContainsKey(temp.id) || !map.nodes.ContainsKey(temp.id)))
+                while (temp != null && (temp.IsEdge() || !criticalPoints.Contains(temp.id)))
                 {
-                    if (nodes.ContainsKey(temp.id)) break;
+                    if (ContainsNode(temp)) break;
                     if (temp.IsEdge() && temp.prev == null)
                     {
                         startPoints.Add(temp);
                     }
                     else if (temp.id != -1)
                     {
-                        nodes[temp.id] = new List<AreaNode>() { temp };
+                        if (!nodes.ContainsKey(temp.id)) nodes[temp.id] = new List<AreaNode>();
+                        nodes[temp.id].Add(temp);
                     }
                     temp = forwards ? temp.next : temp.prev;
                 }
@@ -400,6 +408,11 @@ namespace Zenith.ZGeom
                 nodes[n.id].Add(n);
             }
             return this;
+        }
+
+        private bool ContainsNode(AreaNode node)
+        {
+            return nodes.ContainsKey(node.id) && nodes[node.id].Contains(node);
         }
 
         // note, actual intersections should be exceedingly rare, like 1 in 6 sectors or something
@@ -630,6 +643,7 @@ namespace Zenith.ZGeom
                     }
                     else
                     {
+                        if (!nodes[curr.id].Contains(curr)) throw new NotImplementedException();
                         if (curr.id == -1 || curr.v != null || curr.next == null || curr.prev == null || curr.prev.next != curr || curr.next.prev != curr) throw new NotImplementedException();
                     }
                     curr = curr.next;
@@ -644,6 +658,7 @@ namespace Zenith.ZGeom
                     AreaNode curr = node;
                     while (true)
                     {
+                        if (!nodes[curr.id].Contains(curr)) throw new NotImplementedException();
                         if (curr.id == -1 || curr.v != null || curr.next == null || curr.prev == null || curr.prev.next != curr || curr.next.prev != curr) throw new NotImplementedException();
                         explored.Add(curr);
                         if (curr.next == node) break;
