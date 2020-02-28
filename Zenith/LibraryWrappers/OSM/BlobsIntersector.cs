@@ -87,6 +87,10 @@ namespace Zenith.LibraryWrappers.OSM
                             intersections[n1.wayRef].Add(newNode1);
                             if (!intersections.ContainsKey(n2.wayRef)) intersections.Add(n2.wayRef, new List<NewIntersection>());
                             intersections[n2.wayRef].Add(newNode2);
+                            if (n1.wayRef.id == n2.wayRef.id)
+                            {
+                                n1.wayRef.selfIntersects = true; // mark for destruction, probably
+                            }
                         }
                     }
                 }
@@ -108,10 +112,6 @@ namespace Zenith.LibraryWrappers.OSM
                 // now insert them
                 for (int i = sorted.Count - 1; i >= 0; i--)
                 {
-                    if (sorted[i].wayRef.id == pair.Key.id)
-                    {
-                        pair.Key.selfIntersects = true; // mark for destruction, probably
-                    }
                     pair.Key.refs.Insert(sorted[i].nodePos, sorted[i].nodeID);
                 }
             }
