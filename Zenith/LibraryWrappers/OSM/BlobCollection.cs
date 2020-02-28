@@ -161,15 +161,12 @@ namespace Zenith.LibraryWrappers.OSM
             // construct each multipolygon to add separately
             for (int i = 0; i < inners.Count; i++) // foreach multipolygon, basically
             {
-                if (outers[i].Contains(43362433)) continue; // skip relation 412281
-                if (outers[i].Contains(43401460)) continue;
-                if (outers[i].Contains(43535116)) continue;
-                if (outers[i].Contains(43438055)) continue;
-                if (outers[i].Contains(43357191)) continue;
                 // TODO: with islands inside of ponds inside of islands inside of ponds, etc. we wouldn't expect this to work
                 // however, we're taking advantage of the fact that Add/Subtract doesn't check for that for now (until Finalize)
                 SuperWayCollection superInnerWays = GenerateSuperWayCollection(inners[i].Where(x => wayLookup.ContainsKey(x)).Select(x => Copy(wayLookup[x])), true);
                 SuperWayCollection superOuterWays = GenerateSuperWayCollection(outers[i].Where(x => wayLookup.ContainsKey(x)).Select(x => Copy(wayLookup[x])), true);
+                if (!IsValid(superInnerWays)) continue;
+                if (!IsValid(superOuterWays)) continue;
                 SectorConstrainedOSMAreaGraph innerMap = DoMultipolygon(superInnerWays);
                 SectorConstrainedOSMAreaGraph outerMap = DoMultipolygon(superOuterWays);
                 SectorConstrainedOSMAreaGraph multiPolygon = outerMap.Subtract(innerMap, this, false);
@@ -178,6 +175,17 @@ namespace Zenith.LibraryWrappers.OSM
             SectorConstrainedOSMAreaGraph map = new SectorConstrainedOSMAreaGraph();
             foreach (var adding in addingMaps) map.Add(adding, this, false);
             return map;
+        }
+
+        // we'll just apply this to multipolygons for now, skipping relations like 313091
+        private bool IsValid(SuperWayCollection wayCollection)
+        {
+            foreach (var superWay in wayCollection.linkedWays)
+            {
+                if (sector.ContainsCoord(nodes[superWay.First().refs.First()])) return false;
+                if (sector.ContainsCoord(nodes[superWay.Last().refs.Last()])) return false;
+            }
+            return true;
         }
 
         // TODO: get rid of this dupe logic

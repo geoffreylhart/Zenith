@@ -33,15 +33,20 @@ namespace ZenithUnitTests
             double vertSecs = sw.Elapsed.TotalSeconds; // 0.404 secs (0.773 tablet)
         }
 
-        // 17 secs as of 2/25/2020 on desktop
+        // 20 secs as of 2/25/2020 on desktop
         [TestMethod]
         public void ToughSectorsTest()
         {
             // add a tough sector whenever one misses a crash issue
-            ISector sector = new CubeSector(CubeSector.CubeSectorFace.LEFT, 128, 43, 8);
-            ProceduralTileBuffer buffer = new ProceduralTileBuffer(sector);
-            buffer.LoadLinesFromFile();
-            buffer.GenerateVertices();
+            List<ISector> sectors = new List<ISector>();
+            sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 128, 43, 8));
+            sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 129, 44, 8));
+            foreach (var sector in sectors)
+            {
+                ProceduralTileBuffer buffer = new ProceduralTileBuffer(sector);
+                buffer.LoadLinesFromFile();
+                buffer.GenerateVertices();
+            }
         }
 
         [TestMethod]
