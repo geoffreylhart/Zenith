@@ -170,7 +170,7 @@ namespace Zenith.ZGeom
                 var temp = d;
                 while (temp != null && (temp.IsEdge() || !criticalPoints.Contains(temp.id)))
                 {
-                    if (!ContainsNode(temp)) break;
+                    if (!temp.IsEdge() && !ContainsNode(temp)) break;
                     if (temp.IsEdge() && temp.prev == null)
                     {
                         startPoints.Remove(temp);
@@ -206,8 +206,18 @@ namespace Zenith.ZGeom
             foreach (var d in singularDelete) nodes.Remove(d);
             foreach (var n in loopNodes)
             {
-                if (!nodes.ContainsKey(n.id)) nodes[n.id] = new List<AreaNode>();
-                nodes[n.id].Add(n);
+                if (n.IsEdge())
+                {
+                    if (n.prev == null)
+                    {
+                        startPoints.Add(n);
+                    }
+                }
+                else
+                {
+                    if (!nodes.ContainsKey(n.id)) nodes[n.id] = new List<AreaNode>();
+                    nodes[n.id].Add(n);
+                }
             }
             return this;
         }
@@ -388,7 +398,7 @@ namespace Zenith.ZGeom
                 var temp = d;
                 while (temp != null && (temp.IsEdge() || !criticalPoints.Contains(temp.id)))
                 {
-                    if (ContainsNode(temp)) break;
+                    if (!temp.IsEdge() && ContainsNode(temp)) break;
                     if (temp.IsEdge() && temp.prev == null)
                     {
                         startPoints.Add(temp);
@@ -404,8 +414,18 @@ namespace Zenith.ZGeom
             foreach (var d in singularDelete) nodes.Remove(d);
             foreach (var n in loopNodes)
             {
-                if (!nodes.ContainsKey(n.id)) nodes[n.id] = new List<AreaNode>();
-                nodes[n.id].Add(n);
+                if (n.IsEdge())
+                {
+                    if (n.prev == null)
+                    {
+                        startPoints.Add(n);
+                    }
+                }
+                else
+                {
+                    if (!nodes.ContainsKey(n.id)) nodes[n.id] = new List<AreaNode>();
+                    nodes[n.id].Add(n);
+                }
             }
             return this;
         }
@@ -584,16 +604,28 @@ namespace Zenith.ZGeom
         private List<AreaNode> DoLoops(SectorConstrainedOSMAreaGraph map, BlobCollection blobs)
         {
             // first, find those loops
+            // actually, non-loops should be found as well!
             List<AreaNode> loopNodes = new List<AreaNode>();
             HashSet<AreaNode> explored = new HashSet<AreaNode>();
             foreach (var startPoint in map.startPoints)
             {
+                List<AreaNode> newPath = new List<AreaNode>();
+                bool pathHasConnections = false;
                 AreaNode curr = startPoint;
                 while (true)
                 {
+                    if (!curr.IsEdge() && nodes.ContainsKey(curr.id)) pathHasConnections = true;
+                    newPath.Add(curr);
                     explored.Add(curr);
                     if (curr.next == null) break;
                     curr = curr.next;
+                }
+                if (!pathHasConnections)
+                {
+                    foreach (var n in newPath)
+                    {
+                        loopNodes.Add(n);
+                    }
                 }
             }
             foreach (var nodeList in map.nodes.Values)
