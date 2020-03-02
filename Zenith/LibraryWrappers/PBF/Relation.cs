@@ -71,5 +71,20 @@ namespace Zenith.LibraryWrappers.OSM
             }
             throw new NotImplementedException();
         }
+
+        public Dictionary<string, string> keyValues = new Dictionary<string, string>();
+        public List<string> roleValues = new List<string>();
+
+        internal void InitKeyValues(StringTable stringtable)
+        {
+            for (int i = 0; i < keys.Count; i++)
+            {
+                keyValues[stringtable.vals[keys[i]]] = stringtable.vals[vals[i]];
+            }
+            for (int i = 0; i < roles_sid.Count; i++)
+            {
+                roleValues.Add(stringtable.vals[roles_sid[i]]);
+            }
+        }
     }
 }

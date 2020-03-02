@@ -518,13 +518,28 @@ namespace Zenith.LibraryWrappers.OSM
             foreach (var blob in blobs)
             {
                 if (blob.type != "OSMData") continue;
-                RoadInfoVector info = new RoadInfoVector();
                 foreach (var pGroup in blob.pBlock.primitivegroup)
                 {
                     foreach (var way in pGroup.ways)
                     {
                         way.InitKeyValues(blob.pBlock.stringtable);
                         yield return clone ? Copy(way) : way;
+                    }
+                }
+            }
+        }
+
+        internal IEnumerable<Relation> EnumerateRelations()
+        {
+            foreach (var blob in blobs)
+            {
+                if (blob.type != "OSMData") continue;
+                foreach (var pGroup in blob.pBlock.primitivegroup)
+                {
+                    foreach (var relation in pGroup.relations)
+                    {
+                        relation.InitKeyValues(blob.pBlock.stringtable);
+                        yield return relation;
                     }
                 }
             }
