@@ -15,9 +15,9 @@ namespace Zenith.LibraryWrappers.OSM
         Dictionary<long, WayInfo> wayInfo = new Dictionary<long, WayInfo>();
         Dictionary<long, RelationInfo> relationInfo = new Dictionary<long, RelationInfo>();
 
-        internal void SaveAll(int i)
+        internal void SaveAll(string fileName)
         {
-            string filePath = Path.Combine(OSMPaths.GetLocalCacheRoot(), "planet-meta" + i + ".data");
+            string filePath = Path.Combine(OSMPaths.GetLocalCacheRoot(), fileName);
             using (var writer = File.Open(filePath, FileMode.Create))
             {
                 using (var bw = new BinaryWriter(writer))
@@ -55,7 +55,7 @@ namespace Zenith.LibraryWrappers.OSM
                             bw.Write(pair.Value);
                         }
                         bw.Write(r.roleValues.Count);
-                        foreach (var rolveValue in r.roleValues) bw.Write(rolveValue);
+                        foreach (var roleValue in r.roleValues) bw.Write(roleValue);
                         bw.Write(r.memids.Count);
                         foreach (var memid in r.memids) bw.Write(memid);
                         bw.Write(r.types.Count);
@@ -65,7 +65,66 @@ namespace Zenith.LibraryWrappers.OSM
             }
         }
 
+        internal void LoadAll(string fileName)
+        {
+            string filePath = Path.Combine(OSMPaths.GetLocalCacheRoot(), fileName);
+            using (var reader = File.Open(filePath, FileMode.Open))
+            {
+                using (var br = new BinaryReader(reader))
+                {
+                    int edgeInfoCount = br.ReadInt32();
+                    for (int j = 0; j < edgeInfoCount; j++)
+                    {
+                        EdgeInfo e = new EdgeInfo();
+                        e.wayID = br.ReadInt64();
+                        e.node1 = br.ReadInt64();
+                        e.node2 = br.ReadInt64();
+                        e.longLat1 = new LongLat(br.ReadDouble(), br.ReadDouble());
+                        e.longLat2 = new LongLat(br.ReadDouble(), br.ReadDouble());
+                        string eKey = e.wayID + "," + e.node1 + "," + e.node2;
+                        if (!edgeInfo.ContainsKey(eKey)) edgeInfo[eKey] = e;
+                    }
+                    int wayInfoCount = br.ReadInt32();
+                    for (int j = 0; j < wayInfoCount; j++)
+                    {
+                        WayInfo w = new WayInfo();
+                        w.id = br.ReadInt64();
+                        int keyValueCount = br.ReadInt32();
+                        w.keyValues = new Dictionary<string, string>();
+                        for (int k = 0; k < keyValueCount; k++)
+                        {
+                            w.keyValues[br.ReadString()] = br.ReadString();
+                        }
+                        if (!wayInfo.ContainsKey(w.id)) wayInfo[w.id] = w;
+                    }
+                    int relationInfoCount = br.ReadInt32();
+                    for (int j = 0; j < relationInfoCount; j++)
+                    {
+                        RelationInfo r = new RelationInfo();
+                        r.id = br.ReadInt64();
+                        int keyValueCount = br.ReadInt32();
+                        r.keyValues = new Dictionary<string, string>();
+                        for (int k = 0; k < keyValueCount; k++)
+                        {
+                            r.keyValues[br.ReadString()] = br.ReadString();
+                        }
+                        int roleValuesCount = br.ReadInt32();
+                        r.roleValues = new List<string>();
+                        for (int k = 0; k < roleValuesCount; k++) r.roleValues.Add(br.ReadString());
+                        int memidsCount = br.ReadInt32();
+                        r.memids = new List<long>();
+                        for (int k = 0; k < memidsCount; k++) r.memids.Add(br.ReadInt64());
+                        int typesCount = br.ReadInt32();
+                        r.types = new List<int>();
+                        for (int k = 0; k < typesCount; k++) r.types.Add(br.ReadInt32());
+                        if (!relationInfo.ContainsKey(r.id)) relationInfo[r.id] = r;
+                    }
+                }
+            }
+        }
+
         // took 20.178 hours to save 1.28 GB
+        // saved to 6 different files in case it crashes
         public void LoadAllDetailsFromSource()
         {
             int i = 0;
@@ -79,10 +138,20 @@ namespace Zenith.LibraryWrappers.OSM
                         LoadDetailsFromSource(sector);
                     }
                 }
-                SaveAll(i);
+                SaveAll("planet-meta" + i + ".data");
                 Clear();
                 i++;
             }
+        }
+
+        // uses a minute of time and maybe 8 gigs of memory to comine those 6 files, file only shrinks from 1.28 -> 1.26 GB
+        public void CombineFiles()
+        {
+            for (int i = 0; i < 6; i++)
+            {
+                LoadAll("planet-meta" + i + ".data");
+            }
+            SaveAll("planet-meta.data");
         }
 
         private void Clear()
