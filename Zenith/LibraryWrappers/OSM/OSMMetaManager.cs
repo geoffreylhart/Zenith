@@ -11,9 +11,9 @@ namespace Zenith.LibraryWrappers.OSM
     // load, save, and process quick lookups for massive items
     class OSMMetaManager
     {
-        Dictionary<string, EdgeInfo> edgeInfo = new Dictionary<string, EdgeInfo>();
-        Dictionary<long, WayInfo> wayInfo = new Dictionary<long, WayInfo>();
-        Dictionary<long, RelationInfo> relationInfo = new Dictionary<long, RelationInfo>();
+        HashSet<EdgeInfo> edgeInfo = new HashSet<EdgeInfo>();
+        HashSet<WayInfo> wayInfo = new HashSet<WayInfo>();
+        HashSet<RelationInfo> relationInfo = new HashSet<RelationInfo>();
 
         internal void SaveAll(string fileName)
         {
@@ -23,7 +23,7 @@ namespace Zenith.LibraryWrappers.OSM
                 using (var bw = new BinaryWriter(writer))
                 {
                     bw.Write(edgeInfo.Count);
-                    foreach (var e in edgeInfo.Values)
+                    foreach (var e in edgeInfo)
                     {
                         bw.Write(e.wayID);
                         bw.Write(e.node1);
@@ -34,7 +34,7 @@ namespace Zenith.LibraryWrappers.OSM
                         bw.Write(e.longLat2.Y);
                     }
                     bw.Write(wayInfo.Count);
-                    foreach (var w in wayInfo.Values)
+                    foreach (var w in wayInfo)
                     {
                         bw.Write(w.id);
                         bw.Write(w.keyValues.Count);
@@ -45,7 +45,7 @@ namespace Zenith.LibraryWrappers.OSM
                         }
                     }
                     bw.Write(relationInfo.Count);
-                    foreach (var r in relationInfo.Values)
+                    foreach (var r in relationInfo)
                     {
                         bw.Write(r.id);
                         bw.Write(r.keyValues.Count);
@@ -81,8 +81,7 @@ namespace Zenith.LibraryWrappers.OSM
                         e.node2 = br.ReadInt64();
                         e.longLat1 = new LongLat(br.ReadDouble(), br.ReadDouble());
                         e.longLat2 = new LongLat(br.ReadDouble(), br.ReadDouble());
-                        string eKey = e.wayID + "," + e.node1 + "," + e.node2;
-                        if (!edgeInfo.ContainsKey(eKey)) edgeInfo[eKey] = e;
+                        if (!edgeInfo.Contains(e)) edgeInfo.Add(e);
                     }
                     int wayInfoCount = br.ReadInt32();
                     for (int j = 0; j < wayInfoCount; j++)
@@ -95,7 +94,7 @@ namespace Zenith.LibraryWrappers.OSM
                         {
                             w.keyValues[br.ReadString()] = br.ReadString();
                         }
-                        if (!wayInfo.ContainsKey(w.id)) wayInfo[w.id] = w;
+                        if (!wayInfo.Contains(w)) wayInfo.Add(w);
                     }
                     int relationInfoCount = br.ReadInt32();
                     for (int j = 0; j < relationInfoCount; j++)
@@ -117,7 +116,7 @@ namespace Zenith.LibraryWrappers.OSM
                         int typesCount = br.ReadInt32();
                         r.types = new List<int>();
                         for (int k = 0; k < typesCount; k++) r.types.Add(br.ReadInt32());
-                        if (!relationInfo.ContainsKey(r.id)) relationInfo[r.id] = r;
+                        if (!relationInfo.Contains(r)) relationInfo.Add(r);
                     }
                 }
             }
@@ -144,7 +143,7 @@ namespace Zenith.LibraryWrappers.OSM
             }
         }
 
-        // uses a minute of time and maybe 8 gigs of memory to comine those 6 files, file only shrinks from 1.28 -> 1.26 GB
+        // uses a minute of time and maybe 7 gigs of memory to comine those 6 files, file only shrinks from 1.28 -> 1.26 GB
         public void CombineFiles()
         {
             for (int i = 0; i < 6; i++)
@@ -156,9 +155,9 @@ namespace Zenith.LibraryWrappers.OSM
 
         private void Clear()
         {
-            edgeInfo = new Dictionary<string, EdgeInfo>();
-            wayInfo = new Dictionary<long, WayInfo>();
-            relationInfo = new Dictionary<long, RelationInfo>();
+            edgeInfo = new HashSet<EdgeInfo>();
+            wayInfo = new HashSet<WayInfo>();
+            relationInfo = new HashSet<RelationInfo>();
         }
 
         private void LoadDetailsFromSource(ISector sector)
@@ -180,9 +179,9 @@ namespace Zenith.LibraryWrappers.OSM
                     if (!sector1.Equals(sector2))
                     {
                         var e = new EdgeInfo() { wayID = way.id, node1 = ref1, node2 = ref2, longLat1 = longLat1, longLat2 = longLat2 };
-                        string eKey = e.wayID + "," + e.node1 + "," + e.node2;
-                        if (!edgeInfo.ContainsKey(eKey)) edgeInfo[eKey] = e;
-                        if (!wayInfo.ContainsKey(way.id)) wayInfo[way.id] = new WayInfo() { id = way.id, keyValues = way.keyValues };
+                        if (!edgeInfo.Contains(e)) edgeInfo.Add(e);
+                        var w = new WayInfo() { id = way.id, keyValues = way.keyValues };
+                        if (!wayInfo.Contains(w)) wayInfo.Add(w);
                     }
                 }
             }
@@ -190,9 +189,10 @@ namespace Zenith.LibraryWrappers.OSM
             {
                 foreach (var way in relation.memids)
                 {
-                    if (wayInfo.ContainsKey(way) && !relationInfo.ContainsKey(relation.id))
+                    var r = new RelationInfo() { id = relation.id, keyValues = relation.keyValues, roleValues = relation.roleValues, memids = relation.memids, types = relation.types };
+                    if (wayInfo.Contains(new WayInfo() { id = way }) && !relationInfo.Contains(r))
                     {
-                        relationInfo[relation.id] = new RelationInfo() { id = relation.id, keyValues = relation.keyValues, roleValues = relation.roleValues, memids = relation.memids, types = relation.types };
+                        relationInfo.Add(r);
                     }
                 }
             }
@@ -218,12 +218,38 @@ namespace Zenith.LibraryWrappers.OSM
             public long node2;
             public LongLat longLat1;
             public LongLat longLat2;
+
+            public override int GetHashCode()
+            {
+                return GetKey().GetHashCode();
+            }
+
+            public override bool Equals(object that)
+            {
+                return GetKey().Equals(((EdgeInfo)that).GetKey());
+            }
+
+            private string GetKey()
+            {
+                string eKey = wayID + "," + node1 + "," + node2;
+                return eKey;
+            }
         }
 
         public class WayInfo
         {
             public long id;
             public Dictionary<string, string> keyValues;
+
+            public override int GetHashCode()
+            {
+                return id.GetHashCode();
+            }
+
+            public override bool Equals(object that)
+            {
+                return id.Equals(((WayInfo)that).id);
+            }
         }
 
         // just stash all relation info, just in case
@@ -234,6 +260,16 @@ namespace Zenith.LibraryWrappers.OSM
             public List<string> roleValues;
             public List<long> memids;
             public List<int> types;
+
+            public override int GetHashCode()
+            {
+                return id.GetHashCode();
+            }
+
+            public override bool Equals(object that)
+            {
+                return id.Equals(((RelationInfo)that).id);
+            }
         }
     }
 }
