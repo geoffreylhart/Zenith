@@ -24,6 +24,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)GlobalContent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\BlobsIntersector.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\OSMLineBufferGenerator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\OSMMetaFinal.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\OSMMetaManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\OSM\OSMPaths.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\PBF\Node.cs" />
