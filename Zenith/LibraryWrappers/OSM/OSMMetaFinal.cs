@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.Text;
 using Zenith.ZGeom;
 using Zenith.ZMath;
@@ -25,7 +27,17 @@ namespace Zenith.LibraryWrappers.OSM
         internal void LoadAll(string fileName)
         {
             OSMMetaManager manager = new OSMMetaManager();
-            manager.LoadAll(fileName);
+            if (fileName.Contains("*"))
+            {
+                for (int i = 0; i < 6; i++)
+                {
+                    manager.LoadAll(fileName.Replace("*", i + ""));
+                }
+            }
+            else
+            {
+                manager.LoadAll(fileName);
+            }
             // init
             gridPoints = new Dictionary<ISector, GridPointInfo[,]>();
             gridTops = new Dictionary<ISector, GridPointInfo[,]>();
@@ -48,15 +60,19 @@ namespace Zenith.LibraryWrappers.OSM
                 gridTops[root] = gt;
                 gridLefts[root] = gl;
             }
+            // process all edge info
             foreach (var edge in manager.edgeInfo)
             {
+                var way = manager.wayInfo[edge.wayID];
+                if ((edge.node1 == way.startNode && edge.node2 == way.endNode) || (edge.node1 == way.endNode && edge.node2 == way.startNode)) continue; // for coast, let's reject all simple shape closures
                 // coastline only, to start with
                 if (manager.wayInfo[edge.wayID].keyValues.ContainsKey("natural") && manager.wayInfo[edge.wayID].keyValues["natural"].Equals("coastline"))
                 {
                     foreach (var root in ZCoords.GetSectorManager().GetTopmostOSMSectors())
                     {
                         var local1 = root.ProjectToLocalCoordinates(edge.longLat1.ToSphereVector());
-                        var local2 = root.ProjectToLocalCoordinates(edge.longLat1.ToSphereVector());
+                        var local2 = root.ProjectToLocalCoordinates(edge.longLat2.ToSphereVector());
+                        if ((local1 - local2).Length() > 0.2) continue;
                         // first, order by X
                         if (local1.X > local2.X)
                         {
@@ -66,11 +82,18 @@ namespace Zenith.LibraryWrappers.OSM
                         }
                         for (int x = (int)Math.Ceiling(local1.X * 256); x < local2.X * 256; x++)
                         {
-                            double t = (x - local1.X * 256) / (local2.X - local1.X);
-                            int y = (int)(local1.Y + t * (local2.Y - local1.Y));
+                            double t = (x / 256.0 - local1.X) / (local2.X - local1.X);
+                            int y = (int)((local1.Y + t * (local2.Y - local1.Y)) * 256);
                             if (x >= 0 && x < 257 && y >= 0 && y < 256)
                             {
-                                gridLefts[root][x, y].naturalTypes.Add(0);
+                                if (gridLefts[root][x, y].naturalTypes.Contains(0))
+                                {
+                                    gridLefts[root][x, y].naturalTypes.Remove(0);
+                                }
+                                else
+                                {
+                                    gridLefts[root][x, y].naturalTypes.Add(0);
+                                }
                             }
                         }
                         // now, order by Y
@@ -82,24 +105,90 @@ namespace Zenith.LibraryWrappers.OSM
                         }
                         for (int y = (int)Math.Ceiling(local1.Y * 256); y < local2.Y * 256; y++)
                         {
-                            double t = (y - local1.Y * 256) / (local2.Y - local1.Y);
-                            int x = (int)(local1.X + t * (local2.X - local1.X));
+                            double t = (y / 256.0 - local1.Y) / (local2.Y - local1.Y);
+                            int x = (int)((local1.X + t * (local2.X - local1.X)) * 256);
                             if (x >= 0 && x < 256 && y >= 0 && y < 257)
                             {
-                                gridTops[root][x, y].naturalTypes.Add(0);
+                                if (gridTops[root][x, y].naturalTypes.Contains(0))
+                                {
+                                    gridTops[root][x, y].naturalTypes.Remove(0);
+                                }
+                                else
+                                {
+                                    gridTops[root][x, y].naturalTypes.Add(0);
+                                }
                             }
                         }
                     }
                 }
             }
+            // now actually figure out the points
+            // TODO: we're just doing front for now
+            var frRoot = new CubeSector(CubeSector.CubeSectorFace.FRONT, 0, 0, 0);
+            for (int y = 0; y < 257; y++)
+            {
+                for (int x = 0; x < 257; x++)
+                {
+                    GridPointInfo prev;
+                    GridPointInfo next;
+                    GridPointInfo edge;
+                    if (x == 0)
+                    {
+                        if (y == 0) continue;
+                        prev = gridPoints[frRoot][0, y - 1];
+                        next = gridPoints[frRoot][0, y];
+                        edge = gridLefts[frRoot][0, y - 1];
+                    }
+                    else
+                    {
+                        prev = gridPoints[frRoot][x - 1, y];
+                        next = gridPoints[frRoot][x, y];
+                        edge = gridTops[frRoot][x - 1, y];
+                    }
+                    foreach (var n in prev.naturalTypes) next.naturalTypes.Add(n);
+                    foreach (var n in edge.naturalTypes)
+                    {
+                        if (next.naturalTypes.Contains(n))
+                        {
+                            next.naturalTypes.Remove(n);
+                        }
+                        else
+                        {
+                            next.naturalTypes.Add(n);
+                        }
+                    }
+                }
+            }
+            // finally, render those coast images
+            string mapFile = OSMPaths.GetCoastlineImagePath(frRoot);
+            Bitmap map = new Bitmap(256, 256);
+            for (int i = 0; i < 256; i++)
+            {
+                for (int j = 0; j < 256; j++)
+                {
+                    bool land1 = gridPoints[frRoot][i, j].naturalTypes.Contains(0);
+                    bool land2 = gridPoints[frRoot][i + 1, j].naturalTypes.Contains(0);
+                    bool land3 = gridPoints[frRoot][i, j + 1].naturalTypes.Contains(0);
+                    bool land4 = gridPoints[frRoot][i + 1, j + 1].naturalTypes.Contains(0);
+                    Color color = Color.FromArgb(128, 128, 128);
+                    if (land1 && land2 && land3 && land4) color = Color.FromArgb(0, 255, 0);
+                    if (!land1 && !land2 && !land3 && !land4) color = Color.FromArgb(255, 255, 255);
+
+                    //color = Color.FromArgb(255, 255, 255);
+                    //if (gridTops[frRoot][i,j].naturalTypes.Contains(0) && !(land1 && land2 && land3 && land4) && !(!land1 && !land2 && !land3 && !land4)) color = Color.FromArgb(0, 255, 0);
+
+                    map.SetPixel(i, j, color);
+                }
+            }
+            map.Save(mapFile, ImageFormat.Png);
         }
 
         // as a point, represents the land types and relations that contain it
         // as an edge, represents the same states that will be added or removed upon crossing
         public class GridPointInfo
         {
-            public HashSet<long> relations;
-            public HashSet<int> naturalTypes; // by index
+            public HashSet<long> relations = new HashSet<long>();
+            public HashSet<int> naturalTypes = new HashSet<int>(); // by index
         }
     }
 }
