@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Text;
+using System.Text.RegularExpressions;
 using Zenith.ZGeom;
 using Zenith.ZMath;
 using static Zenith.LibraryWrappers.OSM.OSMMetaManager;
@@ -64,7 +65,7 @@ namespace Zenith.LibraryWrappers.OSM
             foreach (var edge in manager.edgeInfo)
             {
                 var way = manager.wayInfo[edge.wayID];
-                if ((edge.node1 == way.startNode && edge.node2 == way.endNode) || (edge.node1 == way.endNode && edge.node2 == way.startNode)) continue; // for coast, let's reject all simple shape closures
+                if (edge.node1 == way.endNode && edge.node2 == way.startNode) continue; // for coast, let's reject all simple shape closures (OLD BUG: don't reject straight-line ways)
                 // coastline only, to start with
                 if (manager.wayInfo[edge.wayID].keyValues.ContainsKey("natural") && manager.wayInfo[edge.wayID].keyValues["natural"].Equals("coastline"))
                 {
@@ -80,7 +81,7 @@ namespace Zenith.LibraryWrappers.OSM
                             local2 = local1;
                             local1 = temp;
                         }
-                        for (int x = (int)Math.Ceiling(local1.X * 256); x < local2.X * 256; x++)
+                        for (int x = (int)Math.Ceiling(local1.X * 256); x <= local2.X * 256; x++)
                         {
                             double t = (x / 256.0 - local1.X) / (local2.X - local1.X);
                             int y = (int)((local1.Y + t * (local2.Y - local1.Y)) * 256);
@@ -103,7 +104,7 @@ namespace Zenith.LibraryWrappers.OSM
                             local2 = local1;
                             local1 = temp;
                         }
-                        for (int y = (int)Math.Ceiling(local1.Y * 256); y < local2.Y * 256; y++)
+                        for (int y = (int)Math.Ceiling(local1.Y * 256); y <= local2.Y * 256; y++) // BUG: can't believe <= was required, but we do sometimes have nodes on exactly the edge, apparently
                         {
                             double t = (y / 256.0 - local1.Y) / (local2.Y - local1.Y);
                             int x = (int)((local1.X + t * (local2.X - local1.X)) * 256);
@@ -124,7 +125,12 @@ namespace Zenith.LibraryWrappers.OSM
             }
             // now actually figure out the points
             // TODO: we're just doing front for now
-            var frRoot = new CubeSector(CubeSector.CubeSectorFace.FRONT, 0, 0, 0);
+            var frRoot = new CubeSector((CubeSector.CubeSectorFace)int.Parse(Regex.Match(fileName, "[0-9]").Value), 0, 0, 0);
+            if (frRoot.sectorFace == CubeSector.CubeSectorFace.RIGHT || frRoot.sectorFace == CubeSector.CubeSectorFace.BACK)
+            {
+                // invert these faces
+                gridPoints[frRoot][0, 0].naturalTypes.Add(0);
+            }
             for (int y = 0; y < 257; y++)
             {
                 for (int x = 0; x < 257; x++)
