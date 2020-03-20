@@ -21,7 +21,7 @@ namespace ZenithCrossPlatform
             {
                 new OSMMetaFinal().LoadAll("planet-meta" + i + ".data");
             }
-            // bugs: front still has one grey line, top runs out of memory, bottom has one grey line and a hole in the middle?
+            // bugs: front still has one grey line, bottom has a hole in the middle?
             double time = sw.Elapsed.TotalHours;
             using (var game = new Zenith.Game1())
                 game.Run();

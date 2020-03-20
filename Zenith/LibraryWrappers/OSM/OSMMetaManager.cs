@@ -181,6 +181,8 @@ namespace Zenith.LibraryWrappers.OSM
                     Vector2d v2 = blobs.nodes[ref2];
                     LongLat longLat1 = new SphereVector(sector.ProjectToSphereCoordinates(v1)).ToLongLat();
                     LongLat longLat2 = new SphereVector(sector.ProjectToSphereCoordinates(v2)).ToLongLat();
+                    // hmm, this logic will ignore edges that brush up exactly against the top or left of their sector (ex: nodes 6151473219, 6151473220 in way 146849673)
+                    // I have to compensate for this elswhere
                     ISector sector1 = GetContainingSector(longLat1, 8);
                     ISector sector2 = GetContainingSector(longLat2, 8);
                     if (!sector1.Equals(sector2))

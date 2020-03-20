@@ -84,6 +84,7 @@ namespace Zenith.LibraryWrappers.OSM
                         }
                         for (int x = (int)Math.Ceiling(local1.X * 256); x <= local2.X * 256; x++)
                         {
+                            if (x == local1.X * 256) continue;
                             double t = (x / 256.0 - local1.X) / (local2.X - local1.X);
                             int y = (int)((local1.Y + t * (local2.Y - local1.Y)) * 256);
                             if (x >= 0 && x < 257 && y >= 0 && y < 256)
@@ -105,8 +106,11 @@ namespace Zenith.LibraryWrappers.OSM
                             local2 = local1;
                             local1 = temp;
                         }
-                        for (int y = (int)Math.Ceiling(local1.Y * 256); y <= local2.Y * 256; y++) // BUG: can't believe <= was required, but we do sometimes have nodes on exactly the edge, apparently
+                        for (int y = (int)Math.Ceiling(local1.Y * 256); y <= local2.Y * 256; y++) // BUG: can't believe this was required, but we do sometimes have nodes on exactly the edge, apparently
                         {
+                            // ignore the edge that bruhes up exactly against the top (assuming it exists at all, since our original load logic can exclude such an edge)
+                            // with a point exactly on an edge, the -other- edge that matches exactly on bottom should trigger the flag instead (double-flag would be bad)
+                            if (y == local1.Y * 256) continue;
                             double t = (y / 256.0 - local1.Y) / (local2.Y - local1.Y);
                             int x = (int)((local1.X + t * (local2.X - local1.X)) * 256);
                             if (x >= 0 && x < 256 && y >= 0 && y < 257)
@@ -182,7 +186,9 @@ namespace Zenith.LibraryWrappers.OSM
                     if (!land1 && !land2 && !land3 && !land4) color = Color.FromArgb(255, 255, 255);
 
                     //color = Color.FromArgb(255, 255, 255);
-                    //if (gridTops[frRoot][i,j].naturalTypes.Contains(0) && !(land1 && land2 && land3 && land4) && !(!land1 && !land2 && !land3 && !land4)) color = Color.FromArgb(0, 255, 0);
+                    //if (gridTops[frRoot][i,j].naturalTypes.Contains(0)) color = Color.FromArgb(0, 255, 0);
+                    //if (gridLefts[frRoot][i, j].naturalTypes.Contains(0)) color = Color.FromArgb(255, 0, 0);
+                    //if (gridTops[frRoot][i, j].naturalTypes.Contains(0) && gridLefts[frRoot][i, j].naturalTypes.Contains(0)) color = Color.FromArgb(0, 0, 255);
 
                     map.SetPixel(i, j, color);
                 }
