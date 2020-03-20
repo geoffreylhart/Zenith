@@ -64,6 +64,7 @@ namespace Zenith.LibraryWrappers.OSM
             // process all edge info
             foreach (var edge in manager.edgeInfo)
             {
+                if (!manager.wayInfo.ContainsKey(edge.wayID)) continue; // probably doesn't exist because we've removed it to try and save some memory
                 var way = manager.wayInfo[edge.wayID];
                 if (edge.node1 == way.endNode && edge.node2 == way.startNode) continue; // for coast, let's reject all simple shape closures (OLD BUG: don't reject straight-line ways)
                 // coastline only, to start with

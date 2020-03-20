@@ -98,7 +98,10 @@ namespace Zenith.LibraryWrappers.OSM
                         {
                             w.keyValues[br.ReadString()] = br.ReadString();
                         }
-                        if (!wayInfo.ContainsKey(w.id)) wayInfo[w.id] = w;
+                        if (w.keyValues.ContainsKey("natural") && w.keyValues["natural"].Equals("coastline")) // disabling to save some memory, sure
+                        {
+                            if (!wayInfo.ContainsKey(w.id)) wayInfo[w.id] = w;
+                        }
                     }
                     int relationInfoCount = br.ReadInt32();
                     for (int j = 0; j < relationInfoCount; j++)

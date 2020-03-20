@@ -17,7 +17,7 @@ namespace ZenithCrossPlatform
         {
             Stopwatch sw = new Stopwatch();
             sw.Start();
-            foreach (var i in new[] { 0, 1, 2, 3, 5 })
+            foreach (var i in new[] { 0, 1, 2, 3, 4, 5 })
             {
                 new OSMMetaFinal().LoadAll("planet-meta" + i + ".data");
             }
