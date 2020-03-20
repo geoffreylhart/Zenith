@@ -86,7 +86,7 @@ namespace Zenith.LibraryWrappers.OSM
                         {
                             if (x == local1.X * 256) continue;
                             double t = (x / 256.0 - local1.X) / (local2.X - local1.X);
-                            int y = (int)((local1.Y + t * (local2.Y - local1.Y)) * 256);
+                            int y = (int)Math.Floor((local1.Y + t * (local2.Y - local1.Y)) * 256);
                             if (x >= 0 && x < 257 && y >= 0 && y < 256)
                             {
                                 if (gridLefts[root][x, y].naturalTypes.Contains(0))
@@ -112,7 +112,7 @@ namespace Zenith.LibraryWrappers.OSM
                             // with a point exactly on an edge, the -other- edge that matches exactly on bottom should trigger the flag instead (double-flag would be bad)
                             if (y == local1.Y * 256) continue;
                             double t = (y / 256.0 - local1.Y) / (local2.Y - local1.Y);
-                            int x = (int)((local1.X + t * (local2.X - local1.X)) * 256);
+                            int x = (int)Math.Floor((local1.X + t * (local2.X - local1.X)) * 256); // BUG: (int) is NOT THE SAME AS Math.Floor!
                             if (x >= 0 && x < 256 && y >= 0 && y < 257)
                             {
                                 if (gridTops[root][x, y].naturalTypes.Contains(0))
@@ -186,7 +186,7 @@ namespace Zenith.LibraryWrappers.OSM
                     if (!land1 && !land2 && !land3 && !land4) color = Color.FromArgb(255, 255, 255);
 
                     //color = Color.FromArgb(255, 255, 255);
-                    //if (gridTops[frRoot][i,j].naturalTypes.Contains(0)) color = Color.FromArgb(0, 255, 0);
+                    //if (gridTops[frRoot][i, j].naturalTypes.Contains(0)) color = Color.FromArgb(0, 255, 0);
                     //if (gridLefts[frRoot][i, j].naturalTypes.Contains(0)) color = Color.FromArgb(255, 0, 0);
                     //if (gridTops[frRoot][i, j].naturalTypes.Contains(0) && gridLefts[frRoot][i, j].naturalTypes.Contains(0)) color = Color.FromArgb(0, 0, 255);
 
