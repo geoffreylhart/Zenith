@@ -68,7 +68,7 @@ namespace Zenith.LibraryWrappers.OSM
                 var way = manager.wayInfo[edge.wayID];
                 if (edge.node1 == way.endNode && edge.node2 == way.startNode) continue; // for coast, let's reject all simple shape closures (OLD BUG: don't reject straight-line ways)
                 // coastline only, to start with
-                if (manager.wayInfo[edge.wayID].keyValues.ContainsKey("natural") && manager.wayInfo[edge.wayID].keyValues["natural"].Equals("coastline"))
+                if (manager.wayInfo[edge.wayID].ContainsKeyValue(manager, "natural", "coastline"))
                 {
                     foreach (var root in ZCoords.GetSectorManager().GetTopmostOSMSectors())
                     {

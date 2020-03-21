@@ -11,6 +11,8 @@ namespace Zenith.LibraryWrappers.OSM
     // load, save, and process quick lookups for massive items
     public class OSMMetaManager
     {
+        public List<string> stringTable = new List<string>();
+        public Dictionary<string, int> stringTableLookup = new Dictionary<string, int>();
         public HashSet<EdgeInfo> edgeInfo = new HashSet<EdgeInfo>();
         public Dictionary<long, WayInfo> wayInfo = new Dictionary<long, WayInfo>();
         public Dictionary<long, RelationInfo> relationInfo = new Dictionary<long, RelationInfo>();
@@ -39,22 +41,22 @@ namespace Zenith.LibraryWrappers.OSM
                         bw.Write(w.id);
                         bw.Write(w.startNode);
                         bw.Write(w.endNode);
-                        bw.Write(w.keyValues.Count);
-                        foreach (var pair in w.keyValues)
+                        bw.Write(w.keys.Count);
+                        for (int i = 0; i < w.keys.Count; i++)
                         {
-                            bw.Write(pair.Key);
-                            bw.Write(pair.Value);
+                            bw.Write(stringTable[w.keys[i]]);
+                            bw.Write(stringTable[w.values[i]]);
                         }
                     }
                     bw.Write(relationInfo.Count);
                     foreach (var r in relationInfo.Values)
                     {
                         bw.Write(r.id);
-                        bw.Write(r.keyValues.Count);
-                        foreach (var pair in r.keyValues)
+                        bw.Write(r.keys.Count);
+                        for (int i = 0; i < r.keys.Count; i++)
                         {
-                            bw.Write(pair.Key);
-                            bw.Write(pair.Value);
+                            bw.Write(stringTable[r.keys[i]]);
+                            bw.Write(stringTable[r.values[i]]);
                         }
                         bw.Write(r.roleValues.Count);
                         foreach (var roleValue in r.roleValues) bw.Write(roleValue);
@@ -93,15 +95,14 @@ namespace Zenith.LibraryWrappers.OSM
                         w.startNode = br.ReadInt64();
                         w.endNode = br.ReadInt64();
                         int keyValueCount = br.ReadInt32();
-                        w.keyValues = new Dictionary<string, string>();
+                        w.keys = new List<int>();
+                        w.values = new List<int>();
                         for (int k = 0; k < keyValueCount; k++)
                         {
-                            w.keyValues[br.ReadString()] = br.ReadString();
+                            w.keys.Add(LoadIntoStringTable(br.ReadString()));
+                            w.values.Add(LoadIntoStringTable(br.ReadString()));
                         }
-                        if (w.keyValues.ContainsKey("natural") && w.keyValues["natural"].Equals("coastline")) // disabling to save some memory, sure
-                        {
-                            if (!wayInfo.ContainsKey(w.id)) wayInfo[w.id] = w;
-                        }
+                        if (!wayInfo.ContainsKey(w.id)) wayInfo[w.id] = w;
                     }
                     int relationInfoCount = br.ReadInt32();
                     for (int j = 0; j < relationInfoCount; j++)
@@ -109,24 +110,36 @@ namespace Zenith.LibraryWrappers.OSM
                         RelationInfo r = new RelationInfo();
                         r.id = br.ReadInt64();
                         int keyValueCount = br.ReadInt32();
-                        r.keyValues = new Dictionary<string, string>();
+                        r.keys = new List<int>();
+                        r.values = new List<int>();
                         for (int k = 0; k < keyValueCount; k++)
                         {
-                            r.keyValues[br.ReadString()] = br.ReadString();
+                            r.keys.Add(LoadIntoStringTable(br.ReadString()));
+                            r.values.Add(LoadIntoStringTable(br.ReadString()));
                         }
                         int roleValuesCount = br.ReadInt32();
-                        r.roleValues = new List<string>();
-                        for (int k = 0; k < roleValuesCount; k++) r.roleValues.Add(br.ReadString());
+                        r.roleValues = new List<int>();
+                        for (int k = 0; k < roleValuesCount; k++) r.roleValues.Add(LoadIntoStringTable(br.ReadString()));
                         int memidsCount = br.ReadInt32();
                         r.memids = new List<long>();
                         for (int k = 0; k < memidsCount; k++) r.memids.Add(br.ReadInt64());
                         int typesCount = br.ReadInt32();
                         r.types = new List<int>();
                         for (int k = 0; k < typesCount; k++) r.types.Add(br.ReadInt32());
-                        // if (!relationInfo.ContainsKey(r.id)) relationInfo[r.id] = r; // disabling to save some memory, sure
+                        if (!relationInfo.ContainsKey(r.id)) relationInfo[r.id] = r;
                     }
                 }
             }
+        }
+
+        private int LoadIntoStringTable(string str)
+        {
+            if (!stringTableLookup.ContainsKey(str))
+            {
+                stringTable.Add(str);
+                stringTableLookup[str] = stringTable.Count - 1;
+            }
+            return stringTableLookup[str];
         }
 
         // took 21.117584 hours to save 4.19 GB
@@ -162,6 +175,8 @@ namespace Zenith.LibraryWrappers.OSM
 
         private void Clear()
         {
+            stringTable = new List<string>();
+            stringTableLookup = new Dictionary<string, int>();
             edgeInfo = new HashSet<EdgeInfo>();
             wayInfo = new Dictionary<long, WayInfo>();
             relationInfo = new Dictionary<long, RelationInfo>();
@@ -189,7 +204,14 @@ namespace Zenith.LibraryWrappers.OSM
                     {
                         var e = new EdgeInfo() { wayID = way.id, node1 = ref1, node2 = ref2, longLat1 = longLat1, longLat2 = longLat2 };
                         if (!edgeInfo.Contains(e)) edgeInfo.Add(e);
-                        var w = new WayInfo() { id = way.id, keyValues = way.keyValues, startNode = way.refs.First(), endNode = way.refs.Last() };
+                        List<int> wKeys = new List<int>();
+                        List<int> wVals = new List<int>();
+                        foreach (var pair in way.keyValues)
+                        {
+                            wKeys.Add(LoadIntoStringTable(pair.Key));
+                            wVals.Add(LoadIntoStringTable(pair.Value));
+                        }
+                        var w = new WayInfo() { id = way.id, keys = wKeys, values = wVals, startNode = way.refs.First(), endNode = way.refs.Last() };
                         if (!wayInfo.ContainsKey(w.id)) wayInfo[w.id] = w;
                     }
                 }
@@ -202,7 +224,19 @@ namespace Zenith.LibraryWrappers.OSM
                     extraWays.Add(way);
                     if (wayInfo.ContainsKey(way) && !relationInfo.ContainsKey(relation.id))
                     {
-                        var r = new RelationInfo() { id = relation.id, keyValues = relation.keyValues, roleValues = relation.roleValues, memids = relation.memids, types = relation.types };
+                        List<int> rKeys = new List<int>();
+                        List<int> rVals = new List<int>();
+                        List<int> rRoles = new List<int>();
+                        foreach (var pair in relation.keyValues)
+                        {
+                            rKeys.Add(LoadIntoStringTable(pair.Key));
+                            rVals.Add(LoadIntoStringTable(pair.Value));
+                        }
+                        foreach (var role in relation.roleValues)
+                        {
+                            rRoles.Add(LoadIntoStringTable(role));
+                        }
+                        var r = new RelationInfo() { id = relation.id, keys = rKeys, values = rVals, roleValues = rRoles, memids = relation.memids, types = relation.types };
                         relationInfo[r.id] = r;
                     }
                 }
@@ -210,7 +244,14 @@ namespace Zenith.LibraryWrappers.OSM
             foreach (var way in blobs.EnumerateWays(false))
             {
                 if (!extraWays.Contains(way.id)) continue;
-                var w = new WayInfo() { id = way.id, keyValues = way.keyValues, startNode = way.refs.First(), endNode = way.refs.Last() };
+                List<int> wKeys = new List<int>();
+                List<int> wVals = new List<int>();
+                foreach (var pair in way.keyValues)
+                {
+                    wKeys.Add(LoadIntoStringTable(pair.Key));
+                    wVals.Add(LoadIntoStringTable(pair.Value));
+                }
+                var w = new WayInfo() { id = way.id, keys = wKeys, values = wVals, startNode = way.refs.First(), endNode = way.refs.Last() };
                 if (!wayInfo.ContainsKey(w.id)) wayInfo[w.id] = w;
             }
         }
@@ -258,7 +299,8 @@ namespace Zenith.LibraryWrappers.OSM
             public long id;
             public long startNode;
             public long endNode;
-            public Dictionary<string, string> keyValues;
+            public List<int> keys;
+            public List<int> values;
 
             public override int GetHashCode()
             {
@@ -269,14 +311,24 @@ namespace Zenith.LibraryWrappers.OSM
             {
                 return id.Equals(((WayInfo)that).id);
             }
+
+            internal bool ContainsKeyValue(OSMMetaManager manager, string key, string val)
+            {
+                for (int i = 0; i < keys.Count; i++)
+                {
+                    if (manager.stringTable[keys[i]].Equals(key) && manager.stringTable[values[i]].Equals(val)) return true;
+                }
+                return false;
+            }
         }
 
         // just stash all relation info, just in case
         public class RelationInfo
         {
             public long id;
-            public Dictionary<string, string> keyValues;
-            public List<string> roleValues;
+            public List<int> keys;
+            public List<int> values;
+            public List<int> roleValues;
             public List<long> memids;
             public List<int> types;
 
