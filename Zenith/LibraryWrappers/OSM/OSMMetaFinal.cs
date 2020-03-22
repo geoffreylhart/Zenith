@@ -194,16 +194,25 @@ namespace Zenith.LibraryWrappers.OSM
                     if (gridPoints[frRoot][i, j + 1].ways.Any(x => manager.wayInfo[x].ContainsKeyValue(manager, "natural", "water"))) land3 = 1;
                     if (gridPoints[frRoot][i + 1, j + 1].relations.Any(x => manager.relationInfo[x].ContainsKeyValue(manager, "natural", "water"))) land4 = 1;
                     if (gridPoints[frRoot][i + 1, j + 1].ways.Any(x => manager.wayInfo[x].ContainsKeyValue(manager, "natural", "water"))) land4 = 1;
+                    if (gridPoints[frRoot][i, j].relations.Any(x => manager.relationInfo[x].ContainsKeyValue(manager, "natural", "glacier"))) land1 = 2;
+                    if (gridPoints[frRoot][i, j].ways.Any(x => manager.wayInfo[x].ContainsKeyValue(manager, "natural", "glacier"))) land1 = 2;
+                    if (gridPoints[frRoot][i + 1, j].relations.Any(x => manager.relationInfo[x].ContainsKeyValue(manager, "natural", "glacier"))) land2 = 2;
+                    if (gridPoints[frRoot][i + 1, j].ways.Any(x => manager.wayInfo[x].ContainsKeyValue(manager, "natural", "glacier"))) land2 = 2;
+                    if (gridPoints[frRoot][i, j + 1].relations.Any(x => manager.relationInfo[x].ContainsKeyValue(manager, "natural", "glacier"))) land3 = 2;
+                    if (gridPoints[frRoot][i, j + 1].ways.Any(x => manager.wayInfo[x].ContainsKeyValue(manager, "natural", "glacier"))) land3 = 2;
+                    if (gridPoints[frRoot][i + 1, j + 1].relations.Any(x => manager.relationInfo[x].ContainsKeyValue(manager, "natural", "glacier"))) land4 = 2;
+                    if (gridPoints[frRoot][i + 1, j + 1].ways.Any(x => manager.wayInfo[x].ContainsKeyValue(manager, "natural", "glacier"))) land4 = 2;
                     Color color = Color.FromArgb(128, 128, 128);
 
+                    if (land1 == 2 && land2 == 2 && land3 == 2 && land4 == 2) color = Color.FromArgb(255, 255, 255);
                     if (land1 == 1 && land2 == 1 && land3 == 1 && land4 == 1) color = Color.FromArgb(0, 0, 255);
                     if (land1 == 0 && land2 == 0 && land3 == 0 && land4 == 0) color = Color.FromArgb(0, 255, 0);
-                    if (land1 == -1 && land2 == -1 && land3 == -1 && land4 == -1) color = Color.FromArgb(255, 255, 255);
+                    if (land1 == -1 && land2 == -1 && land3 == -1 && land4 == -1) color = Color.FromArgb(0, 0, 255);
 
                     //color = Color.FromArgb(255, 255, 255);
-                    //if (gridTops[frRoot][i, j].naturalTypes.Contains(0)) color = Color.FromArgb(0, 255, 0);
-                    //if (gridLefts[frRoot][i, j].naturalTypes.Contains(0)) color = Color.FromArgb(255, 0, 0);
-                    //if (gridTops[frRoot][i, j].naturalTypes.Contains(0) && gridLefts[frRoot][i, j].naturalTypes.Contains(0)) color = Color.FromArgb(0, 0, 255);
+                    //if (gridTops[frRoot][i, j].relations.Any(x => x == 1279614)) color = Color.FromArgb(0, 255, 0);
+                    //if (gridLefts[frRoot][i, j].relations.Any(x => x == 1279614)) color = Color.FromArgb(255, 0, 0);
+                    //if (gridLefts[frRoot][i, j].relations.Any(x => x == 1279614) && gridTops[frRoot][i, j].relations.Any(x => x == 1279614)) color = Color.FromArgb(0, 0, 0);
 
                     map.SetPixel(i, j, color);
                 }
@@ -233,22 +242,46 @@ namespace Zenith.LibraryWrappers.OSM
                 }
             }
             bool relationHasWater = false;
+            bool relationHasGlacier = false;
             foreach (var relation in way.relations)
             {
                 if (manager.relationInfo[relation].ContainsKeyValue(manager, "natural", "water"))
                 {
                     relationHasWater = true;
                 }
-                if (gridPointInfo.relations.Contains(relation))
+                if (manager.relationInfo[relation].ContainsKeyValue(manager, "natural", "glacier"))
                 {
-                    gridPointInfo.relations.Remove(relation);
+                    relationHasGlacier = true;
+                }
+                if (edge.node1 == way.endNode && edge.node2 == way.startNode)
+                {
+                    // for relations, let's reject all simple shape closures (OLD BUG: don't reject straight-line ways)
                 }
                 else
                 {
-                    gridPointInfo.relations.Add(relation);
+                    if (gridPointInfo.relations.Contains(relation))
+                    {
+                        gridPointInfo.relations.Remove(relation);
+                    }
+                    else
+                    {
+                        gridPointInfo.relations.Add(relation);
+                    }
+
                 }
             }
             if (!relationHasWater && manager.wayInfo[edge.wayID].ContainsKeyValue(manager, "natural", "water"))
+            {
+                if (gridPointInfo.ways.Contains(edge.wayID))
+                {
+                    gridPointInfo.ways.Remove(edge.wayID);
+                }
+                else
+                {
+                    gridPointInfo.ways.Add(edge.wayID);
+                }
+            }
+            if (!relationHasGlacier && manager.wayInfo[edge.wayID].ContainsKeyValue(manager, "natural", "glacier"))
             {
                 if (gridPointInfo.ways.Contains(edge.wayID))
                 {
