@@ -97,6 +97,7 @@ namespace Zenith.LibraryWrappers.OSM
                         int keyValueCount = br.ReadInt32();
                         w.keys = new List<int>();
                         w.values = new List<int>();
+                        w.relations = new List<long>();
                         for (int k = 0; k < keyValueCount; k++)
                         {
                             w.keys.Add(LoadIntoStringTable(br.ReadString()));
@@ -122,7 +123,11 @@ namespace Zenith.LibraryWrappers.OSM
                         for (int k = 0; k < roleValuesCount; k++) r.roleValues.Add(LoadIntoStringTable(br.ReadString()));
                         int memidsCount = br.ReadInt32();
                         r.memids = new List<long>();
-                        for (int k = 0; k < memidsCount; k++) r.memids.Add(br.ReadInt64());
+                        for (int k = 0; k < memidsCount; k++)
+                        {
+                            r.memids.Add(br.ReadInt64());
+                            if (wayInfo.ContainsKey(r.memids.Last())) wayInfo[r.memids.Last()].relations.Add(r.id);
+                        }
                         int typesCount = br.ReadInt32();
                         r.types = new List<int>();
                         for (int k = 0; k < typesCount; k++) r.types.Add(br.ReadInt32());
@@ -211,7 +216,7 @@ namespace Zenith.LibraryWrappers.OSM
                             wKeys.Add(LoadIntoStringTable(pair.Key));
                             wVals.Add(LoadIntoStringTable(pair.Value));
                         }
-                        var w = new WayInfo() { id = way.id, keys = wKeys, values = wVals, startNode = way.refs.First(), endNode = way.refs.Last() };
+                        var w = new WayInfo() { id = way.id, keys = wKeys, values = wVals, startNode = way.refs.First(), endNode = way.refs.Last(), relations = new List<long>() };
                         if (!wayInfo.ContainsKey(w.id)) wayInfo[w.id] = w;
                     }
                 }
@@ -301,6 +306,7 @@ namespace Zenith.LibraryWrappers.OSM
             public long endNode;
             public List<int> keys;
             public List<int> values;
+            public List<long> relations;
 
             public override int GetHashCode()
             {
@@ -340,6 +346,15 @@ namespace Zenith.LibraryWrappers.OSM
             public override bool Equals(object that)
             {
                 return id.Equals(((RelationInfo)that).id);
+            }
+
+            internal bool ContainsKeyValue(OSMMetaManager manager, string key, string val)
+            {
+                for (int i = 0; i < keys.Count; i++)
+                {
+                    if (manager.stringTable[keys[i]].Equals(key) && manager.stringTable[values[i]].Equals(val)) return true;
+                }
+                return false;
             }
         }
     }

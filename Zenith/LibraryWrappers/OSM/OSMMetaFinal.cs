@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Zenith.ZGeom;
@@ -65,65 +66,45 @@ namespace Zenith.LibraryWrappers.OSM
             foreach (var edge in manager.edgeInfo)
             {
                 if (!manager.wayInfo.ContainsKey(edge.wayID)) continue; // probably doesn't exist because we've removed it to try and save some memory
-                var way = manager.wayInfo[edge.wayID];
-                if (edge.node1 == way.endNode && edge.node2 == way.startNode) continue; // for coast, let's reject all simple shape closures (OLD BUG: don't reject straight-line ways)
-                // coastline only, to start with
-                if (manager.wayInfo[edge.wayID].ContainsKeyValue(manager, "natural", "coastline"))
+                foreach (var root in ZCoords.GetSectorManager().GetTopmostOSMSectors())
                 {
-                    foreach (var root in ZCoords.GetSectorManager().GetTopmostOSMSectors())
+                    var local1 = root.ProjectToLocalCoordinates(edge.longLat1.ToSphereVector());
+                    var local2 = root.ProjectToLocalCoordinates(edge.longLat2.ToSphereVector());
+                    if ((local1 - local2).Length() > 0.2) continue;
+                    // first, order by X
+                    if (local1.X > local2.X)
                     {
-                        var local1 = root.ProjectToLocalCoordinates(edge.longLat1.ToSphereVector());
-                        var local2 = root.ProjectToLocalCoordinates(edge.longLat2.ToSphereVector());
-                        if ((local1 - local2).Length() > 0.2) continue;
-                        // first, order by X
-                        if (local1.X > local2.X)
+                        var temp = local2;
+                        local2 = local1;
+                        local1 = temp;
+                    }
+                    for (int x = (int)Math.Ceiling(local1.X * 256); x <= local2.X * 256; x++)
+                    {
+                        if (x == local1.X * 256) continue;
+                        double t = (x / 256.0 - local1.X) / (local2.X - local1.X);
+                        int y = (int)Math.Floor((local1.Y + t * (local2.Y - local1.Y)) * 256);
+                        if (x >= 0 && x < 257 && y >= 0 && y < 256)
                         {
-                            var temp = local2;
-                            local2 = local1;
-                            local1 = temp;
+                            XORWithEdge(manager, gridLefts[root][x, y], edge);
                         }
-                        for (int x = (int)Math.Ceiling(local1.X * 256); x <= local2.X * 256; x++)
+                    }
+                    // now, order by Y
+                    if (local1.Y > local2.Y)
+                    {
+                        var temp = local2;
+                        local2 = local1;
+                        local1 = temp;
+                    }
+                    for (int y = (int)Math.Ceiling(local1.Y * 256); y <= local2.Y * 256; y++) // BUG: can't believe this was required, but we do sometimes have nodes on exactly the edge, apparently
+                    {
+                        // ignore the edge that bruhes up exactly against the top (assuming it exists at all, since our original load logic can exclude such an edge)
+                        // with a point exactly on an edge, the -other- edge that matches exactly on bottom should trigger the flag instead (double-flag would be bad)
+                        if (y == local1.Y * 256) continue;
+                        double t = (y / 256.0 - local1.Y) / (local2.Y - local1.Y);
+                        int x = (int)Math.Floor((local1.X + t * (local2.X - local1.X)) * 256); // BUG: (int) is NOT THE SAME AS Math.Floor!
+                        if (x >= 0 && x < 256 && y >= 0 && y < 257)
                         {
-                            if (x == local1.X * 256) continue;
-                            double t = (x / 256.0 - local1.X) / (local2.X - local1.X);
-                            int y = (int)Math.Floor((local1.Y + t * (local2.Y - local1.Y)) * 256);
-                            if (x >= 0 && x < 257 && y >= 0 && y < 256)
-                            {
-                                if (gridLefts[root][x, y].naturalTypes.Contains(0))
-                                {
-                                    gridLefts[root][x, y].naturalTypes.Remove(0);
-                                }
-                                else
-                                {
-                                    gridLefts[root][x, y].naturalTypes.Add(0);
-                                }
-                            }
-                        }
-                        // now, order by Y
-                        if (local1.Y > local2.Y)
-                        {
-                            var temp = local2;
-                            local2 = local1;
-                            local1 = temp;
-                        }
-                        for (int y = (int)Math.Ceiling(local1.Y * 256); y <= local2.Y * 256; y++) // BUG: can't believe this was required, but we do sometimes have nodes on exactly the edge, apparently
-                        {
-                            // ignore the edge that bruhes up exactly against the top (assuming it exists at all, since our original load logic can exclude such an edge)
-                            // with a point exactly on an edge, the -other- edge that matches exactly on bottom should trigger the flag instead (double-flag would be bad)
-                            if (y == local1.Y * 256) continue;
-                            double t = (y / 256.0 - local1.Y) / (local2.Y - local1.Y);
-                            int x = (int)Math.Floor((local1.X + t * (local2.X - local1.X)) * 256); // BUG: (int) is NOT THE SAME AS Math.Floor!
-                            if (x >= 0 && x < 256 && y >= 0 && y < 257)
-                            {
-                                if (gridTops[root][x, y].naturalTypes.Contains(0))
-                                {
-                                    gridTops[root][x, y].naturalTypes.Remove(0);
-                                }
-                                else
-                                {
-                                    gridTops[root][x, y].naturalTypes.Add(0);
-                                }
-                            }
+                            XORWithEdge(manager, gridTops[root][x, y], edge);
                         }
                     }
                 }
@@ -157,6 +138,8 @@ namespace Zenith.LibraryWrappers.OSM
                         edge = gridTops[frRoot][x - 1, y];
                     }
                     foreach (var n in prev.naturalTypes) next.naturalTypes.Add(n);
+                    foreach (var n in prev.relations) next.relations.Add(n);
+                    foreach (var n in prev.ways) next.ways.Add(n);
                     foreach (var n in edge.naturalTypes)
                     {
                         if (next.naturalTypes.Contains(n))
@@ -168,6 +151,28 @@ namespace Zenith.LibraryWrappers.OSM
                             next.naturalTypes.Add(n);
                         }
                     }
+                    foreach (var n in edge.relations)
+                    {
+                        if (next.relations.Contains(n))
+                        {
+                            next.relations.Remove(n);
+                        }
+                        else
+                        {
+                            next.relations.Add(n);
+                        }
+                    }
+                    foreach (var n in edge.ways)
+                    {
+                        if (next.ways.Contains(n))
+                        {
+                            next.ways.Remove(n);
+                        }
+                        else
+                        {
+                            next.ways.Add(n);
+                        }
+                    }
                 }
             }
             // finally, render those coast images
@@ -177,13 +182,23 @@ namespace Zenith.LibraryWrappers.OSM
             {
                 for (int j = 0; j < 256; j++)
                 {
-                    bool land1 = gridPoints[frRoot][i, j].naturalTypes.Contains(0);
-                    bool land2 = gridPoints[frRoot][i + 1, j].naturalTypes.Contains(0);
-                    bool land3 = gridPoints[frRoot][i, j + 1].naturalTypes.Contains(0);
-                    bool land4 = gridPoints[frRoot][i + 1, j + 1].naturalTypes.Contains(0);
+                    int land1 = gridPoints[frRoot][i, j].naturalTypes.Contains(0) ? 0 : -1;
+                    int land2 = gridPoints[frRoot][i + 1, j].naturalTypes.Contains(0) ? 0 : -1;
+                    int land3 = gridPoints[frRoot][i, j + 1].naturalTypes.Contains(0) ? 0 : -1;
+                    int land4 = gridPoints[frRoot][i + 1, j + 1].naturalTypes.Contains(0) ? 0 : -1;
+                    if (gridPoints[frRoot][i, j].relations.Any(x => manager.relationInfo[x].ContainsKeyValue(manager, "natural", "water"))) land1 = 1;
+                    if (gridPoints[frRoot][i, j].ways.Any(x => manager.wayInfo[x].ContainsKeyValue(manager, "natural", "water"))) land1 = 1;
+                    if (gridPoints[frRoot][i + 1, j].relations.Any(x => manager.relationInfo[x].ContainsKeyValue(manager, "natural", "water"))) land2 = 1;
+                    if (gridPoints[frRoot][i + 1, j].ways.Any(x => manager.wayInfo[x].ContainsKeyValue(manager, "natural", "water"))) land2 = 1;
+                    if (gridPoints[frRoot][i, j + 1].relations.Any(x => manager.relationInfo[x].ContainsKeyValue(manager, "natural", "water"))) land3 = 1;
+                    if (gridPoints[frRoot][i, j + 1].ways.Any(x => manager.wayInfo[x].ContainsKeyValue(manager, "natural", "water"))) land3 = 1;
+                    if (gridPoints[frRoot][i + 1, j + 1].relations.Any(x => manager.relationInfo[x].ContainsKeyValue(manager, "natural", "water"))) land4 = 1;
+                    if (gridPoints[frRoot][i + 1, j + 1].ways.Any(x => manager.wayInfo[x].ContainsKeyValue(manager, "natural", "water"))) land4 = 1;
                     Color color = Color.FromArgb(128, 128, 128);
-                    if (land1 && land2 && land3 && land4) color = Color.FromArgb(0, 255, 0);
-                    if (!land1 && !land2 && !land3 && !land4) color = Color.FromArgb(255, 255, 255);
+
+                    if (land1 == 1 && land2 == 1 && land3 == 1 && land4 == 1) color = Color.FromArgb(0, 0, 255);
+                    if (land1 == 0 && land2 == 0 && land3 == 0 && land4 == 0) color = Color.FromArgb(0, 255, 0);
+                    if (land1 == -1 && land2 == -1 && land3 == -1 && land4 == -1) color = Color.FromArgb(255, 255, 255);
 
                     //color = Color.FromArgb(255, 255, 255);
                     //if (gridTops[frRoot][i, j].naturalTypes.Contains(0)) color = Color.FromArgb(0, 255, 0);
@@ -196,11 +211,62 @@ namespace Zenith.LibraryWrappers.OSM
             map.Save(mapFile, ImageFormat.Png);
         }
 
+        private void XORWithEdge(OSMMetaManager manager, GridPointInfo gridPointInfo, EdgeInfo edge)
+        {
+            var way = manager.wayInfo[edge.wayID];
+            if (manager.wayInfo[edge.wayID].ContainsKeyValue(manager, "natural", "coastline"))
+            {
+                if (edge.node1 == way.endNode && edge.node2 == way.startNode)
+                {
+                    // for coast, let's reject all simple shape closures (OLD BUG: don't reject straight-line ways)
+                }
+                else
+                {
+                    if (gridPointInfo.naturalTypes.Contains(0))
+                    {
+                        gridPointInfo.naturalTypes.Remove(0);
+                    }
+                    else
+                    {
+                        gridPointInfo.naturalTypes.Add(0);
+                    }
+                }
+            }
+            bool relationHasWater = false;
+            foreach (var relation in way.relations)
+            {
+                if (manager.relationInfo[relation].ContainsKeyValue(manager, "natural", "water"))
+                {
+                    relationHasWater = true;
+                }
+                if (gridPointInfo.relations.Contains(relation))
+                {
+                    gridPointInfo.relations.Remove(relation);
+                }
+                else
+                {
+                    gridPointInfo.relations.Add(relation);
+                }
+            }
+            if (!relationHasWater && manager.wayInfo[edge.wayID].ContainsKeyValue(manager, "natural", "water"))
+            {
+                if (gridPointInfo.ways.Contains(edge.wayID))
+                {
+                    gridPointInfo.ways.Remove(edge.wayID);
+                }
+                else
+                {
+                    gridPointInfo.ways.Add(edge.wayID);
+                }
+            }
+        }
+
         // as a point, represents the land types and relations that contain it
         // as an edge, represents the same states that will be added or removed upon crossing
         public class GridPointInfo
         {
             public HashSet<long> relations = new HashSet<long>();
+            public HashSet<long> ways = new HashSet<long>();
             public HashSet<int> naturalTypes = new HashSet<int>(); // by index
         }
     }
