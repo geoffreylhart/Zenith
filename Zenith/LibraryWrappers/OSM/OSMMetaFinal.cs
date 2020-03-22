@@ -245,7 +245,7 @@ namespace Zenith.LibraryWrappers.OSM
             bool relationHasGlacier = false;
             foreach (var relation in way.relations)
             {
-                if (manager.relationInfo[relation].ContainsKeyValue(manager, "natural", "water"))
+                if (IsWater(manager, manager.relationInfo[relation]))
                 {
                     relationHasWater = true;
                 }
@@ -257,7 +257,7 @@ namespace Zenith.LibraryWrappers.OSM
                 {
                     // for relations, let's reject all simple shape closures (OLD BUG: don't reject straight-line ways)
                 }
-                else
+                else if (IsWater(manager, manager.relationInfo[relation]) || manager.relationInfo[relation].ContainsKeyValue(manager, "natural", "glacier"))
                 {
                     if (gridPointInfo.relations.Contains(relation))
                     {
@@ -270,7 +270,7 @@ namespace Zenith.LibraryWrappers.OSM
 
                 }
             }
-            if (!relationHasWater && manager.wayInfo[edge.wayID].ContainsKeyValue(manager, "natural", "water"))
+            if (!relationHasWater && IsWater(manager, manager.wayInfo[edge.wayID]))
             {
                 if (gridPointInfo.ways.Contains(edge.wayID))
                 {
@@ -292,6 +292,20 @@ namespace Zenith.LibraryWrappers.OSM
                     gridPointInfo.ways.Add(edge.wayID);
                 }
             }
+        }
+
+        private bool IsWater(OSMMetaManager manager, RelationInfo relationInfo)
+        {
+            if (relationInfo.ContainsKeyValue(manager, "waterway", "river")) return false; // not area
+            if (relationInfo.ContainsKeyValue(manager, "type", "waterway")) return false; // not area
+            return relationInfo.ContainsKeyValue(manager, "natural", "water");
+        }
+
+        private bool IsWater(OSMMetaManager manager, WayInfo wayInfo)
+        {
+            if (wayInfo.ContainsKeyValue(manager, "waterway", "river")) return false; // not area
+            if (wayInfo.ContainsKeyValue(manager, "type", "waterway")) return false; // not area
+            return wayInfo.ContainsKeyValue(manager, "natural", "water");
         }
 
         // as a point, represents the land types and relations that contain it
