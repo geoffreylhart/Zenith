@@ -259,6 +259,10 @@ namespace Zenith.LibraryWrappers.OSM
                 }
                 else if (IsWater(manager, manager.relationInfo[relation]) || manager.relationInfo[relation].ContainsKeyValue(manager, "natural", "glacier"))
                 {
+                    if (!IsValidRelation(manager, relation))
+                    {
+                        continue;
+                    }
                     if (gridPointInfo.relations.Contains(relation))
                     {
                         gridPointInfo.relations.Remove(relation);
@@ -306,6 +310,29 @@ namespace Zenith.LibraryWrappers.OSM
             if (wayInfo.ContainsKeyValue(manager, "waterway", "river")) return false; // not area
             if (wayInfo.ContainsKeyValue(manager, "type", "waterway")) return false; // not area
             return wayInfo.ContainsKeyValue(manager, "natural", "water");
+        }
+
+        // allows us to discard bad relations (bad so far as we can tell, still can't tell if it crosses multiple faces yet)
+        private bool IsValidRelation(OSMMetaManager manager, long relation)
+        {
+            var relationInfo = manager.relationInfo[relation];
+            foreach (var way in relationInfo.memids)
+            {
+                if (!manager.wayInfo.ContainsKey(way)) return true; // benefit of the doubt, for now
+            }
+            Dictionary<long, int> endCounts = new Dictionary<long, int>();
+            foreach (var way in relationInfo.memids)
+            {
+                if (!endCounts.ContainsKey(manager.wayInfo[way].startNode)) endCounts[manager.wayInfo[way].startNode] = 0;
+                endCounts[manager.wayInfo[way].startNode]++;
+                if (!endCounts.ContainsKey(manager.wayInfo[way].endNode)) endCounts[manager.wayInfo[way].endNode] = 0;
+                endCounts[manager.wayInfo[way].endNode]++;
+            }
+            foreach (var pair in endCounts)
+            {
+                if (pair.Value % 2 == 1) return false;
+            }
+            return true;
         }
 
         // as a point, represents the land types and relations that contain it
