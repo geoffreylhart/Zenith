@@ -59,7 +59,7 @@ namespace Zenith.LibraryWrappers.OSM
                             bw.Write(stringTable[r.values[i]]);
                         }
                         bw.Write(r.roleValues.Count);
-                        foreach (var roleValue in r.roleValues) bw.Write(roleValue);
+                        foreach (var roleValue in r.roleValues) bw.Write(stringTable[roleValue]);
                         bw.Write(r.memids.Count);
                         foreach (var memid in r.memids) bw.Write(memid);
                         bw.Write(r.types.Count);
