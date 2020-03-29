@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -25,6 +26,7 @@ namespace Zenith.LibraryWrappers.OSM
         Dictionary<ISector, GridPointInfo[,]> gridPoints; // the final actual info
         Dictionary<ISector, GridPointInfo[,]> gridTops; // intermediate
         Dictionary<ISector, GridPointInfo[,]> gridLefts; // intermediate
+        HashSet<long> badRelations = new HashSet<long>();
 
         internal void LoadAll(string fileName)
         {
@@ -61,6 +63,11 @@ namespace Zenith.LibraryWrappers.OSM
                 gridPoints[root] = gp;
                 gridTops[root] = gt;
                 gridLefts[root] = gl;
+            }
+            // find bad relations
+            foreach (var relation in manager.relationInfo)
+            {
+                if (!IsValidRelation(manager, relation.Key)) badRelations.Add(relation.Key);
             }
             // process all edge info
             foreach (var edge in manager.edgeInfo)
@@ -175,6 +182,12 @@ namespace Zenith.LibraryWrappers.OSM
                     }
                 }
             }
+            SaveAsImage(manager, frRoot);
+            SaveAsFile(manager, frRoot);
+        }
+
+        private void SaveAsImage(OSMMetaManager manager, CubeSector frRoot)
+        {
             // finally, render those coast images
             string mapFile = OSMPaths.GetCoastlineImagePath(frRoot);
             Bitmap map = new Bitmap(256, 256);
@@ -220,6 +233,32 @@ namespace Zenith.LibraryWrappers.OSM
             map.Save(mapFile, ImageFormat.Png);
         }
 
+        private void SaveAsFile(OSMMetaManager manager, CubeSector frRoot)
+        {
+            string filePath = Path.Combine(OSMPaths.GetRenderRoot(), $"Coastline{frRoot.sectorFace.GetFaceAcronym()}.txt");
+            using (var writer = File.Open(filePath, FileMode.Create))
+            {
+                using (var bw = new BinaryWriter(writer))
+                {
+                    bw.Write(badRelations.Count);
+                    foreach (var relation in badRelations) bw.Write(relation);
+                    for (int i = 0; i < 257; i++)
+                    {
+                        for (int j = 0; j < 257; j++)
+                        {
+                            GridPointInfo gridPoint = gridPoints[frRoot][i, j];
+                            bw.Write(gridPoint.naturalTypes.Count);
+                            foreach (var naturalType in gridPoint.naturalTypes) bw.Write(naturalType);
+                            bw.Write(gridPoint.relations.Count);
+                            foreach (var relation in gridPoint.relations) bw.Write(relation);
+                            bw.Write(gridPoint.ways.Count);
+                            foreach (var way in gridPoint.ways) bw.Write(way);
+                        }
+                    }
+                }
+            }
+        }
+
         private void XORWithEdge(OSMMetaManager manager, GridPointInfo gridPointInfo, EdgeInfo edge)
         {
             var way = manager.wayInfo[edge.wayID];
@@ -259,7 +298,7 @@ namespace Zenith.LibraryWrappers.OSM
                 }
                 else if (IsWater(manager, manager.relationInfo[relation]) || manager.relationInfo[relation].ContainsKeyValue(manager, "natural", "glacier"))
                 {
-                    if (!IsValidRelation(manager, relation))
+                    if (badRelations.Contains(relation))
                     {
                         continue;
                     }
