@@ -259,6 +259,59 @@ namespace Zenith.LibraryWrappers.OSM
             }
         }
 
+        public static OSMMetaFinal GLOBAL_FINAL = null;
+
+        internal static GridPointInfo GetGridPointInfo(ISector sector)
+        {
+            if (GLOBAL_FINAL == null) LoadAll();
+            return GLOBAL_FINAL.gridPoints[sector.GetRoot()][sector.X, sector.Y];
+        }
+
+        private static void LoadAll()
+        {
+            GLOBAL_FINAL = new OSMMetaFinal();
+            // init
+            GLOBAL_FINAL.gridPoints = new Dictionary<ISector, GridPointInfo[,]>();
+            foreach (var root in ZCoords.GetSectorManager().GetTopmostOSMSectors())
+            {
+                GridPointInfo[,] gp = new GridPointInfo[257, 257];
+                for (int x = 0; x < 257; x++)
+                {
+                    for (int y = 0; y < 257; y++)
+                    {
+                        gp[x, y] = new GridPointInfo();
+                    }
+                }
+                GLOBAL_FINAL.gridPoints[root] = gp;
+            }
+            for (int r = 0; r < 6; r++)
+            {
+                var frRoot = new CubeSector((CubeSector.CubeSectorFace)r, 0, 0, 0);
+                string filePath = Path.Combine(OSMPaths.GetRenderRoot(), $"Coastline{frRoot.sectorFace.GetFaceAcronym()}.txt");
+                using (var writer = File.Open(filePath, FileMode.Open))
+                {
+                    using (var br = new BinaryReader(writer))
+                    {
+                        int badRelationsCount = br.ReadInt32();
+                        for (int i = 0; i < badRelationsCount; i++) GLOBAL_FINAL.badRelations.Add(br.ReadInt64());
+                        for (int i = 0; i < 257; i++)
+                        {
+                            for (int j = 0; j < 257; j++)
+                            {
+                                GridPointInfo gridPoint = GLOBAL_FINAL.gridPoints[frRoot][i, j];
+                                int naturalTypesCount = br.ReadInt32();
+                                for (int k = 0; k < naturalTypesCount; k++) gridPoint.naturalTypes.Add(br.ReadInt32());
+                                int relationsCount = br.ReadInt32();
+                                for (int k = 0; k < relationsCount; k++) gridPoint.relations.Add(br.ReadInt64());
+                                int waysCount = br.ReadInt32();
+                                for (int k = 0; k < waysCount; k++) gridPoint.ways.Add(br.ReadInt64());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         private void XORWithEdge(OSMMetaManager manager, GridPointInfo gridPointInfo, EdgeInfo edge)
         {
             var way = manager.wayInfo[edge.wayID];

@@ -18,11 +18,13 @@ namespace Zenith.LibraryWrappers.OSM
         public Dictionary<long, Vector2d> nodes = new Dictionary<long, Vector2d>();
         public List<Blob> blobs;
         private ISector sector;
+        private OSMMetaFinal.GridPointInfo gridPointInfo;
 
         public BlobCollection(List<Blob> blobs, ISector sector)
         {
             this.blobs = blobs;
             this.sector = sector;
+            this.gridPointInfo = OSMMetaFinal.GetGridPointInfo(sector);
             // initialize
             ISector rootSector = sector.GetRoot();
             foreach (var blob in blobs)
