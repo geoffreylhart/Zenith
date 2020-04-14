@@ -26,7 +26,7 @@ namespace Zenith.LibraryWrappers.OSM
         Dictionary<ISector, GridPointInfo[,]> gridPoints; // the final actual info
         Dictionary<ISector, GridPointInfo[,]> gridTops; // intermediate
         Dictionary<ISector, GridPointInfo[,]> gridLefts; // intermediate
-        HashSet<long> badRelations = new HashSet<long>();
+        public HashSet<long> badRelations = new HashSet<long>();
 
         internal void LoadAll(string fileName)
         {

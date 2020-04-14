@@ -60,6 +60,7 @@ namespace Zenith.LibraryWrappers.OSM
             foreach (var way in EnumerateWays()) wayLookup[way.id] = way;
             List<List<long>> inners = new List<List<long>>();
             List<List<long>> outers = new List<List<long>>();
+            List<long> relationIds = new List<long>();
             foreach (var blob in blobs)
             {
                 if (blob.type != "OSMData") continue;
@@ -105,6 +106,7 @@ namespace Zenith.LibraryWrappers.OSM
                             }
                             inners.Add(innerWayIds);
                             outers.Add(outerWayIds);
+                            relationIds.Add(relation.id);
                         }
                     }
                 }
@@ -158,25 +160,136 @@ namespace Zenith.LibraryWrappers.OSM
                 {
                     AddConstrainedPaths(simpleMap, superLoop);
                 }
+                simpleMap.CheckValid();
                 addingMaps.Add(simpleMap);
             }
             // construct each multipolygon to add separately
             for (int i = 0; i < inners.Count; i++) // foreach multipolygon, basically
             {
+                if (OSMMetaFinal.GLOBAL_FINAL.badRelations.Contains(relationIds[i])) continue;
                 // TODO: with islands inside of ponds inside of islands inside of ponds, etc. we wouldn't expect this to work
                 // however, we're taking advantage of the fact that Add/Subtract doesn't check for that for now (until Finalize)
                 SuperWayCollection superInnerWays = GenerateSuperWayCollection(inners[i].Where(x => wayLookup.ContainsKey(x)).Select(x => Copy(wayLookup[x])), true);
                 SuperWayCollection superOuterWays = GenerateSuperWayCollection(outers[i].Where(x => wayLookup.ContainsKey(x)).Select(x => Copy(wayLookup[x])), true);
                 if (!IsValid(superInnerWays)) continue;
                 if (!IsValid(superOuterWays)) continue;
+                OrientSuperWays(superInnerWays, superOuterWays, gridPointInfo.relations.Contains(relationIds[i]));
                 SectorConstrainedOSMAreaGraph innerMap = DoMultipolygon(superInnerWays);
                 SectorConstrainedOSMAreaGraph outerMap = DoMultipolygon(superOuterWays);
                 SectorConstrainedOSMAreaGraph multiPolygon = outerMap.Subtract(innerMap, this, false);
                 addingMaps.Add(multiPolygon);
             }
             SectorConstrainedOSMAreaGraph map = new SectorConstrainedOSMAreaGraph();
-            foreach (var adding in addingMaps) map.Add(adding, this, false);
             return map;
+        }
+
+        private class SuperWayIntersection
+        {
+            public Vector2d intersection;
+            public List<Way> superWay;
+            public bool leaving;
+            public bool inner;
+        }
+
+        private void OrientSuperWays(SuperWayCollection superInnerWays, SuperWayCollection superOuterWays, bool topLeftIsInside)
+        {
+            List<List<Way>> allLinkedWays = new List<List<Way>>();
+            allLinkedWays.AddRange(superInnerWays.linkedWays);
+            allLinkedWays.AddRange(superOuterWays.linkedWays);
+            List<List<Way>> allLoopedWays = new List<List<Way>>();
+            allLoopedWays.AddRange(superInnerWays.loopedWays);
+            allLoopedWays.AddRange(superOuterWays.loopedWays);
+            // assume all loops dont touch the edge for now (they can be corrected later)
+            foreach (var superLoop in allLoopedWays)
+            {
+                SectorConstrainedOSMAreaGraph temp = new SectorConstrainedOSMAreaGraph();
+                bool isCW = ApproximateCW(superLoop);
+                if (isCW) // TODO: why did I have this has the oppsoite logic before??
+                {
+                    // force to be an "outer"
+                    superLoop.Reverse();
+                    foreach (var way in superLoop) way.refs.Reverse();
+                }
+            }
+
+            // now do the -real- orienting
+            List<SuperWayIntersection> intersections = new List<SuperWayIntersection>();
+            foreach (var superWay in superOuterWays.linkedWays) // we expect these to always start and end outside the sector
+            {
+                AddIntersections(intersections, superWay, false);
+            }
+            foreach (var superLoop in superOuterWays.loopedWays)
+            {
+                bool untouchedLoop = CheckIfUntouchedAndSpin(superLoop);
+                if (!untouchedLoop)
+                {
+                    AddIntersections(intersections, superLoop, false);
+                }
+            }
+            foreach (var superWay in superInnerWays.linkedWays) // we expect these to always start and end outside the sector
+            {
+                AddIntersections(intersections, superWay, true);
+            }
+            foreach (var superLoop in superInnerWays.loopedWays)
+            {
+                bool untouchedLoop = CheckIfUntouchedAndSpin(superLoop);
+                if (!untouchedLoop)
+                {
+                    AddIntersections(intersections, superLoop, true);
+                }
+            }
+            if (intersections.Count % 2 != 0) throw new NotImplementedException();
+            intersections = intersections.OrderBy(x => (Math.Atan2(x.intersection.Y - 0.5, x.intersection.X - 0.5) + 8 * Math.PI - (-Math.PI * 3 / 4)) % (2 * Math.PI)).ToList(); // clockwise order starting at top-left
+            HashSet<List<Way>> correctDirectionHash = new HashSet<List<Way>>();
+            HashSet<List<Way>> incorrectDirectionHash = new HashSet<List<Way>>();
+            for (int i = 0; i < intersections.Count; i++)
+            {
+                bool correctDirection = intersections[i].leaving == (topLeftIsInside ^ (i % 2 == 1));
+                if (intersections[i].inner) correctDirection = !correctDirection; // flip all of the inners back, since we're about to subtract them
+                if (correctDirection)
+                {
+                    correctDirectionHash.Add(intersections[i].superWay);
+                    if (incorrectDirectionHash.Contains(intersections[i].superWay)) throw new NotImplementedException(); // disagreement
+                }
+                else
+                {
+                    incorrectDirectionHash.Add(intersections[i].superWay);
+                    if (correctDirectionHash.Contains(intersections[i].superWay)) throw new NotImplementedException(); // disagreement
+                }
+            }
+            foreach (var superWay in incorrectDirectionHash)
+            {
+                superWay.Reverse();
+                foreach (var way in superWay) way.refs.Reverse();
+            }
+        }
+
+        private void AddIntersections(List<SuperWayIntersection> list, List<Way> superWay, bool inner)
+        {
+            bool prevIsInside = false;
+            if (sector.ContainsCoord(nodes[superWay.First().refs.First()])) throw new NotImplementedException();
+            if (sector.ContainsCoord(nodes[superWay.Last().refs.Last()])) throw new NotImplementedException();
+            for (int i = 0; i < superWay.Count; i++)
+            {
+                for (int j = 1; j < superWay[i].refs.Count; j++)
+                {
+                    long prev = superWay[i].refs[j - 1];
+                    long next = superWay[i].refs[j];
+                    var intersections = OSMPolygonBufferGenerator.GetIntersections(sector, nodes[prev], nodes[next]);
+                    foreach (var intersection in intersections)
+                    {
+                        if (prevIsInside) // close-out a line
+                        {
+                            list.Add(new SuperWayIntersection() { intersection = intersection, leaving = true, superWay = superWay, inner = inner });
+                        }
+                        else // start up a new line
+                        {
+                            list.Add(new SuperWayIntersection() { intersection = intersection, leaving = false, superWay = superWay, inner = inner });
+                        }
+                        prevIsInside = !prevIsInside;
+                    }
+                }
+            }
         }
 
         // we'll just apply this to multipolygons for now, skipping relations like 313091
@@ -212,26 +325,12 @@ namespace Zenith.LibraryWrappers.OSM
             foreach (var superWay in superWays.linkedWays) // we expect these to always start and end outside the sector
             {
                 SectorConstrainedOSMAreaGraph temp = new SectorConstrainedOSMAreaGraph();
-                bool isCW = ApproximateCW(superWay); // definitely an approximation, we don't actually know without loading nearby sectors
-                if (isCW)
-                {
-                    // force to be an "outer"
-                    superWay.Reverse();
-                    foreach (var way in superWay) way.refs.Reverse();
-                }
                 AddConstrainedPaths(temp, superWay);
                 map.Add(temp, this, false);
             }
             foreach (var superLoop in superWays.loopedWays)
             {
                 SectorConstrainedOSMAreaGraph temp = new SectorConstrainedOSMAreaGraph();
-                bool isCW = ApproximateCW(superLoop);
-                if (isCW)
-                {
-                    // force to be an "outer"
-                    superLoop.Reverse();
-                    foreach (var way in superLoop) way.refs.Reverse();
-                }
                 bool untouchedLoop = CheckIfUntouchedAndSpin(superLoop);
                 if (untouchedLoop)
                 {
