@@ -240,10 +240,22 @@ namespace Zenith.LibraryWrappers.OSM
             }
             if (intersections.Count % 2 != 0) throw new NotImplementedException();
             intersections = intersections.OrderBy(x => (Math.Atan2(x.intersection.Y - 0.5, x.intersection.X - 0.5) + 8 * Math.PI - (-Math.PI * 3 / 4)) % (2 * Math.PI)).ToList(); // clockwise order starting at top-left
+            // look for duplicates that are near each other, had this issue with relation 534928, if they're close enough we'll just ignore them for now - TODO: this may cause issues later
+            HashSet<int> ignore = new HashSet<int>();
+            for (int i = 0; i < intersections.Count; i++)
+            {
+                int j = (i + 1) % intersections.Count;
+                if ((intersections[i].intersection - intersections[j].intersection).Length() < 0.0000001)
+                {
+                    ignore.Add(i);
+                    ignore.Add(j);
+                }
+            }
             HashSet<List<Way>> correctDirectionHash = new HashSet<List<Way>>();
             HashSet<List<Way>> incorrectDirectionHash = new HashSet<List<Way>>();
             for (int i = 0; i < intersections.Count; i++)
             {
+                if (ignore.Contains(i)) continue;
                 bool correctDirection = intersections[i].leaving == (topLeftIsInside ^ (i % 2 == 1));
                 if (intersections[i].inner) correctDirection = !correctDirection; // flip all of the inners back, since we're about to subtract them
                 if (correctDirection)

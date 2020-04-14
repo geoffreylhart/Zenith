@@ -41,6 +41,8 @@ namespace ZenithUnitTests
             List<ISector> sectors = new List<ISector>();
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 128, 43, 8));
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 129, 44, 8));
+            sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 128, 42, 8));
+            // TODO: that one dingleberry near the dock in pensacola is still broken
             foreach (var sector in sectors)
             {
                 ProceduralTileBuffer buffer = new ProceduralTileBuffer(sector);
