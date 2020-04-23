@@ -28,7 +28,7 @@ namespace Zenith.LibraryWrappers
         {
             if (graph.nodes.Count == 0)
             {
-                if (PixelIsLand(sector))
+                if (OSMMetaFinal.IsPixelLand(sector))
                 {
                     List<VertexPositionColor> vertices = new List<VertexPositionColor>();
                     Vector2d topLeft = new Vector2d(0, 0);
@@ -49,24 +49,6 @@ namespace Zenith.LibraryWrappers
             outline = CloseLines(sector, outline);
             return Tesselate(outline, Pallete.GRASS_GREEN);
         }
-
-#if WINDOWS || LINUX
-        static Dictionary<ISector, Bitmap> landImages = new Dictionary<ISector, Bitmap>();
-        private static bool PixelIsLand(ISector sector)
-        {
-            if (!landImages.ContainsKey(sector.GetRoot())) // 
-            {
-                string mapFile = OSMPaths.GetCoastlineImagePath(sector);
-                landImages[sector.GetRoot()] = new Bitmap(mapFile);
-            }
-            return landImages[sector.GetRoot()].GetPixel(sector.X, sector.Y) == System.Drawing.Color.FromArgb(255, 0, 255, 0);
-        }
-#else
-        private static bool PixelIsLand(ISector sector)
-        {
-            return true;
-        }
-#endif
 
         // cut off the lines hanging outside of the sector
         // we call this before closing lines to prevent any possible confusion on how lines should connect

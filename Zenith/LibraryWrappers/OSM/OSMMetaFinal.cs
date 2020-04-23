@@ -267,6 +267,16 @@ namespace Zenith.LibraryWrappers.OSM
             return GLOBAL_FINAL.gridPoints[sector.GetRoot()][sector.X, sector.Y];
         }
 
+        internal static bool IsPixelLand(ISector sector)
+        {
+            if (GLOBAL_FINAL == null) LoadAll();
+            int land1 = GLOBAL_FINAL.gridPoints[sector.GetRoot()][sector.X, sector.Y].naturalTypes.Contains(0) ? 0 : -1;
+            int land2 = GLOBAL_FINAL.gridPoints[sector.GetRoot()][sector.X + 1, sector.Y].naturalTypes.Contains(0) ? 0 : -1;
+            int land3 = GLOBAL_FINAL.gridPoints[sector.GetRoot()][sector.X, sector.Y + 1].naturalTypes.Contains(0) ? 0 : -1;
+            int land4 = GLOBAL_FINAL.gridPoints[sector.GetRoot()][sector.X + 1, sector.Y + 1].naturalTypes.Contains(0) ? 0 : -1;
+            return land1 == 0 && land2 == 0 && land3 == 0 && land4 == 0;
+        }
+
         private static void LoadAll()
         {
             GLOBAL_FINAL = new OSMMetaFinal();

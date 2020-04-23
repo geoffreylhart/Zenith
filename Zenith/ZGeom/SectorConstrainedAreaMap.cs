@@ -81,12 +81,12 @@ namespace Zenith.ZGeom
             return lineGraph.ConstructAsRoads(graphicsDevice, width, texture, color);
         }
 
-        internal BasicVertexBuffer Tesselate(GraphicsDevice graphicsDevice, Color color)
+        internal BasicVertexBuffer Tesselate(GraphicsDevice graphicsDevice, Color color, bool cornersAreFilled)
         {
-            return new BasicVertexBuffer(graphicsDevice, GetTesselationVertices(color), PrimitiveType.TriangleList);
+            return new BasicVertexBuffer(graphicsDevice, GetTesselationVertices(color, cornersAreFilled), PrimitiveType.TriangleList);
         }
 
-        public List<VertexPositionColor> GetTesselationVertices(Color color)
+        public List<VertexPositionColor> GetTesselationVertices(Color color, bool cornersAreFilled)
         {
             var fakeSector = new CubeSector(CubeSector.CubeSectorFace.FRONT, 0, 0, 8);
             List<List<ContourVertex>> contours = paths.Select(x => x.Select(y => Vector2DToContourVertex(y)).ToList()).ToList();
@@ -100,6 +100,16 @@ namespace Zenith.ZGeom
             {
                 var outerContours = new List<List<ContourVertex>>() { outer.Skip(1).Select(y => Vector2DToContourVertex(y)).ToList() }; // skip 1 since our loops end in a duplicate
                 contours.AddRange(outerContours);
+            }
+            if (paths.Count == 0 && cornersAreFilled)
+            {
+                // add one outer surrounding the hole sector
+                var square = new List<ContourVertex>();
+                square.Add(new ContourVertex() { Position = new Vec3() { X = 0, Y = 0, Z = 0 } });
+                square.Add(new ContourVertex() { Position = new Vec3() { X = 0, Y = 1, Z = 0 } });
+                square.Add(new ContourVertex() { Position = new Vec3() { X = 1, Y = 1, Z = 0 } });
+                square.Add(new ContourVertex() { Position = new Vec3() { X = 1, Y = 0, Z = 0 } });
+                contours.Add(square);
             }
             var vertices = OSMPolygonBufferGenerator.Tesselate(contours, color);
             return vertices;

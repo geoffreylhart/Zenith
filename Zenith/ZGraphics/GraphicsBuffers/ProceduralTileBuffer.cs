@@ -65,7 +65,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             sw.Start();
             vectorTileBuffer = new VectorTileBuffer(graphicsDevice, sector);
             vectorTileBufferUnused = new VectorTileBuffer(graphicsDevice, sector);
-            BasicVertexBuffer landBuffer = landAreaMap.Tesselate(graphicsDevice, Pallete.GRASS_GREEN);
+            BasicVertexBuffer landBuffer = landAreaMap.Tesselate(graphicsDevice, Pallete.GRASS_GREEN, OSMMetaFinal.IsPixelLand(sector));
             vectorTileBuffer.Add(graphicsDevice, landBuffer, sector);
             Console.WriteLine($"Land buffer generated for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
