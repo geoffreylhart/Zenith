@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -42,7 +43,8 @@ namespace ZenithUnitTests
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 128, 43, 8));
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 129, 44, 8));
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 128, 42, 8));
-            // TODO: that one dingleberry near the dock in pensacola is still broken
+            sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 135, 41, 8)); // "topological inconsistency" during tesselation - aka those wingdings TODO: currently can't test this
+
             foreach (var sector in sectors)
             {
                 ProceduralTileBuffer buffer = new ProceduralTileBuffer(sector);

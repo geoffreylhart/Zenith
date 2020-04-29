@@ -133,10 +133,15 @@ namespace Zenith.LibraryWrappers.OSM
             foreach (var way in blobs.EnumerateWays(false)) wayLookup[way.id] = way;
             HashSet<long> ways = new HashSet<long>();
             HashSet<long> innersOuters = new HashSet<long>();
+            HashSet<long> otherInnerOuters = new HashSet<long>();
             foreach (var way in TempGetRelationWays("natural", "water", blobs))
             {
                 ways.Add(way);
                 innersOuters.Add(way);
+            }
+            foreach (var way in TempGetRelationWays(blobs))
+            {
+                if (!innersOuters.Contains(way)) otherInnerOuters.Add(way);
             }
             foreach (var way in TempGetWays("natural", "coastline", blobs)) ways.Add(way);
             foreach (var way in TempGetWays("natural", "water", blobs))
@@ -145,7 +150,11 @@ namespace Zenith.LibraryWrappers.OSM
                 {
                     // some folks forget to close a simple way, or perhaps the mistake is tagging subcomponents of a relation
                     // then there's just straight up errors like way 43291726
-                    if (wayLookup[way].refs.Last() != wayLookup[way].refs.First()) wayLookup[way].refs.Add(wayLookup[way].refs.First());
+                    if (wayLookup[way].refs.Last() != wayLookup[way].refs.First())
+                    {
+                        if (otherInnerOuters.Contains(way)) continue; // unsure of how else to ignore bad ways like 43815149
+                        wayLookup[way].refs.Add(wayLookup[way].refs.First());
+                    }
                 }
                 ways.Add(way);
             }
@@ -187,6 +196,45 @@ namespace Zenith.LibraryWrappers.OSM
                                 {
                                     if (relation.roles_sid[i] == innerIndex) ways.Add(relation.memids[i]);
                                     if (relation.roles_sid[i] == outerIndex) ways.Add(relation.memids[i]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return ways;
+        }
+
+        private static IEnumerable<long> TempGetRelationWays(BlobCollection blobs)
+        {
+            HashSet<long> ways = new HashSet<long>();
+            foreach (var blob in blobs.blobs)
+            {
+                if (blob.type != "OSMData") continue;
+                int typeIndex = blob.pBlock.stringtable.vals.IndexOf("type");
+                int multipolygonIndex = blob.pBlock.stringtable.vals.IndexOf("multipolygon");
+                int outerIndex = blob.pBlock.stringtable.vals.IndexOf("outer");
+                int innerIndex = blob.pBlock.stringtable.vals.IndexOf("inner");
+                if (new[] { typeIndex, multipolygonIndex, outerIndex, innerIndex }.Contains(-1)) continue;
+                foreach (var pGroup in blob.pBlock.primitivegroup)
+                {
+                    foreach (var relation in pGroup.relations)
+                    {
+                        bool isTypeMultipolygon = false;
+                        for (int i = 0; i < relation.keys.Count; i++)
+                        {
+                            if (relation.keys[i] == typeIndex && relation.vals[i] == multipolygonIndex) isTypeMultipolygon = true;
+                        }
+                        if (isTypeMultipolygon)
+                        {
+                            List<long> innerWayIds = new List<long>();
+                            List<long> outerWayIds = new List<long>();
+                            for (int i = 0; i < relation.roles_sid.Count; i++)
+                            {
+                                // just outer for now
+                                if (relation.types[i] == 1)
+                                {
+                                    ways.Add(relation.memids[i]);
                                 }
                             }
                         }

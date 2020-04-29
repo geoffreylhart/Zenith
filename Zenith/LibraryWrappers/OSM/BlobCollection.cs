@@ -61,6 +61,7 @@ namespace Zenith.LibraryWrappers.OSM
             List<List<long>> inners = new List<List<long>>();
             List<List<long>> outers = new List<List<long>>();
             List<long> relationIds = new List<long>();
+            HashSet<long> otherInnerOuters = new HashSet<long>();
             foreach (var blob in blobs)
             {
                 if (blob.type != "OSMData") continue;
@@ -82,31 +83,45 @@ namespace Zenith.LibraryWrappers.OSM
                             if (relation.keys[i] == keyIndex && relation.vals[i] == valueIndex) isKeyValue = true;
                             if (relation.keys[i] == typeIndex && relation.vals[i] == multipolygonIndex) isTypeMultipolygon = true;
                         }
-                        if (isKeyValue && isTypeMultipolygon)
+                        if (isTypeMultipolygon)
                         {
-                            List<long> innerWayIds = new List<long>();
-                            List<long> outerWayIds = new List<long>();
-                            for (int i = 0; i < relation.roles_sid.Count; i++)
+                            if (isKeyValue)
                             {
-                                // just outer for now
-                                if (relation.types[i] == 1)
+                                List<long> innerWayIds = new List<long>();
+                                List<long> outerWayIds = new List<long>();
+                                for (int i = 0; i < relation.roles_sid.Count; i++)
                                 {
-                                    if (relation.roles_sid[i] == 0 && innerIndex != 0 && outerIndex != 0)
+                                    // just outer for now
+                                    if (relation.types[i] == 1)
                                     {
-                                        // some ways are in a relation without any inner/outer tag
-                                        // ex: 359181377 in relation 304768
-                                        outerWayIds.Add(relation.memids[i]);
+                                        if (relation.roles_sid[i] == 0 && innerIndex != 0 && outerIndex != 0)
+                                        {
+                                            // some ways are in a relation without any inner/outer tag
+                                            // ex: 359181377 in relation 304768
+                                            outerWayIds.Add(relation.memids[i]);
+                                        }
+                                        else
+                                        {
+                                            if (relation.roles_sid[i] == innerIndex) innerWayIds.Add(relation.memids[i]);
+                                            if (relation.roles_sid[i] == outerIndex) outerWayIds.Add(relation.memids[i]);
+                                        }
                                     }
-                                    else
+                                }
+                                inners.Add(innerWayIds);
+                                outers.Add(outerWayIds);
+                                relationIds.Add(relation.id);
+                            }
+                            else
+                            {
+                                for (int i = 0; i < relation.roles_sid.Count; i++)
+                                {
+                                    // just outer for now
+                                    if (relation.types[i] == 1)
                                     {
-                                        if (relation.roles_sid[i] == innerIndex) innerWayIds.Add(relation.memids[i]);
-                                        if (relation.roles_sid[i] == outerIndex) outerWayIds.Add(relation.memids[i]);
+                                        otherInnerOuters.Add(relation.memids[i]);
                                     }
                                 }
                             }
-                            inners.Add(innerWayIds);
-                            outers.Add(outerWayIds);
-                            relationIds.Add(relation.id);
                         }
                     }
                 }
@@ -130,7 +145,11 @@ namespace Zenith.LibraryWrappers.OSM
                 if (way.selfIntersects) continue; // just ignore ways like 43410874 to keep you sane
                 SectorConstrainedOSMAreaGraph simpleMap = new SectorConstrainedOSMAreaGraph();
                 var superLoop = new List<Way>() { way };
-                if (way.refs.Last() != way.refs.First()) way.refs.Add(way.refs.First()); // some folks forget to close a simple way, or perhaps the mistake is tagging subcomponents of a relation
+                if (way.refs.Last() != way.refs.First())
+                {
+                    if (otherInnerOuters.Contains(way.id)) continue; // unsure of how else to ignore bad ways like 43815149
+                    way.refs.Add(way.refs.First()); // some folks forget to close a simple way, or perhaps the mistake is tagging subcomponents of a relation
+                }
                 bool isCW = ApproximateCW(superLoop);
                 if (isCW) way.refs.Reverse(); // the simple polygons are always "outers"
                 bool untouchedLoop = CheckIfUntouchedAndSpin(superLoop);
@@ -180,6 +199,7 @@ namespace Zenith.LibraryWrappers.OSM
                 addingMaps.Add(multiPolygon);
             }
             SectorConstrainedOSMAreaGraph map = new SectorConstrainedOSMAreaGraph();
+            foreach (var addingMap in addingMaps) map.Add(addingMap, this, false);
             return map;
         }
 

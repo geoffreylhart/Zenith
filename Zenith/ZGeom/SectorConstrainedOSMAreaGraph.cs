@@ -10,6 +10,9 @@ namespace Zenith.ZGeom
 {
     public class SectorConstrainedOSMAreaGraph
     {
+        static bool PERTURB_AT_JOINTS = false; // ex: a triforce is currently alway 3 shapes, but this would make sure they don't overlap
+        static double PERTURB_AMOUNT = 0;
+
         // TODO: that thing going on near way 553880275, node 5534127050 still doesn't look resolved
         public Dictionary<long, List<AreaNode>> nodes = new Dictionary<long, List<AreaNode>>();
         public HashSet<AreaNode> startPoints = new HashSet<AreaNode>();
@@ -49,6 +52,7 @@ namespace Zenith.ZGeom
                     // sort clockwise
                     finalLines = finalLines.OrderBy(x => ComputeInnerAngle(new Vector2d(1, 0), GetPos(x, blobs) - blobs.nodes[pair.Key])).ToList();
                     bool[] sectors = new bool[finalLines.Count]; // first sector means the area just ccw of the first finalLine
+                    // NOTE: this logic only works assuming multiple polygons are disjoint at intersections
                     foreach (var n in nodes[pair.Key])
                     {
                         int from = finalLines.IndexOf(n.prev);
@@ -257,6 +261,7 @@ namespace Zenith.ZGeom
                     // sort clockwise
                     finalLines = finalLines.OrderBy(x => ComputeInnerAngle(new Vector2d(1, 0), GetPos(x, blobs) - blobs.nodes[pair.Key])).ToList();
                     bool[] sectors = new bool[finalLines.Count]; // first sector means the area just ccw of the first finalLine
+                    // NOTE: this logic only works assuming multiple polygons are disjoint at intersections
                     foreach (var n in nodes[pair.Key])
                     {
                         int from = finalLines.IndexOf(n.prev);
@@ -432,6 +437,7 @@ namespace Zenith.ZGeom
 
         private bool ContainsNode(AreaNode node)
         {
+            if (node.id == -1) return startPoints.Any(x => x.v == node.v); // TODO: make this O(1)
             return nodes.ContainsKey(node.id) && nodes[node.id].Contains(node);
         }
 
@@ -796,7 +802,16 @@ namespace Zenith.ZGeom
                 {
                     if (curr.v == null)
                     {
-                        newPath.Add(blobs.nodes[curr.id]);
+                        Vector2d v = blobs.nodes[curr.id];
+                        // TODO: somehow one of the start points is added twice
+                        // ex: node 5534127050
+                        if (PERTURB_AT_JOINTS && nodes[curr.id].Count > 1)
+                        {
+                            Vector2d v1 = curr.next.v == null ? blobs.nodes[curr.next.id] : curr.next.v;
+                            Vector2d v2 = curr.prev.v == null ? blobs.nodes[curr.prev.id] : curr.prev.v;
+                            v += (v1 + v2 - blobs.nodes[curr.id] * 2).Normalized() * PERTURB_AMOUNT;
+                        }
+                        newPath.Add(v);
                     }
                     else
                     {
@@ -819,7 +834,15 @@ namespace Zenith.ZGeom
                     while (true)
                     {
                         if (curr.next == null || curr.next.prev != curr || curr.prev == null || curr.prev.next != curr) throw new NotImplementedException(); // validity check
-                        newLoop.Add(blobs.nodes[curr.id]);
+                        Vector2d v = blobs.nodes[curr.id];
+                        // ex: node 5534127050
+                        if (PERTURB_AT_JOINTS && nodes[curr.id].Count > 1)
+                        {
+                            Vector2d v1 = blobs.nodes[curr.next.id];
+                            Vector2d v2 = blobs.nodes[curr.prev.id];
+                            v += (v1 + v2 - blobs.nodes[curr.id] * 2).Normalized() * PERTURB_AMOUNT;
+                        }
+                        newLoop.Add(v);
                         explored.Add(curr);
                         if (curr.next == node) break;
                         curr = curr.next;
