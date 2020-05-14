@@ -66,7 +66,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
 
         public void Dispose()
         {
-            buffer.Dispose();
+            // buffer.Dispose(); // DON'T dispose of the static buffer, duh!
         }
 
         public void InitDraw(RenderContext context)

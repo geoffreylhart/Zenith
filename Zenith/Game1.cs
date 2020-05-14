@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -12,6 +13,7 @@ using Zenith.MathHelpers;
 using Zenith.PrimitiveBuilder;
 using Zenith.ZGame;
 using Zenith.ZGraphics;
+using Zenith.ZMath;
 #if ANDROID
 using ZenithAndroid;
 #endif
@@ -20,6 +22,8 @@ namespace Zenith
 {
     public class Game1 : Game
     {
+        public static ISector RENDER_SECTOR = null; // if not null, render this entire sector and quit
+
         public List<ZGameComponent> zComponents = new List<ZGameComponent>();
         public DebugConsole debug;
         public GraphicsDeviceManager graphics;
@@ -135,8 +139,24 @@ namespace Zenith
             base.Initialize();
         }
 
+        static int wait = 0; // wait to initialize whatever
         protected override void Update(GameTime gameTime)
         {
+            if (RENDER_SECTOR != null && wait > 10)
+            {
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
+                foreach (var child in RENDER_SECTOR.GetChildrenAtLevel(8))
+                {
+                    var sectorLoader = new OSMSectorLoader();
+                    var buffer = sectorLoader.GetGraphicsBuffer(GraphicsDevice, child);
+                    buffer.Dispose();
+                }
+                double secs = sw.Elapsed.TotalSeconds;
+                Exit();
+            }
+            wait++;
+
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape) || Constants.TERMINATE)
             {
                 Exit();

@@ -128,35 +128,48 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             }
         }
 
+
+        public static RenderContext context;
+        public static RenderTarget2D RENDER_BUFFER;
+        public static RenderTarget2D TREE_DENSITY_BUFFER;
+        public static RenderTarget2D GRASS_DENSITY_BUFFER;
+        public static RenderTarget2D DOWNSAMPLE_BUFFER;
+
         public Texture2D GetImage(GraphicsDevice graphicsDevice)
         {
-            Vector2d topLeft = new Vector2d(0, 0);
-            Vector2d bottomRight = new Vector2d(1, 1);
-            Matrixd projection = Matrixd.CreateOrthographicOffCenter(0, 1, Math.Sqrt(0.5), 0, -2, 2); // TODO: why negative?
-            //projection = Matrixd.CreateOrthographicOffCenter(0.1, 0.105, 0.1 + Math.Sqrt(0.5) * 0.005, 0.1, -2, 2); // TODO: why negative?
-            Matrixd skew = Matrixd.CreateRotationX(Math.PI / 4);
-            RenderContext context = new RenderContext(graphicsDevice, skew * projection, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0, RenderContext.LayerPass.MAIN_PASS);
-            context.highQuality = true;
-            context.deferred = false;
-            context.treeExtraPH = Math.Sqrt(0.5); // undo our stretching when measuring tree height (TODO: very hacky)
+            if (RENDER_BUFFER == null)
+            {
+                Vector2d topLeft = new Vector2d(0, 0);
+                Vector2d bottomRight = new Vector2d(1, 1);
+                Matrixd projection = Matrixd.CreateOrthographicOffCenter(0, 1, Math.Sqrt(0.5), 0, -2, 2); // TODO: why negative?
+                                                                                                          //projection = Matrixd.CreateOrthographicOffCenter(0.1, 0.105, 0.1 + Math.Sqrt(0.5) * 0.005, 0.1, -2, 2); // TODO: why negative?
+                Matrixd skew = Matrixd.CreateRotationX(Math.PI / 4);
+                context = new RenderContext(graphicsDevice, skew * projection, topLeft.X, bottomRight.X, topLeft.Y, bottomRight.Y, 0, RenderContext.LayerPass.MAIN_PASS);
+                context.highQuality = true;
+                context.deferred = false;
+                context.treeExtraPH = Math.Sqrt(0.5); // undo our stretching when measuring tree height (TODO: very hacky)
+                context.treeLayer = MakeDefaultRenderTarget(graphicsDevice);
+                context.grassLayer = MakeDefaultRenderTarget(graphicsDevice);
+                RENDER_BUFFER = MakeDefaultRenderTarget(graphicsDevice);
+                TREE_DENSITY_BUFFER = context.treeLayer;
+                GRASS_DENSITY_BUFFER = context.grassLayer;
+            }
             InitDraw(context);
-            RenderTarget2D newTarget = new RenderTarget2D(graphicsDevice, 512 * 16, 512 * 16, true, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
-            RenderTarget2D newGrass = new RenderTarget2D(graphicsDevice, 512 * 16, 512 * 16, true, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
-            RenderTarget2D newTree = new RenderTarget2D(graphicsDevice, 512 * 16, 512 * 16, true, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
-            context.treeLayer = newTree;
-            context.grassLayer = newGrass;
-            graphicsDevice.SetRenderTarget(newTree);
+            graphicsDevice.SetRenderTarget(TREE_DENSITY_BUFFER);
             context.layerPass = RenderContext.LayerPass.TREE_DENSITY_PASS;
             Draw(context);
-            graphicsDevice.SetRenderTarget(newGrass);
+            graphicsDevice.SetRenderTarget(GRASS_DENSITY_BUFFER);
             context.layerPass = RenderContext.LayerPass.GRASS_DENSITY_PASS;
             Draw(context);
-            graphicsDevice.SetRenderTarget(newTarget);
+            graphicsDevice.SetRenderTarget(RENDER_BUFFER);
             context.layerPass = RenderContext.LayerPass.MAIN_PASS;
             Draw(context);
-            newTree.Dispose();
-            newGrass.Dispose();
-            return DownScale(graphicsDevice, newTarget, 512);
+            return DownScale(graphicsDevice, RENDER_BUFFER, 512);
+        }
+
+        private RenderTarget2D MakeDefaultRenderTarget(GraphicsDevice graphicsDevice)
+        {
+            return new RenderTarget2D(graphicsDevice, 512 * 16, 512 * 16, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
         }
 
         private Texture2D DownScale(GraphicsDevice graphicsDevice, RenderTarget2D texture, int newsize)
@@ -164,7 +177,6 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             Texture2D newtexture = new RenderTarget2D(graphicsDevice, newsize, newsize, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
             graphicsDevice.SetRenderTarget((RenderTarget2D)newtexture);
             GraphicsBasic.DrawSpriteRect(graphicsDevice, 0, 0, newsize, newsize, texture, BlendState.AlphaBlend, Microsoft.Xna.Framework.Color.White);
-            texture.Dispose();
             return newtexture;
         }
     }

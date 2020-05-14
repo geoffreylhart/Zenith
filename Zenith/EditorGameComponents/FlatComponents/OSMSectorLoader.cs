@@ -81,36 +81,36 @@ namespace Zenith.EditorGameComponents.FlatComponents
                 }
                 else
                 {
-                    //try
-                    //{
-                    ProceduralTileBuffer buffer = new ProceduralTileBuffer(sector);
-                    Stopwatch sw = new Stopwatch();
-                    sw.Start();
-                    buffer.LoadLinesFromFile();
-                    buffer.GenerateVertices();
-                    buffer.GenerateBuffers(graphicsDevice);
-                    Console.WriteLine($"Total load time for {sector} is {sw.Elapsed.TotalSeconds} s");
-                    if (sector.Zoom <= ZCoords.GetSectorManager().GetHighestCacheZoom())
+                    try
                     {
-#if WINDOWS || LINUX
-                        using (var image = buffer.GetImage(graphicsDevice))
+                        ProceduralTileBuffer buffer = new ProceduralTileBuffer(sector);
+                        Stopwatch sw = new Stopwatch();
+                        sw.Start();
+                        buffer.LoadLinesFromFile();
+                        buffer.GenerateVertices();
+                        buffer.GenerateBuffers(graphicsDevice);
+                        Console.WriteLine($"Total load time for {sector} is {sw.Elapsed.TotalSeconds} s");
+                        if (sector.Zoom <= ZCoords.GetSectorManager().GetHighestCacheZoom())
                         {
-                            SuperSave(image, OSMPaths.GetSectorImagePath(sector));
-                        }
-                        RebuildImage(graphicsDevice, sector);
+#if WINDOWS || LINUX
+                            using (var image = buffer.GetImage(graphicsDevice))
+                            {
+                                SuperSave(image, OSMPaths.GetSectorImagePath(sector));
+                            }
+                            RebuildImage(graphicsDevice, sector);
 #endif
+                        }
+                        return buffer;
                     }
-                    return buffer;
-                    //}
-                    //catch (Exception ex)
-                    //{
-                    //    if (sector.Zoom <= ZCoords.GetSectorManager().GetHighestCacheZoom())
-                    //    {
-                    //        SuperSave(GlobalContent.Error, OSMPaths.GetSectorImagePath(sector));
-                    //        RebuildImage(graphicsDevice, sector);
-                    //    }
-                    //    return new ImageTileBuffer(graphicsDevice, GlobalContent.Error, sector);
-                    //}
+                    catch (Exception ex)
+                    {
+                        if (sector.Zoom <= ZCoords.GetSectorManager().GetHighestCacheZoom())
+                        {
+                            SuperSave(GlobalContent.Error, OSMPaths.GetSectorImagePath(sector));
+                            RebuildImage(graphicsDevice, sector);
+                        }
+                        return new ImageTileBuffer(graphicsDevice, GlobalContent.Error, sector);
+                    }
                 }
             }
             else
