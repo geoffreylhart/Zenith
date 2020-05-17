@@ -76,5 +76,16 @@ namespace Zenith.ZMath
         {
             return new Vector2d(-this.Y, this.X);
         }
+
+        public override int GetHashCode()
+        {
+            return this.X.GetHashCode() * 31 + this.Y.GetHashCode();
+        }
+
+        public override bool Equals(object obj)
+        {
+            Vector2d that = (Vector2d)obj;
+            return this.X == that.X && this.Y == that.Y;
+        }
     }
 }

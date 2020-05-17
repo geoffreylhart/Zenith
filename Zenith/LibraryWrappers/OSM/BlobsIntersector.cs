@@ -12,6 +12,7 @@ namespace Zenith.LibraryWrappers.OSM
     {
         internal static void DoIntersections(BlobCollection blobs)
         {
+            RemoveDuplicates(blobs);
             Dictionary<string, long> uids = new Dictionary<string, long>(); // finally decided I needed something to guarantee uniqueness like this TODO: can probably eliminate this
             long uidCounter = -1000;
             List<Way> ways = TempGetWays(blobs);
@@ -113,6 +114,40 @@ namespace Zenith.LibraryWrappers.OSM
                 for (int i = sorted.Count - 1; i >= 0; i--)
                 {
                     pair.Key.refs.Insert(sorted[i].nodePos, sorted[i].nodeID);
+                }
+            }
+        }
+
+        private static void RemoveDuplicates(BlobCollection blobs)
+        {
+            Dictionary<Vector2d, long> nodeHash = new Dictionary<Vector2d, long>();
+            List<Way> ways = TempGetWays(blobs);
+            HashSet<long> dupes = new HashSet<long>();
+            foreach (var node in blobs.nodes)
+            {
+                if (nodeHash.ContainsKey(node.Value))
+                {
+                    dupes.Add(node.Key);
+                }
+                else
+                {
+                    nodeHash.Add(node.Value, node.Key);
+                }
+            }
+            // HOLY CRAP: way 587987916 and 587987919 are identical overlapping shapes, that's why it failed (I thought it was one way with a zero-length edge)
+            foreach (var way in ways)
+            {
+                for (int i = way.refs.Count - 1; i >= 0; i--)
+                {
+                    if (dupes.Contains(way.refs[i]))
+                    {
+                        way.refs[i] = nodeHash[blobs.nodes[way.refs[i]]];
+                    }
+                    // remove consecutive dupes
+                    if (i + 1 < way.refs.Count && way.refs[i] == way.refs[i + 1])
+                    {
+                        way.refs.RemoveAt(i + 1);
+                    }
                 }
             }
         }
@@ -295,6 +330,7 @@ namespace Zenith.LibraryWrappers.OSM
 
         private static Vector2d Intersect(Vector2d a, Vector2d b, Vector2d c, Vector2d d)
         {
+            if ((a.X == c.X && a.Y == c.Y) || (a.X == d.X && a.Y == d.Y) || (b.X == c.X && b.Y == c.Y) || (b.X == d.X && b.Y == d.Y)) return null; // TODO: sometimes consecutive nodes have duplicate coordinates, let's ignore that for now (alternatively, merge those nodes)
             // copied from wiki, sure
             double t = ((a.X - c.X) * (c.Y - d.Y) - (a.Y - c.Y) * (c.X - d.X)) / ((a.X - b.X) * (c.Y - d.Y) - (a.Y - b.Y) * (c.X - d.X));
             double u = -((a.X - b.X) * (a.Y - c.Y) - (a.Y - b.Y) * (a.X - c.X)) / ((a.X - b.X) * (c.Y - d.Y) - (a.Y - b.Y) * (c.X - d.X));

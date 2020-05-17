@@ -179,7 +179,6 @@ namespace Zenith.LibraryWrappers.OSM
                 {
                     AddConstrainedPaths(simpleMap, superLoop);
                 }
-                simpleMap.CheckValid();
                 addingMaps.Add(simpleMap);
             }
             // construct each multipolygon to add separately
