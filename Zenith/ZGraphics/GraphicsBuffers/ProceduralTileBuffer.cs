@@ -44,7 +44,9 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             Console.WriteLine($"Blobs read for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
             BlobsIntersector.DoIntersections(blobs);
-            landAreaMap = blobs.GetCoastAreaMap("natural", "coastline").Subtract(blobs.GetAreaMap("natural", "water"), blobs, false).Finalize(blobs);
+            var tempMap = blobs.GetCoastAreaMap("natural", "coastline").Subtract(blobs.GetAreaMap("natural", "water"), blobs, false);
+            if (Constants.DEBUG_MODE) tempMap.CheckValid();
+            landAreaMap = tempMap.Finalize(blobs);
             Console.WriteLine($"Land area map generated for {sector} in {sw.Elapsed.TotalSeconds} s");
             sw.Restart();
             roadGraph = blobs.GetRoadsFast();

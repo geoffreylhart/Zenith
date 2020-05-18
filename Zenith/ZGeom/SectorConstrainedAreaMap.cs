@@ -91,10 +91,17 @@ namespace Zenith.ZGeom
             var fakeSector = new CubeSector(CubeSector.CubeSectorFace.FRONT, 0, 0, 8);
             List<List<ContourVertex>> contours = paths.Select(x => x.Select(y => Vector2DToContourVertex(y)).ToList()).ToList();
             contours = OSMPolygonBufferGenerator.CloseLines(fakeSector, contours);
+
             foreach (var inner in inners)
             {
-                var innerContours = new List<List<ContourVertex>>() { inner.Skip(1).Select(x => Vector2DToContourVertex(x, true)).ToList() }; // skip 1 since our loops end in a duplicate
-                contours.AddRange(innerContours);
+                var innerContour = inner.Skip(1).Select(x => Vector2DToContourVertex(x, true)).ToList(); // skip 1 since our loops end in a duplicate
+                if (innerContour.Count == 3)
+                {
+                    // TODO: the tesselator just doesn't like triangles!? seriously??
+                    var avg01 = new ContourVertex() { Position = new Vec3() { X = innerContour[0].Position.X / 2 + innerContour[1].Position.X / 2, Y = innerContour[0].Position.Y / 2 + innerContour[1].Position.Y / 2, Z = 0 }, Data = innerContour[0].Data };
+                    innerContour.Insert(1, avg01);
+                }
+                contours.Add(innerContour);
             }
             foreach (var outer in outers)
             {
