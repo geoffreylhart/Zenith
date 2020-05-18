@@ -15,6 +15,7 @@ namespace Zenith.LibraryWrappers.OSM
     // responsible for lots of stuff
     public class BlobCollection
     {
+        public static double SMALLEST_ALLOWED_AREA = 1E-20; // ex: way 43624681 was -1.6543612251060553E-24
         public Dictionary<long, Vector2d> nodes = new Dictionary<long, Vector2d>();
         public List<Blob> blobs;
         private ISector sector;
@@ -150,7 +151,9 @@ namespace Zenith.LibraryWrappers.OSM
                     if (otherInnerOuters.Contains(way.id)) continue; // unsure of how else to ignore bad ways like 43815149
                     way.refs.Add(way.refs.First()); // some folks forget to close a simple way, or perhaps the mistake is tagging subcomponents of a relation
                 }
-                bool isCW = ApproximateCW(superLoop);
+                double wayArea = GetArea(superLoop);
+                if (Math.Abs(wayArea) < SMALLEST_ALLOWED_AREA) continue; // ignore zero-area ways since it really messes with the tesselator (ex: way 43624681) TODO: maybe check for absolute zero via node duplication?
+                bool isCW = wayArea < 0;
                 if (isCW) way.refs.Reverse(); // the simple polygons are always "outers"
                 bool untouchedLoop = CheckIfUntouchedAndSpin(superLoop);
                 if (untouchedLoop)
@@ -190,6 +193,8 @@ namespace Zenith.LibraryWrappers.OSM
                 // however, we're taking advantage of the fact that Add/Subtract doesn't check for that for now (until Finalize)
                 SuperWayCollection superInnerWays = GenerateSuperWayCollection(inners[i].Where(x => wayLookup.ContainsKey(x)).Select(x => Copy(wayLookup[x])), true);
                 SuperWayCollection superOuterWays = GenerateSuperWayCollection(outers[i].Where(x => wayLookup.ContainsKey(x)).Select(x => Copy(wayLookup[x])), true);
+                superInnerWays.loopedWays = superInnerWays.loopedWays.Where(x => Math.Abs(GetArea(x)) < SMALLEST_ALLOWED_AREA).ToList(); // ignore zero-area ways since it really messes with the tesselator (ex: way 43624681) TODO: maybe check for absolute zero via node duplication?
+                superOuterWays.loopedWays = superInnerWays.loopedWays.Where(x => Math.Abs(GetArea(x)) < SMALLEST_ALLOWED_AREA).ToList(); // ignore zero-area ways since it really messes with the tesselator (ex: way 43624681) TODO: maybe check for absolute zero via node duplication?
                 if (!IsValid(superInnerWays)) continue;
                 if (!IsValid(superOuterWays)) continue;
                 OrientSuperWays(superInnerWays, superOuterWays, gridPointInfo.relations.Contains(relationIds[i]));
@@ -412,7 +417,9 @@ namespace Zenith.LibraryWrappers.OSM
             }
             foreach (var superLoop in superWays.loopedWays)
             {
-                bool isCW = ApproximateCW(superLoop);
+                double wayArea = GetArea(superLoop);
+                if (Math.Abs(wayArea) < SMALLEST_ALLOWED_AREA) continue; // ignore zero-area ways since it really messes with the tesselator (ex: way 43624681) TODO: maybe check for absolute zero via node duplication?
+                bool isCW = wayArea < 0;
                 bool untouchedLoop = CheckIfUntouchedAndSpin(superLoop);
                 if (untouchedLoop)
                 {
@@ -586,6 +593,11 @@ namespace Zenith.LibraryWrappers.OSM
 
         private bool ApproximateCW(List<Way> superLoop)
         {
+            return GetArea(superLoop) < 0; // based on the coordinate system we're using, with X right and Y down
+        }
+
+        private double GetArea(List<Way> superLoop)
+        {
             double area = 0;
             // calculate that area
             Vector2d basePoint = nodes[superLoop.First().refs[0]];
@@ -600,8 +612,7 @@ namespace Zenith.LibraryWrappers.OSM
                     area += (line2.X * line1.Y - line2.Y * line1.X) / 2; // random cross-product logic
                 }
             }
-            bool isCW = area < 0; // based on the coordinate system we're using, with X right and Y down
-            return isCW;
+            return area;
         }
 
         private bool CheckIfUntouchedAndSpin(List<Way> superLoop)
