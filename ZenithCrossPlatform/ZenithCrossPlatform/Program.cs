@@ -3,7 +3,6 @@ using System.Diagnostics;
 using Zenith;
 using Zenith.LibraryWrappers.OSM;
 using Zenith.ZGeom;
-using Zenith.ZMath;
 
 namespace ZenithCrossPlatform
 {
@@ -24,6 +23,17 @@ namespace ZenithCrossPlatform
             }
             using (var game = new Zenith.Game1())
                 game.Run();
+        }
+
+        public static void GeneratePlanetMeta()
+        {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            foreach (var i in new[] { 0, 1, 2, 3, 4, 5 })
+            {
+                new OSMMetaFinal().LoadAll("planet-meta" + i + ".data");
+            }
+            double time = sw.Elapsed.TotalSeconds;
         }
     }
 }

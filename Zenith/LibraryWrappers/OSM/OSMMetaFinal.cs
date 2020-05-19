@@ -233,9 +233,22 @@ namespace Zenith.LibraryWrappers.OSM
             map.Save(mapFile, ImageFormat.Png);
         }
 
-        private void SaveAsFile(OSMMetaManager manager, CubeSector frRoot)
+        private void SaveAsFile(OSMMetaManager manager, CubeSector root)
         {
-            string filePath = Path.Combine(OSMPaths.GetRenderRoot(), $"Coastline{frRoot.sectorFace.GetFaceAcronym()}.txt");
+            for (int i = 0; i < 257; i++)
+            {
+                for (int j = 0; j < 257; j++)
+                {
+                    for (int k = 1; k < naturalTypes.Count; k++)
+                    {
+                        bool containsThisType = false;
+                        containsThisType |= gridPoints[root][i, j].relations.Any(x => manager.relationInfo[x].ContainsKeyValue(manager, "natural", naturalTypes[k]));
+                        containsThisType |= gridPoints[root][i, j].ways.Any(x => manager.wayInfo[x].ContainsKeyValue(manager, "natural", naturalTypes[k]));
+                        if (containsThisType) gridPoints[root][i, j].naturalTypes.Add(k);
+                    }
+                }
+            }
+            string filePath = Path.Combine(OSMPaths.GetRenderRoot(), $"Coastline{root.sectorFace.GetFaceAcronym()}.txt");
             using (var writer = File.Open(filePath, FileMode.Create))
             {
                 using (var bw = new BinaryWriter(writer))
@@ -246,7 +259,7 @@ namespace Zenith.LibraryWrappers.OSM
                     {
                         for (int j = 0; j < 257; j++)
                         {
-                            GridPointInfo gridPoint = gridPoints[frRoot][i, j];
+                            GridPointInfo gridPoint = gridPoints[root][i, j];
                             bw.Write(gridPoint.naturalTypes.Count);
                             foreach (var naturalType in gridPoint.naturalTypes) bw.Write(naturalType);
                             bw.Write(gridPoint.relations.Count);
@@ -274,6 +287,10 @@ namespace Zenith.LibraryWrappers.OSM
             int land2 = GLOBAL_FINAL.gridPoints[sector.GetRoot()][sector.X + 1, sector.Y].naturalTypes.Contains(0) ? 0 : -1;
             int land3 = GLOBAL_FINAL.gridPoints[sector.GetRoot()][sector.X, sector.Y + 1].naturalTypes.Contains(0) ? 0 : -1;
             int land4 = GLOBAL_FINAL.gridPoints[sector.GetRoot()][sector.X + 1, sector.Y + 1].naturalTypes.Contains(0) ? 0 : -1;
+            if (GLOBAL_FINAL.gridPoints[sector.GetRoot()][sector.X, sector.Y].naturalTypes.Contains(1)) land1 = 1;
+            if (GLOBAL_FINAL.gridPoints[sector.GetRoot()][sector.X + 1, sector.Y].naturalTypes.Contains(1)) land1 = 1;
+            if (GLOBAL_FINAL.gridPoints[sector.GetRoot()][sector.X, sector.Y + 1].naturalTypes.Contains(1)) land1 = 1;
+            if (GLOBAL_FINAL.gridPoints[sector.GetRoot()][sector.X + 1, sector.Y + 1].naturalTypes.Contains(1)) land1 = 1;
             return land1 == 0 && land2 == 0 && land3 == 0 && land4 == 0;
         }
 
