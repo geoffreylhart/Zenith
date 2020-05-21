@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Zenith;
 using Zenith.LibraryWrappers.OSM;
 using Zenith.MathHelpers;
 using Zenith.ZGraphics.GraphicsBuffers;
@@ -38,6 +39,7 @@ namespace ZenithUnitTests
         [TestMethod]
         public void ToughSectorsTest()
         {
+            Constants.DEBUG_MODE = true;
             // add a tough sector whenever one misses a crash issue
             List<ISector> sectors = new List<ISector>();
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 128, 43, 8));
@@ -45,6 +47,7 @@ namespace ZenithUnitTests
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 128, 42, 8));
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 135, 41, 8)); // "topological inconsistency" during tesselation - aka those wingdings TODO: currently can't test this
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 128, 35, 8)); // has two ways that are deep copies of each other
+            sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 143, 30, 8)); // has vertices exactly on the border of the sector
 
             foreach (var sector in sectors)
             {

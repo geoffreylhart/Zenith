@@ -466,6 +466,9 @@ namespace Zenith.LibraryWrappers.OSM
                     long prev = superWay[i].refs[j - 1];
                     long next = superWay[i].refs[j];
                     var intersections = OSMPolygonBufferGenerator.GetIntersections(sector, nodes[prev], nodes[next]);
+                    // NOTE: we will consider anything on the border to be "inside"
+                    bool borderlineCase = intersections.Any(x => x != nodes[prev] && x != nodes[next]);
+                    intersections = intersections.Where(x => x != nodes[prev] && x != nodes[next]).ToArray();
                     foreach (var intersection in intersections)
                     {
                         if (prevIsInside) // close-out a line
@@ -479,6 +482,13 @@ namespace Zenith.LibraryWrappers.OSM
                         }
                         prevIsInside = !prevIsInside;
                     }
+                    // NOTE: prevIsInside is really nextIsInside now
+                    if (borderlineCase)
+                    {
+                        // let's just make it correct
+                        prevIsInside = sector.ContainsCoord(nodes[next]);
+                    }
+                    if (prevIsInside != sector.ContainsCoord(nodes[next])) throw new NotImplementedException(); // I'm adding this extra paranoia check because I can
                     if (prevIsInside)
                     {
                         lastNodeAdded = new AreaNode() { id = next, prev = lastNodeAdded };
@@ -615,9 +625,9 @@ namespace Zenith.LibraryWrappers.OSM
             return area;
         }
 
+        // this method takes a loop and checks if it ever goes outside the bounds of the sector, then makes sure that the first node is always outside to help other functions deal
         private bool CheckIfUntouchedAndSpin(List<Way> superLoop)
         {
-
             for (int i = 0; i < superLoop.Count; i++)
             {
                 for (int j = 1; j < superLoop[i].refs.Count; j++)
