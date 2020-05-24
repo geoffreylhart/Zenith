@@ -12,7 +12,6 @@ namespace Zenith.LibraryWrappers.OSM
     {
         internal static void DoIntersections(BlobCollection blobs)
         {
-            RemoveDuplicates(blobs);
             Dictionary<string, long> uids = new Dictionary<string, long>(); // finally decided I needed something to guarantee uniqueness like this TODO: can probably eliminate this
             long uidCounter = -1000;
             List<Way> ways = TempGetWays(blobs);
@@ -116,6 +115,7 @@ namespace Zenith.LibraryWrappers.OSM
                     pair.Key.refs.Insert(sorted[i].nodePos, sorted[i].nodeID);
                 }
             }
+            RemoveDuplicates(blobs); // remove duplicates at the end to also remove duplicate intersections
         }
 
         private static void RemoveDuplicates(BlobCollection blobs)

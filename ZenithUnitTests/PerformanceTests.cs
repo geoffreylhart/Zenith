@@ -39,6 +39,7 @@ namespace ZenithUnitTests
         [TestMethod]
         public void ToughSectorsTest()
         {
+            // current errors in LE,X=2,Y=0,Z=2 is 11/4096 ~8 have issues not aren't red
             Constants.DEBUG_MODE = true;
             // add a tough sector whenever one misses a crash issue
             List<ISector> sectors = new List<ISector>();
@@ -48,6 +49,7 @@ namespace ZenithUnitTests
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 135, 41, 8)); // "topological inconsistency" during tesselation - aka those wingdings TODO: currently can't test this
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 128, 35, 8)); // has two ways that are deep copies of each other
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 143, 30, 8)); // has vertices exactly on the border of the sector
+            sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 166, 23, 8)); // results in duplicate intersections
 
             foreach (var sector in sectors)
             {
