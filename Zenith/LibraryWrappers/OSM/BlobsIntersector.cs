@@ -65,7 +65,7 @@ namespace Zenith.LibraryWrappers.OSM
                     someCollinear |= CheckCollinear(Bid, n2.nodePos, n2.nodePos + 1, n2, intersections, blobs, true);
                     someCollinear |= CheckCollinear(Cid, n1.nodePos, n1.nodePos + 1, n1, intersections, blobs, true);
                     someCollinear |= CheckCollinear(Did, n1.nodePos, n1.nodePos + 1, n1, intersections, blobs, true);
-                    if (!ACSame && !ADSame && !BCSame && !BDSame && !someCollinear) // proper intersection
+                    if (!ACSame && !ADSame && !BCSame && !BDSame) // proper intersection
                     {
                         if (someCollinear)
                         {
