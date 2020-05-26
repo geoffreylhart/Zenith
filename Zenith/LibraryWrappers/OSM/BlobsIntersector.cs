@@ -67,29 +67,39 @@ namespace Zenith.LibraryWrappers.OSM
                     someCollinear |= CheckCollinear(Did, n1.nodePos, n1.nodePos + 1, n1, intersections, blobs, true);
                     if (!ACSame && !ADSame && !BCSame && !BDSame && !someCollinear) // proper intersection
                     {
-                        Vector2d intersection = Intersect(A, B, C, D);
-                        if (intersection != null)
+                        if (someCollinear)
                         {
-                            long intersectionID;
-                            if (uids.ContainsKey(intersectionKey))
-                            {
-                                intersectionID = uids[intersectionKey];
-                            }
-                            else
-                            {
-                                intersectionID = uidCounter--;
-                                uids[intersectionKey] = intersectionID;
-                            }
-                            NewIntersection newNode1 = new NewIntersection() { nodeID = intersectionID, wayRef = n1.wayRef, nodePos = n1.nodePos + 1 };
-                            NewIntersection newNode2 = new NewIntersection() { nodeID = intersectionID, wayRef = n2.wayRef, nodePos = n2.nodePos + 1 };
-                            blobs.nodes[intersectionID] = intersection;
-                            if (!intersections.ContainsKey(n1.wayRef)) intersections.Add(n1.wayRef, new List<NewIntersection>());
-                            intersections[n1.wayRef].Add(newNode1);
-                            if (!intersections.ContainsKey(n2.wayRef)) intersections.Add(n2.wayRef, new List<NewIntersection>());
-                            intersections[n2.wayRef].Add(newNode2);
                             if (n1.wayRef.id == n2.wayRef.id)
                             {
                                 n1.wayRef.selfIntersects = true; // mark for destruction, probably
+                            }
+                        }
+                        else
+                        {
+                            Vector2d intersection = Intersect(A, B, C, D);
+                            if (intersection != null)
+                            {
+                                long intersectionID;
+                                if (uids.ContainsKey(intersectionKey))
+                                {
+                                    intersectionID = uids[intersectionKey];
+                                }
+                                else
+                                {
+                                    intersectionID = uidCounter--;
+                                    uids[intersectionKey] = intersectionID;
+                                }
+                                NewIntersection newNode1 = new NewIntersection() { nodeID = intersectionID, wayRef = n1.wayRef, nodePos = n1.nodePos + 1 };
+                                NewIntersection newNode2 = new NewIntersection() { nodeID = intersectionID, wayRef = n2.wayRef, nodePos = n2.nodePos + 1 };
+                                blobs.nodes[intersectionID] = intersection;
+                                if (!intersections.ContainsKey(n1.wayRef)) intersections.Add(n1.wayRef, new List<NewIntersection>());
+                                intersections[n1.wayRef].Add(newNode1);
+                                if (!intersections.ContainsKey(n2.wayRef)) intersections.Add(n2.wayRef, new List<NewIntersection>());
+                                intersections[n2.wayRef].Add(newNode2);
+                                if (n1.wayRef.id == n2.wayRef.id)
+                                {
+                                    n1.wayRef.selfIntersects = true; // mark for destruction, probably
+                                }
                             }
                         }
                     }
@@ -292,7 +302,7 @@ namespace Zenith.LibraryWrappers.OSM
             if (v == a || v == b) return false; // points are already shared, so we'll ignore it
             double angle1 = CalcAngleDiff(a, b, a, v, blobs);
             double angle2 = CalcAngleDiff(b, a, b, v, blobs);
-            if (angle1 < 0.001 && angle2 < 0.001)
+            if (angle1 < 0.01 && angle2 < 0.01)
             {
                 if (doCollinearness)
                 {
