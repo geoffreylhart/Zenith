@@ -182,6 +182,7 @@ namespace Zenith.LibraryWrappers.OSM
                 {
                     AddConstrainedPaths(simpleMap, superLoop);
                 }
+                simpleMap.RemoveDuplicateLines();
                 if (Constants.DEBUG_MODE) simpleMap.CheckValid();
                 addingMaps.Add(simpleMap);
             }
@@ -200,6 +201,8 @@ namespace Zenith.LibraryWrappers.OSM
                 OrientSuperWays(superInnerWays, superOuterWays, gridPointInfo.relations.Contains(relationIds[i]));
                 SectorConstrainedOSMAreaGraph innerMap = DoMultipolygon(superInnerWays);
                 SectorConstrainedOSMAreaGraph outerMap = DoMultipolygon(superOuterWays);
+                innerMap.RemoveDuplicateLines();
+                outerMap.RemoveDuplicateLines();
                 if (Constants.DEBUG_MODE) innerMap.CheckValid();
                 if (Constants.DEBUG_MODE) outerMap.CheckValid();
                 SectorConstrainedOSMAreaGraph multiPolygon = outerMap.Subtract(innerMap, this, false);
@@ -449,6 +452,7 @@ namespace Zenith.LibraryWrappers.OSM
                 }
             }
             // done, wow, so much work
+            map.RemoveDuplicateLines();
             if (Constants.DEBUG_MODE) map.CheckValid();
             return map;
         }

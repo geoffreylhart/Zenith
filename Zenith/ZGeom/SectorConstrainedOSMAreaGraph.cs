@@ -226,6 +226,51 @@ namespace Zenith.ZGeom
             return this;
         }
 
+        // aka, zero-width areas
+        internal void RemoveDuplicateLines()
+        {
+            List<long> remove = new List<long>();
+            foreach (var node in nodes)
+            {
+                // TODO: for now, lets individually fix each possible case
+                for (int i = 0; i < node.Value.Count; i++)
+                {
+                    var matches = node.Value.Take(i + 1).Where(x => (x.prev.id != -1 && x.prev.id == node.Value[i].next.id) || (x.next.id != -1 && x.next.id == node.Value[i].prev.id));
+                    if (matches.Count() > 1) throw new NotImplementedException(); // seriously?
+                    if (matches.Count() == 1)
+                    {
+                        var v1 = node.Value[i];
+                        var v2 = matches.Single();
+                        if (v1.prev.id == v2.next.id && v1.next.id == v2.prev.id)
+                        {
+                            remove.Add(node.Key);
+                        }
+                        else
+                        {
+                            node.Value.Remove(v1);
+                            node.Value.Remove(v2);
+                            AreaNode newNode;
+                            if (v1.prev.id == v2.next.id)
+                            {
+                                newNode = new AreaNode() { id = node.Key, next = v1.next, prev = v2.prev, v = null };
+                            }
+                            else
+                            {
+                                newNode = new AreaNode() { id = node.Key, next = v1.prev, prev = v2.next, v = null };
+                            }
+                            node.Value.Add(newNode);
+                            newNode.prev.next = newNode;
+                            newNode.next.prev = newNode;
+                        }
+                    }
+                }
+            }
+            foreach (var r in remove)
+            {
+                nodes.Remove(r);
+            }
+        }
+
         public SectorConstrainedOSMAreaGraph Subtract(SectorConstrainedOSMAreaGraph map, BlobCollection blobs, bool checkIntersections = true)
         {
             map = map.Clone(); // now we're allowed to junk it

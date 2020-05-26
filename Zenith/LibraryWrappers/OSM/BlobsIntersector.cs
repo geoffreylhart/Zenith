@@ -292,7 +292,7 @@ namespace Zenith.LibraryWrappers.OSM
             if (v == a || v == b) return false; // points are already shared, so we'll ignore it
             double angle1 = CalcAngleDiff(a, b, a, v, blobs);
             double angle2 = CalcAngleDiff(b, a, b, v, blobs);
-            if (angle1 < 0.00001 && angle2 < 0.00001)
+            if (angle1 < 0.001 && angle2 < 0.001)
             {
                 if (doCollinearness)
                 {
