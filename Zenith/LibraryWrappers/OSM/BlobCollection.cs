@@ -151,6 +151,7 @@ namespace Zenith.LibraryWrappers.OSM
                     if (otherInnerOuters.Contains(way.id)) continue; // unsure of how else to ignore bad ways like 43815149
                     way.refs.Add(way.refs.First()); // some folks forget to close a simple way, or perhaps the mistake is tagging subcomponents of a relation
                 }
+                if (!IsValid(superLoop)) continue; // ignore relations like 512080985 which contain duplicate nodes
                 double wayArea = GetArea(superLoop);
                 if (Math.Abs(wayArea) < SMALLEST_ALLOWED_AREA) continue; // ignore zero-area ways since it really messes with the tesselator (ex: way 43624681) TODO: maybe check for absolute zero via node duplication?
                 bool isCW = wayArea < 0;
@@ -341,8 +342,29 @@ namespace Zenith.LibraryWrappers.OSM
         {
             foreach (var superWay in wayCollection.linkedWays)
             {
+                if (!IsValid(superWay)) return false;
                 if (sector.ContainsCoord(nodes[superWay.First().refs.First()])) return false;
                 if (sector.ContainsCoord(nodes[superWay.Last().refs.Last()])) return false;
+            }
+            foreach (var superLoop in wayCollection.loopedWays)
+            {
+                if (!IsValid(superLoop)) return false;
+            }
+            return true;
+        }
+
+        // or loop
+        private bool IsValid(List<Way> superWay)
+        {
+            Dictionary<long, int> lastIndexOf = new Dictionary<long, int>();
+            var broken = BreakDownSuperLoop(superWay);
+            for (int i = 0; i < broken.Count; i++)
+            {
+                if (lastIndexOf.ContainsKey(broken[i]) && (lastIndexOf[broken[i]] != 0 || i != broken.Count - 1))
+                {
+                    return false;
+                }
+                lastIndexOf[broken[i]] = i;
             }
             return true;
         }
