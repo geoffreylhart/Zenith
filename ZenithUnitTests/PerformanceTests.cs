@@ -52,6 +52,7 @@ namespace ZenithUnitTests
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 166, 23, 8)); // results in duplicate intersections
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 143, 3, 8)); // error when too agressive with collinear points
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 130, 20, 8)); // fails due to duplicate nodes within a single way - aka node 5007634875
+            sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 151, 5, 8)); // fails because of multiple ways with lines exactly along border of sector joining together 
 
             foreach (var sector in sectors)
             {

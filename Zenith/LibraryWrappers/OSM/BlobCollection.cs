@@ -481,10 +481,9 @@ namespace Zenith.LibraryWrappers.OSM
 
         private void AddConstrainedPaths(SectorConstrainedOSMAreaGraph map, List<Way> superWay)
         {
-            bool prevIsInside = false;
             if (sector.ContainsCoord(nodes[superWay.First().refs.First()])) throw new NotImplementedException();
             if (sector.ContainsCoord(nodes[superWay.Last().refs.Last()])) throw new NotImplementedException();
-            AreaNode lastNodeAdded = null;
+            List<AreaNode> nodesToAdd = new List<AreaNode>();
             for (int i = 0; i < superWay.Count; i++)
             {
                 for (int j = 1; j < superWay[i].refs.Count; j++)
@@ -492,36 +491,65 @@ namespace Zenith.LibraryWrappers.OSM
                     long prev = superWay[i].refs[j - 1];
                     long next = superWay[i].refs[j];
                     var intersections = OSMPolygonBufferGenerator.GetIntersections(sector, nodes[prev], nodes[next]);
-                    // NOTE: we will consider anything on the border to be "inside"
-                    bool borderlineCase = intersections.Any(x => x != nodes[prev] && x != nodes[next]);
-                    intersections = intersections.Where(x => x != nodes[prev] && x != nodes[next]).ToArray();
-                    foreach (var intersection in intersections)
+                    // NOTE: we will consider anything on the border to be "outside"
+                    intersections = intersections.Where(x => !x.Equals(nodes[prev]) && !x.Equals(nodes[next])).ToArray();
+                    if (i == 0 && j == 1)
                     {
-                        if (prevIsInside) // close-out a line
+                        if (nodes[prev].X == 0 || nodes[prev].X == 1 || nodes[prev].Y == 0 || nodes[prev].Y == 1)
                         {
-                            lastNodeAdded.next = new AreaNode() { v = intersection, prev = lastNodeAdded };
+                            nodesToAdd.Add(new AreaNode() { v = nodes[prev] });
                         }
-                        else // start up a new line
+                        else if (sector.ContainsCoord(nodes[prev]))
                         {
-                            lastNodeAdded = new AreaNode { v = intersection };
-                            map.startPoints.Add(lastNodeAdded);
+                            nodesToAdd.Add(new AreaNode() { id = prev });
                         }
-                        prevIsInside = !prevIsInside;
                     }
-                    // NOTE: prevIsInside is really nextIsInside now
-                    if (borderlineCase)
+                    nodesToAdd.AddRange(intersections.Select(x => new AreaNode { v = x }));
+                    if (nodes[next].X == 0 || nodes[next].X == 1 || nodes[next].Y == 0 || nodes[next].Y == 1)
                     {
-                        // let's just make it correct
-                        prevIsInside = sector.ContainsCoord(nodes[next]);
+                        nodesToAdd.Add(new AreaNode() { v = nodes[next] });
                     }
-                    if (prevIsInside != sector.ContainsCoord(nodes[next])) throw new NotImplementedException(); // I'm adding this extra paranoia check because I can
-                    if (prevIsInside)
+                    else if (sector.ContainsCoord(nodes[next]))
                     {
-                        lastNodeAdded = new AreaNode() { id = next, prev = lastNodeAdded };
-                        lastNodeAdded.prev.next = lastNodeAdded;
-                        if (!map.nodes.ContainsKey(next)) map.nodes[next] = new List<AreaNode>();
-                        map.nodes[next].Add(lastNodeAdded);
+                        nodesToAdd.Add(new AreaNode() { id = next });
                     }
+                }
+            }
+            for (int i = 0; i < nodesToAdd.Count; i++)
+            {
+                var prev = nodesToAdd[(i + nodesToAdd.Count - 1) % nodesToAdd.Count];
+                var curr = nodesToAdd[i];
+                var next = nodesToAdd[(i + 1) % nodesToAdd.Count];
+                if (curr.IsEdge())
+                {
+                    if (!next.IsEdge())
+                    {
+                        var clone = new AreaNode() { v = curr.v };
+                        map.startPoints.Add(clone);
+                        clone.next = next;
+                        next.prev = clone;
+                    }
+                    if (!prev.IsEdge())
+                    {
+                        var clone = new AreaNode() { v = curr.v };
+                        clone.prev = prev;
+                        prev.next = clone;
+                    }
+                    if (prev.IsEdge() && prev.v.X != curr.v.X && prev.v.Y != curr.v.Y)
+                    {
+                        var clone1 = new AreaNode() { v = prev.v };
+                        var clone2 = new AreaNode() { v = curr.v };
+                        map.startPoints.Add(clone1);
+                        clone1.next = clone2;
+                        clone2.prev = clone1;
+                    }
+                }
+                else
+                {
+                    if (!map.nodes.ContainsKey(curr.id)) map.nodes[curr.id] = new List<AreaNode>();
+                    map.nodes[curr.id].Add(curr);
+                    if (!prev.IsEdge()) curr.prev = prev; // edges will handle their prev/next logic
+                    if (!next.IsEdge()) curr.next = next;
                 }
             }
         }
