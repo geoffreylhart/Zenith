@@ -18,7 +18,10 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         public DebugBuffer(GraphicsDevice graphicsDevice, ISector sector)
         {
             this.sector = sector;
-            this.spriteBatch = new SpriteBatch(graphicsDevice);
+            if (graphicsDevice != null)
+            {
+                this.spriteBatch = new SpriteBatch(graphicsDevice);
+            }
         }
 
         public void InitDraw(RenderContext context)

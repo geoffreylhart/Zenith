@@ -19,7 +19,7 @@ namespace Zenith.ZGraphics
 
         public BasicVertexBuffer(GraphicsDevice graphicsDevice, List<VertexPositionColor> vertices, PrimitiveType primitiveType)
         {
-            if (vertices.Count > 0)
+            if (vertices.Count > 0 && graphicsDevice != null)
             {
                 this.vertices = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, vertices.Count, BufferUsage.WriteOnly);
                 this.vertices.SetData(vertices.ToArray());
@@ -29,7 +29,7 @@ namespace Zenith.ZGraphics
 
         public BasicVertexBuffer(GraphicsDevice graphicsDevice, List<int> indices, List<VertexPositionColor> vertices, PrimitiveType primitiveType)
         {
-            if (vertices.Count > 0)
+            if (vertices.Count > 0 && graphicsDevice != null)
             {
                 this.vertices = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, vertices.Count, BufferUsage.WriteOnly);
                 this.vertices.SetData(vertices.ToArray());
@@ -41,7 +41,7 @@ namespace Zenith.ZGraphics
 
         public BasicVertexBuffer(GraphicsDevice graphicsDevice, List<int> indices, List<VertexPositionTexture> vertices, Texture2D texture, bool textureWrap, PrimitiveType primitiveType)
         {
-            if (vertices.Count > 0)
+            if (vertices.Count > 0 && graphicsDevice != null)
             {
                 this.vertices = new VertexBuffer(graphicsDevice, VertexPositionTexture.VertexDeclaration, vertices.Count, BufferUsage.WriteOnly);
                 this.vertices.SetData(vertices.ToArray());
@@ -55,7 +55,7 @@ namespace Zenith.ZGraphics
 
         public BasicVertexBuffer(GraphicsDevice graphicsDevice, List<int> indices, List<VertexPositionNormalTexture> vertices, Texture2D texture, bool textureWrap, PrimitiveType primitiveType)
         {
-            if (vertices.Count > 0)
+            if (vertices.Count > 0 && graphicsDevice != null)
             {
                 this.vertices = new VertexBuffer(graphicsDevice, VertexPositionNormalTexture.VertexDeclaration, vertices.Count, BufferUsage.WriteOnly);
                 this.vertices.SetData(vertices.ToArray());

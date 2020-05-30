@@ -57,10 +57,13 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                     indices.Add(i * 4 + 3);
                     indices.Add(i * 4 + 2);
                 }
-                buffer.vertices = new VertexBuffer(graphicsDevice, VertexPositionTexture.VertexDeclaration, vertices.Count, BufferUsage.WriteOnly);
-                buffer.vertices.SetData(vertices.OrderBy(x => x.Position.Y).ToArray());
-                buffer.indices = new IndexBuffer(graphicsDevice, IndexElementSize.ThirtyTwoBits, indices.Count, BufferUsage.WriteOnly);
-                buffer.indices.SetData(indices.ToArray());
+                if (graphicsDevice != null)
+                {
+                    buffer.vertices = new VertexBuffer(graphicsDevice, VertexPositionTexture.VertexDeclaration, vertices.Count, BufferUsage.WriteOnly);
+                    buffer.vertices.SetData(vertices.OrderBy(x => x.Position.Y).ToArray());
+                    buffer.indices = new IndexBuffer(graphicsDevice, IndexElementSize.ThirtyTwoBits, indices.Count, BufferUsage.WriteOnly);
+                    buffer.indices.SetData(indices.ToArray());
+                }
             }
         }
 
