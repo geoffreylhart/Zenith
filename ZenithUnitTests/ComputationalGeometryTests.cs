@@ -72,17 +72,17 @@ namespace ZenithUnitTests
             AddLineSeg(blobs.nodes, smallLake, 5, 4, 6, 4);
             AddLineSeg(blobs.nodes, smallLake, 6, 4, 3, 1);
             AddLineSeg(blobs.nodes, smallLake, 3, 1, 2, 1);
-            double coastArea = GetArea(coast.Finalize(blobs).GetTesselationVertices(Color.White, false));
+            double coastArea = GetArea(coast.Finalize(blobs).GetTesselationVertices(Color.White));
             if (coastArea != 19.5 - 10) throw new NotImplementedException(); // sure, minus 10 because everything's scaled up and we can't properly close
-            double bigLakeArea = GetArea(bigLake.Finalize(blobs).GetTesselationVertices(Color.White, false));
+            double bigLakeArea = GetArea(bigLake.Finalize(blobs).GetTesselationVertices(Color.White));
             if (bigLakeArea != 10) throw new NotImplementedException();
-            double smallLakeArea = GetArea(smallLake.Finalize(blobs).GetTesselationVertices(Color.White, false));
+            double smallLakeArea = GetArea(smallLake.Finalize(blobs).GetTesselationVertices(Color.White));
             if (smallLakeArea != 3.5) throw new NotImplementedException();
             var lakes = bigLake.Clone().Add(smallLake, blobs);
-            double lakesArea = GetArea(lakes.Finalize(blobs).GetTesselationVertices(Color.White, false));
+            double lakesArea = GetArea(lakes.Finalize(blobs).GetTesselationVertices(Color.White));
             // if (lakesArea != 13.5) throw new NotImplementedException(); // looks like the tesselator is filling in the hole?
             var final = coast.Clone().Subtract(lakes, blobs);
-            double finalArea = GetArea(final.Finalize(blobs).GetTesselationVertices(Color.White, false));
+            double finalArea = GetArea(final.Finalize(blobs).GetTesselationVertices(Color.White));
             if (finalArea != 17.5 - 10) throw new NotImplementedException(); // sure, minus 10 because everything's scaled up and we can't properly close
         }
 
@@ -98,7 +98,7 @@ namespace ZenithUnitTests
             int expectedArea = AreaOfGrid(grid3, size);
             SectorConstrainedOSMAreaGraph asGraph1 = GridToArea(grid1, size, blobs);
             SectorConstrainedOSMAreaGraph asGraph2 = GridToArea(grid2, size, blobs);
-            double area = GetArea(asGraph1.Add(asGraph2, blobs).Finalize(blobs).GetTesselationVertices(Color.White, false));
+            double area = GetArea(asGraph1.Add(asGraph2, blobs).Finalize(blobs).GetTesselationVertices(Color.White));
             if (expectedArea != area) throw new NotImplementedException();
         }
 
@@ -114,7 +114,7 @@ namespace ZenithUnitTests
             int expectedArea = AreaOfGrid(grid3, size);
             SectorConstrainedOSMAreaGraph asGraph1 = GridToArea(grid1, size, blobs);
             SectorConstrainedOSMAreaGraph asGraph2 = GridToArea(grid2, size, blobs);
-            double area = GetArea(asGraph1.Subtract(asGraph2, blobs).Finalize(blobs).GetTesselationVertices(Color.White, false));
+            double area = GetArea(asGraph1.Subtract(asGraph2, blobs).Finalize(blobs).GetTesselationVertices(Color.White));
             if (expectedArea != area) throw new NotImplementedException();
         }
 
@@ -216,8 +216,8 @@ namespace ZenithUnitTests
                 var blobs2 = Clone(blobs); // clone since we modify blobs now
                 //if (square1.Clone().Add(square2, blobs).Area(blobs) != addArea) throw new NotImplementedException();
                 //if (square1.Clone().Subtract(square2, blobs).Area(blobs) != subArea) throw new NotImplementedException();
-                double area1 = GetArea(square1.Clone().Add(square2, blobs).Finalize(blobs).GetTesselationVertices(Color.White, false));
-                double area2 = GetArea(square1.Clone().Subtract(square2, blobs2).Finalize(blobs2).GetTesselationVertices(Color.White, false));
+                double area1 = GetArea(square1.Clone().Add(square2, blobs).Finalize(blobs).GetTesselationVertices(Color.White));
+                double area2 = GetArea(square1.Clone().Subtract(square2, blobs2).Finalize(blobs2).GetTesselationVertices(Color.White));
                 if (area1 != addArea) throw new NotImplementedException();
                 if (area2 != subArea) throw new NotImplementedException();
             }
@@ -227,8 +227,8 @@ namespace ZenithUnitTests
                 SectorConstrainedOSMAreaGraph square1 = MakeOpenRect(blobs.nodes, 0, 0, size1, size1, true, cornersOnly); // leave left open
                 SectorConstrainedOSMAreaGraph square2 = MakeOpenRect(blobs.nodes, offsetX, offsetY, offsetX + size2, offsetY + size2, false, cornersOnly); // leave right open
                 var blobs2 = Clone(blobs); // clone since we modify blobs now
-                double area1 = GetArea(square1.Clone().Add(square2, blobs).Finalize(blobs).GetTesselationVertices(Color.White, false));
-                double area2 = GetArea(square1.Clone().Subtract(square2, blobs2).Finalize(blobs2).GetTesselationVertices(Color.White, false));
+                double area1 = GetArea(square1.Clone().Add(square2, blobs).Finalize(blobs).GetTesselationVertices(Color.White));
+                double area2 = GetArea(square1.Clone().Subtract(square2, blobs2).Finalize(blobs2).GetTesselationVertices(Color.White));
                 if (area1 != addArea) throw new NotImplementedException();
                 if (area2 != subArea) throw new NotImplementedException();
             }
@@ -246,7 +246,7 @@ namespace ZenithUnitTests
             SectorConstrainedOSMAreaGraph square1 = MakeRect(blobs.nodes, 0, 0, size1, size1, cornersOnly);
             SectorConstrainedOSMAreaGraph square2 = MakeRect(blobs.nodes, offsetX1, offsetY1, offsetX1 + size2, offsetY1 + size2, cornersOnly);
             SectorConstrainedOSMAreaGraph square3 = MakeRect(blobs.nodes, offsetX2, offsetY2, offsetX2 + size3, offsetY2 + size3, cornersOnly);
-            double areaAns = GetArea(square1.Subtract(square2.Add(square3, blobs), blobs).Finalize(blobs).GetTesselationVertices(Color.White, false));
+            double areaAns = GetArea(square1.Subtract(square2.Add(square3, blobs), blobs).Finalize(blobs).GetTesselationVertices(Color.White));
             if (areaAns != area) throw new NotImplementedException();
         }
 

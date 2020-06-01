@@ -65,12 +65,12 @@ namespace Zenith.ZGeom
             return lineGraph.ConstructAsRoads(graphicsDevice, width, texture, color);
         }
 
-        internal BasicVertexBuffer Tesselate(GraphicsDevice graphicsDevice, Color color, bool cornersAreFilled)
+        internal BasicVertexBuffer Tesselate(GraphicsDevice graphicsDevice, Color color)
         {
-            return new BasicVertexBuffer(graphicsDevice, GetTesselationVertices(color, cornersAreFilled), PrimitiveType.TriangleList);
+            return new BasicVertexBuffer(graphicsDevice, GetTesselationVertices(color), PrimitiveType.TriangleList);
         }
 
-        public List<VertexPositionColor> GetTesselationVertices(Color color, bool cornersAreFilled)
+        public List<VertexPositionColor> GetTesselationVertices(Color color)
         {
             var fakeSector = new CubeSector(CubeSector.CubeSectorFace.FRONT, 0, 0, 8);
             List<List<ContourVertex>> contours = new List<List<ContourVertex>>();
