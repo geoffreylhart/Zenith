@@ -15,13 +15,11 @@ namespace Zenith.ZGeom
 
         // TODO: that thing going on near way 553880275, node 5534127050 still doesn't look resolved
         public Dictionary<long, List<AreaNode>> nodes = new Dictionary<long, List<AreaNode>>();
-        public HashSet<AreaNode> startPoints = new HashSet<AreaNode>();
 
         // TODO: for now we're assuming no arbitrary intersections or multiple branching intersections - this is probably naive
-        public SectorConstrainedOSMAreaGraph Add(SectorConstrainedOSMAreaGraph map, BlobCollection blobs, bool checkIntersections = true)
+        public SectorConstrainedOSMAreaGraph Add(SectorConstrainedOSMAreaGraph map, BlobCollection blobs)
         {
             map = map.Clone(); // now we're allowed to junk it
-            if (checkIntersections) DoIntersections(new List<SectorConstrainedOSMAreaGraph>() { this, map }, blobs);
             var loopNodes = DoLoops(map, blobs);
             // remember, counterclockwise makes an island
             List<AreaNode> doAdd = new List<AreaNode>();
@@ -81,12 +79,9 @@ namespace Zenith.ZGeom
                     {
                         AreaNode p = finalLines[(i - 1 + finalLines.Count) % finalLines.Count];
                         AreaNode n = finalLines[i];
-                        if (!p.IsEdge() && !n.IsEdge())
+                        if (p.id == n.id)
                         {
-                            if (p.id == n.id)
-                            {
-                                makeMatch[i] = mapInitialLines.Contains(p) ? -1 : 1; // make sector before this match this one to eliminate p
-                            }
+                            makeMatch[i] = mapInitialLines.Contains(p) ? -1 : 1; // make sector before this match this one to eliminate p
                         }
                     }
                     if (!makeMatch.Contains(0)) throw new NotImplementedException();
@@ -172,18 +167,11 @@ namespace Zenith.ZGeom
             {
                 bool forwards = d.next != null && (!criticalPoints.Contains(d.next.id));
                 var temp = d;
-                while (temp != null && (temp.IsEdge() || !criticalPoints.Contains(temp.id)))
+                while (temp != null && !criticalPoints.Contains(temp.id))
                 {
-                    if (!temp.IsEdge() && !ContainsNode(temp)) break;
-                    if (temp.IsEdge() && temp.prev == null)
-                    {
-                        startPoints.Remove(temp);
-                    }
-                    else if (temp.id != -1)
-                    {
-                        nodes[temp.id].Remove(temp);
-                        if (nodes[temp.id].Count == 0) nodes.Remove(temp.id);
-                    }
+                    if (!ContainsNode(temp)) break;
+                    nodes[temp.id].Remove(temp);
+                    if (nodes[temp.id].Count == 0) nodes.Remove(temp.id);
                     temp = forwards ? temp.next : temp.prev;
                 }
             }
@@ -192,36 +180,19 @@ namespace Zenith.ZGeom
             {
                 bool forwards = d.next != null && (!criticalPoints.Contains(d.next.id));
                 var temp = d;
-                while (temp != null && (temp.IsEdge() || !criticalPoints.Contains(temp.id)))
+                while (temp != null && !criticalPoints.Contains(temp.id))
                 {
                     if (ContainsNode(temp)) break;
-                    if (temp.IsEdge() && temp.prev == null)
-                    {
-                        startPoints.Add(temp);
-                    }
-                    else if (temp.id != -1)
-                    {
-                        if (!nodes.ContainsKey(temp.id)) nodes[temp.id] = new List<AreaNode>();
-                        nodes[temp.id].Add(temp);
-                    }
+                    if (!nodes.ContainsKey(temp.id)) nodes[temp.id] = new List<AreaNode>();
+                    nodes[temp.id].Add(temp);
                     temp = forwards ? temp.next : temp.prev;
                 }
             }
             foreach (var d in singularDelete) nodes.Remove(d);
             foreach (var n in loopNodes)
             {
-                if (n.IsEdge())
-                {
-                    if (n.prev == null)
-                    {
-                        startPoints.Add(n);
-                    }
-                }
-                else
-                {
-                    if (!nodes.ContainsKey(n.id)) nodes[n.id] = new List<AreaNode>();
-                    nodes[n.id].Add(n);
-                }
+                if (!nodes.ContainsKey(n.id)) nodes[n.id] = new List<AreaNode>();
+                nodes[n.id].Add(n);
             }
             return this;
         }
@@ -235,13 +206,13 @@ namespace Zenith.ZGeom
                 // TODO: for now, lets individually fix each possible case
                 for (int i = 0; i < node.Value.Count; i++)
                 {
-                    var matches = node.Value.Take(i + 1).Where(x => (x.prev.id != -1 && x.prev.id == node.Value[i].next.id) || (x.next.id != -1 && x.next.id == node.Value[i].prev.id));
+                    var matches = node.Value.Take(i + 1).Where(x => (x.prev == null ? node.Value[i].next == null : node.Value[i].next != null && x.prev.id == node.Value[i].next.id) || (x.next == null ? node.Value[i].prev == null : node.Value[i].prev != null && x.next.id == node.Value[i].prev.id));
                     if (matches.Count() > 1) throw new NotImplementedException(); // seriously?
                     if (matches.Count() == 1)
                     {
                         var v1 = node.Value[i];
                         var v2 = matches.Single();
-                        if (v1.prev.id == v2.next.id && v1.next.id == v2.prev.id)
+                        if ((v1.prev == null ? v2.next == null : v2.next != null && v1.prev.id == v2.next.id) && (v1.next == null ? v2.prev == null : v2.prev != null && v1.next.id == v2.prev.id))
                         {
                             remove.Add(node.Key);
                         }
@@ -252,11 +223,11 @@ namespace Zenith.ZGeom
                             AreaNode newNode;
                             if (v1.prev.id == v2.next.id)
                             {
-                                newNode = new AreaNode() { id = node.Key, next = v1.next, prev = v2.prev, v = null };
+                                newNode = new AreaNode() { id = node.Key, next = v1.next, prev = v2.prev };
                             }
                             else
                             {
-                                newNode = new AreaNode() { id = node.Key, next = v1.prev, prev = v2.next, v = null };
+                                newNode = new AreaNode() { id = node.Key, next = v1.prev, prev = v2.next };
                             }
                             node.Value.Add(newNode);
                             newNode.prev.next = newNode;
@@ -271,10 +242,9 @@ namespace Zenith.ZGeom
             }
         }
 
-        public SectorConstrainedOSMAreaGraph Subtract(SectorConstrainedOSMAreaGraph map, BlobCollection blobs, bool checkIntersections = true)
+        public SectorConstrainedOSMAreaGraph Subtract(SectorConstrainedOSMAreaGraph map, BlobCollection blobs)
         {
             map = map.Clone(); // now we're allowed to junk it
-            if (checkIntersections) DoIntersections(new List<SectorConstrainedOSMAreaGraph>() { this, map }, blobs);
             map.Reverse();
             var loopNodes = DoLoops(map, blobs);
             // remember, counterclockwise makes an island
@@ -335,12 +305,9 @@ namespace Zenith.ZGeom
                     {
                         AreaNode p = finalLines[(i - 1 + finalLines.Count) % finalLines.Count];
                         AreaNode n = finalLines[i];
-                        if (!p.IsEdge() && !n.IsEdge())
+                        if (p.id == n.id)
                         {
-                            if (p.id == n.id)
-                            {
-                                makeMatch[i] = mapInitialLines.Contains(p) ? -1 : 1; // make sector before this match this one to eliminate p
-                            }
+                            makeMatch[i] = mapInitialLines.Contains(p) ? -1 : 1; // make sector before this match this one to eliminate p
                         }
                     }
                     if (!makeMatch.Contains(0)) throw new NotImplementedException();
@@ -426,18 +393,11 @@ namespace Zenith.ZGeom
             {
                 bool forwards = d.next != null && (!criticalPoints.Contains(d.next.id));
                 var temp = d;
-                while (temp != null && (temp.IsEdge() || !criticalPoints.Contains(temp.id)))
+                while (temp != null && !criticalPoints.Contains(temp.id))
                 {
                     if (!ContainsNode(temp)) break;
-                    if (temp.IsEdge() && temp.prev == null)
-                    {
-                        startPoints.Remove(temp);
-                    }
-                    else if (temp.id != -1)
-                    {
-                        nodes[temp.id].Remove(temp);
-                        if (nodes[temp.id].Count == 0) nodes.Remove(temp.id);
-                    }
+                    nodes[temp.id].Remove(temp);
+                    if (nodes[temp.id].Count == 0) nodes.Remove(temp.id);
                     temp = forwards ? temp.next : temp.prev;
                 }
             }
@@ -446,208 +406,27 @@ namespace Zenith.ZGeom
             {
                 bool forwards = d.next != null && (!criticalPoints.Contains(d.next.id));
                 var temp = d;
-                while (temp != null && (temp.IsEdge() || !criticalPoints.Contains(temp.id)))
+                while (temp != null && !criticalPoints.Contains(temp.id))
                 {
-                    if (!temp.IsEdge() && ContainsNode(temp)) break;
-                    if (temp.IsEdge() && temp.prev == null)
-                    {
-                        startPoints.Add(temp);
-                    }
-                    else if (temp.id != -1)
-                    {
-                        if (!nodes.ContainsKey(temp.id)) nodes[temp.id] = new List<AreaNode>();
-                        nodes[temp.id].Add(temp);
-                    }
+                    if (ContainsNode(temp)) break;
+                    if (!nodes.ContainsKey(temp.id)) nodes[temp.id] = new List<AreaNode>();
+                    nodes[temp.id].Add(temp);
                     temp = forwards ? temp.next : temp.prev;
                 }
             }
             foreach (var d in singularDelete) nodes.Remove(d);
             foreach (var n in loopNodes)
             {
-                if (n.IsEdge())
-                {
-                    if (n.prev == null)
-                    {
-                        startPoints.Add(n);
-                    }
-                }
-                else
-                {
-                    if (!nodes.ContainsKey(n.id)) nodes[n.id] = new List<AreaNode>();
-                    nodes[n.id].Add(n);
-                }
+                if (!nodes.ContainsKey(n.id)) nodes[n.id] = new List<AreaNode>();
+                nodes[n.id].Add(n);
             }
             return this;
         }
 
         private bool ContainsNode(AreaNode node)
         {
-            if (node.id == -1) return startPoints.Any(x => x.v == node.v); // TODO: make this O(1)
+            if (node.id == -1) throw new NotImplementedException();
             return nodes.ContainsKey(node.id) && nodes[node.id].Contains(node);
-        }
-
-        // note, actual intersections should be exceedingly rare, like 1 in 6 sectors or something
-        public static void DoIntersections(List<SectorConstrainedOSMAreaGraph> maps, BlobCollection blobs)
-        {
-            var allNodes = new List<List<AreaNode>>();
-            var allTrees = new List<STRtree<AreaNode>>();
-            foreach (var map in maps)
-            {
-                List<AreaNode> nodes = new List<AreaNode>();
-                foreach (var nodeList in map.nodes.Values) nodes.AddRange(nodeList);
-                nodes.AddRange(map.startPoints);
-                allNodes.Add(nodes);
-                allTrees.Add(MakeRTree(nodes, blobs));
-            }
-            for (int j = 0; j < maps.Count; j++)
-            {
-                for (int k = j + 1; k < maps.Count; k++)
-                {
-                    Dictionary<AreaNode, List<AreaNode>> intersections = new Dictionary<AreaNode, List<AreaNode>>();
-                    var map1 = maps[j];
-                    var map2 = maps[k];
-                    var nodes1 = allNodes[j];
-                    var nodes2 = allNodes[k];
-                    var tree1 = allTrees[j];
-                    foreach (var potentialIntersection in FindPotentialIntersections(tree1, nodes2, blobs))
-                    {
-                        var n1 = potentialIntersection.n1;
-                        var n2 = potentialIntersection.n2;
-                        Vector2d A = GetPos(n1, blobs);
-                        Vector2d B = GetPos(n1.next, blobs);
-                        Vector2d C = GetPos(n2, blobs);
-                        Vector2d D = GetPos(n2.next, blobs);
-                        if (Math.Min(A.X, B.X) > Math.Max(C.X, D.X)) continue;
-                        if (Math.Max(A.X, B.X) < Math.Min(C.X, D.X)) continue;
-                        if (Math.Min(A.Y, B.Y) > Math.Max(C.Y, D.Y)) continue;
-                        if (Math.Max(A.Y, B.Y) < Math.Min(C.Y, D.Y)) continue;
-                        long randID = -((n1.id * 3) ^ n2.id); // TODO: get rid of hack
-                                                              // TODO: we're going to treat -1 as always matching for now
-                        bool ACSame = n1.id == n2.id;
-                        bool ADSame = n1.id == n2.next.id;
-                        bool BCSame = n1.next.id == n2.id;
-                        bool BDSame = n1.next.id == n2.next.id;
-                        // a subset of possible tiny angles that can cause rounding errors
-                        // only thing that changes between these is the condition, line direction, and the newpoint id
-                        // TODO: is this really what fixed the nonsense at 240202043? the angleDiff was only 0.009, which seems too big to cause an issue
-                        bool someCollinear = false;
-                        someCollinear |= CheckCollinear(n1, n2, n2.next, map2.nodes, intersections, blobs, true);
-                        someCollinear |= CheckCollinear(n1.next, n2, n2.next, map2.nodes, intersections, blobs, n1.next.next == null);
-                        someCollinear |= CheckCollinear(n2, n1, n1.next, map1.nodes, intersections, blobs, true);
-                        someCollinear |= CheckCollinear(n2.next, n1, n1.next, map1.nodes, intersections, blobs, n2.next.next == null);
-                        if (!ACSame && !ADSame && !BCSame && !BDSame && !someCollinear) // proper intersection
-                        {
-                            Vector2d intersection = Intersect(A, B, C, D);
-                            if (intersection != null)
-                            {
-                                AreaNode newNode1 = new AreaNode() { id = randID };
-                                AreaNode newNode2 = new AreaNode() { id = randID };
-                                blobs.nodes[randID] = intersection;
-                                map1.nodes[randID] = new List<AreaNode>() { newNode1 };
-                                map2.nodes[randID] = new List<AreaNode>() { newNode2 };
-                                if (!intersections.ContainsKey(n1)) intersections.Add(n1, new List<AreaNode>());
-                                intersections[n1].Add(newNode1);
-                                if (!intersections.ContainsKey(n2)) intersections.Add(n2, new List<AreaNode>());
-                                intersections[n2].Add(newNode2);
-                            }
-                        }
-                    }
-                    foreach (var pair in intersections)
-                    {
-                        AreaNode start = pair.Key;
-                        AreaNode end = pair.Key.next;
-                        var sorted = pair.Value.OrderBy(x => (GetPos(x, blobs) - GetPos(start, blobs)).Length()).ToList();
-                        // get rid of duplicates
-                        for (int i = sorted.Count - 1; i > 0; i--)
-                        {
-                            if (sorted[i].id == sorted[i - 1].id) sorted.RemoveAt(i);
-                        }
-                        sorted.Insert(0, start);
-                        sorted.Add(end);
-                        // chain them all together
-                        for (int i = 1; i < sorted.Count; i++)
-                        {
-                            sorted[i - 1].next = sorted[i];
-                            sorted[i].prev = sorted[i - 1];
-                        }
-                    }
-                }
-            }
-        }
-
-        // also setup the collinearness
-        private static bool CheckCollinear(AreaNode v, AreaNode a, AreaNode b, Dictionary<long, List<AreaNode>> nodesAB, Dictionary<AreaNode, List<AreaNode>> intersections, BlobCollection blobs, bool doCollinearness)
-        {
-            if (v.IsEdge() || v.id == a.id || v.id == b.id) return false; // points are already shared, so we'll ignore it
-            double angle1 = CalcAngleDiff(a, b, a, v, blobs);
-            double angle2 = CalcAngleDiff(b, a, b, v, blobs);
-            if (angle1 < 0.01 && angle2 < 0.01)
-            {
-                if (doCollinearness)
-                {
-                    AreaNode newNode = new AreaNode { id = v.id };
-                    if (!intersections.ContainsKey(a)) intersections.Add(a, new List<AreaNode>());
-                    intersections[a].Add(newNode);
-                    nodesAB[v.id] = new List<AreaNode>() { newNode };
-                }
-                return true;
-            }
-            return false;
-        }
-
-        private static double CalcAngleDiff(AreaNode A, AreaNode B, AreaNode C, AreaNode D, BlobCollection blobs)
-        {
-            Vector2d line1 = GetPos(B, blobs) - GetPos(A, blobs);
-            Vector2d line2 = GetPos(D, blobs) - GetPos(C, blobs);
-            double angleDiff = Math.Atan2(line1.Y, line1.X) - Math.Atan2(line2.Y, line2.X);
-            angleDiff = (angleDiff + 2 * Math.PI) % (2 * Math.PI);
-            if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
-            return angleDiff;
-        }
-
-        // just give up and use the library
-        private static IEnumerable<PotentialIntersection> FindPotentialIntersections(STRtree<AreaNode> rtree, List<AreaNode> nodes, BlobCollection blobs)
-        {
-            foreach (var node in nodes)
-            {
-                Vector2d pos1 = GetPos(node, blobs);
-                Vector2d pos2 = GetPos(node.next, blobs);
-                var env = new GeoAPI.Geometries.Envelope(Math.Min(pos1.X, pos2.X), Math.Max(pos1.X, pos2.X), Math.Min(pos1.Y, pos2.Y), Math.Max(pos1.Y, pos2.Y));
-                foreach (var n2 in rtree.Query(env))
-                {
-                    yield return new PotentialIntersection() { n1 = n2, n2 = node };
-                }
-            }
-        }
-
-        private static STRtree<AreaNode> MakeRTree(List<AreaNode> nodes, BlobCollection blobs)
-        {
-            var rtree = new STRtree<AreaNode>();
-            foreach (var node in nodes)
-            {
-                Vector2d pos1 = GetPos(node, blobs);
-                Vector2d pos2 = GetPos(node.next, blobs);
-                var env = new GeoAPI.Geometries.Envelope(Math.Min(pos1.X, pos2.X), Math.Max(pos1.X, pos2.X), Math.Min(pos1.Y, pos2.Y), Math.Max(pos1.Y, pos2.Y));
-                rtree.Insert(env, node);
-            }
-            rtree.Build();
-            return rtree;
-        }
-
-        public class PotentialIntersection
-        {
-            public AreaNode n1;
-            public AreaNode n2;
-        }
-
-        private static Vector2d Intersect(Vector2d a, Vector2d b, Vector2d c, Vector2d d)
-        {
-            // copied from wiki, sure
-            double t = ((a.X - c.X) * (c.Y - d.Y) - (a.Y - c.Y) * (c.X - d.X)) / ((a.X - b.X) * (c.Y - d.Y) - (a.Y - b.Y) * (c.X - d.X));
-            double u = -((a.X - b.X) * (a.Y - c.Y) - (a.Y - b.Y) * (a.X - c.X)) / ((a.X - b.X) * (c.Y - d.Y) - (a.Y - b.Y) * (c.X - d.X));
-            if (double.IsNaN(t) || double.IsNaN(u)) return null;
-            if (t < 0 || t > 1 || u < 0 || u > 1) return null;
-            return a + (b - a) * t;
         }
 
         // TODO: apparently we've been adding loops twice this entire time, basically
@@ -658,27 +437,6 @@ namespace Zenith.ZGeom
             // actually, non-loops should be found as well!
             List<AreaNode> loopNodes = new List<AreaNode>();
             HashSet<AreaNode> explored = new HashSet<AreaNode>();
-            foreach (var startPoint in map.startPoints)
-            {
-                List<AreaNode> newPath = new List<AreaNode>();
-                bool pathHasConnections = false;
-                AreaNode curr = startPoint;
-                while (true)
-                {
-                    if (!curr.IsEdge() && nodes.ContainsKey(curr.id)) pathHasConnections = true;
-                    newPath.Add(curr);
-                    explored.Add(curr);
-                    if (curr.next == null) break;
-                    curr = curr.next;
-                }
-                if (!pathHasConnections)
-                {
-                    foreach (var n in newPath)
-                    {
-                        loopNodes.Add(n);
-                    }
-                }
-            }
             foreach (var nodeList in map.nodes.Values)
             {
                 foreach (var node in nodeList)
@@ -712,26 +470,6 @@ namespace Zenith.ZGeom
         public void CheckValid()
         {
             HashSet<AreaNode> explored = new HashSet<AreaNode>();
-            foreach (var startPoint in startPoints)
-            {
-                if (startPoint.prev != null || startPoint.next == null || startPoint.id != -1 || startPoint.v == null) throw new NotImplementedException();
-                AreaNode curr = startPoint.next;
-                while (true)
-                {
-                    explored.Add(curr);
-                    if (curr.next == null) // endpoint
-                    {
-                        if (curr.next != null || curr.prev == null || curr.id != -1 || curr.v == null || curr.prev.next != curr) throw new NotImplementedException();
-                        break;
-                    }
-                    else
-                    {
-                        if (!nodes[curr.id].Contains(curr)) throw new NotImplementedException();
-                        if (curr.id == -1 || curr.v != null || curr.next == null || curr.prev == null || curr.prev.next != curr || curr.next.prev != curr) throw new NotImplementedException();
-                    }
-                    curr = curr.next;
-                }
-            }
             foreach (var nodeList in nodes.Values)
             {
                 foreach (var node in nodeList)
@@ -741,10 +479,11 @@ namespace Zenith.ZGeom
                     AreaNode curr = node;
                     while (true)
                     {
-                        if (!nodes[curr.id].Contains(curr)) throw new NotImplementedException();
-                        if (curr.id == -1 || curr.v != null || curr.next == null || curr.prev == null || curr.prev.next != curr || curr.next.prev != curr) throw new NotImplementedException();
+                        if (nodes[curr.id].Count == 0 || !nodes[curr.id].All(x => x.id == curr.id)) throw new NotImplementedException();
+                        if (curr.id == -1 || curr.next == null || curr.prev == null || curr.next.prev != curr || curr.prev.next != curr) throw new NotImplementedException();
                         explored.Add(curr);
                         if (curr.next == node) break;
+                        if (curr.next == null) break;
                         curr = curr.next;
                     }
                 }
@@ -756,7 +495,6 @@ namespace Zenith.ZGeom
             // fully reverse, even the bad parts
             HashSet<AreaNode> explored = new HashSet<AreaNode>();
             Queue<AreaNode> bfs = new Queue<AreaNode>();
-            foreach (var startPoint in startPoints) bfs.Enqueue(startPoint);
             foreach (var nodeList in nodes.Values)
             {
                 foreach (var node in nodeList) bfs.Enqueue(node);
@@ -775,8 +513,6 @@ namespace Zenith.ZGeom
                 x.next = x.prev;
                 x.prev = temp;
             }
-            startPoints = new HashSet<AreaNode>();
-            foreach (var start in explored.Where(x => x.prev == null)) startPoints.Add(start);
         }
 
         private static double ComputeInnerAngle(Vector2d v1, Vector2d v2)
@@ -797,7 +533,6 @@ namespace Zenith.ZGeom
             // fully clone, even the bad parts
             HashSet<AreaNode> explored = new HashSet<AreaNode>();
             Queue<AreaNode> bfs = new Queue<AreaNode>();
-            foreach (var startPoint in startPoints) bfs.Enqueue(startPoint);
             foreach (var nodeList in nodes.Values)
             {
                 foreach (var node in nodeList) bfs.Enqueue(node);
@@ -812,16 +547,12 @@ namespace Zenith.ZGeom
             }
             foreach (var x in explored)
             {
-                mapper[x] = new AreaNode() { id = x.id, v = x.v };
+                mapper[x] = new AreaNode() { id = x.id };
             }
             foreach (var x in explored)
             {
                 mapper[x].prev = x.prev == null ? null : mapper[x.prev];
                 mapper[x].next = x.next == null ? null : mapper[x.next];
-            }
-            foreach (var startPoint in startPoints)
-            {
-                map.startPoints.Add(mapper[startPoint]);
             }
             foreach (var pair in nodes)
             {
@@ -830,44 +561,79 @@ namespace Zenith.ZGeom
             return map;
         }
 
+        internal void CloseLines(BlobCollection blobs)
+        {
+            if (nodes.Count == 0) return;
+            var startEndPoints = new List<QuickRef>();
+            foreach (var pair in nodes)
+            {
+                foreach (var node in pair.Value)
+                {
+                    if (node.next == null || node.prev == null)
+                    {
+                        startEndPoints.Add(new QuickRef() { node = node, isBorder = false });
+                        if (blobs.nodes[node.id].X != 0 && blobs.nodes[node.id].X != 1 && blobs.nodes[node.id].Y != 0 && blobs.nodes[node.id].Y != 1) throw new NotImplementedException();
+                    }
+                }
+            }
+            //if(startEndPoints.Count==0) return;
+            foreach (var r in blobs.borderWay.refs.Skip(1))
+            {
+                if (!nodes.ContainsKey(r))
+                {
+                    startEndPoints.Add(new QuickRef() { node = new AreaNode() { id = r }, isBorder = true });
+                }
+            }
+            startEndPoints = startEndPoints.OrderBy(x => -Math.Atan2(blobs.nodes[x.node.id].Y - 0.5, blobs.nodes[x.node.id].X - 0.5)).ToList();
+            int offset = startEndPoints.FindIndex(x => !x.isBorder);
+            if (offset < 0) throw new NotImplementedException();
+            for (int i = 0; i < offset; i++) // rotate it so that the first one is always a non-corner
+            {
+                var temp = startEndPoints[0];
+                startEndPoints.RemoveAt(0);
+                startEndPoints.Add(temp);
+            }
+            bool recentlyConnected = false;
+            for (int i = 0; i < startEndPoints.Count; i++)
+            {
+                AreaNode prev = startEndPoints[i].node;
+                AreaNode next = startEndPoints[(i + 1) % startEndPoints.Count].node;
+                bool prevIsCorner = startEndPoints[i].isBorder;
+                bool nextIsCorner = startEndPoints[(i + 1) % startEndPoints.Count].isBorder;
+                if (!prevIsCorner && !nextIsCorner && prev.next == null && next.prev != null) throw new NotImplementedException(); // two exit nodes in a row
+                if ((prevIsCorner && nextIsCorner && recentlyConnected) || (!prevIsCorner && nextIsCorner && prev.next == null) || (prevIsCorner && !nextIsCorner && next.prev == null) || (!prevIsCorner && !nextIsCorner && prev.next == null && next.prev == null))
+                {
+                    prev.next = next;
+                    next.prev = prev;
+                    if (prevIsCorner)
+                    {
+                        if (!nodes.ContainsKey(prev.id)) nodes[prev.id] = new List<AreaNode>();
+                        nodes[prev.id].Add(prev);
+                    }
+                    recentlyConnected = true;
+                }
+                else
+                {
+                    recentlyConnected = false;
+                }
+            }
+        }
+
+        public class QuickRef
+        {
+            public AreaNode node;
+            public bool isBorder;
+        }
+
         private static Vector2d GetPos(AreaNode node, BlobCollection blobs)
         {
-            return node.IsEdge() ? node.v : blobs.nodes[node.id];
+            return blobs.nodes[node.id];
         }
 
         public SectorConstrainedAreaMap Finalize(BlobCollection blobs)
         {
             HashSet<AreaNode> explored = new HashSet<AreaNode>();
             SectorConstrainedAreaMap map = new SectorConstrainedAreaMap();
-            foreach (var startPoint in startPoints)
-            {
-                List<Vector2d> newPath = new List<Vector2d>();
-                AreaNode curr = startPoint;
-                while (true)
-                {
-                    if (curr.v == null)
-                    {
-                        Vector2d v = blobs.nodes[curr.id];
-                        // TODO: somehow one of the start points is added twice
-                        // ex: node 5534127050
-                        if (PERTURB_AT_JOINTS && nodes[curr.id].Count > 1)
-                        {
-                            Vector2d v1 = curr.next.v == null ? blobs.nodes[curr.next.id] : curr.next.v;
-                            Vector2d v2 = curr.prev.v == null ? blobs.nodes[curr.prev.id] : curr.prev.v;
-                            v += (v1 + v2 - blobs.nodes[curr.id] * 2).Normalized() * PERTURB_AMOUNT;
-                        }
-                        newPath.Add(v);
-                    }
-                    else
-                    {
-                        newPath.Add(curr.v);
-                    }
-                    explored.Add(curr);
-                    if (curr.next == null) break;
-                    curr = curr.next;
-                }
-                map.paths.Add(newPath);
-            }
             foreach (var nodeList in nodes.Values)
             {
                 foreach (var node in nodeList)
@@ -910,26 +676,6 @@ namespace Zenith.ZGeom
         {
             double area = 0;
             HashSet<AreaNode> explored = new HashSet<AreaNode>();
-            foreach (var startPoint in startPoints)
-            {
-                List<Vector2d> newPath = new List<Vector2d>();
-                AreaNode curr = startPoint;
-                while (true)
-                {
-                    if (curr.v == null)
-                    {
-                        newPath.Add(blobs.nodes[curr.id]);
-                    }
-                    else
-                    {
-                        newPath.Add(curr.v);
-                    }
-                    explored.Add(curr);
-                    if (curr.next == null) break;
-                    curr = curr.next;
-                }
-                area += AreaOf(newPath); // TODO: this is fake area, but sure
-            }
             foreach (var nodeList in nodes.Values)
             {
                 foreach (var node in nodeList)
@@ -979,8 +725,6 @@ namespace Zenith.ZGeom
     {
         public AreaNode next;
         public AreaNode prev;
-        public long id = -1; // -1 when at edge
-        public Vector2d v = null; // null when has an id
-        public bool IsEdge() { return v != null; }
+        public long id = -1;
     }
 }

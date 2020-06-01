@@ -108,6 +108,13 @@ namespace Zenith.ZMath
             return true;
         }
 
+        public bool BorderContainsCoord(Vector2d v)
+        {
+            if (v.X == 0 || v.X == 1) return true;
+            if (v.Y == 0 || v.Y == 1) return true;
+            return false;
+        }
+
         // return the portion x is betweeen from and to (negative values allowed)
         // portion is angular portion (as opposed to sin or w/e)
         // we're changing this to require from and to to be right angles now...

@@ -88,7 +88,7 @@ namespace TriangleNet.Geometry
         /// A given number of points will be tested (limit), while the distance to the contour
         /// boundary will be reduced in each iteration (with a factor 1 / 2^i, i = 1 ... limit).
         /// </remarks>
-        public Point FindInteriorPoint(int limit = 5, double eps = 2e-10)
+        public Point FindInteriorPoint(int limit = 5, double eps = 2e-12)
         {
             if (convex)
             {

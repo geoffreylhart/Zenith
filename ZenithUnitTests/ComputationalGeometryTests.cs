@@ -295,17 +295,12 @@ namespace ZenithUnitTests
         private static void MarkEndPoint(SectorConstrainedOSMAreaGraph graph, int x, int y)
         {
             long n = (x + 500) * 1000 + (y + 500);
-            graph.nodes[n].Single().id = -1;
-            graph.nodes[n].Single().v = new Vector2d(x, y);
             graph.nodes.Remove(n);
         }
 
         private static void MarkStartPoint(SectorConstrainedOSMAreaGraph graph, int x, int y)
         {
             long n = (x + 500) * 1000 + (y + 500);
-            graph.nodes[n].Single().id = -1;
-            graph.nodes[n].Single().v = new Vector2d(x, y);
-            graph.startPoints.Add(graph.nodes[n].Single());
             graph.nodes.Remove(n);
         }
 

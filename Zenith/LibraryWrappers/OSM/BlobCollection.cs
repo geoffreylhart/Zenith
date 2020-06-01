@@ -20,9 +20,18 @@ namespace Zenith.LibraryWrappers.OSM
         public List<Blob> blobs;
         private ISector sector;
         private OSMMetaFinal.GridPointInfo gridPointInfo;
+        public Way borderWay;
 
         public BlobCollection(List<Blob> blobs, ISector sector)
         {
+            borderWay = new Way();
+            borderWay.id = -10;
+            borderWay.refs = new List<long>() { -900, -901, -902, -903, -900 }; // arbitrary for now, but ccw for land
+            nodes.Add(-900, new Vector2d(0, 0));
+            nodes.Add(-901, new Vector2d(0, 1));
+            nodes.Add(-902, new Vector2d(1, 1));
+            nodes.Add(-903, new Vector2d(1, 0));
+
             this.blobs = blobs;
             this.sector = sector;
             this.gridPointInfo = OSMMetaFinal.GetGridPointInfo(sector);
@@ -178,12 +187,14 @@ namespace Zenith.LibraryWrappers.OSM
                             curr.next = simpleMap.nodes[broken[0]].First();
                         }
                     }
+                    simpleMap.RemoveDuplicateLines();
                 }
                 else
                 {
                     AddConstrainedPaths(simpleMap, superLoop);
+                    simpleMap.RemoveDuplicateLines();
+                    simpleMap.CloseLines(this);
                 }
-                simpleMap.RemoveDuplicateLines();
                 if (Constants.DEBUG_MODE) simpleMap.CheckValid();
                 addingMaps.Add(simpleMap);
             }
@@ -204,14 +215,16 @@ namespace Zenith.LibraryWrappers.OSM
                 SectorConstrainedOSMAreaGraph outerMap = DoMultipolygon(superOuterWays);
                 innerMap.RemoveDuplicateLines();
                 outerMap.RemoveDuplicateLines();
+                innerMap.CloseLines(this);
+                outerMap.CloseLines(this);
                 if (Constants.DEBUG_MODE) innerMap.CheckValid();
                 if (Constants.DEBUG_MODE) outerMap.CheckValid();
-                SectorConstrainedOSMAreaGraph multiPolygon = outerMap.Subtract(innerMap, this, false);
+                SectorConstrainedOSMAreaGraph multiPolygon = outerMap.Subtract(innerMap, this);
                 if (Constants.DEBUG_MODE) multiPolygon.CheckValid();
                 addingMaps.Add(multiPolygon);
             }
             SectorConstrainedOSMAreaGraph map = new SectorConstrainedOSMAreaGraph();
-            foreach (var addingMap in addingMaps) map.Add(addingMap, this, false);
+            foreach (var addingMap in addingMaps) map.Add(addingMap, this);
             if (Constants.DEBUG_MODE) map.CheckValid();
             return map;
         }
@@ -237,7 +250,7 @@ namespace Zenith.LibraryWrappers.OSM
             {
                 SectorConstrainedOSMAreaGraph temp = new SectorConstrainedOSMAreaGraph();
                 bool isCW = ApproximateCW(superLoop);
-                if (isCW) // TODO: why did I have this has the oppsoite logic before??
+                if (isCW) // TODO: why did I have this has the opposite logic before??
                 {
                     // force to be an "outer"
                     superLoop.Reverse();
@@ -320,16 +333,15 @@ namespace Zenith.LibraryWrappers.OSM
                 {
                     long prev = superWay[i].refs[j - 1];
                     long next = superWay[i].refs[j];
-                    var intersections = OSMPolygonBufferGenerator.GetIntersections(sector, nodes[prev], nodes[next]);
-                    foreach (var intersection in intersections)
+                    if (sector.BorderContainsCoord(nodes[next]))
                     {
                         if (prevIsInside) // close-out a line
                         {
-                            list.Add(new SuperWayIntersection() { intersection = intersection, leaving = true, superWay = superWay, inner = inner });
+                            list.Add(new SuperWayIntersection() { intersection = nodes[next], leaving = true, superWay = superWay, inner = inner });
                         }
                         else // start up a new line
                         {
-                            list.Add(new SuperWayIntersection() { intersection = intersection, leaving = false, superWay = superWay, inner = inner });
+                            list.Add(new SuperWayIntersection() { intersection = nodes[next], leaving = false, superWay = superWay, inner = inner });
                         }
                         prevIsInside = !prevIsInside;
                     }
@@ -390,13 +402,10 @@ namespace Zenith.LibraryWrappers.OSM
             SectorConstrainedOSMAreaGraph map = new SectorConstrainedOSMAreaGraph();
             foreach (var superWay in superWays.linkedWays) // we expect these to always start and end outside the sector
             {
-                SectorConstrainedOSMAreaGraph temp = new SectorConstrainedOSMAreaGraph();
-                AddConstrainedPaths(temp, superWay);
-                map.Add(temp, this, false);
+                AddConstrainedPaths(map, superWay);
             }
             foreach (var superLoop in superWays.loopedWays)
             {
-                SectorConstrainedOSMAreaGraph temp = new SectorConstrainedOSMAreaGraph();
                 bool untouchedLoop = CheckIfUntouchedAndSpin(superLoop);
                 if (untouchedLoop)
                 {
@@ -404,27 +413,26 @@ namespace Zenith.LibraryWrappers.OSM
                     for (int i = 0; i < broken.Count - 1; i++) // since our loops end in a duplicate
                     {
                         AreaNode curr = new AreaNode() { id = broken[i] };
-                        if (!temp.nodes.ContainsKey(broken[i])) temp.nodes[broken[i]] = new List<AreaNode>();
-                        temp.nodes[broken[i]].Add(curr);
+                        if (!map.nodes.ContainsKey(broken[i])) map.nodes[broken[i]] = new List<AreaNode>();
+                        map.nodes[broken[i]].Add(curr);
                         if (i > 0)
                         {
-                            AreaNode prev = temp.nodes[broken[i - 1]].Last();
+                            AreaNode prev = map.nodes[broken[i - 1]].Last();
                             curr.prev = prev;
                             prev.next = curr;
                         }
                         // close the loop
                         if (i == broken.Count - 2)
                         {
-                            temp.nodes[broken[0]].First().prev = curr;
-                            curr.next = temp.nodes[broken[0]].First();
+                            map.nodes[broken[0]].First().prev = curr;
+                            curr.next = map.nodes[broken[0]].First();
                         }
                     }
                 }
                 else
                 {
-                    AddConstrainedPaths(temp, superLoop);
+                    AddConstrainedPaths(map, superLoop);
                 }
-                map.Add(temp, this, false);
             }
             return map;
         }
@@ -475,6 +483,7 @@ namespace Zenith.LibraryWrappers.OSM
             }
             // done, wow, so much work
             map.RemoveDuplicateLines();
+            map.CloseLines(this);
             if (Constants.DEBUG_MODE) map.CheckValid();
             return map;
         }
@@ -488,31 +497,8 @@ namespace Zenith.LibraryWrappers.OSM
             {
                 for (int j = 1; j < superWay[i].refs.Count; j++)
                 {
-                    long prev = superWay[i].refs[j - 1];
                     long next = superWay[i].refs[j];
-                    var intersections = OSMPolygonBufferGenerator.GetIntersections(sector, nodes[prev], nodes[next]);
-                    // NOTE: we will consider anything on the border to be "outside"
-                    intersections = intersections.Where(x => !x.Equals(nodes[prev]) && !x.Equals(nodes[next])).ToArray();
-                    if (i == 0 && j == 1)
-                    {
-                        if (nodes[prev].X == 0 || nodes[prev].X == 1 || nodes[prev].Y == 0 || nodes[prev].Y == 1)
-                        {
-                            nodesToAdd.Add(new AreaNode() { v = nodes[prev] });
-                        }
-                        else if (sector.ContainsCoord(nodes[prev]))
-                        {
-                            nodesToAdd.Add(new AreaNode() { id = prev });
-                        }
-                    }
-                    nodesToAdd.AddRange(intersections.Select(x => new AreaNode { v = x }));
-                    if (nodes[next].X == 0 || nodes[next].X == 1 || nodes[next].Y == 0 || nodes[next].Y == 1)
-                    {
-                        nodesToAdd.Add(new AreaNode() { v = nodes[next] });
-                    }
-                    else if (sector.ContainsCoord(nodes[next]))
-                    {
-                        nodesToAdd.Add(new AreaNode() { id = next });
-                    }
+                    nodesToAdd.Add(new AreaNode() { id = next });
                 }
             }
             for (int i = 0; i < nodesToAdd.Count; i++)
@@ -520,36 +506,41 @@ namespace Zenith.LibraryWrappers.OSM
                 var prev = nodesToAdd[(i + nodesToAdd.Count - 1) % nodesToAdd.Count];
                 var curr = nodesToAdd[i];
                 var next = nodesToAdd[(i + 1) % nodesToAdd.Count];
-                if (curr.IsEdge())
+                if (sector.BorderContainsCoord(nodes[curr.id]))
                 {
-                    if (!next.IsEdge())
+                    bool add = false;
+                    if (!sector.BorderContainsCoord(nodes[next.id]) && sector.ContainsCoord(nodes[next.id]))
                     {
-                        var clone = new AreaNode() { v = curr.v };
-                        map.startPoints.Add(clone);
-                        clone.next = next;
-                        next.prev = clone;
+                        curr.next = next;
+                        next.prev = curr;
+                        add = true;
                     }
-                    if (!prev.IsEdge())
+                    if (!sector.BorderContainsCoord(nodes[prev.id]) && sector.ContainsCoord(nodes[prev.id]))
                     {
-                        var clone = new AreaNode() { v = curr.v };
-                        clone.prev = prev;
-                        prev.next = clone;
+                        curr.prev = prev;
+                        prev.next = curr;
+                        add = true;
                     }
-                    if (prev.IsEdge() && prev.v.X != curr.v.X && prev.v.Y != curr.v.Y)
+                    if (sector.BorderContainsCoord(nodes[prev.id]) && nodes[prev.id].X != nodes[curr.id].X && nodes[prev.id].Y != nodes[curr.id].Y)
                     {
-                        var clone1 = new AreaNode() { v = prev.v };
-                        var clone2 = new AreaNode() { v = curr.v };
-                        map.startPoints.Add(clone1);
-                        clone1.next = clone2;
-                        clone2.prev = clone1;
+                        prev.next = curr;
+                        curr.prev = prev;
+                        add = true;
+                        if (!map.nodes.ContainsKey(prev.id)) map.nodes[prev.id] = new List<AreaNode>();
+                        map.nodes[prev.id].Add(prev);
+                    }
+                    if (add)
+                    {
+                        if (!map.nodes.ContainsKey(curr.id)) map.nodes[curr.id] = new List<AreaNode>();
+                        map.nodes[curr.id].Add(curr);
                     }
                 }
-                else
+                else if (sector.ContainsCoord(nodes[curr.id]))
                 {
                     if (!map.nodes.ContainsKey(curr.id)) map.nodes[curr.id] = new List<AreaNode>();
                     map.nodes[curr.id].Add(curr);
-                    if (!prev.IsEdge()) curr.prev = prev; // edges will handle their prev/next logic
-                    if (!next.IsEdge()) curr.next = next;
+                    if (!sector.BorderContainsCoord(nodes[prev.id]) && sector.ContainsCoord(nodes[prev.id])) curr.prev = prev; // edges will handle their prev/next logic
+                    if (!sector.BorderContainsCoord(nodes[next.id]) && sector.ContainsCoord(nodes[next.id])) curr.next = next;
                 }
             }
         }

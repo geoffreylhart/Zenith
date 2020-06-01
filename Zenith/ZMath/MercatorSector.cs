@@ -116,6 +116,13 @@ namespace Zenith.ZMath
             return true;
         }
 
+        public bool BorderContainsCoord(Vector2d v)
+        {
+            if (v.X == 0 || v.X == 1) return true;
+            if (v.Y == 0 || v.Y == 1) return true;
+            return false;
+        }
+
         private static double ToLat(double y)
         {
             return 2 * Math.Atan(Math.Pow(Math.E, (0.5 - y) * 2 * Math.PI)) - Math.PI / 2;

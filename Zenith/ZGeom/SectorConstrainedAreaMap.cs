@@ -14,28 +14,12 @@ namespace Zenith.ZGeom
 {
     public class SectorConstrainedAreaMap
     {
-        public List<List<Vector2d>> paths = new List<List<Vector2d>>();
         public List<List<Vector2d>> inners = new List<List<Vector2d>>(); // holes
         public List<List<Vector2d>> outers = new List<List<Vector2d>>(); // islands
 
         internal BasicVertexBuffer ConstructAsRoads(GraphicsDevice graphicsDevice, double width, Texture2D texture, Color color)
         {
             LineGraph lineGraph = new LineGraph();
-            foreach (var path in paths)
-            {
-                LineGraph.GraphNode prev = null;
-                for (int i = 0; i < path.Count; i++)
-                {
-                    var next = new LineGraph.GraphNode(path[i]);
-                    if (prev != null)
-                    {
-                        prev.nextConnections.Add(next);
-                        next.prevConnections.Add(prev);
-                    }
-                    lineGraph.nodes.Add(next);
-                    prev = next;
-                }
-            }
             foreach (var path in inners)
             {
                 LineGraph.GraphNode prev = null;
@@ -89,9 +73,7 @@ namespace Zenith.ZGeom
         public List<VertexPositionColor> GetTesselationVertices(Color color, bool cornersAreFilled)
         {
             var fakeSector = new CubeSector(CubeSector.CubeSectorFace.FRONT, 0, 0, 8);
-            List<List<ContourVertex>> contours = paths.Select(x => x.Select(y => Vector2DToContourVertex(y)).ToList()).ToList();
-            contours = OSMPolygonBufferGenerator.CloseLines(fakeSector, contours);
-
+            List<List<ContourVertex>> contours = new List<List<ContourVertex>>();
             foreach (var inner in inners)
             {
                 var innerContour = inner.Skip(1).Select(x => Vector2DToContourVertex(x, true)).ToList(); // skip 1 since our loops end in a duplicate
@@ -107,16 +89,6 @@ namespace Zenith.ZGeom
             {
                 var outerContours = new List<List<ContourVertex>>() { outer.Skip(1).Select(y => Vector2DToContourVertex(y)).ToList() }; // skip 1 since our loops end in a duplicate
                 contours.AddRange(outerContours);
-            }
-            if (paths.Count == 0 && cornersAreFilled)
-            {
-                // add one outer surrounding the hole sector
-                var square = new List<ContourVertex>();
-                square.Add(new ContourVertex() { Position = new Vec3() { X = 0, Y = 0, Z = 0 } });
-                square.Add(new ContourVertex() { Position = new Vec3() { X = 0, Y = 1, Z = 0 } });
-                square.Add(new ContourVertex() { Position = new Vec3() { X = 1, Y = 1, Z = 0 } });
-                square.Add(new ContourVertex() { Position = new Vec3() { X = 1, Y = 0, Z = 0 } });
-                contours.Add(square);
             }
             var vertices = OSMPolygonBufferGenerator.Tesselate(contours, color);
             return vertices;

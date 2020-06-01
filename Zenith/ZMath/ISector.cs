@@ -30,5 +30,6 @@ namespace Zenith.ZMath
         ISector GetSectorAt(double x, double y, int zoom);
         ISector GetRoot();
         bool ContainsCoord(Vector2d v);
+        bool BorderContainsCoord(Vector2d v);
     }
 }

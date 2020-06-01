@@ -8,13 +8,14 @@ using Zenith.ZMath;
 
 namespace Zenith.LibraryWrappers.OSM
 {
-    class BlobsIntersector
+    public class BlobsIntersector
     {
         internal static void DoIntersections(BlobCollection blobs)
         {
             Dictionary<string, long> uids = new Dictionary<string, long>(); // finally decided I needed something to guarantee uniqueness like this TODO: can probably eliminate this
             long uidCounter = -1000;
             List<Way> ways = TempGetWays(blobs);
+            ways.Add(blobs.borderWay);
             List<WayRef> wayRefs = new List<WayRef>();
             STRtree<WayRef> rtree = new STRtree<WayRef>();
             foreach (var way in ways)
@@ -61,10 +62,13 @@ namespace Zenith.LibraryWrappers.OSM
                     // only thing that changes between these is the condition, line direction, and the newpoint id
                     // TODO: is this really what fixed the nonsense at 240202043? the angleDiff was only 0.009, which seems too big to cause an issue
                     bool someCollinear = false;
-                    someCollinear |= CheckCollinear(Aid, n2.nodePos, n2.nodePos + 1, n2, intersections, blobs, true);
-                    someCollinear |= CheckCollinear(Bid, n2.nodePos, n2.nodePos + 1, n2, intersections, blobs, true);
-                    someCollinear |= CheckCollinear(Cid, n1.nodePos, n1.nodePos + 1, n1, intersections, blobs, true);
-                    someCollinear |= CheckCollinear(Did, n1.nodePos, n1.nodePos + 1, n1, intersections, blobs, true);
+                    if (Aid >= 0 && Bid >= 0 && Cid >= 0 && Did >= 0) // ignore collinearness for border intersections
+                    {
+                        someCollinear |= CheckCollinear(Aid, n2.nodePos, n2.nodePos + 1, n2, intersections, blobs, true);
+                        someCollinear |= CheckCollinear(Bid, n2.nodePos, n2.nodePos + 1, n2, intersections, blobs, true);
+                        someCollinear |= CheckCollinear(Cid, n1.nodePos, n1.nodePos + 1, n1, intersections, blobs, true);
+                        someCollinear |= CheckCollinear(Did, n1.nodePos, n1.nodePos + 1, n1, intersections, blobs, true);
+                    }
                     if (!ACSame && !ADSame && !BCSame && !BDSame) // proper intersection
                     {
                         if (someCollinear)
@@ -113,7 +117,14 @@ namespace Zenith.LibraryWrappers.OSM
             }
             foreach (var pair in intersections)
             {
-                var sorted = pair.Value.OrderBy(x => Sorter(x, blobs)).ToList();
+                foreach (var intersection in pair.Value)
+                {
+                    intersection.sortRank = Sorter(intersection, blobs);
+                }
+            }
+            foreach (var pair in intersections)
+            {
+                var sorted = pair.Value.OrderBy(x => x.sortRank).ToList();
                 // get rid of duplicates
                 for (int i = sorted.Count - 1; i > 0; i--)
                 {
@@ -168,7 +179,9 @@ namespace Zenith.LibraryWrappers.OSM
             Vector2d A = blobs.nodes[intersection.wayRef.refs[intersection.nodePos - 1]];
             Vector2d B = blobs.nodes[intersection.nodeID];
             Vector2d C = blobs.nodes[intersection.wayRef.refs[intersection.nodePos]];
-            return intersection.nodePos - 1 + (B - A).Length() / (C - A).Length();
+            double partial = (B - A).Length() / (C - A).Length();
+            if (partial < -0.1 || partial > 1.1) throw new NotImplementedException();
+            return intersection.nodePos - 1 + partial;
         }
 
         // "temporarily" copy the logic to get all of our ways
@@ -336,6 +349,7 @@ namespace Zenith.LibraryWrappers.OSM
             public Way wayRef;
             public int nodePos;
             public long nodeID;
+            public double sortRank;
         }
 
         private static Vector2d Intersect(Vector2d a, Vector2d b, Vector2d c, Vector2d d)
@@ -346,7 +360,13 @@ namespace Zenith.LibraryWrappers.OSM
             double u = -((a.X - b.X) * (a.Y - c.Y) - (a.Y - b.Y) * (a.X - c.X)) / ((a.X - b.X) * (c.Y - d.Y) - (a.Y - b.Y) * (c.X - d.X));
             if (double.IsNaN(t) || double.IsNaN(u)) return null;
             if (t < 0 || t > 1 || u < 0 || u > 1) return null;
-            return a + (b - a) * t;
+            Vector2d answer = a + (b - a) * t;
+            // deal with perfectly horizontal/vertical lines (aka border intersections)
+            if (a.X == b.X) answer.X = a.X;
+            if (c.X == d.X) answer.X = c.X;
+            if (a.Y == b.Y) answer.Y = a.Y;
+            if (c.Y == d.Y) answer.Y = c.Y;
+            return answer;
         }
     }
 }
