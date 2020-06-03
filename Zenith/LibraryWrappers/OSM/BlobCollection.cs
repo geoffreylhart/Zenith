@@ -484,19 +484,25 @@ namespace Zenith.LibraryWrappers.OSM
             // done, wow, so much work
             map.RemoveDuplicateLines();
             map.CloseLines(this);
-            if (map.nodes.Count == 0 && OSMMetaFinal.IsPixelLand(sector)) // just return a big ol' square
+            if (map.nodes.Count == 0 && (OSMMetaFinal.IsPixelLand(sector) || borderWay.refs.Count > 5)) // just return a big ol' square
             {
                 for (int i = 1; i < borderWay.refs.Count; i++)
                 {
-                    if (!map.nodes.ContainsKey(borderWay.refs[i])) map.nodes[borderWay.refs[i]] = new List<AreaNode>();
-                    map.nodes[borderWay.refs[i]].Add(new AreaNode() { id = borderWay.refs[i] });
+                    if (!map.nodes.ContainsKey(borderWay.refs[i]))
+                    {
+                        map.nodes[borderWay.refs[i]] = new List<AreaNode>();
+                        map.nodes[borderWay.refs[i]].Add(new AreaNode() { id = borderWay.refs[i] });
+                    }
                 }
                 for (int i = 1; i < borderWay.refs.Count; i++)
                 {
                     AreaNode prev = map.nodes[borderWay.refs[i - 1]].Single();
                     AreaNode next = map.nodes[borderWay.refs[i]].Single();
-                    prev.next = next;
-                    next.prev = prev;
+                    if (prev.id != next.id)
+                    {
+                        prev.next = next;
+                        next.prev = prev;
+                    }
                 }
             }
             if (Constants.DEBUG_MODE) map.CheckValid();

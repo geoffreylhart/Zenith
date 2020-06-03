@@ -143,6 +143,7 @@ namespace Zenith.LibraryWrappers.OSM
         {
             Dictionary<Vector2d, long> nodeHash = new Dictionary<Vector2d, long>();
             List<Way> ways = TempGetWays(blobs);
+            ways.Add(blobs.borderWay); // whoops, pretty important
             HashSet<long> dupes = new HashSet<long>();
             foreach (var node in blobs.nodes)
             {
