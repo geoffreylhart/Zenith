@@ -62,13 +62,11 @@ namespace Zenith.LibraryWrappers.OSM
                     // only thing that changes between these is the condition, line direction, and the newpoint id
                     // TODO: is this really what fixed the nonsense at 240202043? the angleDiff was only 0.009, which seems too big to cause an issue
                     bool someCollinear = false;
-                    if (Aid >= 0 && Bid >= 0 && Cid >= 0 && Did >= 0) // ignore collinearness for border intersections
-                    {
-                        someCollinear |= CheckCollinear(Aid, n2.nodePos, n2.nodePos + 1, n2, intersections, blobs, true);
-                        someCollinear |= CheckCollinear(Bid, n2.nodePos, n2.nodePos + 1, n2, intersections, blobs, true);
-                        someCollinear |= CheckCollinear(Cid, n1.nodePos, n1.nodePos + 1, n1, intersections, blobs, true);
-                        someCollinear |= CheckCollinear(Did, n1.nodePos, n1.nodePos + 1, n1, intersections, blobs, true);
-                    }
+                    bool isBorderIntersection = Aid < 0 || Bid < 0 || Cid < 0 || Did < 0;
+                    someCollinear |= CheckCollinear(Aid, n2.nodePos, n2.nodePos + 1, n2, intersections, blobs, true, isBorderIntersection);
+                    someCollinear |= CheckCollinear(Bid, n2.nodePos, n2.nodePos + 1, n2, intersections, blobs, true, isBorderIntersection);
+                    someCollinear |= CheckCollinear(Cid, n1.nodePos, n1.nodePos + 1, n1, intersections, blobs, true, isBorderIntersection);
+                    someCollinear |= CheckCollinear(Did, n1.nodePos, n1.nodePos + 1, n1, intersections, blobs, true, isBorderIntersection);
                     if (!ACSame && !ADSame && !BCSame && !BDSame) // proper intersection
                     {
                         if (someCollinear)
@@ -92,6 +90,10 @@ namespace Zenith.LibraryWrappers.OSM
                                 {
                                     intersectionID = uidCounter--;
                                     uids[intersectionKey] = intersectionID;
+                                }
+                                if (n1.wayRef.id == 363340262 || n2.wayRef.id == 363340262 || intersectionID == -1070)
+                                {
+                                    int blah = 5;
                                 }
                                 NewIntersection newNode1 = new NewIntersection() { nodeID = intersectionID, wayRef = n1.wayRef, nodePos = n1.nodePos + 1 };
                                 NewIntersection newNode2 = new NewIntersection() { nodeID = intersectionID, wayRef = n2.wayRef, nodePos = n2.nodePos + 1 };
@@ -309,14 +311,15 @@ namespace Zenith.LibraryWrappers.OSM
         }
 
         // also setup the collinearness
-        private static bool CheckCollinear(long v, int aPos, int bPos, WayRef wayRefAB, Dictionary<Way, List<NewIntersection>> intersections, BlobCollection blobs, bool doCollinearness)
+        private static bool CheckCollinear(long v, int aPos, int bPos, WayRef wayRefAB, Dictionary<Way, List<NewIntersection>> intersections, BlobCollection blobs, bool doCollinearness, bool isBorderIntersection)
         {
             long a = wayRefAB.wayRef.refs[aPos];
             long b = wayRefAB.wayRef.refs[bPos];
             if (v == a || v == b) return false; // points are already shared, so we'll ignore it
             double angle1 = CalcAngleDiff(a, b, a, v, blobs);
             double angle2 = CalcAngleDiff(b, a, b, v, blobs);
-            if (angle1 < 0.01 && angle2 < 0.01)
+            double angleDiff = isBorderIntersection ? 0.0001 : 0.01;
+            if (angle1 < angleDiff && angle2 < angleDiff)
             {
                 if (doCollinearness)
                 {
