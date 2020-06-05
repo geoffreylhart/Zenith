@@ -313,13 +313,32 @@ namespace Zenith.LibraryWrappers.OSM
         // also setup the collinearness
         private static bool CheckCollinear(long v, int aPos, int bPos, WayRef wayRefAB, Dictionary<Way, List<NewIntersection>> intersections, BlobCollection blobs, bool doCollinearness, bool isBorderIntersection)
         {
-            long a = wayRefAB.wayRef.refs[aPos];
-            long b = wayRefAB.wayRef.refs[bPos];
-            if (v == a || v == b) return false; // points are already shared, so we'll ignore it
-            double angle1 = CalcAngleDiff(a, b, a, v, blobs);
-            double angle2 = CalcAngleDiff(b, a, b, v, blobs);
-            double angleDiff = isBorderIntersection ? 0.0001 : 0.01;
-            if (angle1 < angleDiff && angle2 < angleDiff)
+            bool isCollinear = false;
+            if (isBorderIntersection)
+            {
+                long a = wayRefAB.wayRef.refs[aPos];
+                long b = wayRefAB.wayRef.refs[bPos];
+                if (v == a || v == b) return false; // points are already shared, so we'll ignore it
+                Vector2d aV = blobs.nodes[a];
+                Vector2d bV = blobs.nodes[b];
+                Vector2d vV = blobs.nodes[v];
+                if (vV.X == aV.X && vV.X == bV.X && vV.Y < 1 && vV.Y > 0) isCollinear = true;
+                if (vV.Y == aV.Y && vV.Y == bV.Y && vV.X < 1 && vV.X > 0) isCollinear = true;
+            }
+            else
+            {
+                long a = wayRefAB.wayRef.refs[aPos];
+                long b = wayRefAB.wayRef.refs[bPos];
+                if (v == a || v == b) return false; // points are already shared, so we'll ignore it
+                double angle1 = CalcAngleDiff(a, b, a, v, blobs);
+                double angle2 = CalcAngleDiff(b, a, b, v, blobs);
+                double angleDiff = 0.01;
+                if (angle1 < angleDiff && angle2 < angleDiff)
+                {
+                    isCollinear = true;
+                }
+            }
+            if (isCollinear)
             {
                 if (doCollinearness)
                 {
