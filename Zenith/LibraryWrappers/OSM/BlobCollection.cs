@@ -192,8 +192,9 @@ namespace Zenith.LibraryWrappers.OSM
                 else
                 {
                     AddConstrainedPaths(simpleMap, superLoop);
-                    simpleMap.RemoveDuplicateLines();
                     simpleMap.CloseLines(this);
+                    if (Constants.DEBUG_MODE) simpleMap.CheckValid();
+                    simpleMap.RemoveDuplicateLines();
                 }
                 if (Constants.DEBUG_MODE) simpleMap.CheckValid();
                 addingMaps.Add(simpleMap);
@@ -206,17 +207,19 @@ namespace Zenith.LibraryWrappers.OSM
                 // however, we're taking advantage of the fact that Add/Subtract doesn't check for that for now (until Finalize)
                 SuperWayCollection superInnerWays = GenerateSuperWayCollection(inners[i].Where(x => wayLookup.ContainsKey(x)).Select(x => Copy(wayLookup[x])), true);
                 SuperWayCollection superOuterWays = GenerateSuperWayCollection(outers[i].Where(x => wayLookup.ContainsKey(x)).Select(x => Copy(wayLookup[x])), true);
-                superInnerWays.loopedWays = superInnerWays.loopedWays.Where(x => Math.Abs(GetArea(x)) < SMALLEST_ALLOWED_AREA).ToList(); // ignore zero-area ways since it really messes with the tesselator (ex: way 43624681) TODO: maybe check for absolute zero via node duplication?
-                superOuterWays.loopedWays = superInnerWays.loopedWays.Where(x => Math.Abs(GetArea(x)) < SMALLEST_ALLOWED_AREA).ToList(); // ignore zero-area ways since it really messes with the tesselator (ex: way 43624681) TODO: maybe check for absolute zero via node duplication?
+                superInnerWays.loopedWays = superInnerWays.loopedWays.Where(x => Math.Abs(GetArea(x)) >= SMALLEST_ALLOWED_AREA).ToList(); // ignore zero-area ways since it really messes with the tesselator (ex: way 43624681) TODO: maybe check for absolute zero via node duplication?
+                superOuterWays.loopedWays = superOuterWays.loopedWays.Where(x => Math.Abs(GetArea(x)) >= SMALLEST_ALLOWED_AREA).ToList(); // ignore zero-area ways since it really messes with the tesselator (ex: way 43624681) TODO: maybe check for absolute zero via node duplication?
                 if (!IsValid(superInnerWays)) continue;
                 if (!IsValid(superOuterWays)) continue;
                 OrientSuperWays(superInnerWays, superOuterWays, gridPointInfo.relations.Contains(relationIds[i]));
                 SectorConstrainedOSMAreaGraph innerMap = DoMultipolygon(superInnerWays);
                 SectorConstrainedOSMAreaGraph outerMap = DoMultipolygon(superOuterWays);
-                innerMap.RemoveDuplicateLines();
-                outerMap.RemoveDuplicateLines();
                 innerMap.CloseLines(this);
                 outerMap.CloseLines(this);
+                if (Constants.DEBUG_MODE) innerMap.CheckValid();
+                if (Constants.DEBUG_MODE) outerMap.CheckValid();
+                innerMap.RemoveDuplicateLines();
+                outerMap.RemoveDuplicateLines();
                 if (Constants.DEBUG_MODE) innerMap.CheckValid();
                 if (Constants.DEBUG_MODE) outerMap.CheckValid();
                 SectorConstrainedOSMAreaGraph multiPolygon = outerMap.Subtract(innerMap, this);

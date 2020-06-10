@@ -78,7 +78,22 @@ namespace Zenith.LibraryWrappers.OSM
                         }
                         else
                         {
-                            Vector2d intersection = Intersect(A, B, C, D);
+                            // let's sort these lines to guarantee duplicates by value
+                            long[] ns = new long[] { Aid, Bid, Cid, Did };
+                            if (ns[0] >= ns[2]) ns = ns.Reverse().ToArray();
+                            if (ns[0] >= ns[1])
+                            {
+                                var t = ns[1];
+                                ns[1] = ns[0];
+                                ns[0] = t;
+                            }
+                            if (ns[2] >= ns[3])
+                            {
+                                var t = ns[3];
+                                ns[3] = ns[2];
+                                ns[2] = t;
+                            }
+                            Vector2d intersection = Intersect(blobs.nodes[ns[0]], blobs.nodes[ns[1]], blobs.nodes[ns[2]], blobs.nodes[ns[3]]);
                             if (intersection != null)
                             {
                                 long intersectionID;
@@ -90,10 +105,6 @@ namespace Zenith.LibraryWrappers.OSM
                                 {
                                     intersectionID = uidCounter--;
                                     uids[intersectionKey] = intersectionID;
-                                }
-                                if (n1.wayRef.id == 363340262 || n2.wayRef.id == 363340262 || intersectionID == -1070)
-                                {
-                                    int blah = 5;
                                 }
                                 NewIntersection newNode1 = new NewIntersection() { nodeID = intersectionID, wayRef = n1.wayRef, nodePos = n1.nodePos + 1 };
                                 NewIntersection newNode2 = new NewIntersection() { nodeID = intersectionID, wayRef = n2.wayRef, nodePos = n2.nodePos + 1 };

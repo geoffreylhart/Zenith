@@ -198,9 +198,12 @@ namespace Zenith.ZGeom
         }
 
         // aka, zero-width areas
+        // also, the sections of multipolygons with multiple way sections (not supposed to be allowed, but ex: relation 534928 ie Mississippi River)
         internal void RemoveDuplicateLines()
         {
-            List<long> remove = new List<long>();
+            List<long> removeAltogether = new List<long>();
+            List<AreaNode> remove = new List<AreaNode>();
+            List<AreaNode> newNodes = new List<AreaNode>();
             foreach (var node in nodes)
             {
                 // TODO: for now, lets individually fix each possible case
@@ -214,12 +217,12 @@ namespace Zenith.ZGeom
                         var v2 = matches.Single();
                         if ((v1.prev == null ? v2.next == null : v2.next != null && v1.prev.id == v2.next.id) && (v1.next == null ? v2.prev == null : v2.prev != null && v1.next.id == v2.prev.id))
                         {
-                            remove.Add(node.Key);
+                            removeAltogether.Add(node.Key);
                         }
                         else
                         {
-                            node.Value.Remove(v1);
-                            node.Value.Remove(v2);
+                            remove.Add(v1);
+                            remove.Add(v2);
                             AreaNode newNode;
                             if (v1.prev.id == v2.next.id)
                             {
@@ -227,18 +230,27 @@ namespace Zenith.ZGeom
                             }
                             else
                             {
-                                newNode = new AreaNode() { id = node.Key, next = v1.prev, prev = v2.next };
+                                newNode = new AreaNode() { id = node.Key, prev = v1.prev, next = v2.next };
                             }
-                            node.Value.Add(newNode);
-                            newNode.prev.next = newNode;
-                            newNode.next.prev = newNode;
+                            newNodes.Add(newNode);
                         }
                     }
                 }
             }
-            foreach (var r in remove)
+            // do the actual graph edits outside the loop to make debugging easier
+            foreach (var r in removeAltogether)
             {
                 nodes.Remove(r);
+            }
+            foreach (var r in remove)
+            {
+                nodes[r.id].Remove(r);
+            }
+            foreach (var newNode in newNodes)
+            {
+                nodes[newNode.id].Add(newNode);
+                newNode.prev.next = newNode;
+                newNode.next.prev = newNode;
             }
         }
 
@@ -576,7 +588,7 @@ namespace Zenith.ZGeom
                     }
                 }
             }
-            //if(startEndPoints.Count==0) return;
+            if (startEndPoints.Count == 0) return; // usually hit when trying to close the lines on relations
             foreach (var r in blobs.borderWay.refs.Skip(1))
             {
                 if (!nodes.ContainsKey(r))
