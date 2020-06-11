@@ -168,34 +168,15 @@ namespace Zenith.LibraryWrappers.OSM
                 bool untouchedLoop = CheckIfUntouchedAndSpin(superLoop);
                 if (untouchedLoop)
                 {
-                    var broken = BreakDownSuperLoop(superLoop);
-                    for (int i = 0; i < broken.Count - 1; i++) // since our loops end in a duplicate
-                    {
-                        AreaNode curr = new AreaNode() { id = broken[i] };
-                        if (!simpleMap.nodes.ContainsKey(broken[i])) simpleMap.nodes[broken[i]] = new List<AreaNode>();
-                        simpleMap.nodes[broken[i]].Add(curr);
-                        if (i > 0)
-                        {
-                            AreaNode prev = simpleMap.nodes[broken[i - 1]].Last();
-                            curr.prev = prev;
-                            prev.next = curr;
-                        }
-                        // close the loop
-                        if (i == broken.Count - 2)
-                        {
-                            simpleMap.nodes[broken[0]].First().prev = curr;
-                            curr.next = simpleMap.nodes[broken[0]].First();
-                        }
-                    }
-                    simpleMap.RemoveDuplicateLines();
+                    AddUntouchedLoop(simpleMap, superLoop);
                 }
                 else
                 {
                     AddConstrainedPaths(simpleMap, superLoop);
                     simpleMap.CloseLines(this);
                     if (Constants.DEBUG_MODE) simpleMap.CheckValid();
-                    simpleMap.RemoveDuplicateLines();
                 }
+                simpleMap.RemoveDuplicateLines();
                 if (Constants.DEBUG_MODE) simpleMap.CheckValid();
                 addingMaps.Add(simpleMap);
             }
@@ -412,25 +393,7 @@ namespace Zenith.LibraryWrappers.OSM
                 bool untouchedLoop = CheckIfUntouchedAndSpin(superLoop);
                 if (untouchedLoop)
                 {
-                    var broken = BreakDownSuperLoop(superLoop);
-                    for (int i = 0; i < broken.Count - 1; i++) // since our loops end in a duplicate
-                    {
-                        AreaNode curr = new AreaNode() { id = broken[i] };
-                        if (!map.nodes.ContainsKey(broken[i])) map.nodes[broken[i]] = new List<AreaNode>();
-                        map.nodes[broken[i]].Add(curr);
-                        if (i > 0)
-                        {
-                            AreaNode prev = map.nodes[broken[i - 1]].Last();
-                            curr.prev = prev;
-                            prev.next = curr;
-                        }
-                        // close the loop
-                        if (i == broken.Count - 2)
-                        {
-                            map.nodes[broken[0]].First().prev = curr;
-                            curr.next = map.nodes[broken[0]].First();
-                        }
-                    }
+                    AddUntouchedLoop(map, superLoop);
                 }
                 else
                 {
@@ -438,6 +401,26 @@ namespace Zenith.LibraryWrappers.OSM
                 }
             }
             return map;
+        }
+
+        private void AddUntouchedLoop(SectorConstrainedOSMAreaGraph map, List<Way> superLoop)
+        {
+            List<AreaNode> newNodes = new List<AreaNode>();
+            var broken = BreakDownSuperLoop(superLoop);
+            for (int i = 0; i < broken.Count - 1; i++) // since our loops end in a duplicate
+            {
+                AreaNode curr = new AreaNode() { id = broken[i] };
+                newNodes.Add(curr);
+                if (!map.nodes.ContainsKey(broken[i])) map.nodes[broken[i]] = new List<AreaNode>();
+                map.nodes[broken[i]].Add(curr);
+            }
+            for (int i = 0; i < newNodes.Count; i++)
+            {
+                AreaNode prev = newNodes[i];
+                AreaNode next = newNodes[(i + 1) % newNodes.Count];
+                prev.next = next;
+                next.prev = prev;
+            }
         }
 
         internal SectorConstrainedOSMAreaGraph GetCoastAreaMap(string key, string value)
@@ -459,25 +442,7 @@ namespace Zenith.LibraryWrappers.OSM
                 bool untouchedLoop = CheckIfUntouchedAndSpin(superLoop);
                 if (untouchedLoop)
                 {
-                    var broken = BreakDownSuperLoop(superLoop);
-                    for (int i = 0; i < broken.Count - 1; i++) // since our loops end in a duplicate
-                    {
-                        AreaNode curr = new AreaNode() { id = broken[i] };
-                        if (!map.nodes.ContainsKey(broken[i])) map.nodes[broken[i]] = new List<AreaNode>();
-                        map.nodes[broken[i]].Add(curr);
-                        if (i > 0)
-                        {
-                            AreaNode prev = map.nodes[broken[i - 1]].Last();
-                            curr.prev = prev;
-                            prev.next = curr;
-                        }
-                        // close the loop
-                        if (i == broken.Count - 2)
-                        {
-                            map.nodes[broken[0]].First().prev = curr;
-                            curr.next = map.nodes[broken[0]].First();
-                        }
-                    }
+                    AddUntouchedLoop(map, superLoop);
                 }
                 else
                 {
