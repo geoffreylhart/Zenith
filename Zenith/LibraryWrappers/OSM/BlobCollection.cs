@@ -528,8 +528,10 @@ namespace Zenith.LibraryWrappers.OSM
                 {
                     if (!map.nodes.ContainsKey(curr.id)) map.nodes[curr.id] = new List<AreaNode>();
                     map.nodes[curr.id].Add(curr);
-                    if (!sector.BorderContainsCoord(nodes[prev.id]) && sector.ContainsCoord(nodes[prev.id])) curr.prev = prev; // edges will handle their prev/next logic
-                    if (!sector.BorderContainsCoord(nodes[next.id]) && sector.ContainsCoord(nodes[next.id])) curr.next = next;
+                    if (!sector.ContainsCoord(nodes[prev.id])) throw new NotImplementedException(); // previous should be border point or inside
+                    if (!sector.ContainsCoord(nodes[next.id])) throw new NotImplementedException(); // next should be border point or inside
+                    if (!sector.BorderContainsCoord(nodes[prev.id])) curr.prev = prev; // edges will handle their prev/next logic
+                    if (!sector.BorderContainsCoord(nodes[next.id])) curr.next = next;
                 }
             }
         }
@@ -840,8 +842,17 @@ namespace Zenith.LibraryWrappers.OSM
                                 // just outer for now
                                 if (relation.types[i] == 1)
                                 {
-                                    if (relation.roles_sid[i] == innerIndex) innerWayIds.Add(relation.memids[i]);
-                                    if (relation.roles_sid[i] == outerIndex) outerWayIds.Add(relation.memids[i]);
+                                    if (relation.roles_sid[i] == 0 && innerIndex != 0 && outerIndex != 0)
+                                    {
+                                        // some ways are in a relation without any inner/outer tag
+                                        // ex: 359181377 in relation 304768
+                                        outerWayIds.Add(relation.memids[i]);
+                                    }
+                                    else
+                                    {
+                                        if (relation.roles_sid[i] == innerIndex) innerWayIds.Add(relation.memids[i]);
+                                        if (relation.roles_sid[i] == outerIndex) outerWayIds.Add(relation.memids[i]);
+                                    }
                                 }
                             }
                             inners.Add(innerWayIds);

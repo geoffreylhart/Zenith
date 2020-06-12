@@ -259,15 +259,22 @@ namespace Zenith.LibraryWrappers.OSM
                         }
                         if (isKeyValue && isTypeMultipolygon)
                         {
-                            List<long> innerWayIds = new List<long>();
-                            List<long> outerWayIds = new List<long>();
                             for (int i = 0; i < relation.roles_sid.Count; i++)
                             {
                                 // just outer for now
                                 if (relation.types[i] == 1)
                                 {
-                                    if (relation.roles_sid[i] == innerIndex) ways.Add(relation.memids[i]);
-                                    if (relation.roles_sid[i] == outerIndex) ways.Add(relation.memids[i]);
+                                    if (relation.roles_sid[i] == 0 && innerIndex != 0 && outerIndex != 0)
+                                    {
+                                        // some ways are in a relation without any inner/outer tag
+                                        // ex: 359181377 in relation 304768
+                                        ways.Add(relation.memids[i]);
+                                    }
+                                    else
+                                    {
+                                        if (relation.roles_sid[i] == innerIndex) ways.Add(relation.memids[i]);
+                                        if (relation.roles_sid[i] == outerIndex) ways.Add(relation.memids[i]);
+                                    }
                                 }
                             }
                         }
