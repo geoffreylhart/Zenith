@@ -56,6 +56,7 @@ namespace ZenithUnitTests
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 141, 30, 8)); // ?
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 148, 13, 8)); // another tiny thin polygon
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 137, 25, 8)); // broke because we weren't even checking intersections on relations...?
+            sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 145, 36, 8)); // broke because of a trisected relation
 
             foreach (var sector in sectors)
             {

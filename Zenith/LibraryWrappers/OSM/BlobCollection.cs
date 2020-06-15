@@ -195,12 +195,6 @@ namespace Zenith.LibraryWrappers.OSM
                 OrientSuperWays(superInnerWays, superOuterWays, gridPointInfo.relations.Contains(relationIds[i]));
                 SectorConstrainedOSMAreaGraph innerMap = DoMultipolygon(superInnerWays);
                 SectorConstrainedOSMAreaGraph outerMap = DoMultipolygon(superOuterWays);
-                innerMap.CloseLines(this);
-                outerMap.CloseLines(this);
-                if (Constants.DEBUG_MODE) innerMap.CheckValid();
-                if (Constants.DEBUG_MODE) outerMap.CheckValid();
-                innerMap.RemoveDuplicateLines();
-                outerMap.RemoveDuplicateLines();
                 if (Constants.DEBUG_MODE) innerMap.CheckValid();
                 if (Constants.DEBUG_MODE) outerMap.CheckValid();
                 SectorConstrainedOSMAreaGraph multiPolygon = outerMap.Subtract(innerMap, this);
@@ -386,19 +380,29 @@ namespace Zenith.LibraryWrappers.OSM
             SectorConstrainedOSMAreaGraph map = new SectorConstrainedOSMAreaGraph();
             foreach (var superWay in superWays.linkedWays) // we expect these to always start and end outside the sector
             {
-                AddConstrainedPaths(map, superWay);
+                var temp = new SectorConstrainedOSMAreaGraph();
+                AddConstrainedPaths(temp, superWay);
+                temp.CloseLines(this);
+                temp.RemoveDuplicateLines();
+                if (Constants.DEBUG_MODE) temp.CheckValid();
+                map.Intersect(temp, this);
             }
             foreach (var superLoop in superWays.loopedWays)
             {
+                var temp = new SectorConstrainedOSMAreaGraph();
                 bool untouchedLoop = CheckIfUntouchedAndSpin(superLoop);
                 if (untouchedLoop)
                 {
-                    AddUntouchedLoop(map, superLoop);
+                    AddUntouchedLoop(temp, superLoop);
                 }
                 else
                 {
-                    AddConstrainedPaths(map, superLoop);
+                    AddConstrainedPaths(temp, superLoop);
                 }
+                temp.CloseLines(this);
+                temp.RemoveDuplicateLines();
+                if (Constants.DEBUG_MODE) temp.CheckValid();
+                map.Intersect(temp, this);
             }
             return map;
         }

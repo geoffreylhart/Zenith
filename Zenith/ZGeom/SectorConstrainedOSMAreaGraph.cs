@@ -16,10 +16,26 @@ namespace Zenith.ZGeom
         // TODO: that thing going on near way 553880275, node 5534127050 still doesn't look resolved
         public Dictionary<long, List<AreaNode>> nodes = new Dictionary<long, List<AreaNode>>();
 
-        // TODO: for now we're assuming no arbitrary intersections or multiple branching intersections - this is probably naive
+
         public SectorConstrainedOSMAreaGraph Add(SectorConstrainedOSMAreaGraph map, BlobCollection blobs)
         {
+            return BoolOp(map, blobs, false, (x, y) => x || y);
+        }
+
+        public SectorConstrainedOSMAreaGraph Subtract(SectorConstrainedOSMAreaGraph map, BlobCollection blobs)
+        {
+            return BoolOp(map, blobs, true, (x, y) => x && !y);
+        }
+
+        public SectorConstrainedOSMAreaGraph Intersect(SectorConstrainedOSMAreaGraph map, BlobCollection blobs)
+        {
+            return BoolOp(map, blobs, false, (x, y) => x && y);
+        }
+
+        public SectorConstrainedOSMAreaGraph BoolOp(SectorConstrainedOSMAreaGraph map, BlobCollection blobs, bool reverse, Func<bool, bool, bool> boolOp)
+        {
             map = map.Clone(); // now we're allowed to junk it
+            if (reverse) map.Reverse();
             var loopNodes = DoLoops(map, blobs);
             // remember, counterclockwise makes an island
             List<AreaNode> doAdd = new List<AreaNode>();
@@ -49,6 +65,8 @@ namespace Zenith.ZGeom
                     List<AreaNode> finalLines = initialLines.ToList();
                     // sort clockwise
                     finalLines = finalLines.OrderBy(x => ComputeInnerAngle(new Vector2d(1, 0), GetPos(x, blobs) - blobs.nodes[pair.Key])).ToList();
+                    bool[] sectorsSrc = new bool[finalLines.Count];
+                    bool[] sectorsMap = new bool[finalLines.Count];
                     bool[] sectors = new bool[finalLines.Count]; // first sector means the area just ccw of the first finalLine
                     // NOTE: this logic only works assuming multiple polygons are disjoint at intersections
                     foreach (var n in nodes[pair.Key])
@@ -58,18 +76,31 @@ namespace Zenith.ZGeom
                         if (to <= from) to += finalLines.Count;
                         for (int i = from + 1; i <= to; i++)
                         {
-                            sectors[i % sectors.Length] = true;
+                            sectorsSrc[i % sectorsSrc.Length] = true;
                         }
                     }
                     foreach (var n in map.nodes[pair.Key])
                     {
-                        int from = finalLines.IndexOf(n.prev);
-                        int to = finalLines.IndexOf(n.next);
+                        int from, to;
+                        if (reverse)
+                        {
+                            from = finalLines.IndexOf(n.next);
+                            to = finalLines.IndexOf(n.prev);
+                        }
+                        else
+                        {
+                            from = finalLines.IndexOf(n.prev);
+                            to = finalLines.IndexOf(n.next);
+                        }
                         if (to <= from) to += finalLines.Count;
                         for (int i = from + 1; i <= to; i++)
                         {
-                            sectors[i % sectors.Length] = true;
+                            sectorsMap[i % sectorsMap.Length] = true;
                         }
+                    }
+                    for (int i = 0; i < sectors.Length; i++)
+                    {
+                        sectors[i] = boolOp(sectorsSrc[i], sectorsMap[i]);
                     }
                     // make sure zero-width areas match one of their neighbors so they get cleaned up
                     // correction: make sure zero-width somehow prioritize getting rid of new map lines like our original code
@@ -254,186 +285,6 @@ namespace Zenith.ZGeom
             }
         }
 
-        public SectorConstrainedOSMAreaGraph Subtract(SectorConstrainedOSMAreaGraph map, BlobCollection blobs)
-        {
-            map = map.Clone(); // now we're allowed to junk it
-            map.Reverse();
-            var loopNodes = DoLoops(map, blobs);
-            // remember, counterclockwise makes an island
-            List<AreaNode> doAdd = new List<AreaNode>();
-            List<AreaNode> doDelete = new List<AreaNode>();
-            List<long> singularDelete = new List<long>();
-            HashSet<long> criticalPoints = new HashSet<long>();
-            foreach (var pair in map.nodes)
-            {
-                if (nodes.ContainsKey(pair.Key))
-                {
-                    criticalPoints.Add(pair.Key);
-                    List<AreaNode> srcInitialLines = new List<AreaNode>();
-                    List<AreaNode> mapInitialLines = new List<AreaNode>();
-                    List<AreaNode> initialLines = new List<AreaNode>();
-                    foreach (var n in nodes[pair.Key])
-                    {
-                        srcInitialLines.Add(n.prev);
-                        srcInitialLines.Add(n.next);
-                    }
-                    foreach (var n in map.nodes[pair.Key])
-                    {
-                        mapInitialLines.Add(n.prev);
-                        mapInitialLines.Add(n.next);
-                    }
-                    initialLines.AddRange(srcInitialLines);
-                    initialLines.AddRange(mapInitialLines);
-                    List<AreaNode> finalLines = initialLines.ToList();
-                    // sort clockwise
-                    finalLines = finalLines.OrderBy(x => ComputeInnerAngle(new Vector2d(1, 0), GetPos(x, blobs) - blobs.nodes[pair.Key])).ToList();
-                    bool[] sectors = new bool[finalLines.Count]; // first sector means the area just ccw of the first finalLine
-                    // NOTE: this logic only works assuming multiple polygons are disjoint at intersections
-                    foreach (var n in nodes[pair.Key])
-                    {
-                        int from = finalLines.IndexOf(n.prev);
-                        int to = finalLines.IndexOf(n.next);
-                        if (to <= from) to += finalLines.Count;
-                        for (int i = from + 1; i <= to; i++)
-                        {
-                            sectors[i % sectors.Length] = true;
-                        }
-                    }
-                    foreach (var n in map.nodes[pair.Key])
-                    {
-                        int from = finalLines.IndexOf(n.next); // swapped because subtraction
-                        int to = finalLines.IndexOf(n.prev);
-                        if (to <= from) to += finalLines.Count;
-                        for (int i = from + 1; i <= to; i++)
-                        {
-                            sectors[i % sectors.Length] = false; // this is the only difference for a subtraction, as it should be
-                        }
-                    }
-                    // make sure zero-width areas match one of their neighbors so they get cleaned up
-                    // correction: make sure zero-width somehow prioritize getting rid of new map lines like our original code
-                    // turns out, even in our first test case, being inconsistent with this is just wrong (to see, treat this test case as one of two non-degenerate cases)
-                    int[] makeMatch = new int[sectors.Length]; // -1 means, make match left, etc. TODO: I'm really winging it here, no clue if this makes any sense at all (basically, just test it!)
-                    for (int i = 0; i < sectors.Length; i++)
-                    {
-                        AreaNode p = finalLines[(i - 1 + finalLines.Count) % finalLines.Count];
-                        AreaNode n = finalLines[i];
-                        if (p.id == n.id)
-                        {
-                            makeMatch[i] = mapInitialLines.Contains(p) ? -1 : 1; // make sector before this match this one to eliminate p
-                        }
-                    }
-                    if (!makeMatch.Contains(0)) throw new NotImplementedException();
-                    for (int i = 0; i < makeMatch.Length; i++)
-                    {
-                        HashSet<int> explored = new HashSet<int>();
-                        int curr = i;
-                        while (true)
-                        {
-                            if (makeMatch[curr] == 0)
-                            {
-                                sectors[i] = sectors[curr];
-                                break;
-                            }
-                            if (explored.Contains(curr)) throw new NotImplementedException(); // some kind of rare loop
-                            explored.Add(curr);
-                            curr = (curr + makeMatch[curr] + makeMatch.Length) % makeMatch.Length;
-                        }
-                    }
-                    List<int> remove = new List<int>();
-                    for (int i = 0; i < finalLines.Count; i++)
-                    {
-                        // i and i + 1 surround this line
-                        // get rid of any line that doesn't act as a border
-                        if (sectors[i] == sectors[(i + 1) % sectors.Length])
-                        {
-                            remove.Add(i);
-                        }
-                    }
-                    remove.Reverse();
-                    foreach (var i in remove) finalLines.RemoveAt(i);
-                    // we should only have an even number of things in finalLine now
-                    if (finalLines.Count % 2 != 0) throw new NotImplementedException();
-                    // let's make sure the first one points in
-                    if (finalLines.Count > 0)
-                    {
-                        if (finalLines.First().next == null || finalLines.First().next.id != pair.Key)
-                        {
-                            finalLines.Add(finalLines.First());
-                            finalLines.RemoveAt(0);
-                        }
-                    }
-                    foreach (var line in srcInitialLines)
-                    {
-                        if (!finalLines.Contains(line)) doDelete.Add(line);
-                    }
-                    foreach (var line in mapInitialLines)
-                    {
-                        if (finalLines.Contains(line)) doAdd.Add(line);
-                    }
-                    List<AreaNode> newSrcNodes = new List<AreaNode>();
-                    for (int i = 0; i < finalLines.Count / 2; i++)
-                    {
-                        AreaNode into = finalLines[i * 2];
-                        AreaNode outof = finalLines[i * 2 + 1];
-                        AreaNode newSrcNode;
-                        if (i == 0) // mimic our original code for debugging?
-                        {
-                            newSrcNode = nodes[pair.Key].First();
-                        }
-                        else
-                        {
-                            newSrcNode = new AreaNode() { id = pair.Key };
-                        }
-                        into.next = newSrcNode;
-                        outof.prev = newSrcNode;
-                        newSrcNode.prev = into;
-                        newSrcNode.next = outof;
-                        newSrcNodes.Add(newSrcNode);
-                    }
-                    if (newSrcNodes.Count > 0)
-                    {
-                        nodes[pair.Key] = newSrcNodes;
-                    }
-                    else
-                    {
-                        singularDelete.Add(pair.Key);
-                    }
-                }
-            }
-            // delete until you reach the next critical point
-            foreach (var d in doDelete)
-            {
-                bool forwards = d.next != null && (!criticalPoints.Contains(d.next.id));
-                var temp = d;
-                while (temp != null && !criticalPoints.Contains(temp.id))
-                {
-                    if (!ContainsNode(temp)) break;
-                    nodes[temp.id].Remove(temp);
-                    if (nodes[temp.id].Count == 0) nodes.Remove(temp.id);
-                    temp = forwards ? temp.next : temp.prev;
-                }
-            }
-            // add until you reach the next critical point
-            foreach (var d in doAdd)
-            {
-                bool forwards = d.next != null && (!criticalPoints.Contains(d.next.id));
-                var temp = d;
-                while (temp != null && !criticalPoints.Contains(temp.id))
-                {
-                    if (ContainsNode(temp)) break;
-                    if (!nodes.ContainsKey(temp.id)) nodes[temp.id] = new List<AreaNode>();
-                    nodes[temp.id].Add(temp);
-                    temp = forwards ? temp.next : temp.prev;
-                }
-            }
-            foreach (var d in singularDelete) nodes.Remove(d);
-            foreach (var n in loopNodes)
-            {
-                if (!nodes.ContainsKey(n.id)) nodes[n.id] = new List<AreaNode>();
-                nodes[n.id].Add(n);
-            }
-            return this;
-        }
 
         private bool ContainsNode(AreaNode node)
         {
@@ -612,7 +463,22 @@ namespace Zenith.ZGeom
                 AreaNode next = startEndPoints[(i + 1) % startEndPoints.Count].node;
                 bool prevIsCorner = startEndPoints[i].isBorder;
                 bool nextIsCorner = startEndPoints[(i + 1) % startEndPoints.Count].isBorder;
-                if (!prevIsCorner && !nextIsCorner && prev.next == null && next.prev != null) throw new NotImplementedException(); // two exit nodes in a row
+                if (!prevIsCorner && !nextIsCorner && prev.next == null && next.prev != null)
+                {
+                    // check if the next two are equal and could actually be swapped to fix this
+                    if (startEndPoints[(i + 1) % startEndPoints.Count].node.id == startEndPoints[(i + 2) % startEndPoints.Count].node.id && (startEndPoints[(i + 2) % startEndPoints.Count].isBorder || startEndPoints[(i + 2) % startEndPoints.Count].node.prev == null))
+                    {
+                        var temp = startEndPoints[(i + 1) % startEndPoints.Count];
+                        startEndPoints[(i + 1) % startEndPoints.Count] = startEndPoints[(i + 2) % startEndPoints.Count];
+                        startEndPoints[(i + 2) % startEndPoints.Count] = temp;
+                        next = startEndPoints[(i + 1) % startEndPoints.Count].node;
+                        nextIsCorner = startEndPoints[(i + 1) % startEndPoints.Count].isBorder;
+                    }
+                    else
+                    {
+                        throw new NotImplementedException(); // two exit nodes in a row
+                    }
+                }
                 if ((prevIsCorner && nextIsCorner && recentlyConnected) || (!prevIsCorner && nextIsCorner && prev.next == null) || (prevIsCorner && !nextIsCorner && next.prev == null) || (!prevIsCorner && !nextIsCorner && prev.next == null && next.prev == null))
                 {
                     prev.next = next;
