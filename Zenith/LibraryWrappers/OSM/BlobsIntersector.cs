@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Zenith.ZGeom;
 using Zenith.ZMath;
 
 namespace Zenith.LibraryWrappers.OSM
@@ -150,6 +151,157 @@ namespace Zenith.LibraryWrappers.OSM
                 }
             }
             RemoveDuplicates(blobs); // remove duplicates at the end to also remove duplicate intersections
+        }
+
+        // TODO: somehow merge this with DoIntersections all in one pass elegantly
+        // this method is called before all of these maps get added together
+        // it will detect and remove shapes found inside each other
+        public static void FixLoops(List<SectorConstrainedOSMAreaGraph> addingMaps, BlobCollection blobs)
+        {
+            // TODO: I think we still need to exclude intersecting loops from our thing
+            STRtree<LoopRef> rtree = new STRtree<LoopRef>();
+            List<MainLoopRef> mainLoopRefs = new List<MainLoopRef>();
+            HashSet<AreaNode> explored = new HashSet<AreaNode>();
+            foreach (var addingMap in addingMaps)
+            {
+                foreach (var nodeList in addingMap.nodes.Values)
+                {
+                    foreach (var node in nodeList)
+                    {
+                        if (explored.Contains(node)) continue;
+                        List<AreaNode> newLoop = new List<AreaNode>();
+                        AreaNode curr = node;
+                        while (true)
+                        {
+                            newLoop.Add(curr);
+                            explored.Add(curr);
+                            if (curr.next == node)
+                            {
+                                mainLoopRefs.Add(new MainLoopRef() { nodes = newLoop, graph = addingMap });
+                                break;
+                            }
+                            curr = curr.next;
+                        }
+                    }
+                }
+            }
+            foreach (var loopRef in mainLoopRefs)
+            {
+                for (int i = 0; i < loopRef.nodes.Count; i++)
+                {
+                    Vector2d pos1 = blobs.nodes[loopRef.nodes[i].id];
+                    Vector2d pos2 = blobs.nodes[loopRef.nodes[(i + 1) % loopRef.nodes.Count].id];
+                    var env = new Envelope(Math.Min(pos1.X, pos2.X), Math.Max(pos1.X, pos2.X), Math.Min(pos1.Y, pos2.Y), Math.Max(pos1.Y, pos2.Y));
+                    rtree.Insert(env, new LoopRef() { nodes = loopRef.nodes, graph = loopRef.graph, v1 = pos1, v2 = pos2 });
+                }
+            }
+            rtree.Build();
+            foreach (var loopRef in mainLoopRefs)
+            {
+                loopRef.isCW = GetArea(loopRef.nodes, blobs) < 0;
+            }
+            List<MainLoopRef> remove = new List<MainLoopRef>();
+            foreach (var loopRef in mainLoopRefs)
+            {
+                HashSet<long> nodesLookup = new HashSet<long>();
+                foreach (var n in loopRef.nodes) nodesLookup.Add(n.id);
+                var node = blobs.nodes[loopRef.nodes.First().id];
+                Vector2d v1 = new Vector2d(node.X, 10);
+                Vector2d v2 = new Vector2d(node.X, -10);
+                var env = new Envelope(node.X, node.X, -10, 10);
+                var intersections = rtree.Query(env);
+                bool doRemove = false;
+                foreach (var group in intersections.GroupBy(x => x.graph))
+                {
+                    if (group.Any(x => x.nodes.Any(y => nodesLookup.Contains(y.id)))) continue; // let's ignore WHOLE GRAPHS that intersect with us (might need to revise this thinking)
+                    var sorted = group.Where(x => x.v1.X != x.v2.X).ToList(); // skip vertical intersections
+                    sorted = sorted.Where(x => Math.Min(x.v1.X, x.v2.X) != node.X).ToList(); // on perfect-overlap of adjoining lines, this will count things appropriately
+                    sorted = sorted.OrderBy(x => -Intersect(v1, v2, x.v1, x.v2).Y).ToList(); // order from bottom to top
+                    for (int i = 1; i < sorted.Count; i++)
+                    {
+                        if (sorted[i - 1].IsLeftToRight() == sorted[i].IsLeftToRight())
+                        {
+                            // swap perfectly adjacent if necessary
+                            if (sorted[i].ContainsNode(node) && sorted[i + 1].ContainsNode(node))
+                            {
+                                var temp = sorted[i];
+                                sorted[i] = sorted[i + 1];
+                                sorted[i + 1] = temp;
+                            }
+                            if (sorted[i - 1].IsLeftToRight() == sorted[i].IsLeftToRight()) throw new NotImplementedException(); // malformed shape
+                        }
+                    }
+                    if (sorted.Any(x => x.nodes == loopRef.nodes)) continue; // don't care about our own graph, just validating
+                    // remove duplicates that overlap perfectly
+                    for (int i = sorted.Count - 1; i > 0; i--)
+                    {
+                        if (sorted[i].ContainsNode(sorted[i - 1].v1) || sorted[i].ContainsNode(sorted[i - 1].v2))
+                        {
+                            Vector2d inCommon = sorted[i].ContainsNode(sorted[i - 1].v1) ? sorted[i - 1].v1 : sorted[i - 1].v2;
+                            if (inCommon.X == node.X)
+                            {
+                                sorted.RemoveRange(i - 1, 2);
+                                i -= 2;
+                            }
+                        }
+                    }
+                    var below = sorted.Where(x => Intersect(v1, v2, x.v1, x.v2).Y > node.Y);
+                    var above = sorted.Where(x => Intersect(v1, v2, x.v1, x.v2).Y < node.Y);
+                    if (!loopRef.isCW && above.Count() > 0 && !above.First().IsLeftToRight()) doRemove = true;
+                    if (loopRef.isCW && below.Count() > 0 && below.Last().IsLeftToRight()) doRemove = true;
+                }
+                if (doRemove) remove.Add(loopRef);
+            }
+            // expect 14
+            foreach (var r in remove)
+            {
+                foreach (var node in r.nodes)
+                {
+                    r.graph.nodes[node.id].Remove(node);
+                    if (r.graph.nodes[node.id].Count == 0) r.graph.nodes.Remove(node.id);
+                }
+            }
+        }
+
+        private static double GetArea(List<AreaNode> loop, BlobCollection blobs)
+        {
+            double area = 0;
+            // calculate that area
+            Vector2d basePoint = blobs.nodes[loop.First().id];
+            for (int i = 0; i < loop.Count; i++)
+            {
+                long prev = loop[i].id;
+                long next = loop[(i + 1) % loop.Count].id;
+                Vector2d line1 = blobs.nodes[prev] - basePoint;
+                Vector2d line2 = blobs.nodes[next] - blobs.nodes[prev];
+                area += (line2.X * line1.Y - line2.Y * line1.X) / 2; // random cross-product logic
+            }
+            return area;
+        }
+
+        public class MainLoopRef
+        {
+            public List<AreaNode> nodes;
+            public bool isCW; // remember, ccw is a solid shape
+            public SectorConstrainedOSMAreaGraph graph;
+        }
+
+        public class LoopRef
+        {
+            public Vector2d v1;
+            public Vector2d v2;
+            public List<AreaNode> nodes;
+            //public bool isCW; // remember, ccw is a solid shape
+            public SectorConstrainedOSMAreaGraph graph;
+            public bool IsLeftToRight()
+            {
+                return v1.X < v2.X;
+            }
+
+            internal bool ContainsNode(Vector2d node)
+            {
+                return v1.Equals(node) || v2.Equals(node);
+            }
         }
 
         private static void RemoveDuplicates(BlobCollection blobs)
@@ -393,7 +545,7 @@ namespace Zenith.LibraryWrappers.OSM
             public double sortRank;
         }
 
-        private static Vector2d Intersect(Vector2d a, Vector2d b, Vector2d c, Vector2d d)
+        public static Vector2d Intersect(Vector2d a, Vector2d b, Vector2d c, Vector2d d)
         {
             if ((a.X == c.X && a.Y == c.Y) || (a.X == d.X && a.Y == d.Y) || (b.X == c.X && b.Y == c.Y) || (b.X == d.X && b.Y == d.Y)) return null; // TODO: sometimes consecutive nodes have duplicate coordinates, let's ignore that for now (alternatively, merge those nodes)
             // copied from wiki, sure

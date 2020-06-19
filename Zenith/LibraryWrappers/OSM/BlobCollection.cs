@@ -202,6 +202,7 @@ namespace Zenith.LibraryWrappers.OSM
                 addingMaps.Add(multiPolygon);
             }
             SectorConstrainedOSMAreaGraph map = new SectorConstrainedOSMAreaGraph();
+            BlobsIntersector.FixLoops(addingMaps, this);
             foreach (var addingMap in addingMaps) map.Add(addingMap, this);
             if (Constants.DEBUG_MODE) map.CheckValid();
             return map;
