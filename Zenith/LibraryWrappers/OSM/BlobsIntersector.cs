@@ -192,7 +192,7 @@ namespace Zenith.LibraryWrappers.OSM
                     Vector2d pos1 = blobs.nodes[loopRef.nodes[i].id];
                     Vector2d pos2 = blobs.nodes[loopRef.nodes[(i + 1) % loopRef.nodes.Count].id];
                     var env = new Envelope(Math.Min(pos1.X, pos2.X), Math.Max(pos1.X, pos2.X), Math.Min(pos1.Y, pos2.Y), Math.Max(pos1.Y, pos2.Y));
-                    rtree.Insert(env, new LoopRef() { nodes = loopRef.nodes, graph = loopRef.graph, v1 = pos1, v2 = pos2 });
+                    rtree.Insert(env, new LoopRef() { nodes = loopRef.nodes, graph = loopRef.graph, v1 = pos1, v2 = pos2, n1 = loopRef.nodes[i].id, n2 = loopRef.nodes[(i + 1) % loopRef.nodes.Count].id });
                 }
             }
             rtree.Build();
@@ -214,22 +214,24 @@ namespace Zenith.LibraryWrappers.OSM
                 foreach (var group in intersections.GroupBy(x => x.graph))
                 {
                     if (group.Any(x => x.nodes.Any(y => nodesLookup.Contains(y.id)))) continue; // let's ignore WHOLE GRAPHS that intersect with us (might need to revise this thinking)
-                    var sorted = group.Where(x => x.v1.X != x.v2.X).ToList(); // skip vertical intersections
-                    sorted = sorted.Where(x => Math.Min(x.v1.X, x.v2.X) != node.X).ToList(); // on perfect-overlap of adjoining lines, this will count things appropriately
+                    var lessfiltered = group.Where(x => x.v1.X != x.v2.X).ToList(); // skip vertical intersections
+                    var sorted = lessfiltered.Where(x => Math.Min(x.v1.X, x.v2.X) != node.X).ToList(); // on perfect-overlap of adjoining lines, this will count things appropriately
                     sorted = sorted.OrderBy(x => -Intersect(v1, v2, x.v1, x.v2).Y).ToList(); // order from bottom to top
+                    List<int> prevSwaps = new List<int>();
                     for (int i = 1; i < sorted.Count; i++)
                     {
-                        if (sorted[i - 1].IsLeftToRight() == sorted[i].IsLeftToRight())
+                        // swap perfectly adjacent if necessary
+                        if ((sorted[i - 1].v2 == sorted[i].v1 && sorted[i - 1].v2.X == node.X && sorted[i - 1].V1Y() < sorted[i].V2Y()) || (sorted[i - 1].v1 == sorted[i].v2 && sorted[i - 1].v1.X == node.X && sorted[i - 1].V2Y() < sorted[i].V1Y()))
                         {
-                            // swap perfectly adjacent if necessary
-                            if (sorted[i].ContainsNode(node) && sorted[i + 1].ContainsNode(node))
-                            {
-                                var temp = sorted[i];
-                                sorted[i] = sorted[i + 1];
-                                sorted[i + 1] = temp;
-                            }
-                            if (sorted[i - 1].IsLeftToRight() == sorted[i].IsLeftToRight()) throw new NotImplementedException(); // malformed shape
+                            var temp = sorted[i - 1];
+                            sorted[i - 1] = sorted[i];
+                            sorted[i] = temp;
+                            prevSwaps.Add(i - 1);
                         }
+                    }
+                    for (int i = 1; i < sorted.Count; i++)
+                    {
+                        if (sorted[i - 1].IsLeftToRight() == sorted[i].IsLeftToRight()) throw new NotImplementedException(); // malformed shape
                     }
                     if (sorted.Any(x => x.nodes == loopRef.nodes)) continue; // don't care about our own graph, just validating
                     // remove duplicates that overlap perfectly
@@ -288,6 +290,8 @@ namespace Zenith.LibraryWrappers.OSM
 
         public class LoopRef
         {
+            public long n1;
+            public long n2;
             public Vector2d v1;
             public Vector2d v2;
             public List<AreaNode> nodes;
@@ -301,6 +305,18 @@ namespace Zenith.LibraryWrappers.OSM
             internal bool ContainsNode(Vector2d node)
             {
                 return v1.Equals(node) || v2.Equals(node);
+            }
+
+            internal double V1Y()
+            {
+                Vector2d diff = v1 - v2;
+                return diff.Y / diff.Length();
+            }
+
+            internal double V2Y()
+            {
+                Vector2d diff = v2 - v1;
+                return diff.Y / diff.Length();
             }
         }
 

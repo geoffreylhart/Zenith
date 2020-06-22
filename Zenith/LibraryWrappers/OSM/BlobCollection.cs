@@ -381,13 +381,11 @@ namespace Zenith.LibraryWrappers.OSM
             SectorConstrainedOSMAreaGraph map = new SectorConstrainedOSMAreaGraph();
             foreach (var superWay in superWays.linkedWays) // we expect these to always start and end outside the sector
             {
-                var temp = new SectorConstrainedOSMAreaGraph();
-                AddConstrainedPaths(temp, superWay);
-                temp.CloseLines(this);
-                temp.RemoveDuplicateLines();
-                if (Constants.DEBUG_MODE) temp.CheckValid();
-                map.Intersect(temp, this);
+                AddConstrainedPaths(map, superWay);
             }
+            map.CloseLines(this);
+            map.RemoveDuplicateLines();
+            if (Constants.DEBUG_MODE) map.CheckValid();
             foreach (var superLoop in superWays.loopedWays)
             {
                 var temp = new SectorConstrainedOSMAreaGraph();
@@ -403,7 +401,7 @@ namespace Zenith.LibraryWrappers.OSM
                 temp.CloseLines(this);
                 temp.RemoveDuplicateLines();
                 if (Constants.DEBUG_MODE) temp.CheckValid();
-                map.Intersect(temp, this);
+                map.Add(temp, this);
             }
             return map;
         }
