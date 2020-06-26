@@ -15,7 +15,7 @@ namespace Zenith.LibraryWrappers.OSM
     // responsible for lots of stuff
     public class BlobCollection
     {
-        public static double SMALLEST_ALLOWED_AREA = 1E-20; // ex: way 43624681 was -1.6543612251060553E-24
+        public static double SMALLEST_ALLOWED_AREA = 1E-19; // ex: way 43624681 was -1.6543612251060553E-24, way 608212702 was 1.1312315262122068E-20
         public Dictionary<long, Vector2d> nodes = new Dictionary<long, Vector2d>();
         public List<Blob> blobs;
         private ISector sector;

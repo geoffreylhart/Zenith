@@ -187,19 +187,19 @@ namespace Zenith.LibraryWrappers.OSM
             }
             foreach (var loopRef in mainLoopRefs)
             {
+                loopRef.isCW = GetArea(loopRef.nodes, blobs) < 0;
+            }
+            foreach (var loopRef in mainLoopRefs)
+            {
                 for (int i = 0; i < loopRef.nodes.Count; i++)
                 {
                     Vector2d pos1 = blobs.nodes[loopRef.nodes[i].id];
                     Vector2d pos2 = blobs.nodes[loopRef.nodes[(i + 1) % loopRef.nodes.Count].id];
                     var env = new Envelope(Math.Min(pos1.X, pos2.X), Math.Max(pos1.X, pos2.X), Math.Min(pos1.Y, pos2.Y), Math.Max(pos1.Y, pos2.Y));
-                    rtree.Insert(env, new LoopRef() { nodes = loopRef.nodes, graph = loopRef.graph, v1 = pos1, v2 = pos2, n1 = loopRef.nodes[i].id, n2 = loopRef.nodes[(i + 1) % loopRef.nodes.Count].id });
+                    rtree.Insert(env, new LoopRef() { nodes = loopRef.nodes, graph = loopRef.graph, v1 = pos1, v2 = pos2, n1 = loopRef.nodes[i].id, n2 = loopRef.nodes[(i + 1) % loopRef.nodes.Count].id, isCW = loopRef.isCW });
                 }
             }
             rtree.Build();
-            foreach (var loopRef in mainLoopRefs)
-            {
-                loopRef.isCW = GetArea(loopRef.nodes, blobs) < 0;
-            }
             List<MainLoopRef> remove = new List<MainLoopRef>();
             foreach (var loopRef in mainLoopRefs)
             {
@@ -213,10 +213,12 @@ namespace Zenith.LibraryWrappers.OSM
                 bool doRemove = false;
                 foreach (var group in intersections.GroupBy(x => x.graph))
                 {
-                    if (group.Any(x => x.nodes.Any(y => nodesLookup.Contains(y.id)))) continue; // let's ignore WHOLE GRAPHS that intersect with us (might need to revise this thinking)
+                    bool isOwnGraph = group.First().graph == loopRef.graph;
+                    if (!isOwnGraph && group.Any(x => x.nodes.Any(y => nodesLookup.Contains(y.id)))) continue; // let's ignore WHOLE GRAPHS that intersect with us (might need to revise this thinking)
                     var lessfiltered = group.Where(x => x.v1.X != x.v2.X).ToList(); // skip vertical intersections
                     var sorted = lessfiltered.Where(x => Math.Min(x.v1.X, x.v2.X) != node.X).ToList(); // on perfect-overlap of adjoining lines, this will count things appropriately
                     sorted = sorted.OrderBy(x => -Intersect(v1, v2, x.v1, x.v2).Y).ToList(); // order from bottom to top
+                    sorted = sorted.Where(x => x.nodes != loopRef.nodes).ToList(); // ignore our own loop
                     List<int> prevSwaps = new List<int>();
                     for (int i = 1; i < sorted.Count; i++)
                     {
@@ -229,11 +231,28 @@ namespace Zenith.LibraryWrappers.OSM
                             prevSwaps.Add(i - 1);
                         }
                     }
-                    for (int i = 1; i < sorted.Count; i++)
+                    var validateStack = new List<LoopRef>();
+                    var contains = new List<LoopRef>();
+                    if (sorted.Count % 2 != 0) throw new NotImplementedException(); // malformed shape
+                    for (int i = 0; i < sorted.Count; i++)
                     {
-                        if (sorted[i - 1].IsLeftToRight() == sorted[i].IsLeftToRight()) throw new NotImplementedException(); // malformed shape
+                        bool outer = !sorted[i].isCW; // we will no longer be checking for outers immediately within outers, etc. because sometimes people mess up
+                        bool opens = outer == sorted[i].IsLeftToRight();
+                        if (opens)
+                        {
+                            validateStack.Add(sorted[i]);
+                        }
+                        else
+                        {
+                            if (validateStack.Last().nodes != sorted[i].nodes) throw new NotImplementedException(); // malformed shape
+                            if (Intersect(v1, v2, validateStack.Last().v1, validateStack.Last().v2).Y > node.Y && Intersect(v1, v2, sorted[i].v1, sorted[i].v2).Y < node.Y)
+                            {
+                                contains.Add(sorted[i]); // add the one that's above it, sure
+                            }
+                            validateStack.RemoveAt(validateStack.Count - 1);
+                        }
                     }
-                    if (sorted.Any(x => x.nodes == loopRef.nodes)) continue; // don't care about our own graph, just validating
+                    if (validateStack.Count > 0) throw new NotImplementedException(); // malformed shape
                     // remove duplicates that overlap perfectly
                     for (int i = sorted.Count - 1; i > 0; i--)
                     {
@@ -247,14 +266,14 @@ namespace Zenith.LibraryWrappers.OSM
                             }
                         }
                     }
-                    var below = sorted.Where(x => Intersect(v1, v2, x.v1, x.v2).Y > node.Y);
-                    var above = sorted.Where(x => Intersect(v1, v2, x.v1, x.v2).Y < node.Y);
-                    if (!loopRef.isCW && above.Count() > 0 && !above.First().IsLeftToRight()) doRemove = true;
-                    if (loopRef.isCW && below.Count() > 0 && below.Last().IsLeftToRight()) doRemove = true;
+                    if (contains.Count == 0 && isOwnGraph && loopRef.isCW) doRemove = true;
+                    if (contains.Count == 0) continue;
+                    var immediate = contains.First();
+                    if (isOwnGraph && immediate.isCW == loopRef.isCW) doRemove = true; // remove the outermost invalid loop
+                    if (!isOwnGraph && !immediate.isCW) doRemove = true; // remove anything immediately contained by an outer
                 }
                 if (doRemove) remove.Add(loopRef);
             }
-            // expect 14
             foreach (var r in remove)
             {
                 foreach (var node in r.nodes)
@@ -295,7 +314,7 @@ namespace Zenith.LibraryWrappers.OSM
             public Vector2d v1;
             public Vector2d v2;
             public List<AreaNode> nodes;
-            //public bool isCW; // remember, ccw is a solid shape
+            public bool isCW; // remember, ccw is a solid shape
             public SectorConstrainedOSMAreaGraph graph;
             public bool IsLeftToRight()
             {

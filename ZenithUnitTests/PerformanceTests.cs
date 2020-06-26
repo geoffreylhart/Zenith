@@ -59,6 +59,7 @@ namespace ZenithUnitTests
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 145, 36, 8)); // broke because of a trisected relation
 
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 155, 4, 8)); // a lake inside of a lake that should've been deleted triggers more issues when another shape intersects with both (and they disagree on if it should be deleted/alive)
+            sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 139, 24, 8)); // an inner is misidentified as an outer
             //sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 163, 19, 8)); // ?
             //sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 143, 27, 8)); // ?
             //sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 149, 31, 8)); // ?
