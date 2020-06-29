@@ -375,7 +375,6 @@ namespace Zenith.LibraryWrappers.OSM
             return newway;
         }
 
-        // note: this is very very similar to the GetCoastAreaMap (copy-pasted even) - find some way to intuitively combine them
         private SectorConstrainedOSMAreaGraph DoMultipolygon(SuperWayCollection superWays)
         {
             SectorConstrainedOSMAreaGraph map = new SectorConstrainedOSMAreaGraph();
@@ -388,6 +387,9 @@ namespace Zenith.LibraryWrappers.OSM
             if (Constants.DEBUG_MODE) map.CheckValid();
             foreach (var superLoop in superWays.loopedWays)
             {
+                double wayArea = GetArea(superLoop);
+                if (Math.Abs(wayArea) < SMALLEST_ALLOWED_AREA) continue; // ignore zero-area ways since it really messes with the tesselator (ex: way 43624681) TODO: maybe check for absolute zero via node duplication?
+                bool isCW = wayArea < 0;
                 var temp = new SectorConstrainedOSMAreaGraph();
                 bool untouchedLoop = CheckIfUntouchedAndSpin(superLoop);
                 if (untouchedLoop)
@@ -431,30 +433,8 @@ namespace Zenith.LibraryWrappers.OSM
             // remember: "If you regard this as tracing around an area of land, then the coastline way should be running counterclockwise."
             // gather ways with matching starts/ends to form a super-way, coast ways should always run the same direction, so this becomes easier
             SuperWayCollection superWays = GenerateSuperWayCollection(EnumerateWays().Where(x => x.keyValues.ContainsKey(key) && x.keyValues[key] == value), false);
-            // now we actually construct that Sector Constrained OSM Area Map
-            SectorConstrainedOSMAreaGraph map = new SectorConstrainedOSMAreaGraph();
-            foreach (var superWay in superWays.linkedWays) // we expect these to always start and end outside the sector
-            {
-                AddConstrainedPaths(map, superWay);
-            }
-            foreach (var superLoop in superWays.loopedWays)
-            {
-                double wayArea = GetArea(superLoop);
-                if (Math.Abs(wayArea) < SMALLEST_ALLOWED_AREA) continue; // ignore zero-area ways since it really messes with the tesselator (ex: way 43624681) TODO: maybe check for absolute zero via node duplication?
-                bool isCW = wayArea < 0;
-                bool untouchedLoop = CheckIfUntouchedAndSpin(superLoop);
-                if (untouchedLoop)
-                {
-                    AddUntouchedLoop(map, superLoop);
-                }
-                else
-                {
-                    AddConstrainedPaths(map, superLoop);
-                }
-            }
-            // done, wow, so much work
-            map.RemoveDuplicateLines();
-            map.CloseLines(this);
+            SectorConstrainedOSMAreaGraph map = DoMultipolygon(superWays);
+            BlobsIntersector.FixLoops(new List<SectorConstrainedOSMAreaGraph>() { map }, this);
             if (map.nodes.Count == 0 && (OSMMetaFinal.IsPixelLand(sector) || borderWay.refs.Count > 5)) // just return a big ol' square
             {
                 for (int i = 1; i < borderWay.refs.Count; i++)
