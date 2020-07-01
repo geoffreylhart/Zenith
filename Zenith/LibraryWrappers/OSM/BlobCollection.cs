@@ -434,28 +434,30 @@ namespace Zenith.LibraryWrappers.OSM
             // gather ways with matching starts/ends to form a super-way, coast ways should always run the same direction, so this becomes easier
             SuperWayCollection superWays = GenerateSuperWayCollection(EnumerateWays().Where(x => x.keyValues.ContainsKey(key) && x.keyValues[key] == value), false);
             SectorConstrainedOSMAreaGraph map = DoMultipolygon(superWays);
-            BlobsIntersector.FixLoops(new List<SectorConstrainedOSMAreaGraph>() { map }, this);
-            if (map.nodes.Count == 0 && (OSMMetaFinal.IsPixelLand(sector) || borderWay.refs.Count > 5)) // just return a big ol' square
+            if (OSMMetaFinal.IsPixelLand(sector) || borderWay.refs.Count > 5) // just return a big ol' square
             {
+                SectorConstrainedOSMAreaGraph temp = new SectorConstrainedOSMAreaGraph();
                 for (int i = 1; i < borderWay.refs.Count; i++)
                 {
-                    if (!map.nodes.ContainsKey(borderWay.refs[i]))
+                    if (!temp.nodes.ContainsKey(borderWay.refs[i]))
                     {
-                        map.nodes[borderWay.refs[i]] = new List<AreaNode>();
-                        map.nodes[borderWay.refs[i]].Add(new AreaNode() { id = borderWay.refs[i] });
+                        temp.nodes[borderWay.refs[i]] = new List<AreaNode>();
+                        temp.nodes[borderWay.refs[i]].Add(new AreaNode() { id = borderWay.refs[i] });
                     }
                 }
                 for (int i = 1; i < borderWay.refs.Count; i++)
                 {
-                    AreaNode prev = map.nodes[borderWay.refs[i - 1]].Single();
-                    AreaNode next = map.nodes[borderWay.refs[i]].Single();
+                    AreaNode prev = temp.nodes[borderWay.refs[i - 1]].Single();
+                    AreaNode next = temp.nodes[borderWay.refs[i]].Single();
                     if (prev.id != next.id)
                     {
                         prev.next = next;
                         next.prev = prev;
                     }
                 }
+                map = map.Intersect(temp, this);
             }
+            BlobsIntersector.FixLoops(new List<SectorConstrainedOSMAreaGraph>() { map }, this);
             if (Constants.DEBUG_MODE) map.CheckValid();
             return map;
         }

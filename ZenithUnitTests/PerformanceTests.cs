@@ -39,7 +39,7 @@ namespace ZenithUnitTests
         [TestMethod]
         public void ToughSectorsTest()
         {
-            // current errors in LE,X=2,Y=0,Z=2 is 6/4096 ~1 have issues that aren't red
+            // current errors in LE,X=2,Y=0,Z=2 is 0/4096 ~2 have issues that aren't red
             Constants.DEBUG_MODE = true;
             // add a tough sector whenever one misses a crash issue
             List<ISector> sectors = new List<ISector>();
@@ -57,10 +57,10 @@ namespace ZenithUnitTests
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 148, 13, 8)); // another tiny thin polygon
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 137, 25, 8)); // broke because we weren't even checking intersections on relations...?
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 145, 36, 8)); // broke because of a trisected relation
-
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 155, 4, 8)); // a lake inside of a lake that should've been deleted triggers more issues when another shape intersects with both (and they disagree on if it should be deleted/alive)
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 139, 24, 8)); // an inner is misidentified as an outer
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 162, 58, 8)); // had a coastline island that was the wrong direction and intersected with the border
+            sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 152, 36, 8)); // coastline with only loops (and incorrectly tagged at that)
 
             foreach (var sector in sectors)
             {

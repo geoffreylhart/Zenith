@@ -288,9 +288,9 @@ namespace Zenith.LibraryWrappers.OSM
             int land3 = GLOBAL_FINAL.gridPoints[sector.GetRoot()][sector.X, sector.Y + 1].naturalTypes.Contains(0) ? 0 : -1;
             int land4 = GLOBAL_FINAL.gridPoints[sector.GetRoot()][sector.X + 1, sector.Y + 1].naturalTypes.Contains(0) ? 0 : -1;
             if (GLOBAL_FINAL.gridPoints[sector.GetRoot()][sector.X, sector.Y].naturalTypes.Contains(1)) land1 = 1;
-            if (GLOBAL_FINAL.gridPoints[sector.GetRoot()][sector.X + 1, sector.Y].naturalTypes.Contains(1)) land1 = 1;
-            if (GLOBAL_FINAL.gridPoints[sector.GetRoot()][sector.X, sector.Y + 1].naturalTypes.Contains(1)) land1 = 1;
-            if (GLOBAL_FINAL.gridPoints[sector.GetRoot()][sector.X + 1, sector.Y + 1].naturalTypes.Contains(1)) land1 = 1;
+            if (GLOBAL_FINAL.gridPoints[sector.GetRoot()][sector.X + 1, sector.Y].naturalTypes.Contains(1)) land2 = 1;
+            if (GLOBAL_FINAL.gridPoints[sector.GetRoot()][sector.X, sector.Y + 1].naturalTypes.Contains(1)) land3 = 1;
+            if (GLOBAL_FINAL.gridPoints[sector.GetRoot()][sector.X + 1, sector.Y + 1].naturalTypes.Contains(1)) land4 = 1;
             return land1 == 0 && land2 == 0 && land3 == 0 && land4 == 0;
         }
 
