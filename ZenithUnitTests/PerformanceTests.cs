@@ -61,6 +61,7 @@ namespace ZenithUnitTests
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 139, 24, 8)); // an inner is misidentified as an outer
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 162, 58, 8)); // had a coastline island that was the wrong direction and intersected with the border
             sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 152, 36, 8)); // coastline with only loops (and incorrectly tagged at that)
+            sectors.Add(new CubeSector(CubeSector.CubeSectorFace.LEFT, 148, 8, 8)); // no coastline or even relation outers, just holes (islands) in Lake Erie
 
             foreach (var sector in sectors)
             {

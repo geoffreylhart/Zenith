@@ -251,6 +251,11 @@ namespace Zenith.LibraryWrappers.OSM
                     AddIntersections(intersections, superLoop, false);
                 }
             }
+            if (intersections.Count == 0 && topLeftIsInside)
+            {
+                // we are inside some quite large relation - let's add the big ol' box so we can subtract from it
+                superOuterWays.loopedWays.Add(new List<Way>() { borderWay });
+            }
             foreach (var superWay in superInnerWays.linkedWays) // we expect these to always start and end outside the sector
             {
                 AddIntersections(intersections, superWay, true);
