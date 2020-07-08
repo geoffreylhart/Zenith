@@ -171,12 +171,12 @@ namespace Zenith.ZGraphics.GraphicsBuffers
 
         private RenderTarget2D MakeDefaultRenderTarget(GraphicsDevice graphicsDevice)
         {
-            return new RenderTarget2D(graphicsDevice, 512 * 16, 512 * 16, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
+            return new RenderTarget2D(graphicsDevice, 512 * 16, 512 * 16, true, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
         }
 
         private Texture2D DownScale(GraphicsDevice graphicsDevice, RenderTarget2D texture, int newsize)
         {
-            Texture2D newtexture = new RenderTarget2D(graphicsDevice, newsize, newsize, false, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
+            Texture2D newtexture = new RenderTarget2D(graphicsDevice, newsize, newsize, true, graphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
             graphicsDevice.SetRenderTarget((RenderTarget2D)newtexture);
             GraphicsBasic.DrawSpriteRect(graphicsDevice, 0, 0, newsize, newsize, texture, BlendState.AlphaBlend, Microsoft.Xna.Framework.Color.White);
             return newtexture;
