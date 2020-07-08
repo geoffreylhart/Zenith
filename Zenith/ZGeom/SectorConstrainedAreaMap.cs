@@ -20,49 +20,33 @@ namespace Zenith.ZGeom
         internal BasicVertexBuffer ConstructAsRoads(GraphicsDevice graphicsDevice, double width, Texture2D texture, Color color)
         {
             LineGraph lineGraph = new LineGraph();
+            AddLoopsToLineGraph(lineGraph, inners);
+            AddLoopsToLineGraph(lineGraph, outers);
+            return lineGraph.ConstructAsRoads(graphicsDevice, width, texture, color);
+        }
+
+        private void AddLoopsToLineGraph(LineGraph lineGraph, List<List<Vector2d>> inners)
+        {
             foreach (var path in inners)
             {
-                LineGraph.GraphNode prev = null;
-                LineGraph.GraphNode first = null;
-                LineGraph.GraphNode last = null;
+                var newNodes = new LineGraph.GraphNode[path.Count - 1];
                 for (int i = 0; i < path.Count - 1; i++) // since our loops end in a duplicate
                 {
-                    var next = new LineGraph.GraphNode(path[i]);
-                    if (prev != null)
+                    newNodes[i] = new LineGraph.GraphNode(path[i]);
+                    lineGraph.nodes.Add(newNodes[i]);
+                }
+                for (int i = 0; i < newNodes.Length; i++)
+                {
+                    var prev = newNodes[i];
+                    var next = newNodes[(i + 1) % newNodes.Length];
+                    // TODO: don't assume all of these are border intersections - some lines legitimately lie along the border and are perfectly horizontal/straight - I think?
+                    if (!(prev.pos.X == 0 && next.pos.X == 0 || prev.pos.X == 1 && next.pos.X == 1 || prev.pos.Y == 0 && next.pos.Y == 0 || prev.pos.Y == 1 && next.pos.Y == 1))
                     {
                         prev.nextConnections.Add(next);
                         next.prevConnections.Add(prev);
                     }
-                    lineGraph.nodes.Add(next);
-                    last = next;
-                    if (first == null) first = next;
-                    prev = next;
                 }
-                first.prevConnections.Add(last);
-                last.nextConnections.Add(first);
             }
-            foreach (var path in outers)
-            {
-                LineGraph.GraphNode prev = null;
-                LineGraph.GraphNode first = null;
-                LineGraph.GraphNode last = null;
-                for (int i = 0; i < path.Count - 1; i++) // since our loops end in a duplicate
-                {
-                    var next = new LineGraph.GraphNode(path[i]);
-                    if (prev != null)
-                    {
-                        prev.nextConnections.Add(next);
-                        next.prevConnections.Add(prev);
-                    }
-                    lineGraph.nodes.Add(next);
-                    last = next;
-                    if (first == null) first = next;
-                    prev = next;
-                }
-                first.prevConnections.Add(last);
-                last.nextConnections.Add(first);
-            }
-            return lineGraph.ConstructAsRoads(graphicsDevice, width, texture, color);
         }
 
         internal BasicVertexBuffer Tesselate(GraphicsDevice graphicsDevice, Color color)
