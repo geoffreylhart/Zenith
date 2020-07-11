@@ -52,26 +52,47 @@ namespace Zenith.ZGeom
             List<VertexPositionTexture> vertices = new List<VertexPositionTexture>();
             Dictionary<GraphNode, int> indexLookup = new Dictionary<GraphNode, int>();
             for (int i = 0; i < nodes.Count; i++) indexLookup[nodes[i]] = i;
-            foreach (var node in nodes)
+            foreach (var prev in nodes)
             {
-                foreach (var c in node.nextConnections)
+                foreach (var next in prev.nextConnections)
                 {
-                    Vector2d v1 = node.pos;
-                    Vector2d v2 = c.pos;
-                    Vector2d w1 = node.GetW(c, width);
-                    Vector2d w2 = c.GetW(node, width);
-                    Vector2d topLeft = v2 - w2;
-                    Vector2d topRight = v2 + w2;
-                    Vector2d bottomLeft = v1 - w1;
-                    Vector2d bottomRight = v1 + w1;
+                    var prevPrevs = new List<GraphNode>();
+                    prevPrevs.AddRange(prev.prevConnections);
+                    prevPrevs.AddRange(prev.nextConnections);
+                    prevPrevs = prevPrevs.Where(x => x != next).ToList();
+                    var nextNexts = new List<GraphNode>();
+                    nextNexts.AddRange(next.prevConnections);
+                    nextNexts.AddRange(next.nextConnections);
+                    nextNexts = nextNexts.Where(x => x != prev).ToList();
+
+                    // sort clockwise around the line
+                    prevPrevs = prevPrevs.OrderBy(x => ComputeInnerAngle(prev.pos - next.pos, x.pos - prev.pos)).ToList();
+                    nextNexts = nextNexts.OrderBy(x => ComputeInnerAngle(next.pos - prev.pos, x.pos - next.pos)).ToList();
+                    //nextNexts = new List<GraphNode>();
+                    //prevPrevs = new List<GraphNode>();
+                    Vector2d v1 = prev.pos;
+                    Vector2d v2 = next.pos;
+                    Vector2d topLeftW = GetW(prev, next, nextNexts.Count == 0 ? null : nextNexts.Last(), width);
+                    Vector2d topRightW = GetW(prev, next, nextNexts.Count == 0 ? null : nextNexts.First(), width);
+                    Vector2d bottomLeftW = GetW(next, prev, prevPrevs.Count == 0 ? null : prevPrevs.First(), width);
+                    Vector2d bottomRightW = GetW(next, prev, prevPrevs.Count == 0 ? null : prevPrevs.Last(), width);
+                    Vector2d topLeft = v2 + topLeftW;
+                    Vector2d topRight = v2 - topRightW;
+                    Vector2d bottomLeft = v1 - bottomLeftW;
+                    Vector2d bottomRight = v1 + bottomRightW;
                     int i = vertices.Count;
                     double texLength = (v2 - v1).Length() / width;
-                    vertices.Add(new VertexPositionTexture(new Vector3(topLeft, 0), new Vector2(1, 0)));
+                    // TODO: these are guesses - they would certainly work without the "stretching" I do, but I'm not sure otherwise
+                    double topLeftTexOffset = -Vector2d.Dot(topLeftW, v2 - v1) / (v2 - v1).Length() / width;
+                    double topRightTexOffset = Vector2d.Dot(topRightW, v2 - v1) / (v2 - v1).Length() / width;
+                    double bottomLeftTexOffset = Vector2d.Dot(bottomLeftW, v2 - v1) / (v2 - v1).Length() / width;
+                    double bottomRighttTexOffset = -Vector2d.Dot(bottomRightW, v2 - v1) / (v2 - v1).Length() / width;
+                    vertices.Add(new VertexPositionTexture(new Vector3(topLeft, 0), new Vector2(1, (float)topLeftTexOffset)));
                     vertices.Add(new VertexPositionTexture(new Vector3(v2, RIDGE_HEIGHT), new Vector2(0.5f, 0))); // mid
-                    vertices.Add(new VertexPositionTexture(new Vector3(topRight, 0), new Vector2(0, 0)));
-                    vertices.Add(new VertexPositionTexture(new Vector3(bottomLeft, 0), new Vector2(1, (float)texLength)));
+                    vertices.Add(new VertexPositionTexture(new Vector3(topRight, 0), new Vector2(0, (float)topRightTexOffset)));
+                    vertices.Add(new VertexPositionTexture(new Vector3(bottomLeft, 0), new Vector2(1, (float)texLength + (float)bottomLeftTexOffset)));
                     vertices.Add(new VertexPositionTexture(new Vector3(v1, RIDGE_HEIGHT), new Vector2(0.5f, (float)texLength))); // mid
-                    vertices.Add(new VertexPositionTexture(new Vector3(bottomRight, 0), new Vector2(0, (float)texLength)));
+                    vertices.Add(new VertexPositionTexture(new Vector3(bottomRight, 0), new Vector2(0, (float)texLength + (float)bottomRighttTexOffset)));
                     // TODO: why was flipping opposite that I expect correct?
                     // TODO: redo all of this in light of our new coordinate stuff
                     indices.Add(i);
@@ -271,6 +292,42 @@ namespace Zenith.ZGeom
                 node2.prevConnections.Add(node1);
             }
             return this;
+        }
+
+        // TODO: copy-pasted from sectorconstrainedosmareagraph
+        private static double ComputeInnerAngle(Vector2d v1, Vector2d v2)
+        {
+            // ex: we'd expect a square island to have 4 inner angles of pi/2
+            // ex: we'd expect a square pond to have 4 inner angles of 3pi/2
+            // we're returning this according to our unusual coordinate system
+            double cos = (v1.X * v2.X + v1.Y * v2.Y) / v1.Length() / v2.Length();
+            double sin = (v2.X * v1.Y - v2.Y * v1.X) / v1.Length() / v2.Length();
+            return Math.Atan2(-sin, cos) + Math.PI;
+        }
+
+        // TODO: somehow deal with very tight corners, and that one glitch which I assume it from small, sharp angles
+        private Vector2d GetW(GraphNode n1, GraphNode n2, GraphNode n3, double width)
+        {
+            // adjust width based on longLat
+            double stretch = Math.Cos(n2.pos.Y); // TODO: I don't think this stretch amount is accurate anymore
+            Vector2d v1 = new Vector2d(n1.pos.X, n1.pos.Y / stretch);
+            Vector2d v2 = new Vector2d(n2.pos.X, n2.pos.Y / stretch);
+            Vector2d v3 = n3 == null ? null : new Vector2d(n3.pos.X, n3.pos.Y / stretch);
+            Vector2d straightW = (v1 - v2).RotateCW90().Normalized() * width / 2;
+            Vector2d w; // points right
+            if (v3 == null)
+            {
+                w = straightW;
+            }
+            else
+            {
+                Vector2d w1 = (v3 - v2).RotateCCW90().Normalized() * width / 2;
+                Vector2d w2 = (v2 - v1).RotateCCW90().Normalized() * width / 2;
+                w = (w1 + w2).Normalized() * width / 2;
+            }
+            w /= Vector2d.Dot(w.Normalized(), straightW.Normalized());
+            w.Y *= stretch;
+            return w;
         }
 
         internal class GraphNode

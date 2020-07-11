@@ -67,6 +67,11 @@ namespace Zenith.ZMath
             return v / factor;
         }
 
+        internal static double Dot(Vector2d v1, Vector2d v2)
+        {
+            return v1.X * v2.X + v1.Y * v2.Y;
+        }
+
         internal Vector2d RotateCW90()
         {
             return new Vector2d(this.Y, -this.X);
