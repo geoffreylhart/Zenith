@@ -13,21 +13,11 @@ namespace Zenith.ZGraphics.GraphicsBuffers
 {
     class TreeGeometryBuffer : IGraphicsBuffer
     {
-        ISector sector;
         static VertexIndiceBuffer buffer; // contains tons of squares
         private static int REZ = 2048;
-        BasicVertexBuffer coastBuffer;
-        BasicVertexBuffer roadsBuffer;
-        BasicVertexBuffer roadsBufferFat;
-        BasicVertexBuffer landBuffer;
 
-        public TreeGeometryBuffer(GraphicsDevice graphicsDevice, BasicVertexBuffer coastBuffer, BasicVertexBuffer roadsBuffer, BasicVertexBuffer roadsBufferFat, BasicVertexBuffer landBuffer, ISector sector)
+        public TreeGeometryBuffer(GraphicsDevice graphicsDevice)
         {
-            this.coastBuffer = coastBuffer;
-            this.roadsBuffer = roadsBuffer;
-            this.roadsBufferFat = roadsBufferFat;
-            this.landBuffer = landBuffer;
-            this.sector = sector;
             // make that square, sure
             if (buffer == null)
             {
@@ -79,19 +69,6 @@ namespace Zenith.ZGraphics.GraphicsBuffers
         public void Draw(RenderContext context)
         {
             bool actuallyDeferred = context.deferred.HasValue ? context.deferred.Value : Game1.DEFERRED_RENDERING;
-            if (!context.highQuality && (context.maxX - context.minX > 0.1 || context.maxY - context.minY > 0.1)) return;
-            if (context.layerPass == RenderContext.LayerPass.TREE_DENSITY_PASS)
-            {
-                landBuffer.Draw(context, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
-                coastBuffer.Draw(context, PrimitiveType.TriangleList, GlobalContent.BeachTreeDensity, new Vector3(1, 1, 1));
-                roadsBufferFat.Draw(context, PrimitiveType.TriangleList, GlobalContent.RoadTreeDensity, new Vector3(0, 0, 0));
-                roadsBuffer.Draw(context, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
-            }
-            if (context.layerPass == RenderContext.LayerPass.GRASS_DENSITY_PASS)
-            {
-                landBuffer.Draw(context, PrimitiveType.TriangleList, null, new Vector3(1, 1, 1));
-                roadsBuffer.Draw(context, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
-            }
             if (context.layerPass == RenderContext.LayerPass.MAIN_PASS)
             {
                 // first grass

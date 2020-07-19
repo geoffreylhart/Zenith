@@ -1,0 +1,63 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Zenith.LibraryWrappers.OSM;
+using Zenith.ZGeom;
+using Zenith.ZGraphics.Procedural;
+
+namespace Zenith.ZGraphics.Procedural
+{
+    class EdgeLineSource : ILineSource
+    {
+        private bool loaded = false;
+        private bool initiated = false;
+        private IPolygonSource polygonSource;
+        private bool isCCW;
+        private SectorConstrainedOSMAreaGraph graph;
+        private SectorConstrainedAreaMap map;
+        private Dictionary<double, BasicVertexBuffer> bufferCache = new Dictionary<double, BasicVertexBuffer>();
+
+        public EdgeLineSource(IPolygonSource polygonSource, bool isCCW)
+        {
+            this.polygonSource = polygonSource;
+            this.isCCW = isCCW;
+            if (!isCCW) throw new NotImplementedException();
+        }
+
+        public void Load(BlobCollection blobs)
+        {
+            if (loaded) return;
+            polygonSource.Load(blobs);
+            graph = polygonSource.GetGraph();
+            loaded = true;
+        }
+
+        public void Init(BlobCollection blobs)
+        {
+            if (initiated) return;
+            map = graph.Finalize(blobs);
+            initiated = true;
+        }
+
+        public BasicVertexBuffer ConstructAsRoads(GraphicsDevice graphicsDevice, double widthInFeet)
+        {
+            double circumEarth = 24901 * 5280;
+            double width = widthInFeet / circumEarth * 2 * Math.PI;
+            bufferCache[widthInFeet] = map.ConstructAsRoads(graphicsDevice, width, null, Color.White);
+            return bufferCache[widthInFeet];
+        }
+
+        public void Dispose()
+        {
+            if (polygonSource != null) polygonSource.Dispose();
+            graph = null;
+            map = null;
+            foreach (var pair in bufferCache)
+            {
+                pair.Value.Dispose();
+            }
+        }
+    }
+}

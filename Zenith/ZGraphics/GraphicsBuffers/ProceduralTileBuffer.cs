@@ -12,6 +12,7 @@ using Zenith.LibraryWrappers;
 using Zenith.LibraryWrappers.OSM;
 using Zenith.MathHelpers;
 using Zenith.ZGeom;
+using Zenith.ZGraphics.Procedural;
 using Zenith.ZMath;
 
 namespace Zenith.ZGraphics.GraphicsBuffers
@@ -21,37 +22,49 @@ namespace Zenith.ZGraphics.GraphicsBuffers
     public class ProceduralTileBuffer : IGraphicsBuffer
     {
         private ISector sector;
-        // cache for loaded lines
-        SectorConstrainedAreaMap landAreaMap;
-        LineGraph roadGraph;
+        // descriptors
+        private List<IDescriptor> descriptors = new List<IDescriptor>();
+        private List<IDescriptor> treeDescriptors = new List<IDescriptor>();
+        private List<IDescriptor> grassDescriptors = new List<IDescriptor>();
         // actual final buffers that gets drawn
-        VectorTileBuffer vectorTileBuffer;
-        VectorTileBuffer vectorTileBufferUnused;
         TreeGeometryBuffer treeBuffer;
-        HouseBuffer houseBuffer;
         DebugBuffer debugBuffer;
+        BasicVertexBuffer waterBuffer;
 
         public ProceduralTileBuffer(ISector sector)
         {
             this.sector = sector;
+            var landSource = new SubtractionPolygonSource(new RawPolygonSource("natural", "coastline", true), new RawPolygonSource("natural", "water", false));
+            var coastSource = new EdgeLineSource(landSource, true);
+            var roadSource = new RawLineSource("highway", null);
+
+            descriptors.Add(new PolygonRenderDescriptor(landSource, Pallete.GRASS_GREEN));
+            descriptors.Add(new LineRenderDescriptor(coastSource, 10.7 * 50, GlobalContent.Beach));
+            descriptors.Add(new LineRenderDescriptor(roadSource, 10.7 * 4, GlobalContent.Road));
+
+            treeDescriptors.Add(new PolygonRenderDescriptor(landSource, Color.White));
+            treeDescriptors.Add(new LineRenderDescriptor(coastSource, 10.7 * 50, GlobalContent.BeachTreeDensity));
+            treeDescriptors.Add(new LineRenderDescriptor(roadSource, 10.7 * 12, GlobalContent.RoadTreeDensity));
+            treeDescriptors.Add(new LineRenderDescriptor(roadSource, 10.7 * 4, Color.Black));
+
+            grassDescriptors.Add(new PolygonRenderDescriptor(landSource, Color.White));
+            grassDescriptors.Add(new LineRenderDescriptor(roadSource, 10.7 * 4, Color.Black));
         }
 
         public void LoadLinesFromFile()
         {
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
             BlobCollection blobs = OSMReader.GetAllBlobs(sector);
-            Console.WriteLine($"Blobs read for {sector} in {sw.Elapsed.TotalSeconds} s");
-            sw.Restart();
             BlobsIntersector.DoIntersections(blobs);
-            var tempMap = blobs.GetCoastAreaMap("natural", "coastline").Subtract(blobs.GetAreaMap("natural", "water"), blobs);
-            if (Constants.DEBUG_MODE) tempMap.CheckValid();
-            landAreaMap = tempMap.Finalize(blobs);
-            Console.WriteLine($"Land area map generated for {sector} in {sw.Elapsed.TotalSeconds} s");
-            sw.Restart();
-            roadGraph = blobs.GetRoadsFast();
-            Console.WriteLine($"Road graph generated for {sector} in {sw.Elapsed.TotalSeconds} s");
-            sw.Restart();
+
+            var allDescriptors = new List<IDescriptor>();
+            allDescriptors.AddRange(descriptors);
+            allDescriptors.AddRange(treeDescriptors);
+            allDescriptors.AddRange(grassDescriptors);
+            foreach (var descriptor in allDescriptors)
+            {
+                descriptor.Load(blobs);
+                descriptor.Init(blobs);
+            }
         }
 
         public void GenerateVertices()
@@ -60,69 +73,94 @@ namespace Zenith.ZGraphics.GraphicsBuffers
 
         public void GenerateBuffers(GraphicsDevice graphicsDevice)
         {
-            double widthInFeet = 10.7 * 50; // extra thick
-            double circumEarth = 24901 * 5280;
-            double width = widthInFeet / circumEarth * 2 * Math.PI;
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-            vectorTileBuffer = new VectorTileBuffer(graphicsDevice, sector);
-            vectorTileBufferUnused = new VectorTileBuffer(graphicsDevice, sector);
-            BasicVertexBuffer landBuffer = landAreaMap.Tesselate(graphicsDevice, Pallete.GRASS_GREEN);
-            vectorTileBuffer.Add(graphicsDevice, landBuffer, sector);
-            Console.WriteLine($"Land buffer generated for {sector} in {sw.Elapsed.TotalSeconds} s");
-            sw.Restart();
-            BasicVertexBuffer coastBuffer = landAreaMap.ConstructAsRoads(graphicsDevice, width, GlobalContent.Beach, Color.White);
-            vectorTileBuffer.Add(graphicsDevice, coastBuffer, sector);
-            BasicVertexBuffer coastBufferFat = landAreaMap.ConstructAsRoads(graphicsDevice, width * 2, GlobalContent.Beach, Color.White);
-            vectorTileBufferUnused.Add(graphicsDevice, coastBufferFat, sector);
-            Console.WriteLine($"Coast buffer generated for {sector} in {sw.Elapsed.TotalSeconds} s");
-            sw.Restart();
-            BasicVertexBuffer roadsBuffer = roadGraph.ConstructAsRoads(graphicsDevice, width * 4 / 50, GlobalContent.Road, Microsoft.Xna.Framework.Color.White);
-            BasicVertexBuffer roadsBufferFat = roadGraph.ConstructAsRoads(graphicsDevice, width * 12 / 50, GlobalContent.Road, Microsoft.Xna.Framework.Color.White);
-            vectorTileBuffer.Add(graphicsDevice, roadsBuffer, sector);
-            vectorTileBufferUnused.Add(graphicsDevice, roadsBufferFat, sector);
-            Console.WriteLine($"Roads buffer generated for {sector} in {sw.Elapsed.TotalSeconds} s");
-            sw.Restart();
-            treeBuffer = new TreeGeometryBuffer(graphicsDevice, coastBuffer, roadsBuffer, roadsBufferFat, landBuffer, sector);
-            Console.WriteLine($"Trees generated for {sector} in {sw.Elapsed.TotalSeconds} s");
-#if WINDOWS
-            sw.Restart();
-            List<Matrix> matrices = roadGraph.ConstructHousePositions();
-            houseBuffer = new HouseBuffer(graphicsDevice, matrices, sector);
-            Console.WriteLine($"Houses generated for {sector} in {sw.Elapsed.TotalSeconds} s");
-#endif
-            sw.Restart();
+            var allDescriptors = new List<IDescriptor>();
+            allDescriptors.AddRange(descriptors);
+            allDescriptors.AddRange(treeDescriptors);
+            allDescriptors.AddRange(grassDescriptors);
+            foreach (var descriptor in allDescriptors)
+            {
+                descriptor.GenerateBuffers(graphicsDevice);
+            }
+            treeBuffer = new TreeGeometryBuffer(graphicsDevice);
             debugBuffer = new DebugBuffer(graphicsDevice, sector);
+            waterBuffer = GenerateWaterBuffer(graphicsDevice);
         }
 
         public void Dispose()
         {
-            landAreaMap = null;
-            roadGraph = null;
-            if (vectorTileBuffer != null) vectorTileBuffer.Dispose();
-            if (vectorTileBufferUnused != null) vectorTileBufferUnused.Dispose();
-            vectorTileBuffer = null;
+            var allDescriptors = new List<IDescriptor>();
+            allDescriptors.AddRange(descriptors);
+            allDescriptors.AddRange(treeDescriptors);
+            allDescriptors.AddRange(grassDescriptors);
+            foreach (var descriptor in allDescriptors)
+            {
+                descriptor.Dispose();
+            }
             if (treeBuffer != null) treeBuffer.Dispose();
-            treeBuffer = null;
-            if (houseBuffer != null) houseBuffer.Dispose();
-            houseBuffer = null;
             if (debugBuffer != null) debugBuffer.Dispose();
-            debugBuffer = null;
+            if (waterBuffer != null) waterBuffer.Dispose();
+        }
+
+        // sure
+        private BasicVertexBuffer GenerateWaterBuffer(GraphicsDevice graphicsDevice)
+        {
+            List<VertexPositionColor> vertices = new List<VertexPositionColor>();
+            Vector2d topLeft = new Vector2d(0, 0);
+            Vector2d topRight = new Vector2d(1, 0);
+            Vector2d bottomLeft = new Vector2d(0, 1);
+            Vector2d bottomRight = new Vector2d(1, 1);
+            vertices.Add(new VertexPositionColor(new Vector3((float)topLeft.X, (float)topLeft.Y, 0), Pallete.OCEAN_BLUE));
+            vertices.Add(new VertexPositionColor(new Vector3((float)topRight.X, (float)topRight.Y, 0), Pallete.OCEAN_BLUE));
+            vertices.Add(new VertexPositionColor(new Vector3((float)bottomRight.X, (float)bottomRight.Y, 0), Pallete.OCEAN_BLUE));
+            vertices.Add(new VertexPositionColor(new Vector3((float)topLeft.X, (float)topLeft.Y, 0), Pallete.OCEAN_BLUE));
+            vertices.Add(new VertexPositionColor(new Vector3((float)bottomRight.X, (float)bottomRight.Y, 0), Pallete.OCEAN_BLUE));
+            vertices.Add(new VertexPositionColor(new Vector3((float)bottomLeft.X, (float)bottomLeft.Y, 0), Pallete.OCEAN_BLUE));
+            return new BasicVertexBuffer(graphicsDevice, vertices, PrimitiveType.TriangleList);
         }
 
         public void InitDraw(RenderContext context)
         {
-            vectorTileBuffer.InitDraw(context);
+            var allDescriptors = new List<IDescriptor>();
+            allDescriptors.AddRange(descriptors);
+            allDescriptors.AddRange(treeDescriptors);
+            allDescriptors.AddRange(grassDescriptors);
+            foreach (var descriptor in allDescriptors)
+            {
+                descriptor.InitDraw(context);
+            }
             treeBuffer.InitDraw(context);
         }
 
         public void Draw(RenderContext context)
         {
-            vectorTileBuffer.Draw(context);
-#if WINDOWS
-            houseBuffer.Draw(context);
-#endif
-            treeBuffer.Draw(context);
+            if (context.layerPass == RenderContext.LayerPass.MAIN_PASS)
+            {
+                waterBuffer.Draw(context);
+                context.graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, context.graphicsDevice.Viewport.MaxDepth, 0);
+                foreach (var descriptor in descriptors)
+                {
+                    descriptor.Draw(context);
+                    context.graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, context.graphicsDevice.Viewport.MaxDepth, 0);
+                }
+            }
+            if (context.highQuality || (context.maxX - context.minX < 0.1 && context.maxY - context.minY < 0.1))
+            {
+                if (context.layerPass == RenderContext.LayerPass.TREE_DENSITY_PASS)
+                {
+                    foreach (var descriptor in treeDescriptors)
+                    {
+                        descriptor.Draw(context);
+                    }
+                }
+                if (context.layerPass == RenderContext.LayerPass.GRASS_DENSITY_PASS)
+                {
+                    foreach (var descriptor in grassDescriptors)
+                    {
+                        descriptor.Draw(context);
+                    }
+                }
+                treeBuffer.Draw(context);
+            }
             if (Game1.DEBUGGING)
             {
                 context.graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, context.graphicsDevice.Viewport.MaxDepth, 0);
