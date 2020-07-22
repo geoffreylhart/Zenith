@@ -51,6 +51,18 @@
 /processorParam:TextureFormat=Color
 /build:Images/BeachTreeDensity.png
 
+#begin Images/BuildingWall.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipMaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Images/BuildingWall.png
+
 #begin Images/CCWArrows.png
 /importer:TextureImporter
 /processor:TextureProcessor

@@ -23,6 +23,11 @@ namespace Zenith.ZGraphics.Procedural
             this.value = value;
         }
 
+        public LineGraph GetLineGraph()
+        {
+            return lineGraph;
+        }
+
         public void Load(BlobCollection blobs)
         {
             if (loaded) return;

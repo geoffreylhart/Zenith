@@ -17,12 +17,12 @@ namespace Zenith.ZGeom
         public List<List<Vector2d>> inners = new List<List<Vector2d>>(); // holes
         public List<List<Vector2d>> outers = new List<List<Vector2d>>(); // islands
 
-        internal BasicVertexBuffer ConstructAsRoads(GraphicsDevice graphicsDevice, double width, Texture2D texture, Color color)
+        internal LineGraph ToLineGraph()
         {
             LineGraph lineGraph = new LineGraph();
             AddLoopsToLineGraph(lineGraph, inners);
             AddLoopsToLineGraph(lineGraph, outers);
-            return lineGraph.ConstructAsRoads(graphicsDevice, width, texture, color);
+            return lineGraph;
         }
 
         private void AddLoopsToLineGraph(LineGraph lineGraph, List<List<Vector2d>> inners)

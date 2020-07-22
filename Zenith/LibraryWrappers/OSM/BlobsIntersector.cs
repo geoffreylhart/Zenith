@@ -398,12 +398,31 @@ namespace Zenith.LibraryWrappers.OSM
                 ways.Add(way);
                 innersOuters.Add(way);
             }
+            foreach (var way in TempGetRelationWays("building", "yes", blobs))
+            {
+                ways.Add(way);
+                innersOuters.Add(way);
+            }
             foreach (var way in TempGetRelationWays(blobs))
             {
                 if (!innersOuters.Contains(way)) otherInnerOuters.Add(way);
             }
             foreach (var way in TempGetWays("natural", "coastline", blobs)) ways.Add(way);
             foreach (var way in TempGetWays("natural", "water", blobs))
+            {
+                if (!innersOuters.Contains(way) && wayLookup[way].refs.Count > 2)
+                {
+                    // some folks forget to close a simple way, or perhaps the mistake is tagging subcomponents of a relation
+                    // then there's just straight up errors like way 43291726
+                    if (wayLookup[way].refs.Last() != wayLookup[way].refs.First())
+                    {
+                        if (otherInnerOuters.Contains(way)) continue; // unsure of how else to ignore bad ways like 43815149
+                        wayLookup[way].refs.Add(wayLookup[way].refs.First());
+                    }
+                }
+                ways.Add(way);
+            }
+            foreach (var way in TempGetWays("building", "yes", blobs))
             {
                 if (!innersOuters.Contains(way) && wayLookup[way].refs.Count > 2)
                 {

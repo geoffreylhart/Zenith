@@ -16,7 +16,7 @@ namespace Zenith.ZGraphics.Procedural
         private IPolygonSource polygonSource;
         private bool isCCW;
         private SectorConstrainedOSMAreaGraph graph;
-        private SectorConstrainedAreaMap map;
+        private LineGraph lineGraph;
         private Dictionary<double, BasicVertexBuffer> bufferCache = new Dictionary<double, BasicVertexBuffer>();
 
         public EdgeLineSource(IPolygonSource polygonSource, bool isCCW)
@@ -24,6 +24,11 @@ namespace Zenith.ZGraphics.Procedural
             this.polygonSource = polygonSource;
             this.isCCW = isCCW;
             if (!isCCW) throw new NotImplementedException();
+        }
+
+        public LineGraph GetLineGraph()
+        {
+            return lineGraph;
         }
 
         public void Load(BlobCollection blobs)
@@ -37,7 +42,7 @@ namespace Zenith.ZGraphics.Procedural
         public void Init(BlobCollection blobs)
         {
             if (initiated) return;
-            map = graph.Finalize(blobs);
+            lineGraph = graph.Finalize(blobs).ToLineGraph();
             initiated = true;
         }
 
@@ -45,7 +50,7 @@ namespace Zenith.ZGraphics.Procedural
         {
             double circumEarth = 24901 * 5280;
             double width = widthInFeet / circumEarth * 2 * Math.PI;
-            bufferCache[widthInFeet] = map.ConstructAsRoads(graphicsDevice, width, null, Color.White);
+            bufferCache[widthInFeet] = lineGraph.ConstructAsRoads(graphicsDevice, width, null, Color.White);
             return bufferCache[widthInFeet];
         }
 
@@ -53,7 +58,7 @@ namespace Zenith.ZGraphics.Procedural
         {
             if (polygonSource != null) polygonSource.Dispose();
             graph = null;
-            map = null;
+            lineGraph = null;
             foreach (var pair in bufferCache)
             {
                 pair.Value.Dispose();

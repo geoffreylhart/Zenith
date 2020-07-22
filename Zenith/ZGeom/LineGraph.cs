@@ -44,10 +44,13 @@ namespace Zenith.ZGeom
             }
             return new BasicVertexBuffer(graphicsDevice, indices, vertices, PrimitiveType.LineList);
         }
-
         internal BasicVertexBuffer ConstructAsRoads(GraphicsDevice graphicsDevice, double width, Texture2D texture, Color color)
         {
-            width *= 256;
+            return ConstructViaExtrusion(graphicsDevice, new[] { new Vector2d(-width, 0), new Vector2d(0, RIDGE_HEIGHT), new Vector2d(width, 0) }, texture, color);
+        }
+
+        internal BasicVertexBuffer ConstructViaExtrusion(GraphicsDevice graphicsDevice, Vector2d[] shape, Texture2D texture, Color color)
+        {
             List<int> indices = new List<int>();
             List<VertexPositionTexture> vertices = new List<VertexPositionTexture>();
             Dictionary<GraphNode, int> indexLookup = new Dictionary<GraphNode, int>();
@@ -68,45 +71,55 @@ namespace Zenith.ZGeom
                     // sort clockwise around the line
                     prevPrevs = prevPrevs.OrderBy(x => ComputeInnerAngle(prev.pos - next.pos, x.pos - prev.pos)).ToList();
                     nextNexts = nextNexts.OrderBy(x => ComputeInnerAngle(next.pos - prev.pos, x.pos - next.pos)).ToList();
-                    //nextNexts = new List<GraphNode>();
-                    //prevPrevs = new List<GraphNode>();
                     Vector2d v1 = prev.pos;
                     Vector2d v2 = next.pos;
-                    Vector2d topLeftW = GetW(prev, next, nextNexts.Count == 0 ? null : nextNexts.Last(), width);
-                    Vector2d topRightW = GetW(prev, next, nextNexts.Count == 0 ? null : nextNexts.First(), width);
-                    Vector2d bottomLeftW = GetW(next, prev, prevPrevs.Count == 0 ? null : prevPrevs.First(), width);
-                    Vector2d bottomRightW = GetW(next, prev, prevPrevs.Count == 0 ? null : prevPrevs.Last(), width);
-                    Vector2d topLeft = v2 + topLeftW;
-                    Vector2d topRight = v2 - topRightW;
-                    Vector2d bottomLeft = v1 - bottomLeftW;
-                    Vector2d bottomRight = v1 + bottomRightW;
                     int i = vertices.Count;
-                    double texLength = (v2 - v1).Length() / width;
-                    // TODO: these are guesses - they would certainly work without the "stretching" I do, but I'm not sure otherwise
-                    double topLeftTexOffset = -Vector2d.Dot(topLeftW, v2 - v1) / (v2 - v1).Length() / width;
-                    double topRightTexOffset = Vector2d.Dot(topRightW, v2 - v1) / (v2 - v1).Length() / width;
-                    double bottomLeftTexOffset = Vector2d.Dot(bottomLeftW, v2 - v1) / (v2 - v1).Length() / width;
-                    double bottomRighttTexOffset = -Vector2d.Dot(bottomRightW, v2 - v1) / (v2 - v1).Length() / width;
-                    vertices.Add(new VertexPositionTexture(new Vector3(topLeft, 0), new Vector2(1, (float)topLeftTexOffset)));
-                    vertices.Add(new VertexPositionTexture(new Vector3(v2, RIDGE_HEIGHT), new Vector2(0.5f, 0))); // mid
-                    vertices.Add(new VertexPositionTexture(new Vector3(topRight, 0), new Vector2(0, (float)topRightTexOffset)));
-                    vertices.Add(new VertexPositionTexture(new Vector3(bottomLeft, 0), new Vector2(1, (float)texLength + (float)bottomLeftTexOffset)));
-                    vertices.Add(new VertexPositionTexture(new Vector3(v1, RIDGE_HEIGHT), new Vector2(0.5f, (float)texLength))); // mid
-                    vertices.Add(new VertexPositionTexture(new Vector3(bottomRight, 0), new Vector2(0, (float)texLength + (float)bottomRighttTexOffset)));
-                    // TODO: why was flipping opposite that I expect correct?
-                    // TODO: redo all of this in light of our new coordinate stuff
-                    indices.Add(i);
-                    indices.Add(i + 4);
-                    indices.Add(i + 1);
-                    indices.Add(i);
-                    indices.Add(i + 3);
-                    indices.Add(i + 4);
-                    indices.Add(i + 1);
-                    indices.Add(i + 5);
-                    indices.Add(i + 2);
-                    indices.Add(i + 1);
-                    indices.Add(i + 4);
-                    indices.Add(i + 5);
+                    double[] sumLengths = new double[shape.Length];
+                    for (int j = 1; j < shape.Length; j++)
+                    {
+                        sumLengths[j] = sumLengths[j - 1] + (shape[j] - shape[j - 1]).Length();
+                    }
+                    double totalLength = sumLengths.Last();
+                    for (int j = 0; j < shape.Length; j++)
+                    {
+                        sumLengths[j] /= totalLength;
+                    }
+                    double texLength = (v2 - v1).Length() / totalLength;
+                    for (int j = 0; j < shape.Length; j++)
+                    {
+                        var v = shape[j];
+                        Vector2d topW, bottomW;
+                        double topTexOffset, bottomTexOffset;
+                        if (v.X == 0)
+                        {
+                            topW = new Vector2d(0, 0);
+                            bottomW = new Vector2d(0, 0);
+                            topTexOffset = 0;
+                            bottomTexOffset = 0;
+                        }
+                        else
+                        {
+                            topW = GetW(prev, next, nextNexts.Count == 0 ? null : nextNexts.Last(), -v.X);
+                            bottomW = GetW(next, prev, prevPrevs.Count == 0 ? null : prevPrevs.First(), v.X);
+                            topTexOffset = Vector2d.Dot(topW, v2 - v1) / (v2 - v1).Length() / topW.Length();
+                            bottomTexOffset = -Vector2d.Dot(bottomW, v2 - v1) / (v2 - v1).Length() / bottomW.Length();
+                        }
+                        Vector2d top = v2 + topW;
+                        Vector2d bottom = v1 + bottomW;
+                        // TODO: these are guesses - they would certainly work without the "stretching" I do, but I'm not sure otherwise
+                        vertices.Add(new VertexPositionTexture(new Vector3(top, (float)v.Y), new Vector2((float)(1 - sumLengths[j]), (float)topTexOffset)));
+                        vertices.Add(new VertexPositionTexture(new Vector3(bottom, (float)v.Y), new Vector2((float)(1 - sumLengths[j]), (float)texLength + (float)bottomTexOffset)));
+                        if (j > 0)
+                        {
+                            // topleft, bottomrright, topright + topleft, bottom, bottomright
+                            indices.Add(i + (j - 1) * 2);
+                            indices.Add(i + 3 + (j - 1) * 2);
+                            indices.Add(i + 2 + (j - 1) * 2);
+                            indices.Add(i + (j - 1) * 2);
+                            indices.Add(i + 1 + (j - 1) * 2);
+                            indices.Add(i + 3 + (j - 1) * 2);
+                        }
+                    }
                 }
             }
             return new BasicVertexBuffer(graphicsDevice, indices, vertices, texture, true, PrimitiveType.TriangleList);
@@ -313,7 +326,7 @@ namespace Zenith.ZGeom
             Vector2d v1 = new Vector2d(n1.pos.X, n1.pos.Y / stretch);
             Vector2d v2 = new Vector2d(n2.pos.X, n2.pos.Y / stretch);
             Vector2d v3 = n3 == null ? null : new Vector2d(n3.pos.X, n3.pos.Y / stretch);
-            Vector2d straightW = (v1 - v2).RotateCW90().Normalized() * width / 2;
+            Vector2d straightW = (v1 - v2).RotateCW90().Normalized() * width;
             Vector2d w; // points right
             if (v3 == null)
             {
@@ -321,9 +334,9 @@ namespace Zenith.ZGeom
             }
             else
             {
-                Vector2d w1 = (v3 - v2).RotateCCW90().Normalized() * width / 2;
-                Vector2d w2 = (v2 - v1).RotateCCW90().Normalized() * width / 2;
-                w = (w1 + w2).Normalized() * width / 2;
+                Vector2d w1 = (v3 - v2).RotateCCW90().Normalized() * width;
+                Vector2d w2 = (v2 - v1).RotateCCW90().Normalized() * width;
+                w = (w1 + w2).Normalized() * width;
             }
             w /= Vector2d.Dot(w.Normalized(), straightW.Normalized());
             w.Y *= stretch;

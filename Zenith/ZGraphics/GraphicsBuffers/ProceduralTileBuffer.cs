@@ -37,18 +37,25 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             var landSource = new SubtractionPolygonSource(new RawPolygonSource("natural", "coastline", true), new RawPolygonSource("natural", "water", false));
             var coastSource = new EdgeLineSource(landSource, true);
             var roadSource = new RawLineSource("highway", null);
+            var buildingSource = new RawPolygonSource("building", "yes", false);
 
+            descriptors.Add(new DepthClearDescriptor());
             descriptors.Add(new PolygonRenderDescriptor(landSource, Pallete.GRASS_GREEN));
-            descriptors.Add(new LineRenderDescriptor(coastSource, 10.7 * 50, GlobalContent.Beach));
-            descriptors.Add(new LineRenderDescriptor(roadSource, 10.7 * 4, GlobalContent.Road));
+            descriptors.Add(new LineRenderDescriptor(coastSource, 10.7 * 50 * 256, GlobalContent.Beach));
+            descriptors.Add(new DepthClearDescriptor());
+            descriptors.Add(new LineRenderDescriptor(roadSource, 10.7 * 2 * 256, GlobalContent.Road));
+            descriptors.Add(new DepthClearDescriptor());
+            descriptors.Add(new BuildingRenderDescriptor(buildingSource, 10.7 * 10, Color.LightGray, GlobalContent.BuildingWall));
 
             treeDescriptors.Add(new PolygonRenderDescriptor(landSource, Color.White));
-            treeDescriptors.Add(new LineRenderDescriptor(coastSource, 10.7 * 50, GlobalContent.BeachTreeDensity));
-            treeDescriptors.Add(new LineRenderDescriptor(roadSource, 10.7 * 12, GlobalContent.RoadTreeDensity));
-            treeDescriptors.Add(new LineRenderDescriptor(roadSource, 10.7 * 4, Color.Black));
+            treeDescriptors.Add(new LineRenderDescriptor(coastSource, 10.7 * 50 * 256, GlobalContent.BeachTreeDensity));
+            treeDescriptors.Add(new DepthClearDescriptor());
+            treeDescriptors.Add(new LineRenderDescriptor(roadSource, 10.7 * 12 * 256, GlobalContent.RoadTreeDensity));
+            treeDescriptors.Add(new DepthClearDescriptor());
+            treeDescriptors.Add(new LineRenderDescriptor(roadSource, 10.7 * 2 * 256, Color.Black));
 
             grassDescriptors.Add(new PolygonRenderDescriptor(landSource, Color.White));
-            grassDescriptors.Add(new LineRenderDescriptor(roadSource, 10.7 * 4, Color.Black));
+            grassDescriptors.Add(new LineRenderDescriptor(roadSource, 10.7 * 2 * 256, Color.Black));
         }
 
         public void LoadLinesFromFile()
@@ -136,11 +143,9 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             if (context.layerPass == RenderContext.LayerPass.MAIN_PASS)
             {
                 waterBuffer.Draw(context);
-                context.graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, context.graphicsDevice.Viewport.MaxDepth, 0);
                 foreach (var descriptor in descriptors)
                 {
                     descriptor.Draw(context);
-                    context.graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, context.graphicsDevice.Viewport.MaxDepth, 0);
                 }
             }
             if (context.highQuality || (context.maxX - context.minX < 0.1 && context.maxY - context.minY < 0.1))
