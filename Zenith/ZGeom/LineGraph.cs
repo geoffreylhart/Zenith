@@ -99,10 +99,11 @@ namespace Zenith.ZGeom
                         }
                         else
                         {
-                            topW = GetW(prev, next, nextNexts.Count == 0 ? null : nextNexts.Last(), -v.X);
-                            bottomW = GetW(next, prev, prevPrevs.Count == 0 ? null : prevPrevs.First(), v.X);
-                            topTexOffset = Vector2d.Dot(topW, v2 - v1) / (v2 - v1).Length() / topW.Length();
-                            bottomTexOffset = -Vector2d.Dot(bottomW, v2 - v1) / (v2 - v1).Length() / bottomW.Length();
+                            bool isLeft = v.X < 0;
+                            topW = GetW(prev, next, nextNexts.Count == 0 ? null : (isLeft ? nextNexts.Last() : nextNexts.First()), -v.X);
+                            bottomW = GetW(next, prev, prevPrevs.Count == 0 ? null : (isLeft ? prevPrevs.First() : prevPrevs.Last()), v.X);
+                            topTexOffset = Vector2d.Dot(topW, v2 - v1) / (v2 - v1).Length() / totalLength * (isLeft ? -1 : 1);
+                            bottomTexOffset = -Vector2d.Dot(bottomW, v2 - v1) / (v2 - v1).Length() / totalLength * (isLeft ? -1 : 1);
                         }
                         Vector2d top = v2 + topW;
                         Vector2d bottom = v1 + bottomW;
