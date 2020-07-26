@@ -117,4 +117,14 @@
   <ItemGroup>
     <MonoGameContentReference Include="$(MSBuildThisFileDirectory)Content\Content.mgcb" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="$(MSBuildThisFileDirectory)Documentation\BlenderInfo.txt" />
+    <Content Include="$(MSBuildThisFileDirectory)Documentation\CoordinateSystemCheatSheet.txt" />
+    <Content Include="$(MSBuildThisFileDirectory)Documentation\ImageSources.txt" />
+    <Content Include="$(MSBuildThisFileDirectory)Documentation\Keybindings.txt" />
+    <Content Include="$(MSBuildThisFileDirectory)Documentation\LibraryInfo.txt" />
+    <Content Include="$(MSBuildThisFileDirectory)Documentation\quickGameIdeas.txt" />
+    <Content Include="$(MSBuildThisFileDirectory)Documentation\RandomIdeas.txt" />
+    <Content Include="$(MSBuildThisFileDirectory)Documentation\readosmPlan.txt" />
+  </ItemGroup>
 </Project>
