@@ -44,9 +44,16 @@ namespace Zenith.ZGeom
             }
             return new BasicVertexBuffer(graphicsDevice, indices, vertices, PrimitiveType.LineList);
         }
-        internal BasicVertexBuffer ConstructAsRoads(GraphicsDevice graphicsDevice, double width, Texture2D texture, Color color)
+        internal BasicVertexBuffer ConstructAsRoads(GraphicsDevice graphicsDevice, double width, Texture2D texture, Color color, bool outerOnly)
         {
-            return ConstructViaExtrusion(graphicsDevice, new[] { new Vector2d(-width, 0), new Vector2d(0, RIDGE_HEIGHT), new Vector2d(width, 0) }, texture, color);
+            if (outerOnly)
+            {
+                return ConstructViaExtrusion(graphicsDevice, new[] { new Vector2d(-width, -RIDGE_HEIGHT), new Vector2d(0, 0) }, texture, color);
+            }
+            else
+            {
+                return ConstructViaExtrusion(graphicsDevice, new[] { new Vector2d(-width, 0), new Vector2d(0, RIDGE_HEIGHT), new Vector2d(width, 0) }, texture, color);
+            }
         }
 
         internal BasicVertexBuffer ConstructViaExtrusion(GraphicsDevice graphicsDevice, Vector2d[] shape, Texture2D texture, Color color)

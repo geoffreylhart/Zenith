@@ -12,7 +12,7 @@ namespace Zenith.ZGraphics.Procedural
         LineGraph GetLineGraph();
         void Load(BlobCollection blobs); // necessary to be used at all
         void Init(BlobCollection blobs); // necessary to be rendered
-        BasicVertexBuffer ConstructAsRoads(GraphicsDevice graphicsDevice, double widthInFeet);
+        BasicVertexBuffer ConstructAsRoads(GraphicsDevice graphicsDevice, double widthInFeet, bool outerOnly);
         void Dispose();
     }
 }

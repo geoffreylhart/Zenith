@@ -15,12 +15,14 @@ namespace Zenith.ZGraphics.Procedural
         private Texture2D texture;
         private Color color;
         private BasicVertexBuffer buffer;
+        private bool outerOnly;
 
-        public LineRenderDescriptor(ILineSource lineSource, double widthInFeet, Texture2D texture)
+        public LineRenderDescriptor(ILineSource lineSource, double widthInFeet, Texture2D texture, bool outerOnly = false)
         {
             this.lineSource = lineSource;
             this.widthInFeet = widthInFeet;
             this.texture = texture;
+            this.outerOnly = outerOnly;
         }
 
         public LineRenderDescriptor(ILineSource lineSource, double widthInFeet, Color color)
@@ -42,7 +44,7 @@ namespace Zenith.ZGraphics.Procedural
 
         public void GenerateBuffers(GraphicsDevice graphicsDevice)
         {
-            buffer = lineSource.ConstructAsRoads(graphicsDevice, widthInFeet);
+            buffer = lineSource.ConstructAsRoads(graphicsDevice, widthInFeet, outerOnly);
         }
 
         public void InitDraw(RenderContext context)

@@ -41,12 +41,16 @@ namespace Zenith.ZGraphics.Procedural
             initiated = true;
         }
 
-        public BasicVertexBuffer ConstructAsRoads(GraphicsDevice graphicsDevice, double widthInFeet)
+        public BasicVertexBuffer ConstructAsRoads(GraphicsDevice graphicsDevice, double widthInFeet, bool outerOnly)
         {
             double circumEarth = 24901 * 5280;
             double width = widthInFeet / circumEarth * 2 * Math.PI;
-            bufferCache[widthInFeet] = lineGraph.ConstructAsRoads(graphicsDevice, width, null, Color.White);
-            return bufferCache[widthInFeet];
+            double key = widthInFeet * (outerOnly ? -1 : 1);
+            if (!bufferCache.ContainsKey(key))
+            {
+                bufferCache[key] = lineGraph.ConstructAsRoads(graphicsDevice, width, null, Color.White, outerOnly);
+            }
+            return bufferCache[key];
         }
 
         public void Dispose()

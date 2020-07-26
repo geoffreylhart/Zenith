@@ -41,20 +41,24 @@ namespace Zenith.ZGraphics.GraphicsBuffers
 
             descriptors.Add(new DepthClearDescriptor());
             descriptors.Add(new PolygonRenderDescriptor(landSource, Pallete.GRASS_GREEN));
-            descriptors.Add(new LineRenderDescriptor(coastSource, 10.7 * 50 * 256, GlobalContent.Beach));
+            descriptors.Add(new LineRenderDescriptor(coastSource, 10.7 * 25 * 256, GlobalContent.Beach, true));
             descriptors.Add(new DepthClearDescriptor());
             descriptors.Add(new LineRenderDescriptor(roadSource, 10.7 * 2 * 256, GlobalContent.Road));
             descriptors.Add(new DepthClearDescriptor());
             descriptors.Add(new BuildingRenderDescriptor(buildingSource, 10.7 * 10, Color.LightGray, GlobalContent.BuildingWall));
 
+            treeDescriptors.Add(new DepthClearDescriptor());
             treeDescriptors.Add(new PolygonRenderDescriptor(landSource, Color.White));
-            treeDescriptors.Add(new LineRenderDescriptor(coastSource, 10.7 * 50 * 256, GlobalContent.BeachTreeDensity));
+            treeDescriptors.Add(new LineRenderDescriptor(coastSource, 10.7 * 25 * 256, GlobalContent.BeachTreeDensity, true));
             treeDescriptors.Add(new DepthClearDescriptor());
             treeDescriptors.Add(new LineRenderDescriptor(roadSource, 10.7 * 12 * 256, GlobalContent.RoadTreeDensity));
             treeDescriptors.Add(new DepthClearDescriptor());
             treeDescriptors.Add(new LineRenderDescriptor(roadSource, 10.7 * 2 * 256, Color.Black));
 
+            grassDescriptors.Add(new DepthClearDescriptor());
             grassDescriptors.Add(new PolygonRenderDescriptor(landSource, Color.White));
+            grassDescriptors.Add(new LineRenderDescriptor(coastSource, 10.7 * 25 * 256, GlobalContent.BeachGrassDensity, true));
+            grassDescriptors.Add(new DepthClearDescriptor());
             grassDescriptors.Add(new LineRenderDescriptor(roadSource, 10.7 * 2 * 256, Color.Black));
         }
 
@@ -152,6 +156,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
             {
                 if (context.layerPass == RenderContext.LayerPass.TREE_DENSITY_PASS)
                 {
+                    waterBuffer.Draw(context, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
                     foreach (var descriptor in treeDescriptors)
                     {
                         descriptor.Draw(context);
@@ -159,6 +164,7 @@ namespace Zenith.ZGraphics.GraphicsBuffers
                 }
                 if (context.layerPass == RenderContext.LayerPass.GRASS_DENSITY_PASS)
                 {
+                    waterBuffer.Draw(context, PrimitiveType.TriangleList, null, new Vector3(0, 0, 0));
                     foreach (var descriptor in grassDescriptors)
                     {
                         descriptor.Draw(context);
