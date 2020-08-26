@@ -1,20 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Drawing;
-using System.IO;
-using System.IO.Compression;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using LibTessDotNet;
+﻿using LibTessDotNet;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using OsmSharp;
 using OsmSharp.Streams;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
 using TriangleNet.Geometry;
-using TriangleNet.Meshing;
-using Zenith.EditorGameComponents.FlatComponents;
 using Zenith.LibraryWrappers.OSM;
 using Zenith.ZGeom;
 using Zenith.ZGraphics;
@@ -166,20 +158,6 @@ namespace Zenith.LibraryWrappers
             {
                 String quadrantPath = OSMPaths.GetSectorPath(quadrant);
                 BreakupFile(quadrantPath, quadrant, targetZoom);
-            }
-        }
-
-        private static void Compress(string path, string pathGz)
-        {
-            using (FileStream originalFileStream = new FileInfo(path).OpenRead())
-            {
-                using (FileStream compressedFileStream = File.Create(pathGz))
-                {
-                    using (GZipStream compressionStream = new GZipStream(compressedFileStream, CompressionMode.Compress))
-                    {
-                        originalFileStream.CopyTo(compressionStream);
-                    }
-                }
             }
         }
 

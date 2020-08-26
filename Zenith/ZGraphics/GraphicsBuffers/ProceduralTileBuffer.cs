@@ -1,17 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.IO.Compression;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Zenith.LibraryWrappers;
+using System;
+using System.Collections.Generic;
 using Zenith.LibraryWrappers.OSM;
 using Zenith.MathHelpers;
-using Zenith.ZGeom;
 using Zenith.ZGraphics.Procedural;
 using Zenith.ZMath;
 

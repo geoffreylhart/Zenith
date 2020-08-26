@@ -1,21 +1,11 @@
-﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using OsmSharp;
-using OsmSharp.Streams;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Zenith.ZGeom;
 using Zenith.ZMath;
 #if ANDROID
 using ZenithAndroid;
 #endif
-using static Zenith.LibraryWrappers.OSM.Blob;
-using static Zenith.ZGeom.LineGraph;
 
 namespace Zenith.LibraryWrappers.OSM
 {

@@ -41,6 +41,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\PBF\Relation.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\PBF\StringTable.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LibraryWrappers\PBF\Way.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utilities\Compression.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utilities\STRMConverter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZGame\ZGameComponent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZGeom\IGeom.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ZGeom\LineGraph.cs" />

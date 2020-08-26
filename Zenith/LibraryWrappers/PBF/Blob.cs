@@ -1,13 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Zenith.ZMath;
+using Zenith.Utilities;
 
 namespace Zenith.LibraryWrappers.OSM
 {
@@ -66,20 +59,8 @@ namespace Zenith.LibraryWrappers.OSM
         internal void Init()
         {
             if (type != "OSMData") return;
-            using (var memStream = new MemoryStream(zlib_data))
-            {
-                // skip first two bytes
-                // "Those bytes are part of the zlib specification (RFC 1950), not the deflate specification (RFC 1951). Those bytes contain information about the compression method and flags."
-                memStream.ReadByte();
-                memStream.ReadByte();
-                using (var deflateStream = new DeflateStream(memStream, CompressionMode.Decompress))
-                {
-                    byte[] unzipped = new byte[raw_size];
-                    deflateStream.Read(unzipped, 0, raw_size);
-                    zlib_data = unzipped;
-                    pBlock = PrimitiveBlock.Read(new MemoryStream(zlib_data));
-                }
-            }
+            zlib_data = Compression.UnZLibToBytes(zlib_data, raw_size);
+            pBlock = PrimitiveBlock.Read(new MemoryStream(zlib_data));
         }
 
         internal class RoadInfoVector
