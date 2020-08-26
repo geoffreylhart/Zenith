@@ -198,7 +198,7 @@ namespace Zenith.LibraryWrappers.OSM
         {
             int b1 = reader.ReadByte() << 12;
             int b2 = reader.ReadByte() << 8;
-            int b3 = reader.ReadByte() << 4;
+            int b3 = reader.ReadByte() << 4; // wait should this be 8, 16, 24???
             int b4 = reader.ReadByte();
             return b1 + b2 + b3 + b4;
         }

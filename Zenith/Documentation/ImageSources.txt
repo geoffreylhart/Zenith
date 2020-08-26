@@ -6,3 +6,11 @@
 
 Clouds:
 	- http://www.shadedrelief.com/natural3/pages/clouds.html
+
+STRM data:
+	- https://wiki.openstreetmap.org/wiki/SRTM
+	- https://e4ftl01.cr.usgs.gov/MEASURES/SRTMGL1.003/ (global 1-arcsecond coverage) (includes citing info, which is basically no restrictions)
+		- you need a login to download. Register from https://urs.earthdata.nasa.gov/users/new
+		- my original email is under "Welcome to EOSDIS Earthdata Login User Registration"
+		- username glhart, password default
+		- login page: https://urs.earthdata.nasa.gov/
