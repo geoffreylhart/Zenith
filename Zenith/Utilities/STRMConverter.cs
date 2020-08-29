@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using Zenith.MathHelpers;
 using Zenith.ZMath;
@@ -18,18 +19,27 @@ namespace Zenith.Utilities
             // unzip to get bytes
             byte[] bytes = Compression.UnZipToBytes(inputPath);
             //
-            int size = (int)Math.Sqrt(bytes.Length / 2);
-            if (size * size * 2 != bytes.Length) throw new NotImplementedException();
-            //BitmapData bitmapData;
-            //var rect = new System.Drawing.Rectangle(0, 0, size, size);
-            Bitmap bitmap = new Bitmap(size, size, PixelFormat.Format24bppRgb);
-            for (int x = 0; x < size; x++)
+            int W, H;
+            if (inputPath.Contains("hgt"))
             {
-                for (int y = 0; y < size; y++)
+                int size = (int)Math.Sqrt(bytes.Length / 2);
+                W = size;
+                H = size;
+            }
+            else
+            {
+                W = 600 * 8;
+                H = 750 * 8;
+            }
+            if (W * H * 2 != bytes.Length) throw new NotImplementedException();
+            Bitmap bitmap = new Bitmap(W, H, PixelFormat.Format24bppRgb);
+            for (int x = 0; x < W; x++)
+            {
+                for (int y = 0; y < H; y++)
                 {
-                    int dx = x == 0 ? 0 : GetShort(bytes, x, y, size) - GetShort(bytes, x - 1, y, size);
-                    int dy = y == 0 ? 0 : GetShort(bytes, x, y, size) - GetShort(bytes, x, y - 1, size);
-                    Color c = GetColor(GetShort(bytes, x, y, size), dx, dy);
+                    int dx = x == 0 ? 0 : GetShort(bytes, x, y, W, H) - GetShort(bytes, x - 1, y, W, H);
+                    int dy = y == 0 ? 0 : GetShort(bytes, x, y, W, H) - GetShort(bytes, x, y - 1, W, H);
+                    Color c = GetColor(GetShort(bytes, x, y, W, H), dx, dy);
                     bitmap.SetPixel(x, y, c);
                 }
             }
@@ -38,23 +48,78 @@ namespace Zenith.Utilities
 
         internal static void ConvertHGTZIPsToPNG(ISector sector, string outputPath)
         {
-            var fileBytes = new Dictionary<string, byte[]>();
+            int BUFFER_SIZE = 10;
+            var fileBytes = new List<KeyValuePair<string, byte[]>>();
             int REZ = 512;
             int[,] shorts = new int[REZ, REZ];
+            var exists = new HashSet<string>();
+            var doesntexist = new HashSet<string>();
             for (int x = 0; x < REZ; x++)
             {
                 for (int y = 0; y < REZ; y++)
                 {
                     // for now, nearest-neighbor
                     var longLat = new SphereVector(sector.ProjectToSphereCoordinates(new Vector2d((0.5 + x) / REZ, (0.5 + y) / REZ))).ToLongLat() * 180 / Math.PI;
-                    string filePath = Path.Combine(@"C:\Users\Geoffrey Hart\Downloads", $"{(longLat.Y > 0 ? "N" : "S")}{(int)Math.Abs(Math.Floor(longLat.Y)):D2}{(longLat.X > 0 ? "E" : "W")}{(int)Math.Abs(Math.Floor(longLat.X)):D3}.SRTMGL1.hgt.zip"); // ex: N00E017.SRTMGL1.hgt.zip (note, file name is coordinate of bottom-left most point)
-                    if (!fileBytes.ContainsKey(filePath)) fileBytes[filePath] = Compression.UnZipToBytes(filePath);
-                    var bytes = fileBytes[filePath];
-                    int size = (int)Math.Sqrt(bytes.Length / 2);
-                    if (size * size * 2 != bytes.Length) throw new NotImplementedException();
-                    double px = (longLat.X + 360) % 1;
-                    double py = (longLat.Y + 360) % 1;
-                    shorts[x, y] = (int)Sample(bytes, px * (size - 1), (1 - py) * (size - 1), size);
+                    string filePath;
+                    double px, py;
+                    // ex: N00E017.SRTMGL1.hgt.zip (note, file name is the coordinate of bottom-left most point)
+                    // for some reason for dem, the file name is the coordinate of the top-left most point?
+                    if (longLat.Y < -60 || longLat.Y > 60)
+                    {
+                        int roundX = ((int)((longLat.X + 420) / 40)) * 40 - 420;
+                        int roundY = ((int)Math.Ceiling((longLat.Y + 510) / 50)) * 50 - 510;
+                        filePath = Path.Combine(@"C:\Users\Geoffrey Hart\Downloads\Source\STRMGL30", $"{(roundX > 0 ? "E" : "W")}{Math.Abs(roundX):D3}{(roundY > 0 ? "N" : "S")}{Math.Abs(roundY):D2}.SRTMGL30.dem.zip");
+                        px = (longLat.X - roundX) / 40;
+                        py = (1 - (roundY - longLat.Y) / 50);
+                    }
+                    else
+                    {
+                        filePath = Path.Combine(@"C:\Users\Geoffrey Hart\Downloads\Source\STRMGL1", $"{(longLat.Y > 0 ? "N" : "S")}{(int)Math.Abs(Math.Floor(longLat.Y)):D2}{(longLat.X > 0 ? "E" : "W")}{(int)Math.Abs(Math.Floor(longLat.X)):D3}.SRTMGL1.hgt.zip");
+                        if (!exists.Contains(filePath) && !doesntexist.Contains(filePath))
+                        {
+                            if (File.Exists(filePath))
+                            {
+                                exists.Add(filePath);
+                            }
+                            else
+                            {
+                                doesntexist.Add(filePath);
+                            }
+                        }
+                        if (exists.Contains(filePath))
+                        {
+                            px = (longLat.X + 360) % 1;
+                            py = (longLat.Y + 360) % 1;
+                        }
+                        else
+                        {
+                            int roundX = ((int)((longLat.X + 420) / 40)) * 40 - 420;
+                            int roundY = ((int)((longLat.Y + 510) / 50)) * 50 - 510;
+                            filePath = Path.Combine(@"C:\Users\Geoffrey Hart\Downloads\Source\STRMGL30", $"{(roundX > 0 ? "E" : "W")}{Math.Abs(roundX):D3}{(roundY > 0 ? "N" : "S")}{Math.Abs(roundY):D2}.SRTMGL30.dem.zip");
+                            px = (longLat.X - roundX) / 40;
+                            py = (longLat.Y - roundY) / 50;
+                        }
+                    }
+                    if (!fileBytes.Any(z => z.Key == filePath))
+                    {
+                        if (fileBytes.Count == BUFFER_SIZE) fileBytes.RemoveAt(0);
+                        fileBytes.Add(new KeyValuePair<string, byte[]>(filePath, Compression.UnZipToBytes(filePath)));
+                    }
+                    var bytes = fileBytes.Where(z => z.Key == filePath).Single().Value;
+                    int W, H;
+                    if (filePath.Contains("hgt"))
+                    {
+                        int size = (int)Math.Sqrt(bytes.Length / 2);
+                        W = size;
+                        H = size;
+                    }
+                    else
+                    {
+                        W = 600 * 8;
+                        H = 750 * 8;
+                    }
+                    if (W * H * 2 != bytes.Length) throw new NotImplementedException();
+                    shorts[x, y] = (int)Sample(bytes, px * (W - 1), (1 - py) * (H - 1), W, H);
                 }
             }
             Bitmap bitmap = new Bitmap(REZ, REZ, PixelFormat.Format24bppRgb);
@@ -70,23 +135,23 @@ namespace Zenith.Utilities
             }
             bitmap.Save(outputPath);
         }
-        private static double Sample(byte[] bytes, double x, double y, int size)
+        private static double Sample(byte[] bytes, double x, double y, int w, int h)
         {
             if (x < 0) throw new NotImplementedException();
             if (y < 0) throw new NotImplementedException();
-            if (x >= size - 1) throw new NotImplementedException();
-            if (y >= size - 1) throw new NotImplementedException();
-            double topLeft = GetShort(bytes, (int)x, (int)y, size);
-            double topRight = GetShort(bytes, (int)x + 1, (int)y, size);
-            double bottomLeft = GetShort(bytes, (int)x, (int)y + 1, size);
-            double bottomRight = GetShort(bytes, (int)x + 1, (int)y + 1, size);
+            if (x >= w - 1) throw new NotImplementedException();
+            if (y >= h - 1) throw new NotImplementedException();
+            double topLeft = GetShort(bytes, (int)x, (int)y, w, h);
+            double topRight = GetShort(bytes, (int)x + 1, (int)y, w, h);
+            double bottomLeft = GetShort(bytes, (int)x, (int)y + 1, w, h);
+            double bottomRight = GetShort(bytes, (int)x + 1, (int)y + 1, w, h);
             // just do linear for now
             return ((1 - x % 1) * topLeft + (x % 1) * topRight) * (1 - y % 1) + ((1 - x % 1) * bottomLeft + (x % 1) * bottomRight) * (y % 1);
         }
 
-        private static int GetShort(byte[] bytes, int x, int y, int size)
+        private static int GetShort(byte[] bytes, int x, int y, int w, int h)
         {
-            return bytes[(size * y + x) * 2] * 256 + bytes[(size * y + x) * 2 + 1];
+            return bytes[(w * y + x) * 2] * 256 + bytes[(w * y + x) * 2 + 1];
         }
 
         private static Color GetColor(int value, int dx = 0, int dy = 0)
