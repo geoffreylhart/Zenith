@@ -54,7 +54,7 @@ namespace Zenith.Utilities
                     if (size * size * 2 != bytes.Length) throw new NotImplementedException();
                     double px = (longLat.X + 360) % 1;
                     double py = (longLat.Y + 360) % 1;
-                    shorts[x, y] = GetShort(bytes, (int)(px * size), (int)((1 - py) * size), size);
+                    shorts[x, y] = (int)Sample(bytes, px * (size - 1), (1 - py) * (size - 1), size);
                 }
             }
             Bitmap bitmap = new Bitmap(REZ, REZ, PixelFormat.Format24bppRgb);
@@ -69,6 +69,19 @@ namespace Zenith.Utilities
                 }
             }
             bitmap.Save(outputPath);
+        }
+        private static double Sample(byte[] bytes, double x, double y, int size)
+        {
+            if (x < 0) throw new NotImplementedException();
+            if (y < 0) throw new NotImplementedException();
+            if (x >= size - 1) throw new NotImplementedException();
+            if (y >= size - 1) throw new NotImplementedException();
+            double topLeft = GetShort(bytes, (int)x, (int)y, size);
+            double topRight = GetShort(bytes, (int)x + 1, (int)y, size);
+            double bottomLeft = GetShort(bytes, (int)x, (int)y + 1, size);
+            double bottomRight = GetShort(bytes, (int)x + 1, (int)y + 1, size);
+            // just do linear for now
+            return ((1 - x % 1) * topLeft + (x % 1) * topRight) * (1 - y % 1) + ((1 - x % 1) * bottomLeft + (x % 1) * bottomRight) * (y % 1);
         }
 
         private static int GetShort(byte[] bytes, int x, int y, int size)
