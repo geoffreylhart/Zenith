@@ -2,7 +2,9 @@
 using System.Diagnostics;
 using Zenith;
 using Zenith.LibraryWrappers.OSM;
+using Zenith.Utilities;
 using Zenith.ZGeom;
+using Zenith.ZMath;
 
 namespace ZenithCrossPlatform
 {
@@ -17,12 +19,18 @@ namespace ZenithCrossPlatform
         [STAThread]
         static void Main(string[] args)
         {
-            if (args.Length > 0)
-            {
-                Game1.RENDER_SECTOR = ZCoords.GetSectorManager().FromString(args[0]);
-            }
-            using (var game = new Zenith.Game1())
-                game.Run();
+            //STRMConverter.ConvertHGTZIPToPNG(@"C:\Users\Geoffrey Hart\Downloads\temp\N03E019.SRTMGL1.hgt.zip", @"C:\Users\Geoffrey Hart\Downloads\temp\N03E019.png");
+            //STRMConverter.ConvertHGTZIPToPNG(@"C:\Users\Geoffrey Hart\Downloads\N59W149.SRTMGL1.hgt.zip", @"C:\Users\Geoffrey Hart\Downloads\temp\anchorage.png");
+            //STRMConverter.ConvertHGTZIPToPNG(@"C:\Users\Geoffrey Hart\Downloads\N30W090.SRTMGL1.hgt.zip", @"C:\Users\Geoffrey Hart\Downloads\temp\f30.png");
+            //STRMConverter.ConvertHGTZIPToPNG(@"C:\Users\Geoffrey Hart\Downloads\N29W090.SRTMGL1.hgt.zip", @"C:\Users\Geoffrey Hart\Downloads\temp\f29.png");
+            //{[C:\Users\Geoffrey Hart\Downloads\N30W090.SRTMGL1.hgt.zip, {byte[25934402]}]}
+            STRMConverter.ConvertHGTZIPsToPNG(new CubeSector(CubeSector.CubeSectorFace.LEFT, 128, 42, 8), @"C:\Users\Geoffrey Hart\Downloads\temp\florida.png");
+            //if (args.Length > 0)
+            //{
+            //    Game1.RENDER_SECTOR = ZCoords.GetSectorManager().FromString(args[0]);
+            //}
+            //using (var game = new Zenith.Game1())
+            //    game.Run();
         }
 
         public static void GeneratePlanetMeta()
