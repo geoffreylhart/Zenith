@@ -46,11 +46,48 @@ namespace Zenith.Utilities
             bitmap.Save(outputPath);
         }
 
+        internal static void ConvertHGTZIPsToHGTZIP(ISector sector, string rootFolder, bool overwrite)
+        {
+            string outputPath = Path.Combine(rootFolder, sector.GetAllParents().Where(x => x.Zoom == 4).Single().ToString(), sector.ToString() + ".HGT.ZIP");
+            if (!overwrite && File.Exists(outputPath)) return;
+            int[,] shorts = ConvertHGTZIPsToShorts(sector);
+            byte[] outputBytes = new byte[REZ * REZ * 2];
+            for (int x = 0; x < REZ; x++)
+            {
+                for (int y = 0; y < REZ; y++)
+                {
+                    outputBytes[(REZ * y + x) * 2] = (byte)(shorts[x, y] / 256);
+                    outputBytes[(REZ * y + x) * 2 + 1] = (byte)(shorts[x, y] % 256);
+                }
+            }
+            string directoryName = Path.GetDirectoryName(outputPath);
+            if (!Directory.Exists(directoryName)) Directory.CreateDirectory(directoryName);
+            Compression.ZipToFile(outputPath, outputBytes);
+        }
+
+        static int REZ = 512;
+
         internal static void ConvertHGTZIPsToPNG(ISector sector, string outputPath)
+        {
+            int[,] shorts = ConvertHGTZIPsToShorts(sector);
+            Bitmap bitmap = new Bitmap(REZ, REZ, PixelFormat.Format24bppRgb);
+            for (int x = 0; x < REZ; x++)
+            {
+                for (int y = 0; y < REZ; y++)
+                {
+                    int dx = x == 0 ? 0 : shorts[x, y] - shorts[x - 1, y];
+                    int dy = y == 0 ? 0 : shorts[x, y] - shorts[x, y - 1];
+                    Color c = GetColor(shorts[x, y], dx, dy);
+                    bitmap.SetPixel(x, y, c);
+                }
+            }
+            bitmap.Save(outputPath);
+        }
+
+        private static int[,] ConvertHGTZIPsToShorts(ISector sector)
         {
             int BUFFER_SIZE = 10;
             var fileBytes = new List<KeyValuePair<string, byte[]>>();
-            int REZ = 512;
             int[,] shorts = new int[REZ, REZ];
             var exists = new HashSet<string>();
             var doesntexist = new HashSet<string>();
@@ -69,8 +106,26 @@ namespace Zenith.Utilities
                         int roundX = ((int)((longLat.X + 420) / 40)) * 40 - 420;
                         int roundY = ((int)Math.Ceiling((longLat.Y + 510) / 50)) * 50 - 510;
                         filePath = Path.Combine(@"C:\Users\Geoffrey Hart\Downloads\Source\STRMGL30", $"{(roundX > 0 ? "E" : "W")}{Math.Abs(roundX):D3}{(roundY > 0 ? "N" : "S")}{Math.Abs(roundY):D2}.SRTMGL30.dem.zip");
-                        px = (longLat.X - roundX) / 40;
-                        py = (1 - (roundY - longLat.Y) / 50);
+                        if (!exists.Contains(filePath) && !doesntexist.Contains(filePath))
+                        {
+                            if (File.Exists(filePath))
+                            {
+                                exists.Add(filePath);
+                            }
+                            else
+                            {
+                                doesntexist.Add(filePath);
+                            }
+                        }
+                        if (exists.Contains(filePath))
+                        {
+                            px = (longLat.X - roundX) / 40;
+                            py = (1 - (roundY - longLat.Y) / 50);
+                        }
+                        else
+                        {
+                            continue;
+                        }
                     }
                     else
                     {
@@ -94,10 +149,10 @@ namespace Zenith.Utilities
                         else
                         {
                             int roundX = ((int)((longLat.X + 420) / 40)) * 40 - 420;
-                            int roundY = ((int)((longLat.Y + 510) / 50)) * 50 - 510;
+                            int roundY = ((int)Math.Ceiling((longLat.Y + 510) / 50)) * 50 - 510;
                             filePath = Path.Combine(@"C:\Users\Geoffrey Hart\Downloads\Source\STRMGL30", $"{(roundX > 0 ? "E" : "W")}{Math.Abs(roundX):D3}{(roundY > 0 ? "N" : "S")}{Math.Abs(roundY):D2}.SRTMGL30.dem.zip");
                             px = (longLat.X - roundX) / 40;
-                            py = (longLat.Y - roundY) / 50;
+                            py = (1 - (roundY - longLat.Y) / 50);
                         }
                     }
                     if (!fileBytes.Any(z => z.Key == filePath))
@@ -122,19 +177,9 @@ namespace Zenith.Utilities
                     shorts[x, y] = (int)Sample(bytes, px * (W - 1), (1 - py) * (H - 1), W, H);
                 }
             }
-            Bitmap bitmap = new Bitmap(REZ, REZ, PixelFormat.Format24bppRgb);
-            for (int x = 0; x < REZ; x++)
-            {
-                for (int y = 0; y < REZ; y++)
-                {
-                    int dx = x == 0 ? 0 : shorts[x, y] - shorts[x - 1, y];
-                    int dy = y == 0 ? 0 : shorts[x, y] - shorts[x, y - 1];
-                    Color c = GetColor(shorts[x, y], dx, dy);
-                    bitmap.SetPixel(x, y, c);
-                }
-            }
-            bitmap.Save(outputPath);
+            return shorts;
         }
+
         private static double Sample(byte[] bytes, double x, double y, int w, int h)
         {
             if (x < 0) throw new NotImplementedException();
