@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using GeoAPI.Geometries;
-using NetTopologySuite.Geometries;
 using Zenith.ZGeom;
 using Zenith.ZMath;
 using static Zenith.LibraryWrappers.OSM.Blob;

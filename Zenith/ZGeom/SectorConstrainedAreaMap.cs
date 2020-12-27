@@ -5,7 +5,6 @@ using System.Text;
 using LibTessDotNet;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using TriangleNet.Geometry;
 using Zenith.LibraryWrappers;
 using Zenith.ZGraphics;
 using Zenith.ZMath;

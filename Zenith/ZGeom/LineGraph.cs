@@ -1,5 +1,4 @@
-﻿using GeoAPI.Geometries;
-using LibTessDotNet;
+﻿using LibTessDotNet;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using NetTopologySuite.Geometries;
