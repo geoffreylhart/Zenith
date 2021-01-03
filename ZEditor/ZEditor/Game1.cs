@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
+using ZEditor.ZControl;
 using ZEditor.ZGraphics;
 
 namespace ZEditor
@@ -10,6 +11,7 @@ namespace ZEditor
     public class Game1 : Game
     {
         private VertexIndexBuffer renderSubject;
+        private FPSCamera fpsCamera;
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
 
@@ -17,13 +19,21 @@ namespace ZEditor
         {
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
-            IsMouseVisible = true;
+            IsMouseVisible = false;
+            this.TargetElapsedTime = TimeSpan.FromSeconds(1 / 144.0);
         }
 
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
             renderSubject = GenerateCube(GraphicsDevice);
+            fpsCamera = new FPSCamera(new Vector3(2, 2, -1), new Vector3(0.5f, 0.5f, 0.5f));
+            int w = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
+            int h = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
+            _graphics.PreferredBackBufferWidth = w;
+            _graphics.PreferredBackBufferHeight = h;
+            _graphics.IsFullScreen = true;
+            _graphics.ApplyChanges();
 
             base.Initialize();
         }
@@ -41,6 +51,8 @@ namespace ZEditor
                 Exit();
 
             // TODO: Add your update logic here
+            fpsCamera.Update(gameTime, Keyboard.GetState(), Mouse.GetState(), GraphicsDevice);
+            Mouse.SetPosition(GraphicsDevice.Viewport.Width / 2, GraphicsDevice.Viewport.Height / 2);
 
             base.Update(gameTime);
         }
@@ -52,10 +64,10 @@ namespace ZEditor
             // TODO: Add your drawing code here
             BasicEffect basicEffect = new BasicEffect(GraphicsDevice);
             basicEffect.World = Matrix.Identity;
-            // note, after WPV is applied (or is it WVP?), I believe near plane matches to 1 and far plane matches to -1, matching the handedness of Vector3 Constants
-            basicEffect.Projection = Matrix.CreatePerspectiveFieldOfView((float)(Math.PI / 4), 1.5f, 0.01f, 10f);
+            // note, after WVP is applied, I believe near plane matches to 1 and far plane matches to -1, matching the handedness of Vector3 Constants
             // the camera position and lookup at least match up to the coordinates/colors we gave
-            basicEffect.View = Matrix.CreateLookAt(new Vector3(2, 2, -1), new Vector3(0.5f, 0.5f, 0.5f), Vector3.Up);
+            basicEffect.View = fpsCamera.GetView();
+            basicEffect.Projection = Matrix.CreatePerspectiveFieldOfView((float)(Math.PI / 4), GraphicsDevice.Viewport.AspectRatio, 0.01f, 10f);
             basicEffect.VertexColorEnabled = true;
             GraphicsDevice.SetVertexBuffer(renderSubject.vertexBuffer);
             GraphicsDevice.Indices = renderSubject.indexBuffer;
