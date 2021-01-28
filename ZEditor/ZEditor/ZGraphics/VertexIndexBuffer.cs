@@ -5,7 +5,7 @@ using System.Text;
 
 namespace ZEditor.ZGraphics
 {
-    class VertexIndexBuffer : IDisposable
+    public class VertexIndexBuffer : IDisposable
     {
         public VertexBuffer vertexBuffer;
         public IndexBuffer indexBuffer;

@@ -39,8 +39,8 @@ namespace ZEditor.ZControl
                 diffx = mouseState.X - relx;
                 diffy = mouseState.Y - rely;
             }
-            relx += diffx;
-            rely += diffy;
+            relx += diffx * 3;
+            rely += diffy * 3;
             Matrix world = Matrix.Identity;
             Matrix view = GetView();
             Matrix projection = Matrix.CreatePerspectiveFieldOfView((float)(Math.PI / 4), graphicsDevice.Viewport.AspectRatio, 0.01f, 10f);
