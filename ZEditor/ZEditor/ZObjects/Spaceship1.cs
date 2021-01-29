@@ -41,7 +41,7 @@ namespace ZEditor.ZObjects
             var leftDoorBottomFrontRight = leftDoorBottomFrontLeft + Vector3.Forward;
             var leftDoorTopBackLeft = new Vector3(1, 1.5f, 3.5f);
             var leftDoorTopBackRight = leftDoorTopBackLeft + Vector3.Forward;
-            var leftDoorTopFrontLeft = new Vector3(1.25f, 2, 3.5f);
+            var leftDoorTopFrontLeft = new Vector3(1.25f, 1.5f, 3.5f);
             var leftDoorTopFrontRight = leftDoorTopFrontLeft + Vector3.Forward;
 
             var rightDoorBottomBackLeft = leftDoorBottomBackRight * new Vector3(-1, 1, 1);
@@ -59,19 +59,38 @@ namespace ZEditor.ZObjects
             var bottomFrontMidRight = new Vector3(-1, 0, 0);
             // top, bottom, left, right, front, back
             AddQuad(vertices, indices, topBackLeft, topBackRight, topFrontRight, topFrontLeft);
+            AddQuad(vertices, indices, topFrontLeft, topFrontRight, topBackRight, topBackLeft);
             // bottom
             AddQuad(vertices, indices, bottomFrontLeft, bottomFrontMidLeft, leftDoorBottomBackRight, leftDoorBottomFrontRight);
             AddQuad(vertices, indices, bottomFrontMidRight, bottomFrontRight, rightDoorBottomFrontLeft, rightDoorBottomBackLeft);
             AddQuad(vertices, indices, leftDoorBottomFrontLeft, leftDoorBottomBackLeft, bottomBackMidLeft, bottomBackLeft);
             AddQuad(vertices, indices, rightDoorBottomBackRight, rightDoorBottomFrontRight, bottomBackRight, bottomBackMidRight);
             // left
-            AddQuad(vertices, indices, topBackLeft, topFrontLeft, bottomFrontLeft, bottomBackLeft);
+            AddQuad(vertices, indices, topBackLeft, leftDoorTopFrontLeft, leftDoorBottomFrontLeft, bottomBackLeft);
+            AddQuad(vertices, indices, topBackLeft, topFrontLeft, leftDoorTopFrontRight, leftDoorTopFrontLeft);
+            AddQuad(vertices, indices, leftDoorTopFrontRight, topFrontLeft, bottomFrontLeft, leftDoorBottomFrontRight);
+            AddQuad(vertices, indices, topFrontLeft, leftDoorTopBackRight, leftDoorBottomBackRight, bottomFrontMidLeft);
+            AddQuad(vertices, indices, topFrontLeft, topBackLeft, leftDoorTopBackLeft, leftDoorTopBackRight);
+            AddQuad(vertices, indices, leftDoorTopBackLeft, topBackLeft, bottomBackMidLeft, leftDoorBottomBackLeft);
+            AddQuad(vertices, indices, leftDoorTopBackRight, leftDoorTopFrontRight, leftDoorBottomFrontRight, leftDoorBottomBackRight);
+            AddQuad(vertices, indices, leftDoorTopBackLeft, leftDoorTopFrontLeft, leftDoorTopFrontRight, leftDoorTopBackRight);
+            AddQuad(vertices, indices, leftDoorBottomBackLeft, leftDoorBottomFrontLeft, leftDoorTopFrontLeft, leftDoorTopBackLeft);
             // right
-            AddQuad(vertices, indices, topFrontRight, topBackRight, bottomBackRight, bottomFrontRight);
+            AddQuad(vertices, indices, topFrontRight, rightDoorTopFrontLeft, rightDoorBottomFrontLeft, bottomFrontRight);
+            AddQuad(vertices, indices, topFrontRight, topBackRight, rightDoorTopFrontRight, rightDoorTopFrontLeft);
+            AddQuad(vertices, indices, rightDoorTopFrontRight, topBackRight, bottomBackRight, rightDoorBottomFrontRight);
+            AddQuad(vertices, indices, topBackRight, rightDoorTopBackRight, rightDoorBottomBackRight, bottomBackMidRight);
+            AddQuad(vertices, indices, topBackRight, topFrontRight, rightDoorTopBackLeft, rightDoorTopBackRight);
+            AddQuad(vertices, indices, rightDoorTopBackLeft, topFrontRight, bottomFrontMidRight, rightDoorBottomBackLeft);
+            AddQuad(vertices, indices, rightDoorTopFrontLeft, rightDoorTopBackLeft, rightDoorBottomBackLeft, rightDoorBottomFrontLeft);
+            AddQuad(vertices, indices, rightDoorTopFrontRight, rightDoorTopBackRight, rightDoorTopBackLeft, rightDoorTopFrontLeft);
+            AddQuad(vertices, indices, rightDoorBottomFrontRight, rightDoorBottomBackRight, rightDoorTopBackRight, rightDoorTopFrontRight);
             // front
-            AddQuad(vertices, indices, topFrontLeft, topFrontRight, bottomFrontRight, bottomFrontLeft);
+            AddTri(vertices, indices, topFrontLeft, bottomFrontMidLeft, bottomFrontLeft);
+            AddTri(vertices, indices, topFrontRight, bottomFrontRight, bottomFrontMidRight);
             // back
             AddQuad(vertices, indices, topBackRight, topBackLeft, bottomBackLeft, bottomBackRight);
+            AddQuad(vertices, indices, topBackLeft, topBackRight, bottomBackMidRight, bottomBackMidLeft);
 
         }
 
@@ -95,6 +114,19 @@ namespace ZEditor.ZObjects
             AddQuad(vertices, indices, rtf, rtb, rbb, rbf); // righttopfront, righttopback, rightbottomback, rightbottomfront
             AddQuad(vertices, indices, ltf, rtf, rbf, lbf); // lefttopfront, righttopfront, rightbottomfront, leftbottomfront
             AddQuad(vertices, indices, rtb, ltb, lbb, rbb); // righttopback, lefttopback, leftbottomback, rightbottomback
+        }
+
+        private static void AddTri(List<VertexPositionNormalTexture> vertices, List<int> indices, Vector3 v1, Vector3 v2, Vector3 v3)
+        {
+            // preferred quad order topleft, topright, bottomright, topleft, bottomright, bottomleft
+            indices.Add(vertices.Count);
+            indices.Add(vertices.Count + 1);
+            indices.Add(vertices.Count + 2);
+            Vector3 normal = Vector3.Cross(v3 - v1, v2 - v1);
+            normal.Normalize();
+            vertices.Add(new VertexPositionNormalTexture(v1, normal, new Vector2(0, 0)));
+            vertices.Add(new VertexPositionNormalTexture(v2, normal, new Vector2(1, 0)));
+            vertices.Add(new VertexPositionNormalTexture(v3, normal, new Vector2(1, 1)));
         }
 
         private static void AddQuad(List<VertexPositionNormalTexture> vertices, List<int> indices, Vector3 topLeft, Vector3 topRight, Vector3 bottomRight, Vector3 bottomLeft)

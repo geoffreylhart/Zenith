@@ -83,7 +83,7 @@ namespace ZEditor
             foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
             {
                 pass.Apply();
-                GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, 12);
+                GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, renderSubject.indexBuffer.IndexCount / 3);
             }
 
             base.Draw(gameTime);
