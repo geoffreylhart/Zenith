@@ -28,7 +28,8 @@ namespace ZEditor
         {
             // TODO: Add your initialization logic here
             renderSubject = Spaceship1.MakeShip(GraphicsDevice);
-            fpsCamera = new FPSCamera(new Vector3(2, 2, -1), new Vector3(0.5f, 0.5f, 0.5f));
+            // view from slightly above and to the right, but far away TODO: for some reason we aren't looking at 0, 0, 0??
+            fpsCamera = new FPSCamera(new Vector3(-2, 2, -10), new Vector3(0, 0, 0));
             int w = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
             int h = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
             _graphics.PreferredBackBufferWidth = w;
@@ -68,13 +69,13 @@ namespace ZEditor
             // note, after WVP is applied, I believe near plane matches to 1 and far plane matches to -1, matching the handedness of Vector3 Constants
             // the camera position and lookup at least match up to the coordinates/colors we gave
             basicEffect.View = fpsCamera.GetView();
-            basicEffect.Projection = Matrix.CreatePerspectiveFieldOfView((float)(Math.PI / 4), GraphicsDevice.Viewport.AspectRatio, 0.01f, 10f);
+            basicEffect.Projection = Matrix.CreatePerspectiveFieldOfView((float)(Math.PI / 4), GraphicsDevice.Viewport.AspectRatio, 0.01f, 100f);
             basicEffect.DiffuseColor = new Vector3(1, 1, 1);
             basicEffect.AmbientLightColor = new Vector3(0.1f, 0.1f, 0.1f);
             basicEffect.LightingEnabled = true;
             basicEffect.DirectionalLight0.Enabled = true;
             basicEffect.DirectionalLight0.DiffuseColor = new Vector3(0.9f, 0.9f, 0.9f);
-            var direction = new Vector3(3, 2, 1);
+            var direction = new Vector3(2, -2, 10);
             direction.Normalize();
             basicEffect.DirectionalLight0.Direction = direction;
             GraphicsDevice.SetVertexBuffer(renderSubject.vertexBuffer);
