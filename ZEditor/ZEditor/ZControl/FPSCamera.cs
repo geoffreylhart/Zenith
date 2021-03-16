@@ -34,7 +34,7 @@ namespace ZEditor.ZControl
 
             float diffx = 0;
             float diffy = 0;
-            if (prevMouseState.HasValue)
+            if (prevMouseState.HasValue && gameTime.TotalGameTime.TotalSeconds > 0.1)
             {
                 diffx = mouseState.X - relx;
                 diffy = mouseState.Y - rely;
