@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using ZEditor.ZControl;
 using ZEditor.ZGraphics;
-using ZEditor.ZObjects;
+using ZEditor.ZManage;
 
 namespace ZEditor
 {
@@ -27,14 +27,14 @@ namespace ZEditor
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
-            renderSubject = Spaceship1.MakeShip(GraphicsDevice);
+            renderSubject = TemplateManager.Load("zdata.txt", "Spaceship1", GraphicsDevice);
             // view from slightly above and to the right, but far away TODO: for some reason we aren't looking at 0, 0, 0??
             fpsCamera = new FPSCamera(new Vector3(-2, 2, -10), new Vector3(0, 0, 0));
             int w = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
             int h = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
             _graphics.PreferredBackBufferWidth = w;
             _graphics.PreferredBackBufferHeight = h;
-            _graphics.IsFullScreen = true;
+            //_graphics.IsFullScreen = true;
             _graphics.ApplyChanges();
 
             base.Initialize();
