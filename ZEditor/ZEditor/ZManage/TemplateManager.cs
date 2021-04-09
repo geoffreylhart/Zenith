@@ -11,7 +11,7 @@ namespace ZEditor.ZManage
 {
     public class TemplateManager
     {
-        public static VertexIndexBuffer Load(string fileName, string templateName, GraphicsDevice graphicsDevice)
+        public static ITemplate Load(string fileName, string templateName)
         {
             string rootDirectory = Directory.GetCurrentDirectory();
             string fullPath = Path.Combine(rootDirectory.Substring(0, rootDirectory.IndexOf("ZEditor")), "ZEditor\\ZEditor", fileName);
@@ -25,7 +25,7 @@ namespace ZEditor.ZManage
                         string name = match.Groups[1].Value;
                         if (name == templateName)
                         {
-                            return ReadTemplate(reader).MakeBuffer(graphicsDevice);
+                            return ReadTemplate(reader);
                         }
                     }
                 }

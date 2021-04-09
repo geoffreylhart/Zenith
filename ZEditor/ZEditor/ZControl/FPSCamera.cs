@@ -7,7 +7,7 @@ using System.Text;
 
 namespace ZEditor.ZControl
 {
-    class FPSCamera
+    public class FPSCamera
     {
         private Vector3 cameraPosition;
         private Vector3 cameraLookUnitVector;
@@ -46,7 +46,6 @@ namespace ZEditor.ZControl
             Matrix projection = Matrix.CreatePerspectiveFieldOfView((float)(Math.PI / 4), graphicsDevice.Viewport.AspectRatio, 0.01f, 10f);
             Vector3 unprojected = graphicsDevice.Viewport.Unproject(new Vector3(relx, rely, 0.25f), projection, view, world);
             Vector3 unprojected2 = graphicsDevice.Viewport.Unproject(new Vector3(relx, rely, 0.75f), projection, view, world);
-            var blah = graphicsDevice.Viewport.MinDepth;
             var newCameraLookUnitVector = unprojected2 - unprojected;
             newCameraLookUnitVector.Normalize();
             cameraLookUnitVector = newCameraLookUnitVector;
@@ -91,6 +90,23 @@ namespace ZEditor.ZControl
 
             prevKeyboardState = keyboardState;
             prevMouseState = mouseState;
+        }
+
+        public Vector3 GetPosition()
+        {
+            return cameraPosition;
+        }
+
+        public Vector3 GetLookUnitVector(float mouseX, float mouseY, GraphicsDevice graphicsDevice)
+        {
+            Matrix world = Matrix.Identity;
+            Matrix view = GetView();
+            Matrix projection = Matrix.CreatePerspectiveFieldOfView((float)(Math.PI / 4), graphicsDevice.Viewport.AspectRatio, 0.01f, 10f);
+            Vector3 unprojected = graphicsDevice.Viewport.Unproject(new Vector3(mouseX, mouseY, 0.25f), projection, view, world);
+            Vector3 unprojected2 = graphicsDevice.Viewport.Unproject(new Vector3(mouseX, mouseY, 0.75f), projection, view, world);
+            var newCameraLookUnitVector = unprojected2 - unprojected;
+            newCameraLookUnitVector.Normalize();
+            return newCameraLookUnitVector;
         }
     }
 }
