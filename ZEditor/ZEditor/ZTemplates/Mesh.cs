@@ -14,6 +14,7 @@ namespace ZEditor.ZTemplates
     class Mesh : ITemplate
     {
         List<Vector3> positions = new List<Vector3>();
+        List<int>[] positionIndices;
         List<VertexPositionNormalTexture> vertices = new List<VertexPositionNormalTexture>();
         List<int> indices = new List<int>();
         VertexIndexBuffer buffer;
@@ -28,8 +29,11 @@ namespace ZEditor.ZTemplates
             {
                 var split = currLine.Trim().Split(',');
                 positions.Add(new Vector3(float.Parse(split[0]), float.Parse(split[1]), float.Parse(split[2])));
+                tracker.Track(positions.Count - 1, positions[positions.Count - 1]);
                 currLine = reader.ReadLine();
             }
+            positionIndices = new List<int>[positions.Count];
+            for (int i = 0; i < positions.Count; i++) positionIndices[i] = new List<int>();
             currLine = reader.ReadLine();
             if (!currLine.Contains("Quads")) throw new NotImplementedException();
             currLine = reader.ReadLine();
@@ -53,10 +57,10 @@ namespace ZEditor.ZTemplates
                 vertices.Add(new VertexPositionNormalTexture(topRight, normal, new Vector2(1, 0)));
                 vertices.Add(new VertexPositionNormalTexture(bottomRight, normal, new Vector2(1, 1)));
                 vertices.Add(new VertexPositionNormalTexture(bottomLeft, normal, new Vector2(0, 1)));
-                tracker.Track(vertices.Count - 4, topLeft);
-                tracker.Track(vertices.Count - 3, topRight);
-                tracker.Track(vertices.Count - 2, bottomRight);
-                tracker.Track(vertices.Count - 1, bottomLeft);
+                positionIndices[int.Parse(split[0])].Add(vertices.Count - 4);
+                positionIndices[int.Parse(split[1])].Add(vertices.Count - 3);
+                positionIndices[int.Parse(split[2])].Add(vertices.Count - 2);
+                positionIndices[int.Parse(split[3])].Add(vertices.Count - 1);
                 currLine = reader.ReadLine();
             }
             currLine = reader.ReadLine();
@@ -77,9 +81,9 @@ namespace ZEditor.ZTemplates
                 vertices.Add(new VertexPositionNormalTexture(v1, normal, new Vector2(0, 0)));
                 vertices.Add(new VertexPositionNormalTexture(v2, normal, new Vector2(1, 0)));
                 vertices.Add(new VertexPositionNormalTexture(v3, normal, new Vector2(1, 1)));
-                tracker.Track(vertices.Count - 3, v1);
-                tracker.Track(vertices.Count - 2, v2);
-                tracker.Track(vertices.Count - 1, v3);
+                positionIndices[int.Parse(split[0])].Add(vertices.Count - 3);
+                positionIndices[int.Parse(split[1])].Add(vertices.Count - 2);
+                positionIndices[int.Parse(split[2])].Add(vertices.Count - 1);
                 currLine = reader.ReadLine();
             }
         }
@@ -105,10 +109,13 @@ namespace ZEditor.ZTemplates
             {
                 int nearestIndice = tracker.GetNearest(camera.GetPosition(), camera.GetLookUnitVector(mouseState.X, mouseState.Y, graphicsDevice));
                 VertexPositionNormalTexture[] temp = new VertexPositionNormalTexture[1];
-                buffer.vertexBuffer.GetData<VertexPositionNormalTexture>(VertexPositionNormalTexture.VertexDeclaration.VertexStride * nearestIndice, temp, 0, 1);
+                buffer.vertexBuffer.GetData<VertexPositionNormalTexture>(VertexPositionNormalTexture.VertexDeclaration.VertexStride * positionIndices[nearestIndice][0], temp, 0, 1);
                 temp[0].Position = temp[0].Position + Vector3.Forward * 0.01f;
                 tracker.Update(nearestIndice, temp[0].Position);
-                buffer.vertexBuffer.SetData<VertexPositionNormalTexture>(VertexPositionNormalTexture.VertexDeclaration.VertexStride * nearestIndice, temp, 0, 1, VertexPositionNormalTexture.VertexDeclaration.VertexStride);
+                foreach (var indice in positionIndices[nearestIndice])
+                {
+                    buffer.vertexBuffer.SetData<VertexPositionNormalTexture>(VertexPositionNormalTexture.VertexDeclaration.VertexStride * indice, temp, 0, 1, VertexPositionNormalTexture.VertexDeclaration.VertexStride);
+                }
             }
         }
     }
