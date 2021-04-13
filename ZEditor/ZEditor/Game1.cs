@@ -17,6 +17,7 @@ namespace ZEditor
         private FPSCamera fpsCamera;
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
+        private Texture2D cursorTexture;
 
         public Game1()
         {
@@ -33,6 +34,16 @@ namespace ZEditor
             renderSubjectBuffer = renderSubject.MakeBuffer(GraphicsDevice);
             // view from slightly above and to the right, but far away TODO: for some reason we aren't looking at 0, 0, 0??
             fpsCamera = new FPSCamera(new Vector3(-2, 2, -10), new Vector3(0, 0, 0));
+            int radii = 5;
+            cursorTexture = new Texture2D(GraphicsDevice, radii * 2 + 1, radii * 2 + 1);
+            Color[] data = new Color[(radii * 2 + 1) * (radii * 2 + 1)];
+            for (int i = 0; i < radii * 2 + 1; i++)
+            {
+                data[i + (radii * 2 + 1) * radii] = Color.White; // horizontal
+                data[i * (radii * 2 + 1) + radii] = Color.White; // vertical
+            }
+            cursorTexture.SetData(data);
+
             int w = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
             int h = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
             _graphics.PreferredBackBufferWidth = w;
@@ -89,6 +100,10 @@ namespace ZEditor
                 pass.Apply();
                 GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, renderSubjectBuffer.indexBuffer.IndexCount / 3);
             }
+            // draw cursor
+            _spriteBatch.Begin(SpriteSortMode.Deferred, null, null, DepthStencilState.Default, null, null, null);
+            _spriteBatch.Draw(cursorTexture, new Vector2(GraphicsDevice.Viewport.Width / 2f, GraphicsDevice.Viewport.Height / 2f), Color.White);
+            _spriteBatch.End();
 
             base.Draw(gameTime);
         }

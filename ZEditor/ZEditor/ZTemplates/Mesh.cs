@@ -124,39 +124,53 @@ namespace ZEditor.ZTemplates
             return buffer;
         }
 
+        int? draggingIndex = null;
         // note: getting too confusing, since we don't split quads currently into 2 detached triangles, we can't update quads with 2 different normals...
         public void Update(GameTime gameTime, KeyboardState keyboardState, MouseState mouseState, FPSCamera camera, GraphicsDevice graphicsDevice)
         {
             if (buffer != null)
             {
-                int nearestIndice = tracker.GetNearest(camera.GetPosition(), camera.GetLookUnitVector(mouseState.X, mouseState.Y, graphicsDevice));
-                VertexPositionNormalTexture[] temp = new VertexPositionNormalTexture[1];
-                buffer.vertexBuffer.GetData<VertexPositionNormalTexture>(VertexPositionNormalTexture.VertexDeclaration.VertexStride * positions[nearestIndice].vertices[0].index, temp, 0, 1);
-                temp[0].Position = temp[0].Position + Vector3.Up * 0.01f;
-                tracker.Update(nearestIndice, temp[0].Position);
-                foreach (var vertex in positions[nearestIndice].vertices)
+                if (mouseState.LeftButton == ButtonState.Pressed)
                 {
-                    VertexPositionNormalTexture temp2 = vertices[vertex.index];
-                    temp2.Position = temp[0].Position;
-                    vertices[vertex.index] = temp2;
-                    Vector3 newNormal;
-                    if (vertex.polygonNumVertices == 3)
+                    if (draggingIndex == null)
                     {
-                        newNormal = CalculateNormal(vertices[vertex.polygonStartIndex].Position, vertices[vertex.polygonStartIndex + 1].Position, vertices[vertex.polygonStartIndex + 2].Position);
+                        draggingIndex = tracker.GetNearest(camera.GetPosition(), camera.GetLookUnitVector(mouseState.X, mouseState.Y, graphicsDevice));
                     }
-                    else
+                }
+                else
+                {
+                    draggingIndex = null;
+                }
+                if (draggingIndex != null)
+                {
+                    VertexPositionNormalTexture[] temp = new VertexPositionNormalTexture[1];
+                    buffer.vertexBuffer.GetData<VertexPositionNormalTexture>(VertexPositionNormalTexture.VertexDeclaration.VertexStride * positions[draggingIndex.Value].vertices[0].index, temp, 0, 1);
+                    temp[0].Position = temp[0].Position + Vector3.Up * 0.01f;
+                    tracker.Update(draggingIndex.Value, temp[0].Position);
+                    foreach (var vertex in positions[draggingIndex.Value].vertices)
                     {
-                        newNormal = CalculateNormal(vertices[vertex.polygonStartIndex].Position, vertices[vertex.polygonStartIndex + 1].Position, vertices[vertex.polygonStartIndex + 2].Position, vertices[vertex.polygonStartIndex + 3].Position);
+                        VertexPositionNormalTexture temp2 = vertices[vertex.index];
+                        temp2.Position = temp[0].Position;
+                        vertices[vertex.index] = temp2;
+                        Vector3 newNormal;
+                        if (vertex.polygonNumVertices == 3)
+                        {
+                            newNormal = CalculateNormal(vertices[vertex.polygonStartIndex].Position, vertices[vertex.polygonStartIndex + 1].Position, vertices[vertex.polygonStartIndex + 2].Position);
+                        }
+                        else
+                        {
+                            newNormal = CalculateNormal(vertices[vertex.polygonStartIndex].Position, vertices[vertex.polygonStartIndex + 1].Position, vertices[vertex.polygonStartIndex + 2].Position, vertices[vertex.polygonStartIndex + 3].Position);
+                        }
+                        temp[0].Normal = newNormal;
+                        for (int i = 0; i < vertex.polygonNumVertices; i++)
+                        {
+                            VertexPositionNormalTexture[] temp3 = new VertexPositionNormalTexture[1];
+                            buffer.vertexBuffer.GetData<VertexPositionNormalTexture>(VertexPositionNormalTexture.VertexDeclaration.VertexStride * (vertex.polygonStartIndex + i), temp3, 0, 1);
+                            temp3[0].Normal = newNormal;
+                            buffer.vertexBuffer.SetData<VertexPositionNormalTexture>(VertexPositionNormalTexture.VertexDeclaration.VertexStride * (vertex.polygonStartIndex + i), temp3, 0, 1, VertexPositionNormalTexture.VertexDeclaration.VertexStride);
+                        }
+                        buffer.vertexBuffer.SetData<VertexPositionNormalTexture>(VertexPositionNormalTexture.VertexDeclaration.VertexStride * vertex.index, temp, 0, 1, VertexPositionNormalTexture.VertexDeclaration.VertexStride);
                     }
-                    temp[0].Normal = newNormal;
-                    for (int i = 0; i < vertex.polygonNumVertices; i++)
-                    {
-                        VertexPositionNormalTexture[] temp3 = new VertexPositionNormalTexture[1];
-                        buffer.vertexBuffer.GetData<VertexPositionNormalTexture>(VertexPositionNormalTexture.VertexDeclaration.VertexStride * (vertex.polygonStartIndex + i), temp3, 0, 1);
-                        temp3[0].Normal = newNormal;
-                        buffer.vertexBuffer.SetData<VertexPositionNormalTexture>(VertexPositionNormalTexture.VertexDeclaration.VertexStride * (vertex.polygonStartIndex + i), temp3, 0, 1, VertexPositionNormalTexture.VertexDeclaration.VertexStride);
-                    }
-                    buffer.vertexBuffer.SetData<VertexPositionNormalTexture>(VertexPositionNormalTexture.VertexDeclaration.VertexStride * vertex.index, temp, 0, 1, VertexPositionNormalTexture.VertexDeclaration.VertexStride);
                 }
             }
         }
