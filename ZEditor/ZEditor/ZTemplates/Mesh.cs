@@ -145,7 +145,12 @@ namespace ZEditor.ZTemplates
                 {
                     VertexPositionNormalTexture[] temp = new VertexPositionNormalTexture[1];
                     buffer.vertexBuffer.GetData<VertexPositionNormalTexture>(VertexPositionNormalTexture.VertexDeclaration.VertexStride * positions[draggingIndex.Value].vertices[0].index, temp, 0, 1);
-                    temp[0].Position = temp[0].Position + Vector3.Up * 0.01f;
+                    float oldDistance = (temp[0].Position - camera.GetPosition()).Length();
+                    temp[0].Position = camera.GetPosition() + camera.GetLookUnitVector(mouseState.X, mouseState.Y, graphicsDevice) * oldDistance;
+                    // snap to grid
+                    temp[0].Position.X = (float)Math.Round(temp[0].Position.X * 4) / 4;
+                    temp[0].Position.Y = (float)Math.Round(temp[0].Position.Y * 4) / 4;
+                    temp[0].Position.Z = (float)Math.Round(temp[0].Position.Z * 4) / 4;
                     tracker.Update(draggingIndex.Value, temp[0].Position);
                     foreach (var vertex in positions[draggingIndex.Value].vertices)
                     {
