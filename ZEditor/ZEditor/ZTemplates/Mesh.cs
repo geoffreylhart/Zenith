@@ -11,6 +11,26 @@ using ZEditor.ZManage;
 
 namespace ZEditor.ZTemplates
 {
+    // feature todo list:
+    // rewrite to make better sense
+    // matching basic blender functionality:
+    // grey shader thats vaguely specular
+    // objects that are selectable based on mesh and sortable (appears to not care about time but always selects something different, goes through full stack if you never move mouse)
+    // edit mode which renders primarily selected points/edges as whiter, selected as oranger, and fades from orangish in point selection mode
+    //  middle mouse click to drag around origin
+    // ctrl-click for snap, shift click for fine control
+    // x,y,z to lock to those or shift-x-y-z (cancel by typing again) with i guess grids
+    // display point vertices
+    // shift click to select multiple, ctrl click to trace and select multiple
+    // ctrl-r for loop cuts (highlight with yellow) scroll wheel to increase count
+    // e extrude
+    // s to scale
+    // f to make face
+    // z wireframe
+    // a select all
+    // grid base at y=0? which extends infinite and is thicker every 10
+    // rgb xyz axis and widget
+    // selecting mesh gives outline and fainter outline if certain depth in
     class Mesh : ITemplate
     {
         public class PositionInfo
