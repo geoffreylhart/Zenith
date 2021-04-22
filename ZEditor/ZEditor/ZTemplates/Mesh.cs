@@ -66,7 +66,7 @@ namespace ZEditor.ZTemplates
         List<int> faceIndices = new List<int>();
         List<VertexPositionColor> lineVertices = new List<VertexPositionColor>();
         List<int> lineIndices = new List<int>();
-        List<VertexPositionColor> pointVertices = new List<VertexPositionColor>();
+        List<VertexPositionColorTexture> pointVertices = new List<VertexPositionColorTexture>();
         List<int> pointIndices = new List<int>();
         VertexIndexBuffer faceBuffer;
         VertexIndexBuffer lineBuffer;
@@ -105,6 +105,7 @@ namespace ZEditor.ZTemplates
 
         private void AddPoly(string currLine, int sides)
         {
+            // TODO: remove duplicate lines/points
             var split = currLine.Trim().Split(',');
             var infos = split.Select(x => positions[int.Parse(x)]).ToArray();
             for (int i = 0; i < sides - 2; i++)
@@ -117,6 +118,12 @@ namespace ZEditor.ZTemplates
             {
                 lineIndices.Add(lineVertices.Count + i);
                 lineIndices.Add(lineVertices.Count + (i + 1) % sides);
+                pointIndices.Add(pointVertices.Count + i * 4);
+                pointIndices.Add(pointVertices.Count + 1 + i * 4);
+                pointIndices.Add(pointVertices.Count + 2 + i * 4);
+                pointIndices.Add(pointVertices.Count + i * 4);
+                pointIndices.Add(pointVertices.Count + 2 + i * 4);
+                pointIndices.Add(pointVertices.Count + 3 + i * 4);
             }
             Vector3 normal = CalculateNormal(infos.Select(x => x.v).ToArray());
             for (int i = 0; i < sides; i++)
@@ -124,6 +131,10 @@ namespace ZEditor.ZTemplates
                 // TODO: texture coordinate
                 faceVertices.Add(new VertexPositionNormalTexture(infos[i].v, normal, new Vector2(0, 0)));
                 lineVertices.Add(new VertexPositionColor(infos[i].v, Color.Black));
+                pointVertices.Add(new VertexPositionColorTexture(infos[i].v, Color.Black, new Vector2(0, 0)));
+                pointVertices.Add(new VertexPositionColorTexture(infos[i].v, Color.Black, new Vector2(1, 0)));
+                pointVertices.Add(new VertexPositionColorTexture(infos[i].v, Color.Black, new Vector2(1, 1)));
+                pointVertices.Add(new VertexPositionColorTexture(infos[i].v, Color.Black, new Vector2(0, 1)));
             }
             for (int i = 0; i < sides; i++)
             {
@@ -158,7 +169,7 @@ namespace ZEditor.ZTemplates
 
         public VertexIndexBuffer MakePointBuffer(GraphicsDevice graphicsDevice)
         {
-            var vertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, pointVertices.Count, BufferUsage.None);
+            var vertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColorTexture.VertexDeclaration, pointVertices.Count, BufferUsage.None);
             vertexBuffer.SetData(pointVertices.ToArray());
             var indexBuffer = new IndexBuffer(graphicsDevice, IndexElementSize.ThirtyTwoBits, pointIndices.Count, BufferUsage.None);
             indexBuffer.SetData(pointIndices.ToArray());

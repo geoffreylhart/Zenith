@@ -16,6 +16,7 @@ namespace ZEditor
         private VertexIndexBuffer renderSubjectFaceBuffer;
         private VertexIndexBuffer renderSubjectLineBuffer;
         private VertexIndexBuffer renderSubjectPointBuffer;
+        private Effect pointsShader;
         private ITemplate renderSubject;
         private FPSCamera fpsCamera;
         private GraphicsDeviceManager _graphics;
@@ -37,6 +38,7 @@ namespace ZEditor
             renderSubject = TemplateManager.Load("zdata.txt", "Spaceship1");
             renderSubjectFaceBuffer = renderSubject.MakeFaceBuffer(GraphicsDevice);
             renderSubjectLineBuffer = renderSubject.MakeLineBuffer(GraphicsDevice);
+            renderSubjectPointBuffer = renderSubject.MakePointBuffer(GraphicsDevice);
             // view from slightly above and to the right, but far away TODO: for some reason we aren't looking at 0, 0, 0??
             fpsCamera = new FPSCamera(new Vector3(-2, 2, -10), new Vector3(0, 0, 0));
             int radii = 5;
@@ -48,6 +50,8 @@ namespace ZEditor
                 data[i * (radii * 2 + 1) + radii] = Color.White; // vertical
             }
             cursorTexture.SetData(data);
+
+            pointsShader = Content.Load<Effect>("Shaders/PointsShader");
 
             int w = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
             int h = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
@@ -100,27 +104,24 @@ namespace ZEditor
             var direction = new Vector3(2, -2, 10);
             direction.Normalize();
             basicEffect.DirectionalLight0.Direction = direction;
+            // points effect
+            Effect pointsEffect = pointsShader;
+            pointsShader.Parameters["WVP"].SetValue(basicEffect.World * basicEffect.View * basicEffect.Projection);
+            pointsShader.Parameters["PointSize"].SetValue(new Vector2(10f / GraphicsDevice.Viewport.Width, 10f / GraphicsDevice.Viewport.Height));
             if (editMode)
             {
-                GraphicsDevice.SetVertexBuffer(renderSubjectLineBuffer.vertexBuffer);
-                GraphicsDevice.Indices = renderSubjectLineBuffer.indexBuffer;
+                basicEffect.DirectionalLight1.Enabled = true;
+                basicEffect.DirectionalLight1.DiffuseColor = new Vector3(0.9f, 0.9f, 0.9f);
+                var direction2 = new Vector3(-2, 2, -10);
+                direction2.Normalize();
+                basicEffect.DirectionalLight1.Direction = direction2;
+                Render(GraphicsDevice, basicEffect, renderSubjectFaceBuffer, PrimitiveType.TriangleList, renderSubjectFaceBuffer.indexBuffer.IndexCount / 3);
+                Render(GraphicsDevice, basicEffect, renderSubjectLineBuffer, PrimitiveType.LineList, renderSubjectLineBuffer.indexBuffer.IndexCount / 2);
+                Render(GraphicsDevice, pointsShader, renderSubjectPointBuffer, PrimitiveType.TriangleList, renderSubjectPointBuffer.indexBuffer.IndexCount / 3);
             }
             else
             {
-                GraphicsDevice.SetVertexBuffer(renderSubjectFaceBuffer.vertexBuffer);
-                GraphicsDevice.Indices = renderSubjectFaceBuffer.indexBuffer;
-            }
-            foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-                if (editMode)
-                {
-                    GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.LineList, 0, 0, renderSubjectLineBuffer.indexBuffer.IndexCount / 2);
-                }
-                else
-                {
-                    GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, renderSubjectFaceBuffer.indexBuffer.IndexCount / 3);
-                }
+                Render(GraphicsDevice, basicEffect, renderSubjectFaceBuffer, PrimitiveType.TriangleList, renderSubjectFaceBuffer.indexBuffer.IndexCount / 3);
             }
             // draw cursor
             _spriteBatch.Begin(SpriteSortMode.Deferred, null, null, DepthStencilState.Default, null, null, null);
@@ -128,6 +129,17 @@ namespace ZEditor
             _spriteBatch.End();
 
             base.Draw(gameTime);
+        }
+
+        private void Render(GraphicsDevice graphicsDevice, Effect effect, VertexIndexBuffer buffer, PrimitiveType primitiveType, int primitiveCount)
+        {
+            graphicsDevice.SetVertexBuffer(buffer.vertexBuffer);
+            graphicsDevice.Indices = buffer.indexBuffer;
+            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                GraphicsDevice.DrawIndexedPrimitives(primitiveType, 0, 0, primitiveCount);
+            }
         }
     }
 }

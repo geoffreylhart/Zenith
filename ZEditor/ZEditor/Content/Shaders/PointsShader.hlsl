@@ -1,26 +1,17 @@
 float4x4 WVP;
-float PointRadius;
-
-texture Texture;
-sampler2D textureSampler = sampler_state {
-	Texture = (Texture);
-	MinFilter = Point;
-	MagFilter = Point;
-	AddressU = Clamp;
-	AddressV = Wrap;
-};
+float2 PointSize;
 
 struct VertexShaderInput
 {
 	float4 Position : POSITION0;
-	float4 Normal : NORMAL0;
-	float2 TextureCoordinate : TEXCOORD0;
+	float4 Color: COLOR0;
+	float2 TextureCoordinate: TEXCOORD0;
 };
  
 struct VertexShaderOutput
 {
 	float4 Position : POSITION0;
-	float2 TextureCoordinate : TEXCOORD1;
+	float4 Color : COLOR0;
 };
 
 struct PixelShaderOutput
@@ -31,16 +22,18 @@ struct PixelShaderOutput
 VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 {
 	VertexShaderOutput output;
-	output.Position = mul(input.Position, WVP) + input.Normal * PointRadius;
-	output.TextureCoordinate = input.TextureCoordinate;
+	output.Position = mul(input.Position, WVP);
+	output.Position /= output.Position.w;
+	// TODO: make sure flipping makes sense, and the two times (because we're going from 0-1 to -1-1?
+	output.Position += float4((input.TextureCoordinate - float2(0.5, 0.5)) * PointSize * float2(2, -2), 0, 0);
+	output.Color = input.Color;
 	return output;
 }
 
 PixelShaderOutput PixelShaderFunction(VertexShaderOutput input)
 {
 	PixelShaderOutput output;
-	float4 albedo = tex2D(textureSampler, input.TextureCoordinate);
-	output.PNA = float4(albedo.rgb, 1);
+	output.PNA = input.Color;
 	return output;
 }
 
