@@ -15,7 +15,9 @@ namespace ZEditor.ZTemplates
     {
         void Load(StreamReader reader);
         void Save(StreamWriter writer);
-        VertexIndexBuffer MakeBuffer(GraphicsDevice graphics);
+        VertexIndexBuffer MakeFaceBuffer(GraphicsDevice graphics);
+        VertexIndexBuffer MakeLineBuffer(GraphicsDevice graphics);
+        VertexIndexBuffer MakePointBuffer(GraphicsDevice graphics);
         void Update(GameTime gameTime, KeyboardState keyboardState, MouseState mouseState, FPSCamera camera, GraphicsDevice graphicsDevice);
     }
 }

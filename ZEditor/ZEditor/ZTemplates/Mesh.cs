@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using ZEditor.ZControl;
 using ZEditor.ZGraphics;
@@ -31,6 +32,7 @@ namespace ZEditor.ZTemplates
     // grid base at y=0? which extends infinite and is thicker every 10
     // rgb xyz axis and widget
     // selecting mesh gives outline and fainter outline if certain depth in
+    // undo/redo
     class Mesh : ITemplate
     {
         public class PositionInfo
@@ -60,9 +62,15 @@ namespace ZEditor.ZTemplates
         }
 
         List<PositionInfo> positions = new List<PositionInfo>();
-        List<VertexPositionNormalTexture> vertices = new List<VertexPositionNormalTexture>();
-        List<int> indices = new List<int>();
-        VertexIndexBuffer buffer;
+        List<VertexPositionNormalTexture> faceVertices = new List<VertexPositionNormalTexture>();
+        List<int> faceIndices = new List<int>();
+        List<VertexPositionColor> lineVertices = new List<VertexPositionColor>();
+        List<int> lineIndices = new List<int>();
+        List<VertexPositionColor> pointVertices = new List<VertexPositionColor>();
+        List<int> pointIndices = new List<int>();
+        VertexIndexBuffer faceBuffer;
+        VertexIndexBuffer lineBuffer;
+        VertexIndexBuffer pointBuffer;
         PointCollectionTracker tracker = new PointCollectionTracker();
 
         public void Load(StreamReader reader)
@@ -82,27 +90,7 @@ namespace ZEditor.ZTemplates
             currLine = reader.ReadLine();
             while (!currLine.Contains("}"))
             {
-                var split = currLine.Trim().Split(',');
-                PositionInfo topLeft = positions[int.Parse(split[0])];
-                PositionInfo topRight = positions[int.Parse(split[1])];
-                PositionInfo bottomRight = positions[int.Parse(split[2])];
-                PositionInfo bottomLeft = positions[int.Parse(split[3])];
-                // preferred quad order topleft, topright, bottomright, topleft, bottomright, bottomleft
-                indices.Add(vertices.Count);
-                indices.Add(vertices.Count + 1);
-                indices.Add(vertices.Count + 2);
-                indices.Add(vertices.Count);
-                indices.Add(vertices.Count + 2);
-                indices.Add(vertices.Count + 3);
-                Vector3 normal = CalculateNormal(topLeft.v, topRight.v, bottomLeft.v);
-                vertices.Add(new VertexPositionNormalTexture(topLeft.v, normal, new Vector2(0, 0)));
-                vertices.Add(new VertexPositionNormalTexture(topRight.v, normal, new Vector2(1, 0)));
-                vertices.Add(new VertexPositionNormalTexture(bottomRight.v, normal, new Vector2(1, 1)));
-                vertices.Add(new VertexPositionNormalTexture(bottomLeft.v, normal, new Vector2(0, 1)));
-                topLeft.vertices.Add(new VertexInfo(vertices.Count - 4, vertices.Count - 4, 4));
-                topRight.vertices.Add(new VertexInfo(vertices.Count - 3, vertices.Count - 4, 4));
-                bottomRight.vertices.Add(new VertexInfo(vertices.Count - 2, vertices.Count - 4, 4));
-                bottomLeft.vertices.Add(new VertexInfo(vertices.Count - 1, vertices.Count - 4, 4));
+                AddPoly(currLine, 4);
                 currLine = reader.ReadLine();
             }
             currLine = reader.ReadLine();
@@ -110,22 +98,36 @@ namespace ZEditor.ZTemplates
             currLine = reader.ReadLine();
             while (!currLine.Contains("}"))
             {
-                var split = currLine.Trim().Split(',');
-                PositionInfo v1 = positions[int.Parse(split[0])];
-                PositionInfo v2 = positions[int.Parse(split[1])];
-                PositionInfo v3 = positions[int.Parse(split[2])];
-                // preferred quad order topleft, topright, bottomright, topleft, bottomright, bottomleft
-                indices.Add(vertices.Count);
-                indices.Add(vertices.Count + 1);
-                indices.Add(vertices.Count + 2);
-                Vector3 normal = CalculateNormal(v1.v, v2.v, v3.v);
-                vertices.Add(new VertexPositionNormalTexture(v1.v, normal, new Vector2(0, 0)));
-                vertices.Add(new VertexPositionNormalTexture(v2.v, normal, new Vector2(1, 0)));
-                vertices.Add(new VertexPositionNormalTexture(v3.v, normal, new Vector2(1, 1)));
-                v1.vertices.Add(new VertexInfo(vertices.Count - 3, vertices.Count - 3, 3));
-                v2.vertices.Add(new VertexInfo(vertices.Count - 2, vertices.Count - 3, 3));
-                v3.vertices.Add(new VertexInfo(vertices.Count - 1, vertices.Count - 3, 3));
+                AddPoly(currLine, 3);
                 currLine = reader.ReadLine();
+            }
+        }
+
+        private void AddPoly(string currLine, int sides)
+        {
+            var split = currLine.Trim().Split(',');
+            var infos = split.Select(x => positions[int.Parse(x)]).ToArray();
+            for (int i = 0; i < sides - 2; i++)
+            {
+                faceIndices.Add(faceVertices.Count);
+                faceIndices.Add(faceVertices.Count + 1 + i);
+                faceIndices.Add(faceVertices.Count + 2 + i);
+            }
+            for (int i = 0; i < sides; i++)
+            {
+                lineIndices.Add(lineVertices.Count + i);
+                lineIndices.Add(lineVertices.Count + (i + 1) % sides);
+            }
+            Vector3 normal = CalculateNormal(infos.Select(x => x.v).ToArray());
+            for (int i = 0; i < sides; i++)
+            {
+                // TODO: texture coordinate
+                faceVertices.Add(new VertexPositionNormalTexture(infos[i].v, normal, new Vector2(0, 0)));
+                lineVertices.Add(new VertexPositionColor(infos[i].v, Color.Black));
+            }
+            for (int i = 0; i < sides; i++)
+            {
+                infos[i].vertices.Add(new VertexInfo(faceVertices.Count - sides + i, faceVertices.Count - sides, sides));
             }
         }
 
@@ -134,21 +136,41 @@ namespace ZEditor.ZTemplates
             throw new NotImplementedException();
         }
 
-        public VertexIndexBuffer MakeBuffer(GraphicsDevice graphicsDevice)
+        public VertexIndexBuffer MakeFaceBuffer(GraphicsDevice graphicsDevice)
         {
-            var vertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionNormalTexture.VertexDeclaration, vertices.Count, BufferUsage.None);
-            vertexBuffer.SetData(vertices.ToArray());
-            var indexBuffer = new IndexBuffer(graphicsDevice, IndexElementSize.ThirtyTwoBits, indices.Count, BufferUsage.None);
-            indexBuffer.SetData(indices.ToArray());
-            buffer = new VertexIndexBuffer(vertexBuffer, indexBuffer);
-            return buffer;
+            var vertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionNormalTexture.VertexDeclaration, faceVertices.Count, BufferUsage.None);
+            vertexBuffer.SetData(faceVertices.ToArray());
+            var indexBuffer = new IndexBuffer(graphicsDevice, IndexElementSize.ThirtyTwoBits, faceIndices.Count, BufferUsage.None);
+            indexBuffer.SetData(faceIndices.ToArray());
+            faceBuffer = new VertexIndexBuffer(vertexBuffer, indexBuffer);
+            return faceBuffer;
+        }
+
+        public VertexIndexBuffer MakeLineBuffer(GraphicsDevice graphicsDevice)
+        {
+            var vertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, lineVertices.Count, BufferUsage.None);
+            vertexBuffer.SetData(lineVertices.ToArray());
+            var indexBuffer = new IndexBuffer(graphicsDevice, IndexElementSize.ThirtyTwoBits, lineIndices.Count, BufferUsage.None);
+            indexBuffer.SetData(lineIndices.ToArray());
+            lineBuffer = new VertexIndexBuffer(vertexBuffer, indexBuffer);
+            return lineBuffer;
+        }
+
+        public VertexIndexBuffer MakePointBuffer(GraphicsDevice graphicsDevice)
+        {
+            var vertexBuffer = new VertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, pointVertices.Count, BufferUsage.None);
+            vertexBuffer.SetData(pointVertices.ToArray());
+            var indexBuffer = new IndexBuffer(graphicsDevice, IndexElementSize.ThirtyTwoBits, pointIndices.Count, BufferUsage.None);
+            indexBuffer.SetData(pointIndices.ToArray());
+            pointBuffer = new VertexIndexBuffer(vertexBuffer, indexBuffer);
+            return pointBuffer;
         }
 
         int? draggingIndex = null;
         // note: getting too confusing, since we don't split quads currently into 2 detached triangles, we can't update quads with 2 different normals...
         public void Update(GameTime gameTime, KeyboardState keyboardState, MouseState mouseState, FPSCamera camera, GraphicsDevice graphicsDevice)
         {
-            if (buffer != null)
+            if (faceBuffer != null)
             {
                 if (mouseState.LeftButton == ButtonState.Pressed)
                 {
@@ -164,7 +186,7 @@ namespace ZEditor.ZTemplates
                 if (draggingIndex != null)
                 {
                     VertexPositionNormalTexture[] temp = new VertexPositionNormalTexture[1];
-                    buffer.vertexBuffer.GetData<VertexPositionNormalTexture>(VertexPositionNormalTexture.VertexDeclaration.VertexStride * positions[draggingIndex.Value].vertices[0].index, temp, 0, 1);
+                    faceBuffer.vertexBuffer.GetData<VertexPositionNormalTexture>(VertexPositionNormalTexture.VertexDeclaration.VertexStride * positions[draggingIndex.Value].vertices[0].index, temp, 0, 1);
                     float oldDistance = (temp[0].Position - camera.GetPosition()).Length();
                     temp[0].Position = camera.GetPosition() + camera.GetLookUnitVector(mouseState.X, mouseState.Y, graphicsDevice) * oldDistance;
                     // snap to grid
@@ -174,42 +196,40 @@ namespace ZEditor.ZTemplates
                     tracker.Update(draggingIndex.Value, temp[0].Position);
                     foreach (var vertex in positions[draggingIndex.Value].vertices)
                     {
-                        VertexPositionNormalTexture temp2 = vertices[vertex.index];
+                        VertexPositionNormalTexture temp2 = faceVertices[vertex.index];
                         temp2.Position = temp[0].Position;
-                        vertices[vertex.index] = temp2;
+                        faceVertices[vertex.index] = temp2;
                         Vector3 newNormal;
                         if (vertex.polygonNumVertices == 3)
                         {
-                            newNormal = CalculateNormal(vertices[vertex.polygonStartIndex].Position, vertices[vertex.polygonStartIndex + 1].Position, vertices[vertex.polygonStartIndex + 2].Position);
+                            newNormal = CalculateNormal(faceVertices[vertex.polygonStartIndex].Position, faceVertices[vertex.polygonStartIndex + 1].Position, faceVertices[vertex.polygonStartIndex + 2].Position);
                         }
                         else
                         {
-                            newNormal = CalculateNormal(vertices[vertex.polygonStartIndex].Position, vertices[vertex.polygonStartIndex + 1].Position, vertices[vertex.polygonStartIndex + 2].Position, vertices[vertex.polygonStartIndex + 3].Position);
+                            newNormal = CalculateNormal(faceVertices[vertex.polygonStartIndex].Position, faceVertices[vertex.polygonStartIndex + 1].Position, faceVertices[vertex.polygonStartIndex + 2].Position, faceVertices[vertex.polygonStartIndex + 3].Position);
                         }
                         temp[0].Normal = newNormal;
                         for (int i = 0; i < vertex.polygonNumVertices; i++)
                         {
                             VertexPositionNormalTexture[] temp3 = new VertexPositionNormalTexture[1];
-                            buffer.vertexBuffer.GetData<VertexPositionNormalTexture>(VertexPositionNormalTexture.VertexDeclaration.VertexStride * (vertex.polygonStartIndex + i), temp3, 0, 1);
+                            faceBuffer.vertexBuffer.GetData<VertexPositionNormalTexture>(VertexPositionNormalTexture.VertexDeclaration.VertexStride * (vertex.polygonStartIndex + i), temp3, 0, 1);
                             temp3[0].Normal = newNormal;
-                            buffer.vertexBuffer.SetData<VertexPositionNormalTexture>(VertexPositionNormalTexture.VertexDeclaration.VertexStride * (vertex.polygonStartIndex + i), temp3, 0, 1, VertexPositionNormalTexture.VertexDeclaration.VertexStride);
+                            faceBuffer.vertexBuffer.SetData<VertexPositionNormalTexture>(VertexPositionNormalTexture.VertexDeclaration.VertexStride * (vertex.polygonStartIndex + i), temp3, 0, 1, VertexPositionNormalTexture.VertexDeclaration.VertexStride);
                         }
-                        buffer.vertexBuffer.SetData<VertexPositionNormalTexture>(VertexPositionNormalTexture.VertexDeclaration.VertexStride * vertex.index, temp, 0, 1, VertexPositionNormalTexture.VertexDeclaration.VertexStride);
+                        faceBuffer.vertexBuffer.SetData<VertexPositionNormalTexture>(VertexPositionNormalTexture.VertexDeclaration.VertexStride * vertex.index, temp, 0, 1, VertexPositionNormalTexture.VertexDeclaration.VertexStride);
                     }
                 }
             }
         }
 
-        private Vector3 CalculateNormal(Vector3 v1, Vector3 v2, Vector3 v3)
+        private Vector3 CalculateNormal(params Vector3[] vectors)
         {
-            Vector3 normal = Vector3.Cross(v3 - v1, v2 - v1);
-            normal.Normalize();
-            return normal;
-        }
-
-        private Vector3 CalculateNormal(Vector3 v1, Vector3 v2, Vector3 v3, Vector3 v4)
-        {
-            Vector3 normal = CalculateNormal(v1, v2, v3) + CalculateNormal(v1, v2, v4) + CalculateNormal(v1, v3, v4) + CalculateNormal(v2, v3, v4);
+            Vector3 normal = Vector3.Zero;
+            // TODO: non-random averaging
+            for (int i = 0; i < vectors.Length - 2; i++)
+            {
+                normal += Vector3.Cross(vectors[i + 2] - vectors[i], vectors[i + 1] - vectors[i + i]);
+            }
             normal.Normalize();
             return normal;
         }
