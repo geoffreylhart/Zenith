@@ -39,6 +39,8 @@ namespace ZEditor.ZTemplates
         {
             public Vector3 v;
             public List<VertexInfo> vertices = new List<VertexInfo>();
+            public List<int> lineIndices = new List<int>();
+            public List<int> pointIndices = new List<int>();
 
 
             public PositionInfo(float x, float y, float z)
@@ -139,6 +141,8 @@ namespace ZEditor.ZTemplates
             for (int i = 0; i < sides; i++)
             {
                 infos[i].vertices.Add(new VertexInfo(faceVertices.Count - sides + i, faceVertices.Count - sides, sides));
+                infos[i].lineIndices.Add(lineVertices.Count - sides + i);
+                infos[i].pointIndices.Add(pointVertices.Count - sides * 4 + i * 4);
             }
         }
 
@@ -196,15 +200,17 @@ namespace ZEditor.ZTemplates
                 }
                 if (draggingIndex != null)
                 {
+                    // get position and update tracker
+                    Vector3 newPosition = positions[draggingIndex.Value].v;
+                    float oldDistance = (newPosition - camera.GetPosition()).Length();
+                    newPosition = camera.GetPosition() + camera.GetLookUnitVector(mouseState.X, mouseState.Y, graphicsDevice) * oldDistance;
+                    newPosition.X = (float)Math.Round(newPosition.X * 4) / 4;
+                    newPosition.Y = (float)Math.Round(newPosition.Y * 4) / 4;
+                    newPosition.Z = (float)Math.Round(newPosition.Z * 4) / 4;
+                    tracker.Update(draggingIndex.Value, newPosition);
+                    // update faces
                     VertexPositionNormalTexture[] temp = new VertexPositionNormalTexture[1];
-                    faceBuffer.vertexBuffer.GetData<VertexPositionNormalTexture>(VertexPositionNormalTexture.VertexDeclaration.VertexStride * positions[draggingIndex.Value].vertices[0].index, temp, 0, 1);
-                    float oldDistance = (temp[0].Position - camera.GetPosition()).Length();
-                    temp[0].Position = camera.GetPosition() + camera.GetLookUnitVector(mouseState.X, mouseState.Y, graphicsDevice) * oldDistance;
-                    // snap to grid
-                    temp[0].Position.X = (float)Math.Round(temp[0].Position.X * 4) / 4;
-                    temp[0].Position.Y = (float)Math.Round(temp[0].Position.Y * 4) / 4;
-                    temp[0].Position.Z = (float)Math.Round(temp[0].Position.Z * 4) / 4;
-                    tracker.Update(draggingIndex.Value, temp[0].Position);
+                    temp[0].Position = newPosition;
                     foreach (var vertex in positions[draggingIndex.Value].vertices)
                     {
                         VertexPositionNormalTexture temp2 = faceVertices[vertex.index];
@@ -223,11 +229,27 @@ namespace ZEditor.ZTemplates
                         for (int i = 0; i < vertex.polygonNumVertices; i++)
                         {
                             VertexPositionNormalTexture[] temp3 = new VertexPositionNormalTexture[1];
-                            faceBuffer.vertexBuffer.GetData<VertexPositionNormalTexture>(VertexPositionNormalTexture.VertexDeclaration.VertexStride * (vertex.polygonStartIndex + i), temp3, 0, 1);
+                            faceBuffer.vertexBuffer.GetData(VertexPositionNormalTexture.VertexDeclaration.VertexStride * (vertex.polygonStartIndex + i), temp3, 0, 1);
                             temp3[0].Normal = newNormal;
-                            faceBuffer.vertexBuffer.SetData<VertexPositionNormalTexture>(VertexPositionNormalTexture.VertexDeclaration.VertexStride * (vertex.polygonStartIndex + i), temp3, 0, 1, VertexPositionNormalTexture.VertexDeclaration.VertexStride);
+                            faceBuffer.vertexBuffer.SetData(VertexPositionNormalTexture.VertexDeclaration.VertexStride * (vertex.polygonStartIndex + i), temp3, 0, 1, VertexPositionNormalTexture.VertexDeclaration.VertexStride);
                         }
-                        faceBuffer.vertexBuffer.SetData<VertexPositionNormalTexture>(VertexPositionNormalTexture.VertexDeclaration.VertexStride * vertex.index, temp, 0, 1, VertexPositionNormalTexture.VertexDeclaration.VertexStride);
+                        faceBuffer.vertexBuffer.SetData(VertexPositionNormalTexture.VertexDeclaration.VertexStride * vertex.index, temp, 0, 1, VertexPositionNormalTexture.VertexDeclaration.VertexStride);
+                    }
+                    // update lines
+                    var temp4 = new VertexPositionColor[] { new VertexPositionColor(newPosition, Color.Black) };
+                    foreach (var index in positions[draggingIndex.Value].lineIndices)
+                    {
+                        lineBuffer.vertexBuffer.SetData(VertexPositionColor.VertexDeclaration.VertexStride * index, temp4, 0, 1, VertexPositionColor.VertexDeclaration.VertexStride);
+                    }
+                    // update points
+                    var temp5 = new VertexPositionColorTexture[4];
+                    temp5[0] = new VertexPositionColorTexture(newPosition, Color.Black, new Vector2(0, 0));
+                    temp5[1] = new VertexPositionColorTexture(newPosition, Color.Black, new Vector2(1, 0));
+                    temp5[2] = new VertexPositionColorTexture(newPosition, Color.Black, new Vector2(1, 1));
+                    temp5[3] = new VertexPositionColorTexture(newPosition, Color.Black, new Vector2(0, 1));
+                    foreach (var index in positions[draggingIndex.Value].pointIndices)
+                    {
+                        pointBuffer.vertexBuffer.SetData(VertexPositionColorTexture.VertexDeclaration.VertexStride * index, temp5, 0, 4, VertexPositionColorTexture.VertexDeclaration.VertexStride);
                     }
                 }
             }
