@@ -40,7 +40,7 @@ namespace ZEditor.ZManage
             switch (thisName)
             {
                 case "Mesh":
-                    var mesh = new Mesh();
+                    var mesh = new MeshTemplate();
                     mesh.Load(reader);
                     return mesh;
                 default:
