@@ -131,11 +131,11 @@ namespace ZEditor.ZTemplates
                     newPosition.X = (float)Math.Round(newPosition.X * 4) / 4;
                     newPosition.Y = (float)Math.Round(newPosition.Y * 4) / 4;
                     newPosition.Z = (float)Math.Round(newPosition.Z * 4) / 4;
-                    tracker.Update(draggingIndex.Value, newPosition);
-                    faceMesh.Update(draggingIndex.Value, newPosition, positions);
-                    lineMesh.Update(draggingIndex.Value, newPosition, positions);
-                    pointMesh.Update(draggingIndex.Value, newPosition, positions);
                     positions[draggingIndex.Value] = newPosition;
+                    tracker.Update(draggingIndex.Value, newPosition);
+                    faceMesh.Update(draggingIndex.Value, positions);
+                    lineMesh.Update(draggingIndex.Value, positions);
+                    pointMesh.Update(draggingIndex.Value, positions);
                 }
             }
         }

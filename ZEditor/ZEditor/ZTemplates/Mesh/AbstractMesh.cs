@@ -11,56 +11,78 @@ namespace ZEditor.ZTemplates.Mesh
     abstract class AbstractMesh<T> where T : struct, IVertexType
     {
         private HashSet<ItemInfo> items;
-        private Dictionary<int, List<ItemInfo>> itemLookup;
+        private Dictionary<int, HashSet<ItemInfo>> itemLookup;
         public VertexIndexBuffer buffer;
 
         private class ItemInfo
         {
             public int[] vertices;
             public int[] indices;
+            public bool flippable;
+
+            public override bool Equals(object obj)
+            {
+                ItemInfo that = (ItemInfo)obj;
+                if (this.vertices.Length != that.vertices.Length) return false;
+                for (int i = 0; i < this.vertices.Length; i++)
+                {
+                    if (this.vertices[i] != that.vertices[i])
+                    {
+                        if (!flippable) return false;
+                        for (int j = 0; j < this.vertices.Length; j++)
+                        {
+                            if (this.vertices[j] != that.vertices[this.vertices.Length - 1 - j]) return false;
+                        }
+                        return true;
+                    }
+                }
+                return true;
+            }
+
+            public override int GetHashCode()
+            {
+                int result = 17;
+                foreach (var x in vertices) result = result * 23 + x;
+                if (!flippable) return result;
+                int result2 = 17;
+                for (int i = 0; i < vertices.Length; i++) result2 = result2 * 23 + vertices[vertices.Length - 1 - i];
+                return Math.Min(result, result2);
+            }
         }
 
         public AbstractMesh()
         {
-            itemLookup = new Dictionary<int, List<ItemInfo>>();
-            if (FlippedAreEquivalent())
-            {
-                items = new HashSet<ItemInfo>(new FlippableIntArrayComparer());
-            }
-            else
-            {
-                items = new HashSet<ItemInfo>(new IntArrayComparer());
-            }
+            itemLookup = new Dictionary<int, HashSet<ItemInfo>>();
+            items = new HashSet<ItemInfo>();
         }
 
         public void AddItem(int[] itemIndices)
         {
-            ItemInfo item = new ItemInfo() { vertices = itemIndices, indices = new int[itemIndices.Length * VerticesPerVertex()] };
+            ItemInfo item = new ItemInfo() { vertices = itemIndices, indices = new int[itemIndices.Length * VerticesPerVertex()], flippable = FlippedAreEquivalent() };
             if (!items.Contains(item))
             {
                 items.Add(item);
                 foreach (int vertex in item.vertices)
                 {
-                    if (!itemLookup.ContainsKey(vertex)) itemLookup[vertex] = new List<ItemInfo>();
+                    if (!itemLookup.ContainsKey(vertex)) itemLookup[vertex] = new HashSet<ItemInfo>();
                     itemLookup[vertex].Add(item);
                 }
             }
         }
 
-        public void Update(int vertexIndice, Vector3 newPosition, Vector3[] positions)
+        public void Update(int vertexIndice, Vector3[] positions)
         {
             foreach (var item in itemLookup[vertexIndice])
             {
                 for (int i = 0; i < item.vertices.Length; i++)
                 {
+                    if (!WholeItemDependent() && item.vertices[i] != vertexIndice) continue;
                     T[] temp = new T[VerticesPerVertex()];
-                    buffer.vertexBuffer.GetData(new T().VertexDeclaration.VertexStride * item.indices[i], temp, 0, VerticesPerVertex(), new T().VertexDeclaration.VertexStride);
                     for (int j = 0; j < VerticesPerVertex(); j++)
                     {
                         temp[j] = MakeVertex(positions[item.vertices[i]], i * VerticesPerVertex() + j, item.vertices, positions);
                     }
                     buffer.vertexBuffer.SetData(new T().VertexDeclaration.VertexStride * item.indices[i], temp, 0, VerticesPerVertex(), new T().VertexDeclaration.VertexStride);
-                    if (!WholeItemDependent()) break;
                 }
                 if (MergeAllVertices()) break;
             }
@@ -99,7 +121,7 @@ namespace ZEditor.ZTemplates.Mesh
                 if (!MergeAllVertices()) verticesAdded = new Dictionary<int, int>();
             }
             var vertexBuffer = new VertexBuffer(graphicsDevice, new T().VertexDeclaration, vertices.Count, BufferUsage.None);
-            vertexBuffer.SetData<T>(vertices.ToArray());
+            vertexBuffer.SetData(vertices.ToArray());
             var indexBuffer = new IndexBuffer(graphicsDevice, IndexElementSize.ThirtyTwoBits, indices.Count, BufferUsage.None);
             indexBuffer.SetData(indices.ToArray());
             buffer = new VertexIndexBuffer(vertexBuffer, indexBuffer);
@@ -114,53 +136,5 @@ namespace ZEditor.ZTemplates.Mesh
         public abstract bool MergeAllVertices(); // not just vertices within a single item
         public abstract int VerticesPerVertex();
         public abstract bool WholeItemDependent();
-
-        private class IntArrayComparer : IEqualityComparer<ItemInfo>
-        {
-            public bool Equals(ItemInfo x, ItemInfo y)
-            {
-                if (x.vertices.Length != y.vertices.Length) return false;
-                for (int i = 0; i < x.vertices.Length; i++)
-                {
-                    if (x.vertices[i] != y.vertices[i]) return false;
-                }
-                return true;
-            }
-
-            public int GetHashCode(ItemInfo obj)
-            {
-                int result = 17;
-                foreach (var x in obj.vertices) result = result * 23 + x;
-                return result;
-            }
-        }
-
-        private class FlippableIntArrayComparer : IEqualityComparer<ItemInfo>
-        {
-            public bool Equals(ItemInfo x, ItemInfo y)
-            {
-                if (x.vertices.Length != y.vertices.Length) return false;
-                for (int i = 0; i < x.vertices.Length; i++)
-                {
-                    if (x.vertices[i] != y.vertices[i])
-                    {
-                        for (int j = 0; j < x.vertices.Length; j++)
-                        {
-                            if (x.vertices[j] != y.vertices[x.vertices.Length - 1 - i]) return false;
-                        }
-                    }
-                }
-                return true;
-            }
-
-            public int GetHashCode(ItemInfo obj)
-            {
-                int result = 17;
-                foreach (var x in obj.vertices) result = result * 23 + x;
-                int result2 = 17;
-                for (int i = 0; i < obj.vertices.Length; i++) result2 = result2 * 23 + obj.vertices[obj.vertices.Length - 1 - i];
-                return Math.Min(result, result2);
-            }
-        }
     }
 }
