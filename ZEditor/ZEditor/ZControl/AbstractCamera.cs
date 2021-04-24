@@ -11,12 +11,14 @@ namespace ZEditor.ZControl
     {
         protected Vector3 cameraPosition;
         protected Vector3 cameraLookUnitVector;
+        protected Vector3 cameraUpVector;
 
         public AbstractCamera(Vector3 cameraPosition, Vector3 cameraTarget)
         {
             this.cameraPosition = cameraPosition;
             cameraLookUnitVector = cameraTarget - cameraPosition;
             cameraLookUnitVector.Normalize();
+            cameraUpVector = Vector3.Up;
         }
 
         public Vector3 GetPosition()
@@ -26,7 +28,7 @@ namespace ZEditor.ZControl
 
         public Matrix GetView()
         {
-            return Matrix.CreateLookAt(cameraPosition, cameraPosition + cameraLookUnitVector, Vector3.Up);
+            return Matrix.CreateLookAt(cameraPosition, cameraPosition + cameraLookUnitVector, cameraUpVector);
         }
 
         public abstract void Update(GameTime gameTime, KeyboardState keyboardState, MouseState mouseState, GraphicsDevice graphicsDevice);
@@ -41,6 +43,14 @@ namespace ZEditor.ZControl
             var newCameraLookUnitVector = unprojected2 - unprojected;
             newCameraLookUnitVector.Normalize();
             return newCameraLookUnitVector;
+        }
+
+        public Vector3 GetRelativeVector(Vector3 v)
+        {
+            Vector3 forward = cameraLookUnitVector;
+            Vector3 right = Vector3.Cross(forward, cameraUpVector);
+            Vector3 up = Vector3.Cross(right, forward);
+            return v.X * right + v.Y * up - v.Z * forward;
         }
 
         internal Vector3 GetTarget()
