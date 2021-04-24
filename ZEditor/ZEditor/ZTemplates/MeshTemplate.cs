@@ -30,10 +30,13 @@ namespace ZEditor.ZTemplates
     // f to make face
     // z wireframe
     // a select all
+    // g to move
     // grid base at y=0? which extends infinite and is thicker every 10
     // rgb xyz axis and widget
     // selecting mesh gives outline and fainter outline if certain depth in
     // undo/redo
+    // saving
+    // reverting
     class MeshTemplate : ITemplate
     {
         FaceMesh faceMesh = new FaceMesh();
@@ -41,6 +44,7 @@ namespace ZEditor.ZTemplates
         PointMesh pointMesh = new PointMesh();
         Vector3[] positions;
         PointCollectionTracker tracker = new PointCollectionTracker();
+        HashSet<int> selected = new HashSet<int>();
 
         public void Load(StreamReader reader)
         {
@@ -107,9 +111,10 @@ namespace ZEditor.ZTemplates
 
         int? draggingIndex = null;
         // note: getting too confusing, since we don't split quads currently into 2 detached triangles, we can't update quads with 2 different normals...
-        public void Update(GameTime gameTime, KeyboardState keyboardState, MouseState mouseState, FPSCamera camera, GraphicsDevice graphicsDevice)
+        public void Update(GameTime gameTime, KeyboardState keyboardState, MouseState mouseState, AbstractCamera camera, GraphicsDevice graphicsDevice, bool editMode)
         {
-            if (faceMesh.buffer != null)
+            if (!editMode) draggingIndex = null;
+            if (faceMesh.buffer != null && editMode)
             {
                 if (mouseState.LeftButton == ButtonState.Pressed)
                 {

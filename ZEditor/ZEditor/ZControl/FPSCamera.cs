@@ -7,27 +7,18 @@ using System.Text;
 
 namespace ZEditor.ZControl
 {
-    public class FPSCamera
+    public class FPSCamera : AbstractCamera
     {
-        private Vector3 cameraPosition;
-        private Vector3 cameraLookUnitVector;
-
-        public FPSCamera(Vector3 cameraPosition, Vector3 cameraTarget)
-        {
-            this.cameraPosition = cameraPosition;
-            cameraLookUnitVector = cameraTarget - cameraPosition;
-            cameraLookUnitVector.Normalize();
-        }
-
-        internal Matrix GetView()
-        {
-            return Matrix.CreateLookAt(cameraPosition, cameraPosition + cameraLookUnitVector, Vector3.Up);
-        }
-
         private KeyboardState? prevKeyboardState = null;
         private MouseState? prevMouseState = null;
-        internal void Update(GameTime gameTime, KeyboardState keyboardState, MouseState mouseState, GraphicsDevice graphicsDevice)
+
+        public FPSCamera(Vector3 cameraPosition, Vector3 cameraTarget) : base(cameraPosition, cameraTarget)
         {
+        }
+
+        public override void Update(GameTime gameTime, KeyboardState keyboardState, MouseState mouseState, GraphicsDevice graphicsDevice)
+        {
+            Mouse.SetPosition(graphicsDevice.Viewport.Width / 2, graphicsDevice.Viewport.Height / 2);
             // update mouse look vector, for now, let's assume that we'll want to track the mouse perfectly
             float relx = graphicsDevice.Viewport.Width / 2f;
             float rely = graphicsDevice.Viewport.Height / 2f;
@@ -49,18 +40,6 @@ namespace ZEditor.ZControl
             var newCameraLookUnitVector = unprojected2 - unprojected;
             newCameraLookUnitVector.Normalize();
             cameraLookUnitVector = newCameraLookUnitVector;
-
-            //float diffx = 0;
-            //float diffy = 0;
-            //if (prevMouseState.HasValue)
-            //{
-            //    diffx = mouseState.X - prevMouseState.Value.X;
-            //    diffy = mouseState.Y - prevMouseState.Value.Y;
-            //}
-            //cameraLookUnitVector = Vector3.Transform(cameraLookUnitVector, Matrix.CreateRotationY(diffx / -400f));
-            //cameraLookUnitVector.Normalize();
-            //cameraLookUnitVector.Y += diffy / -200f;
-            //cameraLookUnitVector.Normalize();
 
             float walkSpeed = 4.317f;
             float ascendSpeed = walkSpeed; // not sure
@@ -90,23 +69,6 @@ namespace ZEditor.ZControl
 
             prevKeyboardState = keyboardState;
             prevMouseState = mouseState;
-        }
-
-        public Vector3 GetPosition()
-        {
-            return cameraPosition;
-        }
-
-        public Vector3 GetLookUnitVector(float mouseX, float mouseY, GraphicsDevice graphicsDevice)
-        {
-            Matrix world = Matrix.Identity;
-            Matrix view = GetView();
-            Matrix projection = Matrix.CreatePerspectiveFieldOfView((float)(Math.PI / 4), graphicsDevice.Viewport.AspectRatio, 0.01f, 10f);
-            Vector3 unprojected = graphicsDevice.Viewport.Unproject(new Vector3(mouseX, mouseY, 0.25f), projection, view, world);
-            Vector3 unprojected2 = graphicsDevice.Viewport.Unproject(new Vector3(mouseX, mouseY, 0.75f), projection, view, world);
-            var newCameraLookUnitVector = unprojected2 - unprojected;
-            newCameraLookUnitVector.Normalize();
-            return newCameraLookUnitVector;
         }
     }
 }

@@ -18,7 +18,7 @@ namespace ZEditor
         private VertexIndexBuffer renderSubjectPointBuffer;
         private Effect pointsShader;
         private ITemplate renderSubject;
-        private FPSCamera fpsCamera;
+        private AbstractCamera camera;
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
         private Texture2D cursorTexture;
@@ -40,7 +40,7 @@ namespace ZEditor
             renderSubjectLineBuffer = renderSubject.MakeLineBuffer(GraphicsDevice);
             renderSubjectPointBuffer = renderSubject.MakePointBuffer(GraphicsDevice);
             // view from slightly above and to the right, but far away TODO: for some reason we aren't looking at 0, 0, 0??
-            fpsCamera = new FPSCamera(new Vector3(-2, 2, -10), new Vector3(0, 0, 0));
+            camera = new FPSCamera(new Vector3(-2, 2, -10), new Vector3(0, 0, 0));
             int radii = 5;
             cursorTexture = new Texture2D(GraphicsDevice, radii * 2 + 1, radii * 2 + 1);
             Color[] data = new Color[(radii * 2 + 1) * (radii * 2 + 1)];
@@ -75,12 +75,22 @@ namespace ZEditor
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-            editMode ^= Keyboard.GetState().AreKeysCtrlPressed(Keys.E);
+            if (Keyboard.GetState().AreKeysCtrlPressed(Keys.E))
+            {
+                editMode = !editMode;
+                if (editMode)
+                {
+                    camera = new EditorCamera(camera.GetPosition(), camera.GetTarget());
+                }
+                else
+                {
+                    camera = new FPSCamera(camera.GetPosition(), camera.GetTarget());
+                }
+            }
 
             // TODO: Add your update logic here
-            fpsCamera.Update(gameTime, Keyboard.GetState(), Mouse.GetState(), GraphicsDevice);
-            renderSubject.Update(gameTime, Keyboard.GetState(), Mouse.GetState(), fpsCamera, GraphicsDevice);
-            Mouse.SetPosition(GraphicsDevice.Viewport.Width / 2, GraphicsDevice.Viewport.Height / 2);
+            camera.Update(gameTime, Keyboard.GetState(), Mouse.GetState(), GraphicsDevice);
+            renderSubject.Update(gameTime, Keyboard.GetState(), Mouse.GetState(), camera, GraphicsDevice, editMode);
 
             base.Update(gameTime);
         }
@@ -94,7 +104,7 @@ namespace ZEditor
             basicEffect.World = Matrix.Identity;
             // note, after WVP is applied, I believe near plane matches to 1 and far plane matches to -1, matching the handedness of Vector3 Constants
             // the camera position and lookup at least match up to the coordinates/colors we gave
-            basicEffect.View = fpsCamera.GetView();
+            basicEffect.View = camera.GetView();
             basicEffect.Projection = Matrix.CreatePerspectiveFieldOfView((float)(Math.PI / 4), GraphicsDevice.Viewport.AspectRatio, 0.01f, 100f);
             basicEffect.DiffuseColor = new Vector3(1, 1, 1);
             basicEffect.AmbientLightColor = new Vector3(0.1f, 0.1f, 0.1f);
@@ -115,7 +125,7 @@ namespace ZEditor
                 var direction2 = new Vector3(-2, 2, -10);
                 direction2.Normalize();
                 basicEffect.DirectionalLight1.Direction = direction2;
-                //Render(GraphicsDevice, basicEffect, renderSubjectFaceBuffer, PrimitiveType.TriangleList, renderSubjectFaceBuffer.indexBuffer.IndexCount / 3);
+                Render(GraphicsDevice, basicEffect, renderSubjectFaceBuffer, PrimitiveType.TriangleList, renderSubjectFaceBuffer.indexBuffer.IndexCount / 3);
                 Render(GraphicsDevice, basicEffect, renderSubjectLineBuffer, PrimitiveType.LineList, renderSubjectLineBuffer.indexBuffer.IndexCount / 2);
                 Render(GraphicsDevice, pointsShader, renderSubjectPointBuffer, PrimitiveType.TriangleList, renderSubjectPointBuffer.indexBuffer.IndexCount / 3);
             }
@@ -125,7 +135,7 @@ namespace ZEditor
             }
             // draw cursor
             _spriteBatch.Begin(SpriteSortMode.Deferred, null, null, DepthStencilState.Default, null, null, null);
-            _spriteBatch.Draw(cursorTexture, new Vector2(GraphicsDevice.Viewport.Width / 2f, GraphicsDevice.Viewport.Height / 2f), Color.White);
+            _spriteBatch.Draw(cursorTexture, new Vector2(Mouse.GetState().X, Mouse.GetState().Y), Color.White);
             _spriteBatch.End();
 
             base.Draw(gameTime);
