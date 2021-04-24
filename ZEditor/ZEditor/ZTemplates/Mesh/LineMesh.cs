@@ -13,9 +13,9 @@ namespace ZEditor.ZTemplates.Mesh
             return true;
         }
 
-        public override VertexPositionColor MakeVertex(Vector3 position, int vertexNum, int[] item, Vector3[] positions)
+        public override VertexPositionColor MakeVertex(Vector3 position, Color color, int vertexNum, int[] item, Vector3[] positions)
         {
-            return new VertexPositionColor(position, Color.Black);
+            return new VertexPositionColor(position, color);
         }
 
         public override bool MergeAllVertices()

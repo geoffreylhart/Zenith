@@ -70,7 +70,7 @@ namespace ZEditor.ZTemplates.Mesh
             }
         }
 
-        public void Update(int vertexIndice, Vector3[] positions)
+        public void Update(int vertexIndice, Vector3[] positions, Color[] colors)
         {
             foreach (var item in itemLookup[vertexIndice])
             {
@@ -80,7 +80,7 @@ namespace ZEditor.ZTemplates.Mesh
                     T[] temp = new T[VerticesPerVertex()];
                     for (int j = 0; j < VerticesPerVertex(); j++)
                     {
-                        temp[j] = MakeVertex(positions[item.vertices[i]], i * VerticesPerVertex() + j, item.vertices, positions);
+                        temp[j] = MakeVertex(positions[item.vertices[i]], colors[item.vertices[i]], i * VerticesPerVertex() + j, item.vertices, positions);
                     }
                     buffer.vertexBuffer.SetData(new T().VertexDeclaration.VertexStride * item.indices[i], temp, 0, VerticesPerVertex(), new T().VertexDeclaration.VertexStride);
                 }
@@ -88,7 +88,7 @@ namespace ZEditor.ZTemplates.Mesh
             }
         }
 
-        public VertexIndexBuffer MakeBuffer(Vector3[] positions, GraphicsDevice graphicsDevice)
+        public VertexIndexBuffer MakeBuffer(Vector3[] positions, Color[] colors, GraphicsDevice graphicsDevice)
         {
             List<T> vertices = new List<T>();
             List<int> indices = new List<int>();
@@ -111,7 +111,7 @@ namespace ZEditor.ZTemplates.Mesh
                         }
                         else
                         {
-                            vertices.Add(MakeVertex(positions[itemReplacement[indexOffsets[j]] / VerticesPerVertex()], indexOffsets[j], itemReplacement, positions));
+                            vertices.Add(MakeVertex(positions[itemReplacement[indexOffsets[j]] / VerticesPerVertex()], colors[itemReplacement[indexOffsets[j]] / VerticesPerVertex()], indexOffsets[j], itemReplacement, positions));
                             verticesAdded.Add(itemReplacement[indexOffsets[j]], vertices.Count - 1);
                             indices.Add(vertices.Count - 1);
                         }
@@ -131,7 +131,7 @@ namespace ZEditor.ZTemplates.Mesh
 
         public abstract int NumPrimitives(int numVertices);
         public abstract int[] PrimitiveIndexOffets(int primitiveNum);
-        public abstract T MakeVertex(Vector3 position, int vertexNum, int[] item, Vector3[] positions);
+        public abstract T MakeVertex(Vector3 position, Color color, int vertexNum, int[] item, Vector3[] positions);
         public abstract bool FlippedAreEquivalent();
         public abstract bool MergeAllVertices(); // not just vertices within a single item
         public abstract int VerticesPerVertex();

@@ -126,6 +126,8 @@ namespace ZEditor
                 direction2.Normalize();
                 basicEffect.DirectionalLight1.Direction = direction2;
                 Render(GraphicsDevice, basicEffect, renderSubjectFaceBuffer, PrimitiveType.TriangleList, renderSubjectFaceBuffer.indexBuffer.IndexCount / 3);
+                basicEffect.VertexColorEnabled = true;
+                basicEffect.LightingEnabled = false;
                 Render(GraphicsDevice, basicEffect, renderSubjectLineBuffer, PrimitiveType.LineList, renderSubjectLineBuffer.indexBuffer.IndexCount / 2);
                 Render(GraphicsDevice, pointsShader, renderSubjectPointBuffer, PrimitiveType.TriangleList, renderSubjectPointBuffer.indexBuffer.IndexCount / 3);
             }

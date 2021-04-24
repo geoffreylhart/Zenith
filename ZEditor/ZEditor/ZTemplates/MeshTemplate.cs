@@ -37,12 +37,14 @@ namespace ZEditor.ZTemplates
     // undo/redo
     // saving
     // reverting
+    // ctrl l to select all connected
     class MeshTemplate : ITemplate
     {
         FaceMesh faceMesh = new FaceMesh();
         LineMesh lineMesh = new LineMesh();
         PointMesh pointMesh = new PointMesh();
         Vector3[] positions;
+        Color[] colors;
         PointCollectionTracker tracker = new PointCollectionTracker();
         HashSet<int> selected = new HashSet<int>();
 
@@ -60,6 +62,7 @@ namespace ZEditor.ZTemplates
                 currLine = reader.ReadLine();
             }
             positions = positionList.ToArray();
+            colors = positionList.Select(x => Color.Black).ToArray();
             currLine = reader.ReadLine();
             if (!currLine.Contains("Quads")) throw new NotImplementedException();
             currLine = reader.ReadLine();
@@ -96,31 +99,64 @@ namespace ZEditor.ZTemplates
 
         public VertexIndexBuffer MakeFaceBuffer(GraphicsDevice graphicsDevice)
         {
-            return faceMesh.MakeBuffer(positions, graphicsDevice);
+            return faceMesh.MakeBuffer(positions, colors, graphicsDevice);
         }
 
         public VertexIndexBuffer MakeLineBuffer(GraphicsDevice graphicsDevice)
         {
-            return lineMesh.MakeBuffer(positions, graphicsDevice);
+            return lineMesh.MakeBuffer(positions, colors, graphicsDevice);
         }
 
         public VertexIndexBuffer MakePointBuffer(GraphicsDevice graphicsDevice)
         {
-            return pointMesh.MakeBuffer(positions, graphicsDevice);
+            return pointMesh.MakeBuffer(positions, colors, graphicsDevice);
         }
 
         int? draggingIndex = null;
+        MouseState? prevMouseState = null;
         // note: getting too confusing, since we don't split quads currently into 2 detached triangles, we can't update quads with 2 different normals...
         public void Update(GameTime gameTime, KeyboardState keyboardState, MouseState mouseState, AbstractCamera camera, GraphicsDevice graphicsDevice, bool editMode)
         {
             if (!editMode) draggingIndex = null;
             if (faceMesh.buffer != null && editMode)
             {
-                if (mouseState.LeftButton == ButtonState.Pressed)
+                if (mouseState.LeftButton == ButtonState.Pressed && (!prevMouseState.HasValue || prevMouseState.Value.LeftButton == ButtonState.Released))
                 {
-                    if (draggingIndex == null)
+                    int nearestIndex = tracker.GetNearest(camera.GetPosition(), camera.GetLookUnitVector(mouseState.X, mouseState.Y, graphicsDevice));
+                    if (keyboardState.IsKeyDown(Keys.LeftControl) || keyboardState.IsKeyDown(Keys.RightControl))
                     {
-                        draggingIndex = tracker.GetNearest(camera.GetPosition(), camera.GetLookUnitVector(mouseState.X, mouseState.Y, graphicsDevice));
+
+                    }
+                    else if (keyboardState.IsKeyDown(Keys.LeftShift) || keyboardState.IsKeyDown(Keys.RightShift))
+                    {
+                        if (selected.Contains(nearestIndex))
+                        {
+                            colors[nearestIndex] = Color.Black;
+                            pointMesh.Update(nearestIndex, positions, colors);
+                            lineMesh.Update(nearestIndex, positions, colors);
+                            selected.Remove(nearestIndex);
+                        }
+                        else
+                        {
+                            colors[nearestIndex] = Color.Orange;
+                            pointMesh.Update(nearestIndex, positions, colors);
+                            lineMesh.Update(nearestIndex, positions, colors);
+                            selected.Add(nearestIndex);
+                        }
+                    }
+                    else
+                    {
+                        foreach (var v in selected)
+                        {
+                            colors[v] = Color.Black;
+                            pointMesh.Update(v, positions, colors);
+                            lineMesh.Update(v, positions, colors);
+                        }
+                        selected.Clear();
+                        selected.Add(nearestIndex);
+                        colors[nearestIndex] = Color.Orange;
+                        pointMesh.Update(nearestIndex, positions, colors);
+                        lineMesh.Update(nearestIndex, positions, colors);
                     }
                 }
                 else
@@ -138,11 +174,12 @@ namespace ZEditor.ZTemplates
                     newPosition.Z = (float)Math.Round(newPosition.Z * 4) / 4;
                     positions[draggingIndex.Value] = newPosition;
                     tracker.Update(draggingIndex.Value, newPosition);
-                    faceMesh.Update(draggingIndex.Value, positions);
-                    lineMesh.Update(draggingIndex.Value, positions);
-                    pointMesh.Update(draggingIndex.Value, positions);
+                    faceMesh.Update(draggingIndex.Value, positions, colors);
+                    lineMesh.Update(draggingIndex.Value, positions, colors);
+                    pointMesh.Update(draggingIndex.Value, positions, colors);
                 }
             }
+            prevMouseState = mouseState;
         }
     }
 }
