@@ -31,15 +31,15 @@ namespace ZEditor.ZControl
             return Matrix.CreateLookAt(cameraPosition, cameraPosition + cameraLookUnitVector, cameraUpVector);
         }
 
-        public abstract void Update(GameTime gameTime, KeyboardState keyboardState, MouseState mouseState, GraphicsDevice graphicsDevice);
+        public abstract void Update(UIContext uiContext);
 
-        public Vector3 GetLookUnitVector(float mouseX, float mouseY, GraphicsDevice graphicsDevice)
+        public Vector3 GetLookUnitVector(UIContext uiContext)
         {
             Matrix world = Matrix.Identity;
             Matrix view = GetView();
-            Matrix projection = Matrix.CreatePerspectiveFieldOfView((float)(Math.PI / 4), graphicsDevice.Viewport.AspectRatio, 0.01f, 10f);
-            Vector3 unprojected = graphicsDevice.Viewport.Unproject(new Vector3(mouseX, mouseY, 0.25f), projection, view, world);
-            Vector3 unprojected2 = graphicsDevice.Viewport.Unproject(new Vector3(mouseX, mouseY, 0.75f), projection, view, world);
+            Matrix projection = Matrix.CreatePerspectiveFieldOfView((float)(Math.PI / 4), uiContext.AspectRatio, 0.01f, 10f);
+            Vector3 unprojected = uiContext.Unproject(new Vector3(uiContext.MouseVector2, 0.25f), projection, view, world);
+            Vector3 unprojected2 = uiContext.Unproject(new Vector3(uiContext.MouseVector2, 0.75f), projection, view, world);
             var newCameraLookUnitVector = unprojected2 - unprojected;
             newCameraLookUnitVector.Normalize();
             return newCameraLookUnitVector;

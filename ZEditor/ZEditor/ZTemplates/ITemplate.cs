@@ -18,6 +18,6 @@ namespace ZEditor.ZTemplates
         VertexIndexBuffer MakeFaceBuffer(GraphicsDevice graphics);
         VertexIndexBuffer MakeLineBuffer(GraphicsDevice graphics);
         VertexIndexBuffer MakePointBuffer(GraphicsDevice graphics);
-        void Update(GameTime gameTime, KeyboardState keyboardState, MouseState mouseState, AbstractCamera camera, GraphicsDevice graphicsDevice, bool editMode);
+        void Update(UIContext uiContext, AbstractCamera camera, bool editMode);
     }
 }

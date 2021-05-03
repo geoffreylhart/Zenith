@@ -9,34 +9,20 @@ namespace ZEditor.ZControl
 {
     public class FPSCamera : AbstractCamera
     {
-        private KeyboardState? prevKeyboardState = null;
-        private MouseState? prevMouseState = null;
-
         public FPSCamera(Vector3 cameraPosition, Vector3 cameraTarget) : base(cameraPosition, cameraTarget)
         {
         }
 
-        public override void Update(GameTime gameTime, KeyboardState keyboardState, MouseState mouseState, GraphicsDevice graphicsDevice)
+        public override void Update(UIContext uiContext)
         {
-            Mouse.SetPosition(graphicsDevice.Viewport.Width / 2, graphicsDevice.Viewport.Height / 2);
+            uiContext.CenterMouse();
             // update mouse look vector, for now, let's assume that we'll want to track the mouse perfectly
-            float relx = graphicsDevice.Viewport.Width / 2f;
-            float rely = graphicsDevice.Viewport.Height / 2f;
-
-            float diffx = 0;
-            float diffy = 0;
-            if (prevMouseState.HasValue && gameTime.TotalGameTime.TotalSeconds > 0.1)
-            {
-                diffx = mouseState.X - relx;
-                diffy = mouseState.Y - rely;
-            }
-            relx += diffx * 3;
-            rely += diffy * 3;
+            Vector2 relative = uiContext.MouseVector2 + uiContext.MouseDiffVector2 * 3;
             Matrix world = Matrix.Identity;
             Matrix view = GetView();
-            Matrix projection = Matrix.CreatePerspectiveFieldOfView((float)(Math.PI / 4), graphicsDevice.Viewport.AspectRatio, 0.01f, 10f);
-            Vector3 unprojected = graphicsDevice.Viewport.Unproject(new Vector3(relx, rely, 0.25f), projection, view, world);
-            Vector3 unprojected2 = graphicsDevice.Viewport.Unproject(new Vector3(relx, rely, 0.75f), projection, view, world);
+            Matrix projection = Matrix.CreatePerspectiveFieldOfView((float)(Math.PI / 4), uiContext.AspectRatio, 0.01f, 10f);
+            Vector3 unprojected = uiContext.Unproject(new Vector3(relative.X, relative.Y, 0.25f), projection, view, world);
+            Vector3 unprojected2 = uiContext.Unproject(new Vector3(relative.X, relative.Y, 0.75f), projection, view, world);
             var newCameraLookUnitVector = unprojected2 - unprojected;
             newCameraLookUnitVector.Normalize();
             cameraLookUnitVector = newCameraLookUnitVector;
@@ -51,24 +37,21 @@ namespace ZEditor.ZControl
             float forwardAmount = 0;
             float rightAmount = 0;
             float upAmount = 0;
-            if (keyboardState.IsKeyDown(Keys.W) || keyboardState.IsKeyDown(Keys.Up)) forwardAmount++;
-            if (keyboardState.IsKeyDown(Keys.S) || keyboardState.IsKeyDown(Keys.Down)) forwardAmount--;
-            if (keyboardState.IsKeyDown(Keys.D) || keyboardState.IsKeyDown(Keys.Right)) rightAmount++;
-            if (keyboardState.IsKeyDown(Keys.A) || keyboardState.IsKeyDown(Keys.Left)) rightAmount--;
-            if (keyboardState.IsKeyDown(Keys.Space)) upAmount++;
-            if (keyboardState.IsKeyDown(Keys.LeftShift)) upAmount--;
+            if (Keyboard.GetState().IsKeyDown(Keys.W) || Keyboard.GetState().IsKeyDown(Keys.Up)) forwardAmount++;
+            if (Keyboard.GetState().IsKeyDown(Keys.S) || Keyboard.GetState().IsKeyDown(Keys.Down)) forwardAmount--;
+            if (Keyboard.GetState().IsKeyDown(Keys.D) || Keyboard.GetState().IsKeyDown(Keys.Right)) rightAmount++;
+            if (Keyboard.GetState().IsKeyDown(Keys.A) || Keyboard.GetState().IsKeyDown(Keys.Left)) rightAmount--;
+            if (Keyboard.GetState().IsKeyDown(Keys.Space)) upAmount++;
+            if (Keyboard.GetState().IsKeyDown(Keys.LeftShift)) upAmount--;
             float len = (float)Math.Sqrt(forwardAmount * forwardAmount + rightAmount * rightAmount);
             if (len > 0)
             {
                 forwardAmount /= len;
                 rightAmount /= len;
             }
-            cameraPosition += flatCameraLookUnitVector * forwardAmount * (float)gameTime.ElapsedGameTime.TotalSeconds * walkSpeed;
-            cameraPosition += flatRightUnitVector * rightAmount * (float)gameTime.ElapsedGameTime.TotalSeconds * walkSpeed;
-            cameraPosition += Vector3.Up * upAmount * (float)gameTime.ElapsedGameTime.TotalSeconds * ascendSpeed;
-
-            prevKeyboardState = keyboardState;
-            prevMouseState = mouseState;
+            cameraPosition += flatCameraLookUnitVector * forwardAmount * (float)uiContext.ElapsedSeconds * walkSpeed;
+            cameraPosition += flatRightUnitVector * rightAmount * (float)uiContext.ElapsedSeconds * walkSpeed;
+            cameraPosition += Vector3.Up * upAmount * (float)uiContext.ElapsedSeconds * ascendSpeed;
         }
     }
 }

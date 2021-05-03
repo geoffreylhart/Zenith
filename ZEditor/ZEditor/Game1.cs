@@ -19,6 +19,7 @@ namespace ZEditor
         private Effect pointsShader;
         private ITemplate renderSubject;
         private AbstractCamera camera;
+        private UIContext uiContext;
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
         private Texture2D cursorTexture;
@@ -30,6 +31,7 @@ namespace ZEditor
             Content.RootDirectory = "Content";
             //IsMouseVisible = false;
             this.TargetElapsedTime = TimeSpan.FromSeconds(1 / 144.0);
+            uiContext = new UIContext(this);
         }
 
         protected override void Initialize()
@@ -72,10 +74,10 @@ namespace ZEditor
 
         protected override void Update(GameTime gameTime)
         {
+            uiContext.UpdateGameTime(gameTime);
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
-
-            if (Keyboard.GetState().AreKeysCtrlPressed(Keys.E))
+            if (uiContext.IsKeyCtrlPressed(Keys.E))
             {
                 editMode = !editMode;
                 if (editMode)
@@ -89,9 +91,10 @@ namespace ZEditor
             }
 
             // TODO: Add your update logic here
-            camera.Update(gameTime, Keyboard.GetState(), Mouse.GetState(), GraphicsDevice);
-            renderSubject.Update(gameTime, Keyboard.GetState(), Mouse.GetState(), camera, GraphicsDevice, editMode);
+            camera.Update(uiContext);
+            renderSubject.Update(uiContext, camera, editMode);
 
+            uiContext.UpdateKeys();
             base.Update(gameTime);
         }
 
@@ -137,7 +140,7 @@ namespace ZEditor
             }
             // draw cursor
             _spriteBatch.Begin(SpriteSortMode.Deferred, null, null, DepthStencilState.Default, null, null, null);
-            _spriteBatch.Draw(cursorTexture, new Vector2(Mouse.GetState().X, Mouse.GetState().Y), Color.White);
+            _spriteBatch.Draw(cursorTexture, uiContext.MouseVector2, Color.White);
             _spriteBatch.End();
 
             base.Draw(gameTime);

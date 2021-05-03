@@ -112,22 +112,20 @@ namespace ZEditor.ZTemplates
             return pointMesh.MakeBuffer(positions, colors, graphicsDevice);
         }
 
-        int? draggingIndex = null;
-        MouseState? prevMouseState = null;
+        bool draggingMode = false;
         // note: getting too confusing, since we don't split quads currently into 2 detached triangles, we can't update quads with 2 different normals...
-        public void Update(GameTime gameTime, KeyboardState keyboardState, MouseState mouseState, AbstractCamera camera, GraphicsDevice graphicsDevice, bool editMode)
+        public void Update(UIContext uiContext, AbstractCamera camera, bool editMode)
         {
-            if (!editMode) draggingIndex = null;
             if (faceMesh.buffer != null && editMode)
             {
-                if (mouseState.LeftButton == ButtonState.Pressed && (!prevMouseState.HasValue || prevMouseState.Value.LeftButton == ButtonState.Released))
+                if (uiContext.IsLeftMouseButtonPressed())
                 {
-                    int nearestIndex = tracker.GetNearest(camera.GetPosition(), camera.GetLookUnitVector(mouseState.X, mouseState.Y, graphicsDevice));
-                    if (keyboardState.IsKeyDown(Keys.LeftControl) || keyboardState.IsKeyDown(Keys.RightControl))
+                    int nearestIndex = tracker.GetNearest(camera.GetPosition(), camera.GetLookUnitVector(uiContext));
+                    if (uiContext.IsCtrlPressed())
                     {
 
                     }
-                    else if (keyboardState.IsKeyDown(Keys.LeftShift) || keyboardState.IsKeyDown(Keys.RightShift))
+                    else if (Keyboard.GetState().IsKeyDown(Keys.LeftShift) || Keyboard.GetState().IsKeyDown(Keys.RightShift))
                     {
                         if (selected.Contains(nearestIndex))
                         {
@@ -159,27 +157,26 @@ namespace ZEditor.ZTemplates
                         lineMesh.Update(nearestIndex, positions, colors);
                     }
                 }
-                else
+                if (uiContext.IsKeyCtrlPressed(Keys.G)) draggingMode = true;
+                if (selected.Count > 0)
                 {
-                    draggingIndex = null;
-                }
-                if (draggingIndex != null)
-                {
-                    // get position and update tracker
-                    Vector3 newPosition = positions[draggingIndex.Value];
-                    float oldDistance = (newPosition - camera.GetPosition()).Length();
-                    newPosition = camera.GetPosition() + camera.GetLookUnitVector(mouseState.X, mouseState.Y, graphicsDevice) * oldDistance;
-                    newPosition.X = (float)Math.Round(newPosition.X * 4) / 4;
-                    newPosition.Y = (float)Math.Round(newPosition.Y * 4) / 4;
-                    newPosition.Z = (float)Math.Round(newPosition.Z * 4) / 4;
-                    positions[draggingIndex.Value] = newPosition;
-                    tracker.Update(draggingIndex.Value, newPosition);
-                    faceMesh.Update(draggingIndex.Value, positions, colors);
-                    lineMesh.Update(draggingIndex.Value, positions, colors);
-                    pointMesh.Update(draggingIndex.Value, positions, colors);
+                    foreach (var s in selected)
+                    {
+                        // get position and update tracker
+                        Vector3 newPosition = positions[s];
+                        float oldDistance = (newPosition - camera.GetPosition()).Length();
+                        newPosition = camera.GetPosition() + camera.GetLookUnitVector(uiContext) * oldDistance;
+                        newPosition.X = (float)Math.Round(newPosition.X * 4) / 4;
+                        newPosition.Y = (float)Math.Round(newPosition.Y * 4) / 4;
+                        newPosition.Z = (float)Math.Round(newPosition.Z * 4) / 4;
+                        positions[s] = newPosition;
+                        tracker.Update(s, newPosition);
+                        faceMesh.Update(s, positions, colors);
+                        lineMesh.Update(s, positions, colors);
+                        pointMesh.Update(s, positions, colors);
+                    }
                 }
             }
-            prevMouseState = mouseState;
         }
     }
 }
