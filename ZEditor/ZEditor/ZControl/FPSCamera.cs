@@ -15,9 +15,12 @@ namespace ZEditor.ZControl
 
         public override void Update(UIContext uiContext)
         {
-            uiContext.CenterMouse();
             // update mouse look vector, for now, let's assume that we'll want to track the mouse perfectly
-            Vector2 relative = uiContext.MouseVector2 + uiContext.MouseDiffVector2 * 3;
+            Vector2 relative = uiContext.MouseVector2;
+            if (uiContext.MouseDiffVector2.Length() < 100) // ignore game startup snap
+            {
+                relative += uiContext.MouseDiffVector2 * 3;
+            }
             Matrix world = Matrix.Identity;
             Matrix view = GetView();
             Matrix projection = Matrix.CreatePerspectiveFieldOfView((float)(Math.PI / 4), uiContext.AspectRatio, 0.01f, 10f);
@@ -52,6 +55,7 @@ namespace ZEditor.ZControl
             cameraPosition += flatCameraLookUnitVector * forwardAmount * (float)uiContext.ElapsedSeconds * walkSpeed;
             cameraPosition += flatRightUnitVector * rightAmount * (float)uiContext.ElapsedSeconds * walkSpeed;
             cameraPosition += Vector3.Up * upAmount * (float)uiContext.ElapsedSeconds * ascendSpeed;
+            uiContext.CenterMouse();
         }
     }
 }

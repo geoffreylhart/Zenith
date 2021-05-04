@@ -57,5 +57,17 @@ namespace ZEditor.ZControl
         {
             return cameraPosition + cameraLookUnitVector;
         }
+
+        // translate camera offset to real-world offset
+        internal Vector3 GetPerspectiveOffset(UIContext uiContext, Vector3 position, Vector2 cameraOffset)
+        {
+            Matrix world = Matrix.Identity;
+            Matrix view = GetView();
+            Matrix projection = Matrix.CreatePerspectiveFieldOfView((float)(Math.PI / 4), uiContext.AspectRatio, 0.01f, 10f);
+            Vector3 projected = uiContext.Project(position, projection, view, world);
+            projected += new Vector3(cameraOffset, 0);
+            Vector3 unprojected = uiContext.Unproject(projected, projection, view, world);
+            return unprojected - position;
+        }
     }
 }

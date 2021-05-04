@@ -77,6 +77,11 @@ namespace ZEditor.ZControl
             }
         }
 
+        internal Vector3 Project(Vector3 v, Matrix projection, Matrix view, Matrix world)
+        {
+            return game.GraphicsDevice.Viewport.Project(v, projection, view, world);
+        }
+
         internal Vector3 Unproject(Vector3 v, Matrix projection, Matrix view, Matrix world)
         {
             return game.GraphicsDevice.Viewport.Unproject(v, projection, view, world);

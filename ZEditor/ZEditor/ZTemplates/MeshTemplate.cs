@@ -112,7 +112,8 @@ namespace ZEditor.ZTemplates
             return pointMesh.MakeBuffer(positions, colors, graphicsDevice);
         }
 
-        bool draggingMode = false;
+        Vector2? dragOrigin = null;
+        Dictionary<int, Vector3> oldPositions = new Dictionary<int, Vector3>();
         // note: getting too confusing, since we don't split quads currently into 2 detached triangles, we can't update quads with 2 different normals...
         public void Update(UIContext uiContext, AbstractCamera camera, bool editMode)
         {
@@ -157,18 +158,36 @@ namespace ZEditor.ZTemplates
                         lineMesh.Update(nearestIndex, positions, colors);
                     }
                 }
-                if (uiContext.IsKeyCtrlPressed(Keys.G)) draggingMode = true;
-                if (selected.Count > 0)
+                if (uiContext.IsKeyPressed(Keys.G))
                 {
+                    if (dragOrigin == null)
+                    {
+                        dragOrigin = uiContext.MouseVector2;
+                        oldPositions.Clear();
+                        foreach (var s in selected) oldPositions.Add(s, positions[s]);
+                    }
+                    else
+                    {
+                        dragOrigin = null;
+                    }
+                }
+                if (selected.Count > 0 && dragOrigin != null)
+                {
+                    Vector3 sumOffset = Vector3.Zero;
+                    foreach (var s in selected)
+                    {
+                        Vector3 currPosition = positions[s];
+                        sumOffset += camera.GetPerspectiveOffset(uiContext, currPosition, uiContext.MouseVector2 - dragOrigin.Value);
+                    }
+                    sumOffset /= selected.Count;
+                    sumOffset.X = (float)Math.Round(sumOffset.X * 4) / 4;
+                    sumOffset.Y = (float)Math.Round(sumOffset.Y * 4) / 4;
+                    sumOffset.Z = (float)Math.Round(sumOffset.Z * 4) / 4;
                     foreach (var s in selected)
                     {
                         // get position and update tracker
-                        Vector3 newPosition = positions[s];
-                        float oldDistance = (newPosition - camera.GetPosition()).Length();
-                        newPosition = camera.GetPosition() + camera.GetLookUnitVector(uiContext) * oldDistance;
-                        newPosition.X = (float)Math.Round(newPosition.X * 4) / 4;
-                        newPosition.Y = (float)Math.Round(newPosition.Y * 4) / 4;
-                        newPosition.Z = (float)Math.Round(newPosition.Z * 4) / 4;
+                        Vector3 newPosition = oldPositions[s];
+                        newPosition += sumOffset;
                         positions[s] = newPosition;
                         tracker.Update(s, newPosition);
                         faceMesh.Update(s, positions, colors);
