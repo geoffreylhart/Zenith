@@ -114,62 +114,65 @@ namespace ZEditor.ZTemplates
 
         Vector2? dragOrigin = null;
         Dictionary<int, Vector3> oldPositions = new Dictionary<int, Vector3>();
-        // note: getting too confusing, since we don't split quads currently into 2 detached triangles, we can't update quads with 2 different normals...
         public void Update(UIContext uiContext, AbstractCamera camera, bool editMode)
         {
             if (faceMesh.buffer != null && editMode)
             {
                 if (uiContext.IsLeftMouseButtonPressed())
                 {
-                    int nearestIndex = tracker.GetNearest(camera.GetPosition(), camera.GetLookUnitVector(uiContext));
-                    if (uiContext.IsCtrlPressed())
+                    if (dragOrigin == null)
                     {
-
-                    }
-                    else if (Keyboard.GetState().IsKeyDown(Keys.LeftShift) || Keyboard.GetState().IsKeyDown(Keys.RightShift))
-                    {
-                        if (selected.Contains(nearestIndex))
+                        int nearestIndex = tracker.GetNearest(camera.GetPosition(), camera.GetLookUnitVector(uiContext));
+                        if (uiContext.IsCtrlPressed())
                         {
-                            colors[nearestIndex] = Color.Black;
-                            pointMesh.Update(nearestIndex, positions, colors);
-                            lineMesh.Update(nearestIndex, positions, colors);
-                            selected.Remove(nearestIndex);
+
+                        }
+                        else if (Keyboard.GetState().IsKeyDown(Keys.LeftShift) || Keyboard.GetState().IsKeyDown(Keys.RightShift))
+                        {
+                            if (selected.Contains(nearestIndex))
+                            {
+                                colors[nearestIndex] = Color.Black;
+                                pointMesh.Update(nearestIndex, positions, colors);
+                                lineMesh.Update(nearestIndex, positions, colors);
+                                selected.Remove(nearestIndex);
+                            }
+                            else
+                            {
+                                colors[nearestIndex] = Color.Orange;
+                                pointMesh.Update(nearestIndex, positions, colors);
+                                lineMesh.Update(nearestIndex, positions, colors);
+                                selected.Add(nearestIndex);
+                            }
                         }
                         else
                         {
+                            foreach (var v in selected)
+                            {
+                                colors[v] = Color.Black;
+                                pointMesh.Update(v, positions, colors);
+                                lineMesh.Update(v, positions, colors);
+                            }
+                            selected.Clear();
+                            selected.Add(nearestIndex);
                             colors[nearestIndex] = Color.Orange;
                             pointMesh.Update(nearestIndex, positions, colors);
                             lineMesh.Update(nearestIndex, positions, colors);
-                            selected.Add(nearestIndex);
                         }
-                    }
-                    else
-                    {
-                        foreach (var v in selected)
-                        {
-                            colors[v] = Color.Black;
-                            pointMesh.Update(v, positions, colors);
-                            lineMesh.Update(v, positions, colors);
-                        }
-                        selected.Clear();
-                        selected.Add(nearestIndex);
-                        colors[nearestIndex] = Color.Orange;
-                        pointMesh.Update(nearestIndex, positions, colors);
-                        lineMesh.Update(nearestIndex, positions, colors);
-                    }
-                }
-                if (uiContext.IsKeyPressed(Keys.G))
-                {
-                    if (dragOrigin == null)
-                    {
-                        dragOrigin = uiContext.MouseVector2;
-                        oldPositions.Clear();
-                        foreach (var s in selected) oldPositions.Add(s, positions[s]);
                     }
                     else
                     {
                         dragOrigin = null;
                     }
+                }
+                if (uiContext.IsKeyPressed(Keys.Escape))
+                {
+                    dragOrigin = null;
+                }
+                if (uiContext.IsKeyPressed(Keys.G) && dragOrigin == null)
+                {
+                    dragOrigin = uiContext.MouseVector2;
+                    oldPositions.Clear();
+                    foreach (var s in selected) oldPositions.Add(s, positions[s]);
                 }
                 if (selected.Count > 0 && dragOrigin != null)
                 {

@@ -55,10 +55,11 @@ namespace ZEditor
 
             pointsShader = Content.Load<Effect>("Shaders/PointsShader");
 
-            int w = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
-            int h = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
+            int w = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width - 40;
+            int h = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height - 40 - 45;
             _graphics.PreferredBackBufferWidth = w;
             _graphics.PreferredBackBufferHeight = h;
+            Window.Position = new Point(20, 20);
             //_graphics.IsFullScreen = true;
             _graphics.ApplyChanges();
 
@@ -75,7 +76,7 @@ namespace ZEditor
         protected override void Update(GameTime gameTime)
         {
             uiContext.UpdateGameTime(gameTime);
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || uiContext.IsKeyShiftPressed(Keys.Escape))
                 Exit();
             if (uiContext.IsKeyCtrlPressed(Keys.E))
             {
