@@ -32,7 +32,7 @@ namespace ZEditor.ZTemplates.Mesh
             return true;
         }
 
-        public override VertexPositionColor MakeVertex(Vector3 position, Color color, int vertexNum, int[] item, Vector3[] positions)
+        public override VertexPositionColor MakeVertex(Vector3 position, Color color, int vertexNum, int[] item)
         {
             return new VertexPositionColor(position, color);
         }

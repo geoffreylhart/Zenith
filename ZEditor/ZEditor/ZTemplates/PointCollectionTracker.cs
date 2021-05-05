@@ -2,17 +2,13 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using ZEditor.ZComponents.Data;
 
 namespace ZEditor.ZTemplates
 {
-    public class PointCollectionTracker
+    public class PointCollectionTracker : IVertexObserver
     {
         Dictionary<int, Vector3> dict = new Dictionary<int, Vector3>();
-
-        internal void Track(int index, Vector3 v)
-        {
-            dict[index] = v;
-        }
 
         internal int GetNearest(Vector3 start, Vector3 look)
         {
@@ -39,9 +35,14 @@ namespace ZEditor.ZTemplates
             return Math.Abs(Vector3.Dot(n - start, perpendicular));
         }
 
-        internal void Update(int nearestIndice, Vector3 v)
+        public void Add(int index, Vector3 v, Color color)
         {
-            dict[nearestIndice] = v;
+            dict[index] = v;
+        }
+
+        public void Update(int index, Vector3 v, Color color)
+        {
+            dict[index] = v;
         }
     }
 }

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using ZEditor.ZComponents.Data;
 using ZEditor.ZControl;
 using ZEditor.ZGraphics;
 using ZEditor.ZManage;
@@ -40,35 +41,30 @@ namespace ZEditor.ZTemplates
     // ctrl l to select all connected
     public class MeshTemplate : ZGameObject
     {
-        FaceMesh faceMesh = new FaceMesh();
-        LineMesh lineMesh = new LineMesh();
-        PointMesh pointMesh = new PointMesh();
-        Vector3[] positions;
-        Color[] colors;
+        FaceMesh faceMesh;
+        LineMesh lineMesh;
+        PointMesh pointMesh;
+        VertexDataComponent vertexData;
         PointCollectionTracker tracker = new PointCollectionTracker();
         HashSet<int> selected = new HashSet<int>();
 
         public MeshTemplate()
         {
-            Register(faceMesh, lineMesh, pointMesh);
+            vertexData = new VertexDataComponent() { saveColor = false };
+            faceMesh = new FaceMesh() { vertexData = vertexData };
+            lineMesh = new LineMesh() { vertexData = vertexData };
+            pointMesh = new PointMesh() { vertexData = vertexData };
+            vertexData.AddObserver(faceMesh);
+            vertexData.AddObserver(lineMesh);
+            vertexData.AddObserver(pointMesh);
+            vertexData.AddObserver(tracker);
+            Register(vertexData, faceMesh, lineMesh, pointMesh);
         }
 
-        public void Load(StreamReader reader)
+        public override void Load(StreamReader reader, GraphicsDevice graphicsDevice)
         {
+            vertexData.Load(reader, graphicsDevice);
             var currLine = reader.ReadLine();
-            if (!currLine.Contains("Vertices")) throw new NotImplementedException();
-            currLine = reader.ReadLine();
-            var positionList = new List<Vector3>();
-            while (!currLine.Contains("}"))
-            {
-                var split = currLine.Trim().Split(',');
-                positionList.Add(new Vector3(float.Parse(split[0]), float.Parse(split[1]), float.Parse(split[2])));
-                tracker.Track(positionList.Count - 1, positionList[positionList.Count - 1]);
-                currLine = reader.ReadLine();
-            }
-            positions = positionList.ToArray();
-            colors = positionList.Select(x => Color.Black).ToArray();
-            currLine = reader.ReadLine();
             if (!currLine.Contains("Quads")) throw new NotImplementedException();
             currLine = reader.ReadLine();
             while (!currLine.Contains("}"))
@@ -84,6 +80,9 @@ namespace ZEditor.ZTemplates
                 AddPoly(currLine, 3);
                 currLine = reader.ReadLine();
             }
+            faceMesh.MakeBuffer(graphicsDevice);
+            lineMesh.MakeBuffer(graphicsDevice);
+            pointMesh.MakeBuffer(graphicsDevice);
         }
 
         private void AddPoly(string currLine, int sides)
@@ -100,21 +99,6 @@ namespace ZEditor.ZTemplates
         public void Save(StreamWriter writer)
         {
             throw new NotImplementedException();
-        }
-
-        public VertexIndexBuffer MakeFaceBuffer(GraphicsDevice graphicsDevice)
-        {
-            return faceMesh.MakeBuffer(positions, colors, graphicsDevice);
-        }
-
-        public VertexIndexBuffer MakeLineBuffer(GraphicsDevice graphicsDevice)
-        {
-            return lineMesh.MakeBuffer(positions, colors, graphicsDevice);
-        }
-
-        public VertexIndexBuffer MakePointBuffer(GraphicsDevice graphicsDevice)
-        {
-            return pointMesh.MakeBuffer(positions, colors, graphicsDevice);
         }
 
         Vector2? dragOrigin = null;
@@ -136,16 +120,12 @@ namespace ZEditor.ZTemplates
                         {
                             if (selected.Contains(nearestIndex))
                             {
-                                colors[nearestIndex] = Color.Black;
-                                pointMesh.Update(nearestIndex, positions, colors);
-                                lineMesh.Update(nearestIndex, positions, colors);
+                                vertexData.Update(nearestIndex, vertexData.positions[nearestIndex], Color.Black);
                                 selected.Remove(nearestIndex);
                             }
                             else
                             {
-                                colors[nearestIndex] = Color.Orange;
-                                pointMesh.Update(nearestIndex, positions, colors);
-                                lineMesh.Update(nearestIndex, positions, colors);
+                                vertexData.Update(nearestIndex, vertexData.positions[nearestIndex], Color.Orange);
                                 selected.Add(nearestIndex);
                             }
                         }
@@ -153,15 +133,11 @@ namespace ZEditor.ZTemplates
                         {
                             foreach (var v in selected)
                             {
-                                colors[v] = Color.Black;
-                                pointMesh.Update(v, positions, colors);
-                                lineMesh.Update(v, positions, colors);
+                                vertexData.Update(v, vertexData.positions[v], Color.Black);
                             }
                             selected.Clear();
                             selected.Add(nearestIndex);
-                            colors[nearestIndex] = Color.Orange;
-                            pointMesh.Update(nearestIndex, positions, colors);
-                            lineMesh.Update(nearestIndex, positions, colors);
+                            vertexData.Update(nearestIndex, vertexData.positions[nearestIndex], Color.Orange);
                         }
                     }
                     else
@@ -177,14 +153,14 @@ namespace ZEditor.ZTemplates
                 {
                     dragOrigin = uiContext.MouseVector2;
                     oldPositions.Clear();
-                    foreach (var s in selected) oldPositions.Add(s, positions[s]);
+                    foreach (var s in selected) oldPositions.Add(s, vertexData.positions[s]);
                 }
                 if (selected.Count > 0 && dragOrigin != null)
                 {
                     Vector3 sumOffset = Vector3.Zero;
                     foreach (var s in selected)
                     {
-                        Vector3 currPosition = positions[s];
+                        Vector3 currPosition = vertexData.positions[s];
                         sumOffset += camera.GetPerspectiveOffset(uiContext, currPosition, uiContext.MouseVector2 - dragOrigin.Value);
                     }
                     sumOffset /= selected.Count;
@@ -196,11 +172,7 @@ namespace ZEditor.ZTemplates
                         // get position and update tracker
                         Vector3 newPosition = oldPositions[s];
                         newPosition += sumOffset;
-                        positions[s] = newPosition;
-                        tracker.Update(s, newPosition);
-                        faceMesh.Update(s, positions, colors);
-                        lineMesh.Update(s, positions, colors);
-                        pointMesh.Update(s, positions, colors);
+                        vertexData.Update(s, newPosition, Color.Orange);
                     }
                 }
             }

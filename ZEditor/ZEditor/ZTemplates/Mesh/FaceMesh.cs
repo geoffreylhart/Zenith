@@ -64,9 +64,9 @@ namespace ZEditor.ZTemplates.Mesh
             return false;
         }
 
-        public override VertexPositionNormalTexture MakeVertex(Vector3 position, Color color, int vertexNum, int[] item, Vector3[] positions)
+        public override VertexPositionNormalTexture MakeVertex(Vector3 position, Color color, int vertexNum, int[] item)
         {
-            return new VertexPositionNormalTexture(position, CalculateNormal(item.Select(x => positions[x]).ToArray()), new Vector2(0, 0));
+            return new VertexPositionNormalTexture(position, CalculateNormal(item.Select(x => vertexData.positions[x]).ToArray()), new Vector2(0, 0));
         }
 
         public override bool MergeAllVertices()

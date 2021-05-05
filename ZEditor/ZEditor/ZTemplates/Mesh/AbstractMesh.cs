@@ -3,17 +3,19 @@ using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ZEditor.ZComponents.Data;
 using ZEditor.ZGraphics;
 using ZEditor.ZManage;
 
 namespace ZEditor.ZTemplates.Mesh
 {
     // an attempt to abstract out the logic of points/lines/faces
-    abstract class AbstractMesh<T> : ZComponent where T : struct, IVertexType
+    abstract class AbstractMesh<T> : ZComponent, IVertexObserver where T : struct, IVertexType
     {
         private HashSet<ItemInfo> items;
         private Dictionary<int, HashSet<ItemInfo>> itemLookup;
         public VertexIndexBuffer buffer;
+        public VertexDataComponent vertexData;
 
         private class ItemInfo
         {
@@ -71,25 +73,7 @@ namespace ZEditor.ZTemplates.Mesh
             }
         }
 
-        public void Update(int vertexIndice, Vector3[] positions, Color[] colors)
-        {
-            foreach (var item in itemLookup[vertexIndice])
-            {
-                for (int i = 0; i < item.vertices.Length; i++)
-                {
-                    if (!WholeItemDependent() && item.vertices[i] != vertexIndice) continue;
-                    T[] temp = new T[VerticesPerVertex()];
-                    for (int j = 0; j < VerticesPerVertex(); j++)
-                    {
-                        temp[j] = MakeVertex(positions[item.vertices[i]], colors[item.vertices[i]], i * VerticesPerVertex() + j, item.vertices, positions);
-                    }
-                    buffer.vertexBuffer.SetData(new T().VertexDeclaration.VertexStride * item.indices[i], temp, 0, VerticesPerVertex(), new T().VertexDeclaration.VertexStride);
-                }
-                if (MergeAllVertices()) break;
-            }
-        }
-
-        public VertexIndexBuffer MakeBuffer(Vector3[] positions, Color[] colors, GraphicsDevice graphicsDevice)
+        public VertexIndexBuffer MakeBuffer(GraphicsDevice graphicsDevice)
         {
             List<T> vertices = new List<T>();
             List<int> indices = new List<int>();
@@ -112,7 +96,7 @@ namespace ZEditor.ZTemplates.Mesh
                         }
                         else
                         {
-                            vertices.Add(MakeVertex(positions[itemReplacement[indexOffsets[j]] / VerticesPerVertex()], colors[itemReplacement[indexOffsets[j]] / VerticesPerVertex()], indexOffsets[j], itemReplacement, positions));
+                            vertices.Add(MakeVertex(vertexData.positions[itemReplacement[indexOffsets[j]] / VerticesPerVertex()], vertexData.colors[itemReplacement[indexOffsets[j]] / VerticesPerVertex()], indexOffsets[j], itemReplacement));
                             verticesAdded.Add(itemReplacement[indexOffsets[j]], vertices.Count - 1);
                             indices.Add(vertices.Count - 1);
                         }
@@ -131,7 +115,7 @@ namespace ZEditor.ZTemplates.Mesh
 
         public abstract int NumPrimitives(int numVertices);
         public abstract int[] PrimitiveIndexOffets(int primitiveNum);
-        public abstract T MakeVertex(Vector3 position, Color color, int vertexNum, int[] item, Vector3[] positions);
+        public abstract T MakeVertex(Vector3 position, Color color, int vertexNum, int[] item);
         public abstract bool FlippedAreEquivalent();
         public abstract bool MergeAllVertices(); // not just vertices within a single item
         public abstract int VerticesPerVertex();
@@ -148,6 +132,28 @@ namespace ZEditor.ZTemplates.Mesh
         public override void DrawDebug(GraphicsDevice graphicsDevice, Matrix world, Matrix view, Matrix projection)
         {
             DrawDebugMesh(graphicsDevice, world, view, projection);
+        }
+
+        public void Add(int index, Vector3 v, Color color)
+        {
+        }
+
+        public void Update(int index, Vector3 v, Color color)
+        {
+            foreach (var item in itemLookup[index])
+            {
+                for (int i = 0; i < item.vertices.Length; i++)
+                {
+                    if (!WholeItemDependent() && item.vertices[i] != index) continue;
+                    T[] temp = new T[VerticesPerVertex()];
+                    for (int j = 0; j < VerticesPerVertex(); j++)
+                    {
+                        temp[j] = MakeVertex(vertexData.positions[item.vertices[i]], vertexData.colors[item.vertices[i]], i * VerticesPerVertex() + j, item.vertices);
+                    }
+                    buffer.vertexBuffer.SetData(new T().VertexDeclaration.VertexStride * item.indices[i], temp, 0, VerticesPerVertex(), new T().VertexDeclaration.VertexStride);
+                }
+                if (MergeAllVertices()) break;
+            }
         }
     }
 }

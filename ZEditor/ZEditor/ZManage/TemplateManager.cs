@@ -11,7 +11,7 @@ namespace ZEditor.ZManage
 {
     public class TemplateManager
     {
-        public static ZGameObject Load(string fileName, string templateName)
+        public static ZGameObject Load(string fileName, string templateName, GraphicsDevice graphicsDevice)
         {
             string rootDirectory = Directory.GetCurrentDirectory();
             string fullPath = Path.Combine(rootDirectory.Substring(0, rootDirectory.IndexOf("ZEditor")), "ZEditor\\ZEditor", fileName);
@@ -25,7 +25,7 @@ namespace ZEditor.ZManage
                         string name = match.Groups[1].Value;
                         if (name == templateName)
                         {
-                            return ReadTemplate(reader);
+                            return ReadTemplate(reader, graphicsDevice);
                         }
                     }
                 }
@@ -33,7 +33,7 @@ namespace ZEditor.ZManage
             throw new NotImplementedException();
         }
 
-        private static ZGameObject ReadTemplate(StreamReader reader)
+        private static ZGameObject ReadTemplate(StreamReader reader, GraphicsDevice graphicsDevice)
         {
             string nameLine = reader.ReadLine();
             string thisName = Regex.Match(nameLine, "^ *([^ ]+) {$").Groups[1].Value;
@@ -41,7 +41,7 @@ namespace ZEditor.ZManage
             {
                 case "Mesh":
                     var mesh = new MeshTemplate();
-                    mesh.Load(reader);
+                    mesh.Load(reader, graphicsDevice);
                     return mesh;
                 default:
                     throw new NotImplementedException();

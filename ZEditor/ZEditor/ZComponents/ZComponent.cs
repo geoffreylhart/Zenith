@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace ZEditor.ZManage
@@ -10,5 +11,7 @@ namespace ZEditor.ZManage
     {
         public virtual void Draw(GraphicsDevice graphics, Matrix world, Matrix view, Matrix projection) { }
         public virtual void DrawDebug(GraphicsDevice graphics, Matrix world, Matrix view, Matrix projection) { }
+        public virtual void Load(StreamReader reader, GraphicsDevice graphics) { }
+        public virtual void Save(StreamWriter writer) { }
     }
 }
