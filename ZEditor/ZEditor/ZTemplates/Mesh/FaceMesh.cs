@@ -9,6 +9,56 @@ namespace ZEditor.ZTemplates.Mesh
 {
     class FaceMesh : AbstractMesh<VertexPositionNormalTexture>
     {
+        public override void DrawMesh(GraphicsDevice graphicsDevice, Matrix world, Matrix view, Matrix projection)
+        {
+            BasicEffect effect = new BasicEffect(graphicsDevice);
+            effect.World = world;
+            effect.View = view;
+            effect.Projection = projection;
+            effect.DiffuseColor = new Vector3(1, 1, 1);
+            effect.AmbientLightColor = new Vector3(0.1f, 0.1f, 0.1f);
+            effect.LightingEnabled = true;
+            effect.DirectionalLight0.Enabled = true;
+            effect.DirectionalLight0.DiffuseColor = new Vector3(0.9f, 0.9f, 0.9f);
+            var direction = new Vector3(2, -2, 10);
+            direction.Normalize();
+            effect.DirectionalLight0.Direction = direction;
+            graphicsDevice.SetVertexBuffer(buffer.vertexBuffer);
+            graphicsDevice.Indices = buffer.indexBuffer;
+            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, buffer.indexBuffer.IndexCount / 3);
+            }
+        }
+        public override void DrawDebugMesh(GraphicsDevice graphicsDevice, Matrix world, Matrix view, Matrix projection)
+        {
+            BasicEffect effect = new BasicEffect(graphicsDevice);
+            effect.World = world;
+            effect.View = view;
+            effect.Projection = projection;
+            effect.DiffuseColor = new Vector3(1, 1, 1);
+            effect.AmbientLightColor = new Vector3(0.1f, 0.1f, 0.1f);
+            effect.LightingEnabled = true;
+            effect.DirectionalLight0.Enabled = true;
+            effect.DirectionalLight0.DiffuseColor = new Vector3(0.9f, 0.9f, 0.9f);
+            var direction = new Vector3(2, -2, 10);
+            direction.Normalize();
+            effect.DirectionalLight0.Direction = direction;
+            effect.DirectionalLight1.Enabled = true;
+            effect.DirectionalLight1.DiffuseColor = new Vector3(0.9f, 0.9f, 0.9f);
+            var direction2 = new Vector3(-2, 2, -10);
+            direction2.Normalize();
+            effect.DirectionalLight1.Direction = direction2;
+            graphicsDevice.SetVertexBuffer(buffer.vertexBuffer);
+            graphicsDevice.Indices = buffer.indexBuffer;
+            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, buffer.indexBuffer.IndexCount / 3);
+            }
+        }
+
         public override bool FlippedAreEquivalent()
         {
             return false;

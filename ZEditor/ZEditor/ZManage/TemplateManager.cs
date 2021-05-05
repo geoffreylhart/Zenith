@@ -11,7 +11,7 @@ namespace ZEditor.ZManage
 {
     public class TemplateManager
     {
-        public static ITemplate Load(string fileName, string templateName)
+        public static ZGameObject Load(string fileName, string templateName)
         {
             string rootDirectory = Directory.GetCurrentDirectory();
             string fullPath = Path.Combine(rootDirectory.Substring(0, rootDirectory.IndexOf("ZEditor")), "ZEditor\\ZEditor", fileName);
@@ -33,7 +33,7 @@ namespace ZEditor.ZManage
             throw new NotImplementedException();
         }
 
-        private static ITemplate ReadTemplate(StreamReader reader)
+        private static ZGameObject ReadTemplate(StreamReader reader)
         {
             string nameLine = reader.ReadLine();
             string thisName = Regex.Match(nameLine, "^ *([^ ]+) {$").Groups[1].Value;

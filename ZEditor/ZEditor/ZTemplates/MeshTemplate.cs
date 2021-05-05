@@ -38,7 +38,7 @@ namespace ZEditor.ZTemplates
     // saving
     // reverting
     // ctrl l to select all connected
-    class MeshTemplate : ITemplate
+    public class MeshTemplate : ZGameObject
     {
         FaceMesh faceMesh = new FaceMesh();
         LineMesh lineMesh = new LineMesh();
@@ -47,6 +47,11 @@ namespace ZEditor.ZTemplates
         Color[] colors;
         PointCollectionTracker tracker = new PointCollectionTracker();
         HashSet<int> selected = new HashSet<int>();
+
+        public MeshTemplate()
+        {
+            Register(faceMesh, lineMesh, pointMesh);
+        }
 
         public void Load(StreamReader reader)
         {

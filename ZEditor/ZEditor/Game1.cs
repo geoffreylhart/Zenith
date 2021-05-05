@@ -13,11 +13,7 @@ namespace ZEditor
 {
     public class Game1 : Game
     {
-        private VertexIndexBuffer renderSubjectFaceBuffer;
-        private VertexIndexBuffer renderSubjectLineBuffer;
-        private VertexIndexBuffer renderSubjectPointBuffer;
-        private Effect pointsShader;
-        private ITemplate renderSubject;
+        private ZGameObject renderSubject;
         private AbstractCamera camera;
         private UIContext uiContext;
         private GraphicsDeviceManager _graphics;
@@ -38,9 +34,9 @@ namespace ZEditor
         {
             // TODO: Add your initialization logic here
             renderSubject = TemplateManager.Load("zdata.txt", "Spaceship1");
-            renderSubjectFaceBuffer = renderSubject.MakeFaceBuffer(GraphicsDevice);
-            renderSubjectLineBuffer = renderSubject.MakeLineBuffer(GraphicsDevice);
-            renderSubjectPointBuffer = renderSubject.MakePointBuffer(GraphicsDevice);
+            ((MeshTemplate)renderSubject).MakeFaceBuffer(GraphicsDevice);
+            ((MeshTemplate)renderSubject).MakeLineBuffer(GraphicsDevice);
+            ((MeshTemplate)renderSubject).MakePointBuffer(GraphicsDevice);
             // view from slightly above and to the right, but far away TODO: for some reason we aren't looking at 0, 0, 0??
             camera = new FPSCamera(new Vector3(-2, 2, -10), new Vector3(0, 0, 0));
             int radii = 5;
@@ -53,7 +49,7 @@ namespace ZEditor
             }
             cursorTexture.SetData(data);
 
-            pointsShader = Content.Load<Effect>("Shaders/PointsShader");
+            GlobalContent.Init(this.Content);
 
             int w = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width - 40;
             int h = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height - 40 - 45;
@@ -93,7 +89,7 @@ namespace ZEditor
 
             // TODO: Add your update logic here
             camera.Update(uiContext);
-            renderSubject.Update(uiContext, camera, editMode);
+            ((MeshTemplate)renderSubject).Update(uiContext, camera, editMode);
 
             uiContext.UpdateKeys();
             base.Update(gameTime);
@@ -104,40 +100,16 @@ namespace ZEditor
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
             // TODO: Add your drawing code here
-            BasicEffect basicEffect = new BasicEffect(GraphicsDevice);
-            basicEffect.World = Matrix.Identity;
-            // note, after WVP is applied, I believe near plane matches to 1 and far plane matches to -1, matching the handedness of Vector3 Constants
-            // the camera position and lookup at least match up to the coordinates/colors we gave
-            basicEffect.View = camera.GetView();
-            basicEffect.Projection = Matrix.CreatePerspectiveFieldOfView((float)(Math.PI / 4), GraphicsDevice.Viewport.AspectRatio, 0.01f, 100f);
-            basicEffect.DiffuseColor = new Vector3(1, 1, 1);
-            basicEffect.AmbientLightColor = new Vector3(0.1f, 0.1f, 0.1f);
-            basicEffect.LightingEnabled = true;
-            basicEffect.DirectionalLight0.Enabled = true;
-            basicEffect.DirectionalLight0.DiffuseColor = new Vector3(0.9f, 0.9f, 0.9f);
-            var direction = new Vector3(2, -2, 10);
-            direction.Normalize();
-            basicEffect.DirectionalLight0.Direction = direction;
-            // points effect
-            Effect pointsEffect = pointsShader;
-            pointsShader.Parameters["WVP"].SetValue(basicEffect.World * basicEffect.View * basicEffect.Projection);
-            pointsShader.Parameters["PointSize"].SetValue(new Vector2(10f / GraphicsDevice.Viewport.Width, 10f / GraphicsDevice.Viewport.Height));
+            Matrix world = Matrix.Identity;
+            Matrix view = camera.GetView();
+            Matrix projection = Matrix.CreatePerspectiveFieldOfView((float)(Math.PI / 4), GraphicsDevice.Viewport.AspectRatio, 0.01f, 100f);
             if (editMode)
             {
-                basicEffect.DirectionalLight1.Enabled = true;
-                basicEffect.DirectionalLight1.DiffuseColor = new Vector3(0.9f, 0.9f, 0.9f);
-                var direction2 = new Vector3(-2, 2, -10);
-                direction2.Normalize();
-                basicEffect.DirectionalLight1.Direction = direction2;
-                Render(GraphicsDevice, basicEffect, renderSubjectFaceBuffer, PrimitiveType.TriangleList, renderSubjectFaceBuffer.indexBuffer.IndexCount / 3);
-                basicEffect.VertexColorEnabled = true;
-                basicEffect.LightingEnabled = false;
-                Render(GraphicsDevice, basicEffect, renderSubjectLineBuffer, PrimitiveType.LineList, renderSubjectLineBuffer.indexBuffer.IndexCount / 2);
-                Render(GraphicsDevice, pointsShader, renderSubjectPointBuffer, PrimitiveType.TriangleList, renderSubjectPointBuffer.indexBuffer.IndexCount / 3);
+                renderSubject.DrawDebug(GraphicsDevice, world, view, projection);
             }
             else
             {
-                Render(GraphicsDevice, basicEffect, renderSubjectFaceBuffer, PrimitiveType.TriangleList, renderSubjectFaceBuffer.indexBuffer.IndexCount / 3);
+                renderSubject.Draw(GraphicsDevice, world, view, projection);
             }
             // draw cursor
             _spriteBatch.Begin(SpriteSortMode.Deferred, null, null, DepthStencilState.Default, null, null, null);
@@ -145,17 +117,6 @@ namespace ZEditor
             _spriteBatch.End();
 
             base.Draw(gameTime);
-        }
-
-        private void Render(GraphicsDevice graphicsDevice, Effect effect, VertexIndexBuffer buffer, PrimitiveType primitiveType, int primitiveCount)
-        {
-            graphicsDevice.SetVertexBuffer(buffer.vertexBuffer);
-            graphicsDevice.Indices = buffer.indexBuffer;
-            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-                GraphicsDevice.DrawIndexedPrimitives(primitiveType, 0, 0, primitiveCount);
-            }
         }
     }
 }

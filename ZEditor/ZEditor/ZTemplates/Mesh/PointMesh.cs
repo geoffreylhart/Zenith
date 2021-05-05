@@ -3,11 +3,29 @@ using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using ZEditor.ZManage;
 
 namespace ZEditor.ZTemplates.Mesh
 {
     class PointMesh : AbstractMesh<VertexPositionColorTexture>
     {
+        public override void DrawMesh(GraphicsDevice graphicsDevice, Matrix world, Matrix view, Matrix projection)
+        {
+        }
+        public override void DrawDebugMesh(GraphicsDevice graphicsDevice, Matrix world, Matrix view, Matrix projection)
+        {
+            Effect effect = GlobalContent.PointsShader;
+            effect.Parameters["WVP"].SetValue(world * view * projection);
+            effect.Parameters["PointSize"].SetValue(new Vector2(10f / graphicsDevice.Viewport.Width, 10f / graphicsDevice.Viewport.Height));
+            graphicsDevice.SetVertexBuffer(buffer.vertexBuffer);
+            graphicsDevice.Indices = buffer.indexBuffer;
+            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, buffer.indexBuffer.IndexCount / 3);
+            }
+        }
+
         public override bool FlippedAreEquivalent()
         {
             return false;

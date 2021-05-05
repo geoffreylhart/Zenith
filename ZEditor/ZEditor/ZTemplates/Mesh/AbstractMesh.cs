@@ -4,11 +4,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ZEditor.ZGraphics;
+using ZEditor.ZManage;
 
 namespace ZEditor.ZTemplates.Mesh
 {
     // an attempt to abstract out the logic of points/lines/faces
-    abstract class AbstractMesh<T> where T : struct, IVertexType
+    abstract class AbstractMesh<T> : ZComponent where T : struct, IVertexType
     {
         private HashSet<ItemInfo> items;
         private Dictionary<int, HashSet<ItemInfo>> itemLookup;
@@ -128,7 +129,6 @@ namespace ZEditor.ZTemplates.Mesh
             return buffer;
         }
 
-
         public abstract int NumPrimitives(int numVertices);
         public abstract int[] PrimitiveIndexOffets(int primitiveNum);
         public abstract T MakeVertex(Vector3 position, Color color, int vertexNum, int[] item, Vector3[] positions);
@@ -136,5 +136,18 @@ namespace ZEditor.ZTemplates.Mesh
         public abstract bool MergeAllVertices(); // not just vertices within a single item
         public abstract int VerticesPerVertex();
         public abstract bool WholeItemDependent();
+        // note: this could maybe all be abstracted out, yeah?
+        public abstract void DrawMesh(GraphicsDevice graphicsDevice, Matrix world, Matrix view, Matrix projection);
+        public abstract void DrawDebugMesh(GraphicsDevice graphicsDevice, Matrix world, Matrix view, Matrix projection);
+
+        public override void Draw(GraphicsDevice graphicsDevice, Matrix world, Matrix view, Matrix projection)
+        {
+            DrawMesh(graphicsDevice, world, view, projection);
+        }
+
+        public override void DrawDebug(GraphicsDevice graphicsDevice, Matrix world, Matrix view, Matrix projection)
+        {
+            DrawDebugMesh(graphicsDevice, world, view, projection);
+        }
     }
 }

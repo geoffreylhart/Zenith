@@ -8,6 +8,25 @@ namespace ZEditor.ZTemplates.Mesh
 {
     class LineMesh : AbstractMesh<VertexPositionColor>
     {
+        public override void DrawMesh(GraphicsDevice graphicsDevice, Matrix world, Matrix view, Matrix projection)
+        {
+        }
+        public override void DrawDebugMesh(GraphicsDevice graphicsDevice, Matrix world, Matrix view, Matrix projection)
+        {
+            BasicEffect effect = new BasicEffect(graphicsDevice);
+            effect.World = world;
+            effect.View = view;
+            effect.Projection = projection;
+            effect.VertexColorEnabled = true;
+            graphicsDevice.SetVertexBuffer(buffer.vertexBuffer);
+            graphicsDevice.Indices = buffer.indexBuffer;
+            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                graphicsDevice.DrawIndexedPrimitives(PrimitiveType.LineList, 0, 0, buffer.indexBuffer.IndexCount / 2);
+            }
+        }
+
         public override bool FlippedAreEquivalent()
         {
             return true;
