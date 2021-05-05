@@ -17,13 +17,7 @@ namespace ZEditor.ZTemplates.Mesh
             Effect effect = GlobalContent.PointsShader;
             effect.Parameters["WVP"].SetValue(world * view * projection);
             effect.Parameters["PointSize"].SetValue(new Vector2(10f / graphicsDevice.Viewport.Width, 10f / graphicsDevice.Viewport.Height));
-            graphicsDevice.SetVertexBuffer(buffer.vertexBuffer);
-            graphicsDevice.Indices = buffer.indexBuffer;
-            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-                graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, buffer.indexBuffer.IndexCount / 3);
-            }
+            buffer.Draw(PrimitiveType.TriangleList, graphicsDevice, effect);
         }
 
         public override bool FlippedAreEquivalent()

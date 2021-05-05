@@ -39,18 +39,21 @@ namespace ZEditor.ZTemplates
     // saving
     // reverting
     // ctrl l to select all connected
-    public class MeshTemplate : ZGameObject
+    public class MeshTemplate : ZGameObject, IIntListHashObserver
     {
         FaceMesh faceMesh;
         LineMesh lineMesh;
         PointMesh pointMesh;
         VertexDataComponent vertexData;
+        IntListHashDataComponent polyData;
         PointCollectionTracker tracker = new PointCollectionTracker();
         HashSet<int> selected = new HashSet<int>();
 
         public MeshTemplate()
         {
             vertexData = new VertexDataComponent() { saveColor = false };
+            polyData = new IntListHashDataComponent();
+            polyData.AddObserver(this);
             faceMesh = new FaceMesh() { vertexData = vertexData };
             lineMesh = new LineMesh() { vertexData = vertexData };
             pointMesh = new PointMesh() { vertexData = vertexData };
@@ -58,42 +61,7 @@ namespace ZEditor.ZTemplates
             vertexData.AddObserver(lineMesh);
             vertexData.AddObserver(pointMesh);
             vertexData.AddObserver(tracker);
-            Register(vertexData, faceMesh, lineMesh, pointMesh);
-        }
-
-        public override void Load(StreamReader reader, GraphicsDevice graphicsDevice)
-        {
-            vertexData.Load(reader, graphicsDevice);
-            var currLine = reader.ReadLine();
-            if (!currLine.Contains("Quads")) throw new NotImplementedException();
-            currLine = reader.ReadLine();
-            while (!currLine.Contains("}"))
-            {
-                AddPoly(currLine, 4);
-                currLine = reader.ReadLine();
-            }
-            currLine = reader.ReadLine();
-            if (!currLine.Contains("Tris")) throw new NotImplementedException();
-            currLine = reader.ReadLine();
-            while (!currLine.Contains("}"))
-            {
-                AddPoly(currLine, 3);
-                currLine = reader.ReadLine();
-            }
-            faceMesh.MakeBuffer(graphicsDevice);
-            lineMesh.MakeBuffer(graphicsDevice);
-            pointMesh.MakeBuffer(graphicsDevice);
-        }
-
-        private void AddPoly(string currLine, int sides)
-        {
-            var split = currLine.Trim().Split(',').Select(x => int.Parse(x)).ToArray();
-            faceMesh.AddItem(split);
-            for (int i = 0; i < sides; i++)
-            {
-                lineMesh.AddItem(new int[] { split[i], split[(i + 1) % sides] });
-                pointMesh.AddItem(new int[] { split[i] });
-            }
+            Register(vertexData, polyData, faceMesh, lineMesh, pointMesh);
         }
 
         public void Save(StreamWriter writer)
@@ -175,6 +143,16 @@ namespace ZEditor.ZTemplates
                         vertexData.Update(s, newPosition, Color.Orange);
                     }
                 }
+            }
+        }
+
+        public void Add(int[] intList)
+        {
+            faceMesh.AddItem(intList);
+            for (int i = 0; i < intList.Length; i++)
+            {
+                lineMesh.AddItem(new int[] { intList[i], intList[(i + 1) % intList.Length] });
+                pointMesh.AddItem(new int[] { intList[i] });
             }
         }
     }

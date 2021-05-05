@@ -23,13 +23,7 @@ namespace ZEditor.ZTemplates.Mesh
             var direction = new Vector3(2, -2, 10);
             direction.Normalize();
             effect.DirectionalLight0.Direction = direction;
-            graphicsDevice.SetVertexBuffer(buffer.vertexBuffer);
-            graphicsDevice.Indices = buffer.indexBuffer;
-            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-                graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, buffer.indexBuffer.IndexCount / 3);
-            }
+            buffer.Draw(PrimitiveType.TriangleList, graphicsDevice, effect);
         }
         public override void DrawDebugMesh(GraphicsDevice graphicsDevice, Matrix world, Matrix view, Matrix projection)
         {
@@ -50,13 +44,7 @@ namespace ZEditor.ZTemplates.Mesh
             var direction2 = new Vector3(-2, 2, -10);
             direction2.Normalize();
             effect.DirectionalLight1.Direction = direction2;
-            graphicsDevice.SetVertexBuffer(buffer.vertexBuffer);
-            graphicsDevice.Indices = buffer.indexBuffer;
-            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-                graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, buffer.indexBuffer.IndexCount / 3);
-            }
+            buffer.Draw(PrimitiveType.TriangleList, graphicsDevice, effect);
         }
 
         public override bool FlippedAreEquivalent()

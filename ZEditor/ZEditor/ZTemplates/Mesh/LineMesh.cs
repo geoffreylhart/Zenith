@@ -18,13 +18,7 @@ namespace ZEditor.ZTemplates.Mesh
             effect.View = view;
             effect.Projection = projection;
             effect.VertexColorEnabled = true;
-            graphicsDevice.SetVertexBuffer(buffer.vertexBuffer);
-            graphicsDevice.Indices = buffer.indexBuffer;
-            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-                graphicsDevice.DrawIndexedPrimitives(PrimitiveType.LineList, 0, 0, buffer.indexBuffer.IndexCount / 2);
-            }
+            buffer.Draw(PrimitiveType.LineList, graphicsDevice, effect);
         }
 
         public override bool FlippedAreEquivalent()

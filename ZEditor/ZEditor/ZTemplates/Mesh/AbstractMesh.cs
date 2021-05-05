@@ -12,10 +12,13 @@ namespace ZEditor.ZTemplates.Mesh
     // an attempt to abstract out the logic of points/lines/faces
     abstract class AbstractMesh<T> : ZComponent, IVertexObserver where T : struct, IVertexType
     {
+        private int vertexCount = 0;
         private HashSet<ItemInfo> items;
         private Dictionary<int, HashSet<ItemInfo>> itemLookup;
-        public VertexIndexBuffer buffer;
+        public DynamicVertexIndexBuffer<T> buffer;
         public VertexDataComponent vertexData;
+        // TODO: remove if possible
+        private Dictionary<int, int> verticesAdded = new Dictionary<int, int>();
 
         private class ItemInfo
         {
@@ -57,6 +60,7 @@ namespace ZEditor.ZTemplates.Mesh
         {
             itemLookup = new Dictionary<int, HashSet<ItemInfo>>();
             items = new HashSet<ItemInfo>();
+            buffer = new DynamicVertexIndexBuffer<T>();
         }
 
         public void AddItem(int[] itemIndices)
@@ -70,47 +74,41 @@ namespace ZEditor.ZTemplates.Mesh
                     if (!itemLookup.ContainsKey(vertex)) itemLookup[vertex] = new HashSet<ItemInfo>();
                     itemLookup[vertex].Add(item);
                 }
+                UpdateBuffersWithItem(item);
             }
         }
 
-        public VertexIndexBuffer MakeBuffer(GraphicsDevice graphicsDevice)
+        private void UpdateBuffersWithItem(ItemInfo item)
         {
             List<T> vertices = new List<T>();
             List<int> indices = new List<int>();
-            Dictionary<int, int> verticesAdded = new Dictionary<int, int>();
-            foreach (var item in items)
+            int[] itemReplacement = new int[item.vertices.Length * VerticesPerVertex()];
+            for (int i = 0; i < itemReplacement.Length; i++)
             {
-                int[] itemReplacement = new int[item.vertices.Length * VerticesPerVertex()];
-                for (int i = 0; i < itemReplacement.Length; i++)
-                {
-                    itemReplacement[i] = item.vertices[i / VerticesPerVertex()] * VerticesPerVertex() + i / item.vertices.Length;
-                }
-                for (int i = 0; i < NumPrimitives(itemReplacement.Length); i++)
-                {
-                    int[] indexOffsets = PrimitiveIndexOffets(i);
-                    for (int j = 0; j < indexOffsets.Length; j++)
-                    {
-                        if (verticesAdded.ContainsKey(itemReplacement[indexOffsets[j]]))
-                        {
-                            indices.Add(verticesAdded[itemReplacement[indexOffsets[j]]]);
-                        }
-                        else
-                        {
-                            vertices.Add(MakeVertex(vertexData.positions[itemReplacement[indexOffsets[j]] / VerticesPerVertex()], vertexData.colors[itemReplacement[indexOffsets[j]] / VerticesPerVertex()], indexOffsets[j], itemReplacement));
-                            verticesAdded.Add(itemReplacement[indexOffsets[j]], vertices.Count - 1);
-                            indices.Add(vertices.Count - 1);
-                        }
-                        item.indices[indexOffsets[j]] = indices.Last();
-                    }
-                }
-                if (!MergeAllVertices()) verticesAdded = new Dictionary<int, int>();
+                itemReplacement[i] = item.vertices[i / VerticesPerVertex()] * VerticesPerVertex() + i / item.vertices.Length;
             }
-            var vertexBuffer = new VertexBuffer(graphicsDevice, new T().VertexDeclaration, vertices.Count, BufferUsage.None);
-            vertexBuffer.SetData(vertices.ToArray());
-            var indexBuffer = new IndexBuffer(graphicsDevice, IndexElementSize.ThirtyTwoBits, indices.Count, BufferUsage.None);
-            indexBuffer.SetData(indices.ToArray());
-            buffer = new VertexIndexBuffer(vertexBuffer, indexBuffer);
-            return buffer;
+            for (int i = 0; i < NumPrimitives(itemReplacement.Length); i++)
+            {
+                int[] indexOffsets = PrimitiveIndexOffets(i);
+                for (int j = 0; j < indexOffsets.Length; j++)
+                {
+                    if (verticesAdded.ContainsKey(itemReplacement[indexOffsets[j]]))
+                    {
+                        indices.Add(verticesAdded[itemReplacement[indexOffsets[j]]]);
+                    }
+                    else
+                    {
+                        vertices.Add(MakeVertex(vertexData.positions[itemReplacement[indexOffsets[j]] / VerticesPerVertex()], vertexData.colors[itemReplacement[indexOffsets[j]] / VerticesPerVertex()], indexOffsets[j], itemReplacement));
+                        verticesAdded.Add(itemReplacement[indexOffsets[j]], vertexCount);
+                        indices.Add(vertexCount);
+                        vertexCount++;
+                    }
+                    item.indices[indexOffsets[j]] = indices.Last();
+                }
+            }
+            if (!MergeAllVertices()) verticesAdded = new Dictionary<int, int>();
+            buffer.AddVertices(vertices);
+            buffer.AddIndices(indices);
         }
 
         public abstract int NumPrimitives(int numVertices);
@@ -150,7 +148,7 @@ namespace ZEditor.ZTemplates.Mesh
                     {
                         temp[j] = MakeVertex(vertexData.positions[item.vertices[i]], vertexData.colors[item.vertices[i]], i * VerticesPerVertex() + j, item.vertices);
                     }
-                    buffer.vertexBuffer.SetData(new T().VertexDeclaration.VertexStride * item.indices[i], temp, 0, VerticesPerVertex(), new T().VertexDeclaration.VertexStride);
+                    buffer.SetVertices(item.indices[i], temp);
                 }
                 if (MergeAllVertices()) break;
             }
