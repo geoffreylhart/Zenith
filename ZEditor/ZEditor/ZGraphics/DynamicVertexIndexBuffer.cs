@@ -101,6 +101,7 @@ namespace ZEditor.ZGraphics
 
         public void SetVertices(int offset, T[] data)
         {
+            // TODO: interesting that this can be called without a graphicsdevice though...
             T[] blah = new T[data.Length];
             vertexBuffer.GetData(new T().VertexDeclaration.VertexStride * offset, blah, 0, data.Length, new T().VertexDeclaration.VertexStride);
             vertexBuffer.SetData(new T().VertexDeclaration.VertexStride * offset, data, 0, data.Length, new T().VertexDeclaration.VertexStride);

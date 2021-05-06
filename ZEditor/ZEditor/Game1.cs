@@ -36,6 +36,7 @@ namespace ZEditor
             renderSubject = TemplateManager.Load("zdata.txt", "Spaceship1", GraphicsDevice);
             // view from slightly above and to the right, but far away TODO: for some reason we aren't looking at 0, 0, 0??
             camera = new FPSCamera(new Vector3(-2, 2, -10), new Vector3(0, 0, 0));
+            uiContext.Camera = camera;
             int radii = 5;
             cursorTexture = new Texture2D(GraphicsDevice, radii * 2 + 1, radii * 2 + 1);
             Color[] data = new Color[(radii * 2 + 1) * (radii * 2 + 1)];
@@ -82,11 +83,12 @@ namespace ZEditor
                 {
                     camera = new FPSCamera(camera.GetPosition(), camera.GetTarget());
                 }
+                uiContext.Camera = camera;
             }
 
             // TODO: Add your update logic here
             camera.Update(uiContext);
-            ((MeshTemplate)renderSubject).Update(uiContext, camera, editMode);
+            ((MeshTemplate)renderSubject).Update(uiContext);
 
             uiContext.UpdateKeys();
             base.Update(gameTime);

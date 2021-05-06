@@ -14,6 +14,8 @@ namespace ZEditor.ZControl
         private double elapsedSeconds = 0;
         private Game game;
 
+        public AbstractCamera Camera { get; set; }
+
         public float AspectRatio { get { return game.GraphicsDevice.Viewport.AspectRatio; } }
 
         public double ScrollWheelDiff { get { return prevMouseState == null ? 0 : Mouse.GetState().ScrollWheelValue - prevMouseState.ScrollWheelValue; } }

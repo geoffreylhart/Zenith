@@ -3,14 +3,15 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using ZEditor.ZComponents.Data;
+using ZEditor.ZComponents.UI;
 
 namespace ZEditor.ZTemplates
 {
-    public class PointCollectionTracker : IVertexObserver
+    public class PointCollectionTracker : IVertexObserver, IRayLookup<int>
     {
         Dictionary<int, Vector3> dict = new Dictionary<int, Vector3>();
 
-        internal int GetNearest(Vector3 start, Vector3 look)
+        public int Get(Vector3 start, Vector3 look)
         {
             double distance = double.MaxValue;
             int best = -1;

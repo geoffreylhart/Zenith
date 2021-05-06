@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using ZEditor.ZComponents.Data;
+using ZEditor.ZComponents.UI;
 using ZEditor.ZControl;
 using ZEditor.ZGraphics;
 using ZEditor.ZManage;
@@ -47,7 +48,6 @@ namespace ZEditor.ZTemplates
         VertexDataComponent vertexData;
         IntListHashDataComponent polyData;
         PointCollectionTracker tracker = new PointCollectionTracker();
-        HashSet<int> selected = new HashSet<int>();
 
         public MeshTemplate()
         {
@@ -62,88 +62,27 @@ namespace ZEditor.ZTemplates
             vertexData.AddObserver(pointMesh);
             vertexData.AddObserver(tracker);
             Register(vertexData, polyData, faceMesh, lineMesh, pointMesh);
+            // setup ui
+            // TODO: these all need to be in reversible actions
+            Selector selector = new Selector(new CameraSelectionProvider(tracker), x => vertexData.Update(x, vertexData.positions[x], Color.Orange), x => vertexData.Update(x, vertexData.positions[x], Color.Black));
+            CameraMouseTracker cameraMouseTracker = new CameraMouseTracker();
+            cameraMouseTracker.stepSize = 0.25f;
+            // TODO: maybe make event handlers so you can do += stuff...
+            cameraMouseTracker.OnStepDiff = x => { foreach (var s in selector.selected) vertexData.Update(s, vertexData.positions[s] + x, Color.Orange); };
+            StateSwitcher switcher = new StateSwitcher(selector);
+            switcher.AddKeyState(Keys.G, cameraMouseTracker, () =>
+            {
+                Vector3 selectedSum = Vector3.Zero;
+                foreach (var s in selector.selected) selectedSum += vertexData.positions[s];
+                cameraMouseTracker.worldOrigin = selectedSum / selector.selected.Count;
+                cameraMouseTracker.mouseOrigin = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
+            });
+            Register(switcher);
         }
 
         public void Save(StreamWriter writer)
         {
             throw new NotImplementedException();
-        }
-
-        Vector2? dragOrigin = null;
-        Dictionary<int, Vector3> oldPositions = new Dictionary<int, Vector3>();
-        public void Update(UIContext uiContext, AbstractCamera camera, bool editMode)
-        {
-            if (faceMesh.buffer != null && editMode)
-            {
-                if (uiContext.IsLeftMouseButtonPressed())
-                {
-                    if (dragOrigin == null)
-                    {
-                        int nearestIndex = tracker.GetNearest(camera.GetPosition(), camera.GetLookUnitVector(uiContext));
-                        if (uiContext.IsCtrlPressed())
-                        {
-
-                        }
-                        else if (Keyboard.GetState().IsKeyDown(Keys.LeftShift) || Keyboard.GetState().IsKeyDown(Keys.RightShift))
-                        {
-                            if (selected.Contains(nearestIndex))
-                            {
-                                vertexData.Update(nearestIndex, vertexData.positions[nearestIndex], Color.Black);
-                                selected.Remove(nearestIndex);
-                            }
-                            else
-                            {
-                                vertexData.Update(nearestIndex, vertexData.positions[nearestIndex], Color.Orange);
-                                selected.Add(nearestIndex);
-                            }
-                        }
-                        else
-                        {
-                            foreach (var v in selected)
-                            {
-                                vertexData.Update(v, vertexData.positions[v], Color.Black);
-                            }
-                            selected.Clear();
-                            selected.Add(nearestIndex);
-                            vertexData.Update(nearestIndex, vertexData.positions[nearestIndex], Color.Orange);
-                        }
-                    }
-                    else
-                    {
-                        dragOrigin = null;
-                    }
-                }
-                if (uiContext.IsKeyPressed(Keys.Escape))
-                {
-                    dragOrigin = null;
-                }
-                if (uiContext.IsKeyPressed(Keys.G) && dragOrigin == null)
-                {
-                    dragOrigin = uiContext.MouseVector2;
-                    oldPositions.Clear();
-                    foreach (var s in selected) oldPositions.Add(s, vertexData.positions[s]);
-                }
-                if (selected.Count > 0 && dragOrigin != null)
-                {
-                    Vector3 sumOffset = Vector3.Zero;
-                    foreach (var s in selected)
-                    {
-                        Vector3 currPosition = vertexData.positions[s];
-                        sumOffset += camera.GetPerspectiveOffset(uiContext, currPosition, uiContext.MouseVector2 - dragOrigin.Value);
-                    }
-                    sumOffset /= selected.Count;
-                    sumOffset.X = (float)Math.Round(sumOffset.X * 4) / 4;
-                    sumOffset.Y = (float)Math.Round(sumOffset.Y * 4) / 4;
-                    sumOffset.Z = (float)Math.Round(sumOffset.Z * 4) / 4;
-                    foreach (var s in selected)
-                    {
-                        // get position and update tracker
-                        Vector3 newPosition = oldPositions[s];
-                        newPosition += sumOffset;
-                        vertexData.Update(s, newPosition, Color.Orange);
-                    }
-                }
-            }
         }
 
         public void Add(int[] intList)
