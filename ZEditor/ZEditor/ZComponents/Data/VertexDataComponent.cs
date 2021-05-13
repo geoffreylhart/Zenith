@@ -31,9 +31,16 @@ namespace ZEditor.ZComponents.Data
             }
         }
 
-        public override void Save(StreamWriter writer)
+        public override void Save(IndentableStreamWriter writer)
         {
-            throw new NotImplementedException();
+            writer.WriteLine("Vertices {");
+            writer.Indent();
+            foreach (var position in positions)
+            {
+                writer.WriteLine(position.X + "," + position.Y + "," + position.Z);
+            }
+            writer.UnIndent();
+            writer.WriteLine("}");
         }
 
         internal void AddObserver(IVertexObserver observer)

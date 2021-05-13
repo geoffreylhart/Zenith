@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using ZEditor.ZComponents.Data;
 using ZEditor.ZControl;
 
 namespace ZEditor.ZManage
@@ -29,7 +30,7 @@ namespace ZEditor.ZManage
         {
             foreach (var child in children) child.Load(reader, graphicsDevice);
         }
-        public override void Save(StreamWriter writer)
+        public override void Save(IndentableStreamWriter writer)
         {
             foreach (var child in children) child.Save(writer);
         }

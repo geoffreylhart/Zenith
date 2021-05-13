@@ -80,11 +80,6 @@ namespace ZEditor.ZTemplates
             Register(switcher);
         }
 
-        public void Save(StreamWriter writer)
-        {
-            throw new NotImplementedException();
-        }
-
         public void Add(int[] intList)
         {
             faceMesh.AddItem(intList);

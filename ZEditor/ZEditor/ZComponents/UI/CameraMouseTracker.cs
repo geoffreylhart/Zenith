@@ -8,6 +8,7 @@ using ZEditor.ZManage;
 namespace ZEditor.ZComponents.UI
 {
     // tracks mouse movement from the perspective of a camera
+    // TODO: probably take inspiration from the android gestures code
     public class CameraMouseTracker : ZComponent
     {
         public float stepSize = 1;

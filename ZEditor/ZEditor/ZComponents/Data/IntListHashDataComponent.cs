@@ -34,9 +34,30 @@ namespace ZEditor.ZComponents.Data
             }
         }
 
-        public override void Save(StreamWriter writer)
+        public override void Save(IndentableStreamWriter writer)
         {
-            throw new NotImplementedException();
+            writer.WriteLine("Quads {");
+            writer.Indent();
+            foreach (var intList in intLists)
+            {
+                if (intList.Length == 4)
+                {
+                    writer.WriteLine(string.Join(",", intList));
+                }
+            }
+            writer.UnIndent();
+            writer.WriteLine("}");
+            writer.WriteLine("Tris {");
+            writer.Indent();
+            foreach (var intList in intLists)
+            {
+                if (intList.Length == 3)
+                {
+                    writer.WriteLine(string.Join(",", intList));
+                }
+            }
+            writer.UnIndent();
+            writer.WriteLine("}");
         }
 
         internal void AddObserver(IIntListHashObserver observer)

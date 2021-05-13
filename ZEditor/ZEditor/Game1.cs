@@ -71,7 +71,13 @@ namespace ZEditor
         {
             uiContext.UpdateGameTime(gameTime);
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || uiContext.IsKeyShiftPressed(Keys.Escape))
+            {
                 Exit();
+            }
+            if (uiContext.IsKeyCtrlPressed(Keys.S))
+            {
+                TemplateManager.Save(renderSubject, "zdata.txt", "Spaceship1");
+            }
             if (uiContext.IsKeyCtrlPressed(Keys.E))
             {
                 editMode = !editMode;
