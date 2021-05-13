@@ -93,5 +93,10 @@ namespace ZEditor.ZTemplates.Mesh
             normal.Normalize();
             return normal;
         }
+
+        public override int PrimitiveSize()
+        {
+            return 3;
+        }
     }
 }

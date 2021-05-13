@@ -54,5 +54,10 @@ namespace ZEditor.ZTemplates.Mesh
         {
             return false;
         }
+
+        public override int PrimitiveSize()
+        {
+            return 4;
+        }
     }
 }

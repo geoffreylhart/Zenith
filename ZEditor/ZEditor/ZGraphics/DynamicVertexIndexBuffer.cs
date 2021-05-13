@@ -101,11 +101,6 @@ namespace ZEditor.ZGraphics
 
         public void SetVertices(int offset, T[] data)
         {
-            // TODO: split vertices between the two if that's ever necessary
-            if (vertexBuffer != null && vertexBuffer.VertexCount > offset && vertexBuffer.VertexCount < offset + data.Length)
-            {
-                // split the vertices between the two
-            }
             if (vertexBuffer == null)
             {
                 // all vertices update pending
@@ -131,6 +126,66 @@ namespace ZEditor.ZGraphics
             {
                 // split the vertices between the two
                 throw new NotImplementedException();
+            }
+        }
+
+        public void SetIndices(int offset, int[] data)
+        {
+            if (indexBuffer == null)
+            {
+                // all indices update pending
+                for (int i = 0; i < data.Length; i++)
+                {
+                    pendingIndices[i + offset] = data[i];
+                }
+            }
+            else if (indexBuffer.IndexCount < offset)
+            {
+                // all indices update pending
+                for (int i = 0; i < data.Length; i++)
+                {
+                    pendingIndices[i + offset - indexBuffer.IndexCount] = data[i];
+                }
+            }
+            else if (offset + data.Length <= indexBuffer.IndexCount)
+            {
+                // all vertices go to buffer
+                indexBuffer.SetData(4 * offset, data, 0, data.Length);
+            }
+            else
+            {
+                // split the indices between the two
+                throw new NotImplementedException();
+            }
+        }
+
+        public void SetIndices(int toOffset, int fromOffset, int length)
+        {
+            int[] fromIndices = new int[length];
+            if (indexBuffer.IndexCount > fromOffset)
+            {
+                indexBuffer.GetData(4 * fromOffset, fromIndices, 0, Math.Min(indexBuffer.IndexCount - fromOffset, length));
+            }
+            for (int i = Math.Max(indexBuffer.IndexCount - fromOffset, 0); i < length; i++)
+            {
+                fromIndices[i] = pendingIndices[i + fromOffset - indexBuffer.IndexCount];
+            }
+            SetIndices(toOffset, fromIndices);
+        }
+
+        // TODO: actually shrink
+        internal void ReduceIndices(int length)
+        {
+            for (int i = 0; i < length; i++)
+            {
+                if (pendingIndices.Count > 0)
+                {
+                    pendingIndices.RemoveAt(pendingIndices.Count - 1);
+                }
+                else
+                {
+                    indexCount--;
+                }
             }
         }
     }

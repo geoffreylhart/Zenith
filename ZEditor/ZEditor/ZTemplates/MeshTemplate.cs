@@ -65,17 +65,32 @@ namespace ZEditor.ZTemplates
             // setup ui
             // TODO: these all need to be in reversible actions
             Selector selector = new Selector(new CameraSelectionProvider(tracker), x => vertexData.Update(x, vertexData.positions[x], Color.Orange), x => vertexData.Update(x, vertexData.positions[x], Color.Black));
-            CameraMouseTracker cameraMouseTracker = new CameraMouseTracker();
-            cameraMouseTracker.stepSize = 0.25f;
+            CameraMouseTracker dragMouseTracker = new CameraMouseTracker() { stepSize = 0.25f };
+            CameraMouseTracker extrudeMouseTracker = new CameraMouseTracker(){ stepSize = 0.25f };
             // TODO: maybe make event handlers so you can do += stuff...
-            cameraMouseTracker.OnStepDiff = x => { foreach (var s in selector.selected) vertexData.Update(s, vertexData.positions[s] + x, Color.Orange); };
+            dragMouseTracker.OnStepDiff = x => { foreach (var s in selector.selected) vertexData.Update(s, vertexData.positions[s] + x, Color.Orange); };
+            extrudeMouseTracker.OnStepDiff = x => { foreach (var s in selector.selected) vertexData.Update(s, vertexData.positions[s] + x, Color.Orange); };
             StateSwitcher switcher = new StateSwitcher(selector);
-            switcher.AddKeyState(Keys.G, cameraMouseTracker, () =>
+            switcher.AddKeyState(Keys.G, dragMouseTracker, () =>
             {
                 Vector3 selectedSum = Vector3.Zero;
                 foreach (var s in selector.selected) selectedSum += vertexData.positions[s];
-                cameraMouseTracker.worldOrigin = selectedSum / selector.selected.Count;
-                cameraMouseTracker.mouseOrigin = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
+                dragMouseTracker.worldOrigin = selectedSum / selector.selected.Count;
+                dragMouseTracker.mouseOrigin = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
+            });
+            switcher.AddKeyState(Keys.H, extrudeMouseTracker, () =>
+            {
+                Vector3 selectedSum = Vector3.Zero;
+                foreach (var s in selector.selected) selectedSum += vertexData.positions[s];
+                dragMouseTracker.worldOrigin = selectedSum / selector.selected.Count;
+                dragMouseTracker.mouseOrigin = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
+                // get selected polys
+                var selectedPolys = polyData.intLists.Where(x => x.All(y => selector.selected.Contains(y))).ToList();
+                // delete those polys
+                foreach (var p in selectedPolys) polyData.Remove(p);
+                // delete orphan vertices?
+                // add those polys offset by some amount (so they stay connected to each other while disconnecting from the main group)
+                // add walls to edges (disconnected or border of polys)
             });
             Register(switcher);
         }
@@ -88,6 +103,12 @@ namespace ZEditor.ZTemplates
                 lineMesh.AddItem(new int[] { intList[i], intList[(i + 1) % intList.Length] });
                 pointMesh.AddItem(new int[] { intList[i] });
             }
+        }
+
+        public void Remove(int[] intList)
+        {
+            faceMesh.RemoveItem(intList);
+            // TODO: remove orphaned lines/points
         }
     }
 }

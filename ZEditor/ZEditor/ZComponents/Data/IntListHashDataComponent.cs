@@ -74,6 +74,15 @@ namespace ZEditor.ZComponents.Data
             }
         }
 
+        public void Remove(int[] intList)
+        {
+            if (intLists.Contains(intList))
+            {
+                intLists.Remove(intList);
+                foreach (var observer in observers) observer.Remove(intList);
+            }
+        }
+
         private class IntListEqualityComparer : IEqualityComparer<int[]>
         {
             public bool Equals(int[] x, int[] y)

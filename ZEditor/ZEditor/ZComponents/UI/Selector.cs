@@ -11,7 +11,7 @@ namespace ZEditor.ZComponents.UI
     // TODO: perhaps separate components that merely facilitate actions vs ones that are visible
     public class Selector : ZComponent
     {
-        public HashSet<int> selected = new HashSet<int>();
+        public HashSet<int> selected = new HashSet<int>(); // TODO: make this readonly?
         private IIndexSelectionProvider indexSelectionProvider;
         private Action<int> OnSelect;
         private Action<int> OnDeselect;
@@ -62,6 +62,15 @@ namespace ZEditor.ZComponents.UI
                     selected.Add(selectedIndex);
                 }
             }
+        }
+
+        public void SetSelected(HashSet<int> newSelected)
+        {
+            foreach (var v in selected)
+            {
+                OnDeselect(v);
+            }
+            selected.Clear();
         }
     }
 }

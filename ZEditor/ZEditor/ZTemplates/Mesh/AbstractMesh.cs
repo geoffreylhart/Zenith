@@ -13,6 +13,8 @@ namespace ZEditor.ZTemplates.Mesh
     abstract class AbstractMesh<T> : ZComponent, IVertexObserver where T : struct, IVertexType
     {
         private int vertexCount = 0;
+        private int indexCount = 0;
+        private List<ItemInfo> primitiveItemLookup = new List<ItemInfo>();
         private HashSet<ItemInfo> items;
         private Dictionary<int, HashSet<ItemInfo>> itemLookup;
         public DynamicVertexIndexBuffer<T> buffer;
@@ -24,6 +26,8 @@ namespace ZEditor.ZTemplates.Mesh
         {
             public int[] vertices;
             public int[] indices;
+            // the index index, jeez
+            public List<int> primitiveIndices = new List<int>();
             public bool flippable;
 
             public override bool Equals(object obj)
@@ -78,6 +82,40 @@ namespace ZEditor.ZTemplates.Mesh
             }
         }
 
+        public void RemoveItem(int[] itemIndices)
+        {
+            ItemInfo itemDummy = new ItemInfo() { vertices = itemIndices, flippable = FlippedAreEquivalent() };
+            ItemInfo actualItem;
+            if (items.TryGetValue(itemDummy, out actualItem))
+            {
+                items.Remove(actualItem);
+                foreach (int vertex in actualItem.vertices)
+                {
+                    itemLookup[vertex].Remove(actualItem);
+                    if (itemLookup[vertex].Count == 0)
+                    {
+                        // orphaned vertex
+                        itemLookup.Remove(vertex);
+                        throw new NotImplementedException();
+                    }
+                }
+                for (int i = 0; i < actualItem.primitiveIndices.Count; i++)
+                {
+                    int deletingIndex = actualItem.primitiveIndices[i];
+                    int lastPIndex = (primitiveItemLookup.Count - 1) * PrimitiveSize();
+                    // take the "last" primitive and replace ours spot with it, then shrink total primitives
+                    // TODO: this is insanity
+                    var prims = primitiveItemLookup.Last().primitiveIndices;
+                    int maxIndex = prims.IndexOf(lastPIndex);
+                    prims[maxIndex] = deletingIndex;
+                    primitiveItemLookup[deletingIndex / PrimitiveSize()] = primitiveItemLookup.Last();
+                    primitiveItemLookup.RemoveAt(primitiveItemLookup.Count - 1);
+                    buffer.SetIndices(deletingIndex, lastPIndex, PrimitiveSize());
+                    buffer.ReduceIndices(PrimitiveSize());
+                }
+            }
+        }
+
         private void UpdateBuffersWithItem(ItemInfo item)
         {
             List<T> vertices = new List<T>();
@@ -89,7 +127,9 @@ namespace ZEditor.ZTemplates.Mesh
             }
             for (int i = 0; i < NumPrimitives(itemReplacement.Length); i++)
             {
+                item.primitiveIndices.Add(indexCount);
                 int[] indexOffsets = PrimitiveIndexOffets(i);
+                primitiveItemLookup.Add(item);
                 for (int j = 0; j < indexOffsets.Length; j++)
                 {
                     if (verticesAdded.ContainsKey(itemReplacement[indexOffsets[j]]))
@@ -103,6 +143,7 @@ namespace ZEditor.ZTemplates.Mesh
                         indices.Add(vertexCount);
                         vertexCount++;
                     }
+                    indexCount++;
                     item.indices[indexOffsets[j]] = indices.Last();
                 }
             }
@@ -113,6 +154,7 @@ namespace ZEditor.ZTemplates.Mesh
 
         public abstract int NumPrimitives(int numVertices);
         public abstract int[] PrimitiveIndexOffets(int primitiveNum);
+        public abstract int PrimitiveSize();
         public abstract T MakeVertex(Vector3 position, Color color, int vertexNum, int[] item);
         public abstract bool FlippedAreEquivalent();
         public abstract bool MergeAllVertices(); // not just vertices within a single item

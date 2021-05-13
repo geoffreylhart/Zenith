@@ -7,5 +7,6 @@ namespace ZEditor.ZComponents.Data
     interface IIntListHashObserver
     {
         public void Add(int[] intList);
+        public void Remove(int[] intList);
     }
 }
