@@ -101,10 +101,37 @@ namespace ZEditor.ZGraphics
 
         public void SetVertices(int offset, T[] data)
         {
-            // TODO: interesting that this can be called without a graphicsdevice though...
-            T[] blah = new T[data.Length];
-            vertexBuffer.GetData(new T().VertexDeclaration.VertexStride * offset, blah, 0, data.Length, new T().VertexDeclaration.VertexStride);
-            vertexBuffer.SetData(new T().VertexDeclaration.VertexStride * offset, data, 0, data.Length, new T().VertexDeclaration.VertexStride);
+            // TODO: split vertices between the two if that's ever necessary
+            if (vertexBuffer != null && vertexBuffer.VertexCount > offset && vertexBuffer.VertexCount < offset + data.Length)
+            {
+                // split the vertices between the two
+            }
+            if (vertexBuffer == null)
+            {
+                // all vertices update pending
+                for (int i = 0; i < data.Length; i++)
+                {
+                    pendingVertices[i + offset] = data[i];
+                }
+            }
+            else if (vertexBuffer.VertexCount < offset)
+            {
+                // all vertices update pending
+                for (int i = 0; i < data.Length; i++)
+                {
+                    pendingVertices[i + offset - vertexBuffer.VertexCount] = data[i];
+                }
+            }
+            else if (offset + data.Length <= vertexBuffer.VertexCount)
+            {
+                // all vertices go to buffer
+                vertexBuffer.SetData(new T().VertexDeclaration.VertexStride * offset, data, 0, data.Length, new T().VertexDeclaration.VertexStride);
+            }
+            else
+            {
+                // split the vertices between the two
+                throw new NotImplementedException();
+            }
         }
     }
 }
