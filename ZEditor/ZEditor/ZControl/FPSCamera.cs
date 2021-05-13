@@ -16,7 +16,7 @@ namespace ZEditor.ZControl
         public override void Update(UIContext uiContext)
         {
             // update mouse look vector, for now, let's assume that we'll want to track the mouse perfectly
-            Vector2 relative = uiContext.MouseVector2;
+            Vector2 relative = uiContext.ScreenCenter;
             if (uiContext.MouseDiffVector2.Length() < 100) // ignore game startup snap
             {
                 relative += uiContext.MouseDiffVector2 * 3;

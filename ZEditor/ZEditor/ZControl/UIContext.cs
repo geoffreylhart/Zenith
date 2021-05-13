@@ -31,6 +31,8 @@ namespace ZEditor.ZControl
 
         public Vector2 MouseDiffVector2 { get { return prevMouseState == null ? new Vector2() : new Vector2(Mouse.GetState().X - prevMouseState.X, Mouse.GetState().Y - prevMouseState.Y); } }
 
+        public Vector2 ScreenCenter { get { return new Vector2(game.GraphicsDevice.Viewport.Width / 2f, game.GraphicsDevice.Viewport.Height / 2f); } }
+
         public UIContext(Game game)
         {
             this.game = game;
