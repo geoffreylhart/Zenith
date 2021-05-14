@@ -48,6 +48,8 @@ namespace ZEditor.ZTemplates
         VertexDataComponent vertexData;
         IntListHashDataComponent polyData;
         PointCollectionTracker tracker = new PointCollectionTracker();
+        Dictionary<int[], int> lineParentCounts = new Dictionary<int[], int>(new LineComparer());
+        Dictionary<int, int> pointParentCounts = new Dictionary<int, int>();
 
         public MeshTemplate()
         {
@@ -66,7 +68,7 @@ namespace ZEditor.ZTemplates
             // TODO: these all need to be in reversible actions
             Selector selector = new Selector(new CameraSelectionProvider(tracker), x => vertexData.Update(x, vertexData.positions[x], Color.Orange), x => vertexData.Update(x, vertexData.positions[x], Color.Black));
             CameraMouseTracker dragMouseTracker = new CameraMouseTracker() { stepSize = 0.25f };
-            CameraMouseTracker extrudeMouseTracker = new CameraMouseTracker(){ stepSize = 0.25f };
+            CameraMouseTracker extrudeMouseTracker = new CameraMouseTracker() { stepSize = 0.25f };
             // TODO: maybe make event handlers so you can do += stuff...
             dragMouseTracker.OnStepDiff = x => { foreach (var s in selector.selected) vertexData.Update(s, vertexData.positions[s] + x, Color.Orange); };
             extrudeMouseTracker.OnStepDiff = x => { foreach (var s in selector.selected) vertexData.Update(s, vertexData.positions[s] + x, Color.Orange); };
@@ -82,13 +84,12 @@ namespace ZEditor.ZTemplates
             {
                 Vector3 selectedSum = Vector3.Zero;
                 foreach (var s in selector.selected) selectedSum += vertexData.positions[s];
-                dragMouseTracker.worldOrigin = selectedSum / selector.selected.Count;
-                dragMouseTracker.mouseOrigin = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
+                extrudeMouseTracker.worldOrigin = selectedSum / selector.selected.Count;
+                extrudeMouseTracker.mouseOrigin = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
                 // get selected polys
                 var selectedPolys = polyData.intLists.Where(x => x.All(y => selector.selected.Contains(y))).ToList();
                 // delete those polys
                 foreach (var p in selectedPolys) polyData.Remove(p);
-                // delete orphan vertices?
                 // add those polys offset by some amount (so they stay connected to each other while disconnecting from the main group)
                 // add walls to edges (disconnected or border of polys)
             });
@@ -100,7 +101,12 @@ namespace ZEditor.ZTemplates
             faceMesh.AddItem(intList);
             for (int i = 0; i < intList.Length; i++)
             {
-                lineMesh.AddItem(new int[] { intList[i], intList[(i + 1) % intList.Length] });
+                var line = new int[] { intList[i], intList[(i + 1) % intList.Length] };
+                if (!lineParentCounts.ContainsKey(line)) lineParentCounts.Add(line, 0);
+                lineParentCounts[line]++;
+                lineMesh.AddItem(line);
+                if (!pointParentCounts.ContainsKey(intList[i])) pointParentCounts.Add(intList[i], 0);
+                pointParentCounts[intList[i]]++;
                 pointMesh.AddItem(new int[] { intList[i] });
             }
         }
@@ -108,7 +114,41 @@ namespace ZEditor.ZTemplates
         public void Remove(int[] intList)
         {
             faceMesh.RemoveItem(intList);
-            // TODO: remove orphaned lines/points
+            // TODO: make linemesh etc functions protected or sealed or something
+            for (int i = 0; i < intList.Length; i++)
+            {
+                var line = new int[] { intList[i], intList[(i + 1) % intList.Length] };
+                lineParentCounts[line]--;
+                if (lineParentCounts[line] == 0)
+                {
+                    lineParentCounts.Remove(line);
+                    lineMesh.RemoveItem(line);
+                }
+                pointParentCounts[intList[i]]--;
+                if (pointParentCounts[intList[i]] == 0)
+                {
+                    pointParentCounts.Remove(intList[i]);
+                    pointMesh.RemoveItem(new int[] { intList[i] });
+                }
+            }
+        }
+
+        private class LineComparer : IEqualityComparer<int[]>
+        {
+            public bool Equals(int[] x, int[] y)
+            {
+                if (x[0] == y[0] && x[1] == y[1]) return true;
+                if (x[0] == y[1] && x[1] == y[0]) return true;
+                return false;
+            }
+
+            public int GetHashCode(int[] obj)
+            {
+                int result = 17;
+                result = result * 23 + Math.Min(obj[0], obj[1]);
+                result = result * 23 + Math.Max(obj[0], obj[1]);
+                return result;
+            }
         }
     }
 }
