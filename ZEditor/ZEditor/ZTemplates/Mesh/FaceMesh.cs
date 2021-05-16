@@ -4,12 +4,72 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using ZEditor.DataStructures;
+using ZEditor.ZComponents.Data;
+using ZEditor.ZGraphics;
+using ZEditor.ZManage;
 
 namespace ZEditor.ZTemplates.Mesh
 {
-    class FaceMesh : AbstractMesh<VertexPositionNormalTexture>
+    // let's just do this super inefficiently and go from there
+    public class FaceMesh : ZComponent, IVertexObserver
     {
-        public override void DrawMesh(GraphicsDevice graphicsDevice, Matrix world, Matrix view, Matrix projection)
+        public DynamicVertexIndexBuffer<VertexPositionNormalTexture> buffer;
+        public VertexDataComponent vertexData;
+        private HashSet<int[]> items = new HashSet<int[]>(new IntListEqualityComparer());
+
+        public FaceMesh()
+        {
+            buffer = new DynamicVertexIndexBuffer<VertexPositionNormalTexture>();
+        }
+
+        public void AddItem(int[] item)
+        {
+            items.Add(item);
+            RecalculateEverything();
+        }
+
+        public void RemoveItem(int[] item)
+        {
+            items.Remove(item);
+            RecalculateEverything();
+        }
+
+        private void RecalculateEverything()
+        {
+            if (buffer != null) buffer.Dispose();
+            buffer = new DynamicVertexIndexBuffer<VertexPositionNormalTexture>();
+            int verticesAdded = 0;
+            foreach (var item in items)
+            {
+                var normal = CalculateNormal(item.Select(x => vertexData.positions[x]).ToArray());
+                var vertices = item.Select(x => new VertexPositionNormalTexture(vertexData.positions[x], normal, new Vector2(0, 0))).ToList();
+                var indices = new List<int>();
+                for (int i = 0; i < item.Length - 2; i++)
+                {
+                    indices.Add(verticesAdded);
+                    indices.Add(verticesAdded + i + 1);
+                    indices.Add(verticesAdded + i + 2);
+                }
+                buffer.AddVertices(vertices);
+                buffer.AddIndices(indices);
+                verticesAdded += vertices.Count();
+            }
+        }
+
+        private Vector3 CalculateNormal(params Vector3[] vectors)
+        {
+            Vector3 normal = Vector3.Zero;
+            // TODO: non-random averaging
+            for (int i = 0; i < vectors.Length - 2; i++)
+            {
+                normal += Vector3.Cross(vectors[i + 2] - vectors[i], vectors[i + 1] - vectors[i + i]);
+            }
+            normal.Normalize();
+            return normal;
+        }
+
+        public override void Draw(GraphicsDevice graphicsDevice, Matrix world, Matrix view, Matrix projection)
         {
             BasicEffect effect = new BasicEffect(graphicsDevice);
             effect.World = world;
@@ -25,7 +85,8 @@ namespace ZEditor.ZTemplates.Mesh
             effect.DirectionalLight0.Direction = direction;
             buffer.Draw(PrimitiveType.TriangleList, graphicsDevice, effect);
         }
-        public override void DrawDebugMesh(GraphicsDevice graphicsDevice, Matrix world, Matrix view, Matrix projection)
+
+        public override void DrawDebug(GraphicsDevice graphicsDevice, Matrix world, Matrix view, Matrix projection)
         {
             BasicEffect effect = new BasicEffect(graphicsDevice);
             effect.World = world;
@@ -47,56 +108,13 @@ namespace ZEditor.ZTemplates.Mesh
             buffer.Draw(PrimitiveType.TriangleList, graphicsDevice, effect);
         }
 
-        public override bool FlippedAreEquivalent()
+        public void Add(int index, Vector3 v, Color color)
         {
-            return false;
         }
 
-        public override VertexPositionNormalTexture MakeVertex(Vector3 position, Color color, int vertexNum, int[] item)
+        public void Update(int index, Vector3 v, Color color)
         {
-            return new VertexPositionNormalTexture(position, CalculateNormal(item.Select(x => vertexData.positions[x]).ToArray()), new Vector2(0, 0));
-        }
-
-        public override bool MergeAllVertices()
-        {
-            return false;
-        }
-
-        public override int NumPrimitives(int numVertices)
-        {
-            return numVertices - 2;
-        }
-
-        public override int[] PrimitiveIndexOffets(int primitiveNum)
-        {
-            return new int[] { 0, primitiveNum + 1, primitiveNum + 2 };
-        }
-
-        public override int VerticesPerVertex()
-        {
-            return 1;
-        }
-
-        public override bool WholeItemDependent()
-        {
-            return true;
-        }
-
-        private Vector3 CalculateNormal(params Vector3[] vectors)
-        {
-            Vector3 normal = Vector3.Zero;
-            // TODO: non-random averaging
-            for (int i = 0; i < vectors.Length - 2; i++)
-            {
-                normal += Vector3.Cross(vectors[i + 2] - vectors[i], vectors[i + 1] - vectors[i + i]);
-            }
-            normal.Normalize();
-            return normal;
-        }
-
-        public override int PrimitiveSize()
-        {
-            return 3;
+            RecalculateEverything();
         }
     }
 }

@@ -2,16 +2,64 @@
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using ZEditor.DataStructures;
+using ZEditor.ZComponents.Data;
+using ZEditor.ZGraphics;
+using ZEditor.ZManage;
 
 namespace ZEditor.ZTemplates.Mesh
 {
-    class LineMesh : AbstractMesh<VertexPositionColor>
+    // let's just do this super inefficiently and go from there
+    public class LineMesh : ZComponent, IVertexObserver
     {
-        public override void DrawMesh(GraphicsDevice graphicsDevice, Matrix world, Matrix view, Matrix projection)
+        public DynamicVertexIndexBuffer<VertexPositionColor> buffer;
+        public VertexDataComponent vertexData;
+        private HashSet<int[]> items = new HashSet<int[]>(new ReversibleIntListEqualityComparer());
+
+        public LineMesh()
+        {
+            buffer = new DynamicVertexIndexBuffer<VertexPositionColor>();
+        }
+
+        public void AddItem(int[] item)
+        {
+            items.Add(item);
+            RecalculateEverything();
+        }
+
+        public void RemoveItem(int[] item)
+        {
+            items.Remove(item);
+            RecalculateEverything();
+        }
+
+        private void RecalculateEverything()
+        {
+            if (buffer != null) buffer.Dispose();
+            buffer = new DynamicVertexIndexBuffer<VertexPositionColor>();
+            Dictionary<int, int> verticesAdded = new Dictionary<int, int>();
+            foreach (var item in items)
+            {
+                foreach(var v in item)
+                {
+                    if (!verticesAdded.ContainsKey(v))
+                    {
+                        buffer.AddVertices(new List<VertexPositionColor>() { new VertexPositionColor(vertexData.positions[v], vertexData.colors[v]) });
+                        verticesAdded.Add(v, verticesAdded.Count);
+                    }
+                }
+                var indices = item.Select(x => verticesAdded[x]).ToList();
+                buffer.AddIndices(indices);
+            }
+        }
+
+        public override void Draw(GraphicsDevice graphicsDevice, Matrix world, Matrix view, Matrix projection)
         {
         }
-        public override void DrawDebugMesh(GraphicsDevice graphicsDevice, Matrix world, Matrix view, Matrix projection)
+
+        public override void DrawDebug(GraphicsDevice graphicsDevice, Matrix world, Matrix view, Matrix projection)
         {
             BasicEffect effect = new BasicEffect(graphicsDevice);
             effect.World = world;
@@ -21,44 +69,13 @@ namespace ZEditor.ZTemplates.Mesh
             buffer.Draw(PrimitiveType.LineList, graphicsDevice, effect);
         }
 
-        public override bool FlippedAreEquivalent()
+        public void Add(int index, Vector3 v, Color color)
         {
-            return true;
         }
 
-        public override VertexPositionColor MakeVertex(Vector3 position, Color color, int vertexNum, int[] item)
+        public void Update(int index, Vector3 v, Color color)
         {
-            return new VertexPositionColor(position, color);
-        }
-
-        public override bool MergeAllVertices()
-        {
-            return true;
-        }
-
-        public override int NumPrimitives(int numVertices)
-        {
-            return 1;
-        }
-
-        public override int[] PrimitiveIndexOffets(int primitiveNum)
-        {
-            return new int[] { 0, 1 };
-        }
-
-        public override int VerticesPerVertex()
-        {
-            return 1;
-        }
-
-        public override bool WholeItemDependent()
-        {
-            return false;
-        }
-
-        public override int PrimitiveSize()
-        {
-            return 2;
+            RecalculateEverything();
         }
     }
 }

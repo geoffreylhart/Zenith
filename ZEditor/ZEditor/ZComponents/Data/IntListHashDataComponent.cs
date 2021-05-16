@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
+using ZEditor.DataStructures;
 using ZEditor.ZManage;
 
 namespace ZEditor.ZComponents.Data
@@ -80,29 +81,6 @@ namespace ZEditor.ZComponents.Data
             {
                 intLists.Remove(intList);
                 foreach (var observer in observers) observer.Remove(intList);
-            }
-        }
-
-        private class IntListEqualityComparer : IEqualityComparer<int[]>
-        {
-            public bool Equals(int[] x, int[] y)
-            {
-                if (x.Length != y.Length) return false;
-                for (int i = 0; i < x.Length; i++)
-                {
-                    if (x[i] != y[i])
-                    {
-                        return false;
-                    }
-                }
-                return true;
-            }
-
-            public int GetHashCode(int[] obj)
-            {
-                int result = 17;
-                foreach (var x in obj) result = result * 23 + x;
-                return result;
             }
         }
     }

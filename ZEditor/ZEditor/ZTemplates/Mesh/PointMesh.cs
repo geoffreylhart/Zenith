@@ -2,17 +2,69 @@
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using ZEditor.DataStructures;
+using ZEditor.ZComponents.Data;
+using ZEditor.ZGraphics;
 using ZEditor.ZManage;
 
 namespace ZEditor.ZTemplates.Mesh
 {
-    class PointMesh : AbstractMesh<VertexPositionColorTexture>
+    // let's just do this super inefficiently and go from there
+    public class PointMesh : ZComponent, IVertexObserver
     {
-        public override void DrawMesh(GraphicsDevice graphicsDevice, Matrix world, Matrix view, Matrix projection)
+        public DynamicVertexIndexBuffer<VertexPositionColorTexture> buffer;
+        public VertexDataComponent vertexData;
+        private HashSet<int> items = new HashSet<int>();
+
+        public PointMesh()
+        {
+            buffer = new DynamicVertexIndexBuffer<VertexPositionColorTexture>();
+        }
+
+        public void AddItem(int item)
+        {
+            items.Add(item);
+            RecalculateEverything();
+        }
+
+        public void RemoveItem(int item)
+        {
+            items.Remove(item);
+            RecalculateEverything();
+        }
+
+        private void RecalculateEverything()
+        {
+            if (buffer != null) buffer.Dispose();
+            buffer = new DynamicVertexIndexBuffer<VertexPositionColorTexture>();
+            int verticesAdded = 0;
+            foreach (var item in items)
+            {
+                var vertices = new List<VertexPositionColorTexture>();
+                vertices.Add(new VertexPositionColorTexture(vertexData.positions[item], vertexData.colors[item], new Vector2(0, 0)));
+                vertices.Add(new VertexPositionColorTexture(vertexData.positions[item], vertexData.colors[item], new Vector2(1, 0)));
+                vertices.Add(new VertexPositionColorTexture(vertexData.positions[item], vertexData.colors[item], new Vector2(1, 1)));
+                vertices.Add(new VertexPositionColorTexture(vertexData.positions[item], vertexData.colors[item], new Vector2(0, 1)));
+                var indices = new List<int>();
+                indices.Add(verticesAdded * 4);
+                indices.Add(verticesAdded * 4 + 1);
+                indices.Add(verticesAdded * 4 + 2);
+                indices.Add(verticesAdded * 4);
+                indices.Add(verticesAdded * 4 + 2);
+                indices.Add(verticesAdded * 4 + 3);
+                buffer.AddVertices(vertices);
+                buffer.AddIndices(indices);
+                verticesAdded++;
+            }
+        }
+
+        public override void Draw(GraphicsDevice graphicsDevice, Matrix world, Matrix view, Matrix projection)
         {
         }
-        public override void DrawDebugMesh(GraphicsDevice graphicsDevice, Matrix world, Matrix view, Matrix projection)
+
+        public override void DrawDebug(GraphicsDevice graphicsDevice, Matrix world, Matrix view, Matrix projection)
         {
             Effect effect = GlobalContent.PointsShader;
             effect.Parameters["WVP"].SetValue(world * view * projection);
@@ -20,44 +72,13 @@ namespace ZEditor.ZTemplates.Mesh
             buffer.Draw(PrimitiveType.TriangleList, graphicsDevice, effect);
         }
 
-        public override bool FlippedAreEquivalent()
+        public void Add(int index, Vector3 v, Color color)
         {
-            return false;
         }
 
-        public override VertexPositionColorTexture MakeVertex(Vector3 position, Color color, int vertexNum, int[] item)
+        public void Update(int index, Vector3 v, Color color)
         {
-            return new VertexPositionColorTexture(position, color, new Vector2(vertexNum == 1 || vertexNum == 2 ? 1 : 0, vertexNum > 1 ? 1 : 0));
-        }
-
-        public override bool MergeAllVertices()
-        {
-            return false;
-        }
-
-        public override int NumPrimitives(int numVertices)
-        {
-            return numVertices - 2;
-        }
-
-        public override int[] PrimitiveIndexOffets(int primitiveNum)
-        {
-            return new int[] { 0, primitiveNum + 1, primitiveNum + 2 };
-        }
-
-        public override int VerticesPerVertex()
-        {
-            return 4;
-        }
-
-        public override bool WholeItemDependent()
-        {
-            return false;
-        }
-
-        public override int PrimitiveSize()
-        {
-            return 4;
+            RecalculateEverything();
         }
     }
 }

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using ZEditor.DataStructures;
 using ZEditor.ZComponents.Data;
 using ZEditor.ZComponents.UI;
 using ZEditor.ZControl;
@@ -48,7 +49,7 @@ namespace ZEditor.ZTemplates
         VertexDataComponent vertexData;
         IntListHashDataComponent polyData;
         PointCollectionTracker tracker = new PointCollectionTracker();
-        Dictionary<int[], int> lineParentCounts = new Dictionary<int[], int>(new LineComparer());
+        Dictionary<int[], int> lineParentCounts = new Dictionary<int[], int>(new ReversibleIntListEqualityComparer());
         Dictionary<int, int> pointParentCounts = new Dictionary<int, int>();
 
         public MeshTemplate()
@@ -107,7 +108,7 @@ namespace ZEditor.ZTemplates
                 lineMesh.AddItem(line);
                 if (!pointParentCounts.ContainsKey(intList[i])) pointParentCounts.Add(intList[i], 0);
                 pointParentCounts[intList[i]]++;
-                pointMesh.AddItem(new int[] { intList[i] });
+                pointMesh.AddItem(intList[i]);
             }
         }
 
@@ -128,26 +129,8 @@ namespace ZEditor.ZTemplates
                 if (pointParentCounts[intList[i]] == 0)
                 {
                     pointParentCounts.Remove(intList[i]);
-                    pointMesh.RemoveItem(new int[] { intList[i] });
+                    pointMesh.RemoveItem(intList[i]);
                 }
-            }
-        }
-
-        private class LineComparer : IEqualityComparer<int[]>
-        {
-            public bool Equals(int[] x, int[] y)
-            {
-                if (x[0] == y[0] && x[1] == y[1]) return true;
-                if (x[0] == y[1] && x[1] == y[0]) return true;
-                return false;
-            }
-
-            public int GetHashCode(int[] obj)
-            {
-                int result = 17;
-                result = result * 23 + Math.Min(obj[0], obj[1]);
-                result = result * 23 + Math.Max(obj[0], obj[1]);
-                return result;
             }
         }
     }
