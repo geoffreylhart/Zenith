@@ -64,13 +64,22 @@ namespace ZEditor.ZComponents.UI
             }
         }
 
-        public void SetSelected(HashSet<int> newSelected)
+        internal void Clear()
         {
             foreach (var v in selected)
             {
                 OnDeselect(v);
             }
             selected.Clear();
+        }
+
+        internal void Add(int v)
+        {
+            if (!selected.Contains(v))
+            {
+                selected.Add(v);
+                OnSelect(v);
+            }
         }
     }
 }

@@ -87,14 +87,83 @@ namespace ZEditor.ZTemplates
                 foreach (var s in selector.selected) selectedSum += vertexData.positions[s];
                 extrudeMouseTracker.worldOrigin = selectedSum / selector.selected.Count;
                 extrudeMouseTracker.mouseOrigin = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
-                // get selected polys
-                var selectedPolys = polyData.intLists.Where(x => x.All(y => selector.selected.Contains(y))).ToList();
-                // delete those polys
+                var selectedPolys = GetSelectedPolys(selector);
+                var clonedPolys = ClonePolys(selectedPolys);
+                foreach (var p in clonedPolys) polyData.Add(p);
+                SetSelected(selector, clonedPolys);
+                var perim1 = GetPerimeterPieces(selectedPolys);
+                var perim2 = GetPerimeterPieces(clonedPolys);
+                for (int i = 0; i < perim1.Count; i++)
+                {
+                    polyData.Add(new int[] { perim1[i][1], perim2[i][1], perim2[i][0], perim1[i][0] });
+                }
                 foreach (var p in selectedPolys) polyData.Remove(p);
-                // add those polys offset by some amount (so they stay connected to each other while disconnecting from the main group)
-                // add walls to edges (disconnected or border of polys)
             });
             Register(switcher);
+        }
+
+        // return the lines (in order) of unshared edges
+        private List<int[]> GetPerimeterPieces(List<int[]> polys)
+        {
+            List<int[]> perimPieces = new List<int[]>();
+            Dictionary<int[], int> lineCounts = new Dictionary<int[], int>(new ReversibleIntListEqualityComparer());
+            foreach (var poly in polys)
+            {
+                for (int i = 0; i < poly.Length; i++)
+                {
+                    var line = new int[] { poly[i], poly[(i + 1) % poly.Length] };
+                    if (!lineCounts.ContainsKey(line)) lineCounts[line] = 0;
+                    lineCounts[line]++;
+                }
+            }
+            foreach (var poly in polys)
+            {
+                for (int i = 0; i < poly.Length; i++)
+                {
+                    var line = new int[] { poly[i], poly[(i + 1) % poly.Length] };
+                    if (lineCounts[line] == 1) perimPieces.Add(line);
+                }
+            }
+            return perimPieces;
+        }
+
+        private void SetSelected(Selector selector, List<int[]> polys)
+        {
+            selector.Clear();
+            foreach (var poly in polys)
+            {
+                foreach (var v in poly)
+                {
+                    selector.Add(v);
+                }
+            }
+        }
+
+        private List<int[]> GetSelectedPolys(Selector selector)
+        {
+            return polyData.intLists.Where(x => x.All(y => selector.selected.Contains(y))).ToList();
+        }
+
+        private List<int[]> ClonePolys(List<int[]> originalPolys)
+        {
+            Dictionary<int, int> replacedVertices = new Dictionary<int, int>();
+            List<int[]> clonedPolys = new List<int[]>();
+            foreach (var poly in originalPolys)
+            {
+                int[] clonedPoly = new int[poly.Length];
+                for (int i = 0; i < poly.Length; i++)
+                {
+                    if (!replacedVertices.ContainsKey(poly[i]))
+                    {
+                        replacedVertices[poly[i]] = vertexData.positions.Count;
+                        vertexData.positions.Add(vertexData.positions[poly[i]]);
+                        vertexData.colors.Add(Color.Black);
+                    }
+                    clonedPoly[i] = replacedVertices[poly[i]];
+                }
+                clonedPolys.Add(clonedPoly);
+            }
+            return clonedPolys;
         }
 
         public void Add(int[] intList)
@@ -130,6 +199,7 @@ namespace ZEditor.ZTemplates
                 {
                     pointParentCounts.Remove(intList[i]);
                     pointMesh.RemoveItem(intList[i]);
+                    // TODO: remove points from vertexdata
                 }
             }
         }
