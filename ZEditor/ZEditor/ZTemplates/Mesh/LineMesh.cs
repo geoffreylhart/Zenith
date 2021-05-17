@@ -8,45 +8,46 @@ using ZEditor.DataStructures;
 using ZEditor.ZComponents.Data;
 using ZEditor.ZGraphics;
 using ZEditor.ZManage;
+using static ZEditor.ZComponents.Data.VertexDataComponent;
 
 namespace ZEditor.ZTemplates.Mesh
 {
     // let's just do this super inefficiently and go from there
-    public class LineMesh : ZComponent, IVertexObserver
+    public class LineMesh : ZComponent
     {
         public DynamicVertexIndexBuffer<VertexPositionColor> buffer;
         public VertexDataComponent vertexData;
-        private HashSet<int[]> items = new HashSet<int[]>(new ReversibleIntListEqualityComparer());
+        private HashSet<VertexData[]> items = new HashSet<VertexData[]>(new ReversibleArrayEqualityComparer<VertexData>());
 
         public LineMesh()
         {
             buffer = new DynamicVertexIndexBuffer<VertexPositionColor>();
         }
 
-        public void AddItem(int[] item)
+        public void AddItem(VertexData[] item)
         {
             items.Add(item);
             RecalculateEverything();
         }
 
-        public void RemoveItem(int[] item)
+        public void RemoveItem(VertexData[] item)
         {
             items.Remove(item);
             RecalculateEverything();
         }
 
-        private void RecalculateEverything()
+        public void RecalculateEverything()
         {
             if (buffer != null) buffer.Dispose();
             buffer = new DynamicVertexIndexBuffer<VertexPositionColor>();
-            Dictionary<int, int> verticesAdded = new Dictionary<int, int>();
+            Dictionary<VertexData, int> verticesAdded = new Dictionary<VertexData, int>();
             foreach (var item in items)
             {
-                foreach(var v in item)
+                foreach (var v in item)
                 {
                     if (!verticesAdded.ContainsKey(v))
                     {
-                        buffer.AddVertices(new List<VertexPositionColor>() { new VertexPositionColor(vertexData.positions[v], vertexData.colors[v]) });
+                        buffer.AddVertices(new List<VertexPositionColor>() { new VertexPositionColor(v.position, v.color) });
                         verticesAdded.Add(v, verticesAdded.Count);
                     }
                 }
@@ -67,15 +68,6 @@ namespace ZEditor.ZTemplates.Mesh
             effect.Projection = projection;
             effect.VertexColorEnabled = true;
             buffer.Draw(PrimitiveType.LineList, graphicsDevice, effect);
-        }
-
-        public void Add(int index, Vector3 v, Color color)
-        {
-        }
-
-        public void Update(int index, Vector3 v, Color color)
-        {
-            RecalculateEverything();
         }
     }
 }

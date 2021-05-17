@@ -9,14 +9,14 @@ namespace ZEditor.ZComponents.UI
 {
     // can select multiple items
     // TODO: perhaps separate components that merely facilitate actions vs ones that are visible
-    public class Selector : ZComponent
+    public class Selector<T> : ZComponent
     {
-        public HashSet<int> selected = new HashSet<int>(); // TODO: make this readonly?
-        private IIndexSelectionProvider indexSelectionProvider;
-        private Action<int> OnSelect;
-        private Action<int> OnDeselect;
+        public HashSet<T> selected = new HashSet<T>(); // TODO: make this readonly?
+        private IIndexSelectionProvider<T> indexSelectionProvider;
+        private Action<T> OnSelect;
+        private Action<T> OnDeselect;
 
-        public Selector(IIndexSelectionProvider indexSelectionProvider, Action<int> OnSelect, Action<int> OnDeselect)
+        public Selector(IIndexSelectionProvider<T> indexSelectionProvider, Action<T> OnSelect, Action<T> OnDeselect)
         {
             this.indexSelectionProvider = indexSelectionProvider;
             this.OnSelect = OnSelect;
@@ -27,39 +27,39 @@ namespace ZEditor.ZComponents.UI
         {
             if (uiContext.IsLeftMouseButtonPressed())
             {
-                int selectedIndex = indexSelectionProvider.GetSelectedIndex(uiContext);
+                T selected = indexSelectionProvider.GetSelectedIndex(uiContext);
                 if (uiContext.IsCtrlPressed())
                 {
 
                 }
                 else if (Keyboard.GetState().IsKeyDown(Keys.LeftShift) || Keyboard.GetState().IsKeyDown(Keys.RightShift))
                 {
-                    if (selected.Contains(selectedIndex))
+                    if (this.selected.Contains(selected))
                     {
-                        OnDeselect(selectedIndex);
-                        selected.Remove(selectedIndex);
+                        OnDeselect(selected);
+                        this.selected.Remove(selected);
                     }
                     else
                     {
-                        OnSelect(selectedIndex);
-                        selected.Add(selectedIndex);
+                        OnSelect(selected);
+                        this.selected.Add(selected);
                     }
                 }
                 else
                 {
-                    foreach (var v in selected)
+                    foreach (var v in this.selected)
                     {
-                        if (v != selectedIndex)
+                        if (!v.Equals(selected))
                         {
                             OnDeselect(v);
                         }
                     }
-                    if (!selected.Contains(selectedIndex))
+                    if (!this.selected.Contains(selected))
                     {
-                        OnSelect(selectedIndex);
+                        OnSelect(selected);
                     }
-                    selected.Clear();
-                    selected.Add(selectedIndex);
+                    this.selected.Clear();
+                    this.selected.Add(selected);
                 }
             }
         }
@@ -73,7 +73,7 @@ namespace ZEditor.ZComponents.UI
             selected.Clear();
         }
 
-        internal void Add(int v)
+        internal void Add(T v)
         {
             if (!selected.Contains(v))
             {

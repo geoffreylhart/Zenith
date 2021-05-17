@@ -5,8 +5,8 @@ using ZEditor.ZControl;
 
 namespace ZEditor.ZComponents.UI
 {
-    public interface IIndexSelectionProvider
+    public interface IIndexSelectionProvider<T>
     {
-        public int GetSelectedIndex(UIContext uiContext); 
+        public T GetSelectedIndex(UIContext uiContext); 
     }
 }

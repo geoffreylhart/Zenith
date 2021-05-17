@@ -13,6 +13,7 @@ using ZEditor.ZControl;
 using ZEditor.ZGraphics;
 using ZEditor.ZManage;
 using ZEditor.ZTemplates.Mesh;
+using static ZEditor.ZComponents.Data.VertexDataComponent;
 
 namespace ZEditor.ZTemplates
 {
@@ -41,50 +42,47 @@ namespace ZEditor.ZTemplates
     // saving
     // reverting
     // ctrl l to select all connected
-    public class MeshTemplate : ZGameObject, IIntListHashObserver
+    public class MeshTemplate : ZGameObject, IVertexListHashObserver
     {
         FaceMesh faceMesh;
         LineMesh lineMesh;
         PointMesh pointMesh;
         VertexDataComponent vertexData;
-        IntListHashDataComponent polyData;
-        PointCollectionTracker tracker = new PointCollectionTracker();
-        Dictionary<int[], int> lineParentCounts = new Dictionary<int[], int>(new ReversibleIntListEqualityComparer());
-        Dictionary<int, int> pointParentCounts = new Dictionary<int, int>();
+        VertexListHashDataComponent polyData;
+        PointCollectionTracker tracker;
+        Dictionary<VertexData[], int> lineParentCounts = new Dictionary<VertexData[], int>(new ReversibleArrayEqualityComparer<VertexData>());
+        Dictionary<VertexData, int> pointParentCounts = new Dictionary<VertexData, int>();
 
         public MeshTemplate()
         {
             vertexData = new VertexDataComponent() { saveColor = false };
-            polyData = new IntListHashDataComponent();
+            polyData = new VertexListHashDataComponent() { vertexData = vertexData };
             polyData.AddObserver(this);
             faceMesh = new FaceMesh() { vertexData = vertexData };
             lineMesh = new LineMesh() { vertexData = vertexData };
             pointMesh = new PointMesh() { vertexData = vertexData };
-            vertexData.AddObserver(faceMesh);
-            vertexData.AddObserver(lineMesh);
-            vertexData.AddObserver(pointMesh);
-            vertexData.AddObserver(tracker);
+            tracker = new PointCollectionTracker() { vertexData = vertexData };
             Register(vertexData, polyData, faceMesh, lineMesh, pointMesh);
             // setup ui
             // TODO: these all need to be in reversible actions
-            Selector selector = new Selector(new CameraSelectionProvider(tracker), x => vertexData.Update(x, vertexData.positions[x], Color.Orange), x => vertexData.Update(x, vertexData.positions[x], Color.Black));
+            var selector = new Selector<VertexData>(new CameraSelectionProvider<VertexData>(tracker), x => { x.color = Color.Orange; RecalculateEverything(); }, x => { x.color = Color.Black; RecalculateEverything(); });
             CameraMouseTracker dragMouseTracker = new CameraMouseTracker() { stepSize = 0.25f };
             CameraMouseTracker extrudeMouseTracker = new CameraMouseTracker() { stepSize = 0.25f };
             // TODO: maybe make event handlers so you can do += stuff...
-            dragMouseTracker.OnStepDiff = x => { foreach (var s in selector.selected) vertexData.Update(s, vertexData.positions[s] + x, Color.Orange); };
-            extrudeMouseTracker.OnStepDiff = x => { foreach (var s in selector.selected) vertexData.Update(s, vertexData.positions[s] + x, Color.Orange); };
+            dragMouseTracker.OnStepDiff = x => { foreach (var s in selector.selected) s.position += x; RecalculateEverything(); };
+            extrudeMouseTracker.OnStepDiff = x => { foreach (var s in selector.selected) s.position += x; RecalculateEverything(); };
             StateSwitcher switcher = new StateSwitcher(selector);
             switcher.AddKeyState(Keys.G, dragMouseTracker, () =>
             {
                 Vector3 selectedSum = Vector3.Zero;
-                foreach (var s in selector.selected) selectedSum += vertexData.positions[s];
+                foreach (var s in selector.selected) selectedSum += s.position;
                 dragMouseTracker.worldOrigin = selectedSum / selector.selected.Count;
                 dragMouseTracker.mouseOrigin = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
             });
             switcher.AddKeyState(Keys.H, extrudeMouseTracker, () =>
             {
                 Vector3 selectedSum = Vector3.Zero;
-                foreach (var s in selector.selected) selectedSum += vertexData.positions[s];
+                foreach (var s in selector.selected) selectedSum += s.position;
                 extrudeMouseTracker.worldOrigin = selectedSum / selector.selected.Count;
                 extrudeMouseTracker.mouseOrigin = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
                 var selectedPolys = GetSelectedPolys(selector);
@@ -95,7 +93,7 @@ namespace ZEditor.ZTemplates
                 var perim2 = GetPerimeterPieces(clonedPolys);
                 for (int i = 0; i < perim1.Count; i++)
                 {
-                    polyData.Add(new int[] { perim1[i][1], perim2[i][1], perim2[i][0], perim1[i][0] });
+                    polyData.Add(new VertexData[] { perim1[i][1], perim2[i][1], perim2[i][0], perim1[i][0] });
                 }
                 foreach (var p in selectedPolys) polyData.Remove(p);
             });
@@ -103,15 +101,15 @@ namespace ZEditor.ZTemplates
         }
 
         // return the lines (in order) of unshared edges
-        private List<int[]> GetPerimeterPieces(List<int[]> polys)
+        private List<VertexData[]> GetPerimeterPieces(List<VertexData[]> polys)
         {
-            List<int[]> perimPieces = new List<int[]>();
-            Dictionary<int[], int> lineCounts = new Dictionary<int[], int>(new ReversibleIntListEqualityComparer());
+            List<VertexData[]> perimPieces = new List<VertexData[]>();
+            Dictionary<VertexData[], int> lineCounts = new Dictionary<VertexData[], int>(new ReversibleArrayEqualityComparer<VertexData>());
             foreach (var poly in polys)
             {
                 for (int i = 0; i < poly.Length; i++)
                 {
-                    var line = new int[] { poly[i], poly[(i + 1) % poly.Length] };
+                    var line = new VertexData[] { poly[i], poly[(i + 1) % poly.Length] };
                     if (!lineCounts.ContainsKey(line)) lineCounts[line] = 0;
                     lineCounts[line]++;
                 }
@@ -120,14 +118,14 @@ namespace ZEditor.ZTemplates
             {
                 for (int i = 0; i < poly.Length; i++)
                 {
-                    var line = new int[] { poly[i], poly[(i + 1) % poly.Length] };
+                    var line = new VertexData[] { poly[i], poly[(i + 1) % poly.Length] };
                     if (lineCounts[line] == 1) perimPieces.Add(line);
                 }
             }
             return perimPieces;
         }
 
-        private void SetSelected(Selector selector, List<int[]> polys)
+        private void SetSelected(Selector<VertexData> selector, List<VertexData[]> polys)
         {
             selector.Clear();
             foreach (var poly in polys)
@@ -139,25 +137,24 @@ namespace ZEditor.ZTemplates
             }
         }
 
-        private List<int[]> GetSelectedPolys(Selector selector)
+        private List<VertexData[]> GetSelectedPolys(Selector<VertexData> selector)
         {
-            return polyData.intLists.Where(x => x.All(y => selector.selected.Contains(y))).ToList();
+            return polyData.lists.Where(x => x.All(y => selector.selected.Contains(y))).ToList();
         }
 
-        private List<int[]> ClonePolys(List<int[]> originalPolys)
+        private List<VertexData[]> ClonePolys(List<VertexData[]> originalPolys)
         {
-            Dictionary<int, int> replacedVertices = new Dictionary<int, int>();
-            List<int[]> clonedPolys = new List<int[]>();
+            var replacedVertices = new Dictionary<VertexData, VertexData>();
+            var clonedPolys = new List<VertexData[]>();
             foreach (var poly in originalPolys)
             {
-                int[] clonedPoly = new int[poly.Length];
+                VertexData[] clonedPoly = new VertexData[poly.Length];
                 for (int i = 0; i < poly.Length; i++)
                 {
                     if (!replacedVertices.ContainsKey(poly[i]))
                     {
-                        replacedVertices[poly[i]] = vertexData.positions.Count;
-                        vertexData.positions.Add(vertexData.positions[poly[i]]);
-                        vertexData.colors.Add(Color.Black);
+                        replacedVertices[poly[i]] = new VertexData(poly[i].position, Color.Black);
+                        vertexData.vertexData.Add(replacedVertices[poly[i]]);
                     }
                     clonedPoly[i] = replacedVertices[poly[i]];
                 }
@@ -166,12 +163,12 @@ namespace ZEditor.ZTemplates
             return clonedPolys;
         }
 
-        public void Add(int[] intList)
+        public void Add(VertexData[] intList)
         {
             faceMesh.AddItem(intList);
             for (int i = 0; i < intList.Length; i++)
             {
-                var line = new int[] { intList[i], intList[(i + 1) % intList.Length] };
+                var line = new VertexData[] { intList[i], intList[(i + 1) % intList.Length] };
                 if (!lineParentCounts.ContainsKey(line)) lineParentCounts.Add(line, 0);
                 lineParentCounts[line]++;
                 lineMesh.AddItem(line);
@@ -179,15 +176,16 @@ namespace ZEditor.ZTemplates
                 pointParentCounts[intList[i]]++;
                 pointMesh.AddItem(intList[i]);
             }
+            RecalculateEverything();
         }
 
-        public void Remove(int[] intList)
+        public void Remove(VertexData[] intList)
         {
             faceMesh.RemoveItem(intList);
             // TODO: make linemesh etc functions protected or sealed or something
             for (int i = 0; i < intList.Length; i++)
             {
-                var line = new int[] { intList[i], intList[(i + 1) % intList.Length] };
+                var line = new VertexData[] { intList[i], intList[(i + 1) % intList.Length] };
                 lineParentCounts[line]--;
                 if (lineParentCounts[line] == 0)
                 {
@@ -199,9 +197,16 @@ namespace ZEditor.ZTemplates
                 {
                     pointParentCounts.Remove(intList[i]);
                     pointMesh.RemoveItem(intList[i]);
-                    // TODO: remove points from vertexdata
                 }
             }
+            RecalculateEverything();
+        }
+
+        private void RecalculateEverything()
+        {
+            faceMesh.RecalculateEverything();
+            lineMesh.RecalculateEverything();
+            pointMesh.RecalculateEverything();
         }
     }
 }

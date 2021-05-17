@@ -6,16 +6,16 @@ using ZEditor.ZTemplates;
 
 namespace ZEditor.ZComponents.UI
 {
-    public class CameraSelectionProvider : IIndexSelectionProvider
+    public class CameraSelectionProvider<T> : IIndexSelectionProvider<T>
     {
-        private IRayLookup<int> lookup;
+        private IRayLookup<T> lookup;
 
-        public CameraSelectionProvider(IRayLookup<int> lookup)
+        public CameraSelectionProvider(IRayLookup<T> lookup)
         {
             this.lookup = lookup;
         }
 
-        public int GetSelectedIndex(UIContext uiContext)
+        public T GetSelectedIndex(UIContext uiContext)
         {
             return lookup.Get(uiContext.Camera.GetPosition(), uiContext.Camera.GetLookUnitVector(uiContext));
         }

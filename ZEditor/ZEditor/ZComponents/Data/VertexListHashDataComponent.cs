@@ -7,13 +7,15 @@ using System.Linq;
 using System.Text;
 using ZEditor.DataStructures;
 using ZEditor.ZManage;
+using static ZEditor.ZComponents.Data.VertexDataComponent;
 
 namespace ZEditor.ZComponents.Data
 {
-    class IntListHashDataComponent : ZComponent, IIntListHashObserver
+    class VertexListHashDataComponent : ZComponent, IVertexListHashObserver
     {
-        public HashSet<int[]> intLists = new HashSet<int[]>(new IntListEqualityComparer()); // TODO: make readonly
-        private List<IIntListHashObserver> observers = new List<IIntListHashObserver>();
+        public VertexDataComponent vertexData;
+        public HashSet<VertexData[]> lists = new HashSet<VertexData[]>(new ArrayEqualityComparer<VertexData>());
+        private List<IVertexListHashObserver> observers = new List<IVertexListHashObserver>();
 
         public override void Load(StreamReader reader, GraphicsDevice graphicsDevice)
         {
@@ -22,7 +24,7 @@ namespace ZEditor.ZComponents.Data
             currLine = reader.ReadLine();
             while (!currLine.Contains("}"))
             {
-                Add(currLine.Trim().Split(',').Select(x => int.Parse(x)).ToArray());
+                Add(currLine.Trim().Split(',').Select(x => vertexData.vertexData[int.Parse(x)]).ToArray());
                 currLine = reader.ReadLine();
             }
             currLine = reader.ReadLine();
@@ -30,7 +32,7 @@ namespace ZEditor.ZComponents.Data
             currLine = reader.ReadLine();
             while (!currLine.Contains("}"))
             {
-                Add(currLine.Trim().Split(',').Select(x => int.Parse(x)).ToArray());
+                Add(currLine.Trim().Split(',').Select(x => vertexData.vertexData[int.Parse(x)]).ToArray());
                 currLine = reader.ReadLine();
             }
         }
@@ -39,47 +41,47 @@ namespace ZEditor.ZComponents.Data
         {
             writer.WriteLine("Quads {");
             writer.Indent();
-            foreach (var intList in intLists)
+            foreach (var intList in lists)
             {
                 if (intList.Length == 4)
                 {
-                    writer.WriteLine(string.Join(",", intList));
+                    writer.WriteLine(string.Join(",", intList.Select(x => vertexData.vertexData.IndexOf(x))));
                 }
             }
             writer.UnIndent();
             writer.WriteLine("}");
             writer.WriteLine("Tris {");
             writer.Indent();
-            foreach (var intList in intLists)
+            foreach (var intList in lists)
             {
                 if (intList.Length == 3)
                 {
-                    writer.WriteLine(string.Join(",", intList));
+                    writer.WriteLine(string.Join(",", intList.Select(x => vertexData.vertexData.IndexOf(x))));
                 }
             }
             writer.UnIndent();
             writer.WriteLine("}");
         }
 
-        internal void AddObserver(IIntListHashObserver observer)
+        internal void AddObserver(IVertexListHashObserver observer)
         {
             observers.Add(observer);
         }
 
-        public void Add(int[] intList)
+        public void Add(VertexData[] intList)
         {
-            if (!intLists.Contains(intList))
+            if (!lists.Contains(intList))
             {
-                intLists.Add(intList);
+                lists.Add(intList);
                 foreach (var observer in observers) observer.Add(intList);
             }
         }
 
-        public void Remove(int[] intList)
+        public void Remove(VertexData[] intList)
         {
-            if (intLists.Contains(intList))
+            if (lists.Contains(intList))
             {
-                intLists.Remove(intList);
+                lists.Remove(intList);
                 foreach (var observer in observers) observer.Remove(intList);
             }
         }

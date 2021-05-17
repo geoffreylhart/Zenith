@@ -4,24 +4,25 @@ using System.Collections.Generic;
 using System.Text;
 using ZEditor.ZComponents.Data;
 using ZEditor.ZComponents.UI;
+using static ZEditor.ZComponents.Data.VertexDataComponent;
 
 namespace ZEditor.ZTemplates
 {
-    public class PointCollectionTracker : IVertexObserver, IRayLookup<int>
+    public class PointCollectionTracker : IRayLookup<VertexData>
     {
-        Dictionary<int, Vector3> dict = new Dictionary<int, Vector3>();
+        public VertexDataComponent vertexData = new VertexDataComponent();
 
-        public int Get(Vector3 start, Vector3 look)
+        public VertexData Get(Vector3 start, Vector3 look)
         {
             double distance = double.MaxValue;
-            int best = -1;
-            foreach (var pair in dict)
+            VertexData best = null;
+            foreach (var v in vertexData.vertexData)
             {
-                double thisdistance = Distance(pair.Value, start, look);
+                double thisdistance = Distance(v.position, start, look);
                 if (thisdistance < distance)
                 {
                     distance = thisdistance;
-                    best = pair.Key;
+                    best = v;
                 }
             }
             return best;
@@ -34,16 +35,6 @@ namespace ZEditor.ZTemplates
             perpendicular = Vector3.Cross(perpendicular, look);
             perpendicular.Normalize();
             return Math.Abs(Vector3.Dot(n - start, perpendicular));
-        }
-
-        public void Add(int index, Vector3 v, Color color)
-        {
-            dict[index] = v;
-        }
-
-        public void Update(int index, Vector3 v, Color color)
-        {
-            dict[index] = v;
         }
     }
 }

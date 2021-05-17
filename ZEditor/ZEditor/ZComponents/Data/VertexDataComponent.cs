@@ -11,12 +11,10 @@ using ZEditor.ZTemplates.Mesh;
 
 namespace ZEditor.ZComponents.Data
 {
-    public class VertexDataComponent : ZComponent, IVertexObserver
+    public class VertexDataComponent : ZComponent
     {
         public bool saveColor;
-        public List<Vector3> positions = new List<Vector3>(); // TODO: make readonly
-        public List<Color> colors = new List<Color>();
-        private List<IVertexObserver> observers = new List<IVertexObserver>();
+        public List<VertexData> vertexData = new List<VertexData>();
 
         public override void Load(StreamReader reader, GraphicsDevice graphicsDevice)
         {
@@ -26,7 +24,7 @@ namespace ZEditor.ZComponents.Data
             while (!currLine.Contains("}"))
             {
                 var split = currLine.Trim().Split(',');
-                Add(positions.Count, new Vector3(float.Parse(split[0]), float.Parse(split[1]), float.Parse(split[2])), Color.Black);
+                vertexData.Add(new VertexData(new Vector3(float.Parse(split[0]), float.Parse(split[1]), float.Parse(split[2])), Color.Black));
                 currLine = reader.ReadLine();
             }
         }
@@ -35,31 +33,22 @@ namespace ZEditor.ZComponents.Data
         {
             writer.WriteLine("Vertices {");
             writer.Indent();
-            foreach (var position in positions)
+            foreach (var vertex in vertexData)
             {
-                writer.WriteLine(position.X + "," + position.Y + "," + position.Z);
+                writer.WriteLine(vertex.position.X + "," + vertex.position.Y + "," + vertex.position.Z);
             }
             writer.UnIndent();
             writer.WriteLine("}");
         }
-
-        internal void AddObserver(IVertexObserver observer)
+        public class VertexData
         {
-            observers.Add(observer);
-        }
-
-        public void Add(int index, Vector3 v, Color color)
-        {
-            positions.Add(v);
-            colors.Add(color);
-            foreach (var observer in observers) observer.Add(positions.Count - 1, v, color);
-        }
-
-        public void Update(int index, Vector3 v, Color color)
-        {
-            positions[index] = v;
-            colors[index] = color;
-            foreach (var observer in observers) observer.Update(index, v, color);
+            public Vector3 position;
+            public Color color;
+            public VertexData(Vector3 position, Color color)
+            {
+                this.position = position;
+                this.color = color;
+            }
         }
     }
 }

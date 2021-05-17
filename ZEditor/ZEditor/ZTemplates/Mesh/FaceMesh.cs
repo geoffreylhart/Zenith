@@ -8,42 +8,43 @@ using ZEditor.DataStructures;
 using ZEditor.ZComponents.Data;
 using ZEditor.ZGraphics;
 using ZEditor.ZManage;
+using static ZEditor.ZComponents.Data.VertexDataComponent;
 
 namespace ZEditor.ZTemplates.Mesh
 {
     // let's just do this super inefficiently and go from there
-    public class FaceMesh : ZComponent, IVertexObserver
+    public class FaceMesh : ZComponent
     {
         public DynamicVertexIndexBuffer<VertexPositionNormalTexture> buffer;
         public VertexDataComponent vertexData;
-        private HashSet<int[]> items = new HashSet<int[]>(new IntListEqualityComparer());
+        private HashSet<VertexData[]> items = new HashSet<VertexData[]>(new ArrayEqualityComparer<VertexData>());
 
         public FaceMesh()
         {
             buffer = new DynamicVertexIndexBuffer<VertexPositionNormalTexture>();
         }
 
-        public void AddItem(int[] item)
+        public void AddItem(VertexData[] item)
         {
             items.Add(item);
             RecalculateEverything();
         }
 
-        public void RemoveItem(int[] item)
+        public void RemoveItem(VertexData[] item)
         {
             items.Remove(item);
             RecalculateEverything();
         }
 
-        private void RecalculateEverything()
+        public void RecalculateEverything()
         {
             if (buffer != null) buffer.Dispose();
             buffer = new DynamicVertexIndexBuffer<VertexPositionNormalTexture>();
             int verticesAdded = 0;
             foreach (var item in items)
             {
-                var normal = CalculateNormal(item.Select(x => vertexData.positions[x]).ToArray());
-                var vertices = item.Select(x => new VertexPositionNormalTexture(vertexData.positions[x], normal, new Vector2(0, 0))).ToList();
+                var normal = CalculateNormal(item.Select(x => x.position).ToArray());
+                var vertices = item.Select(x => new VertexPositionNormalTexture(x.position, normal, new Vector2(0, 0))).ToList();
                 var indices = new List<int>();
                 for (int i = 0; i < item.Length - 2; i++)
                 {
@@ -106,15 +107,6 @@ namespace ZEditor.ZTemplates.Mesh
             direction2.Normalize();
             effect.DirectionalLight1.Direction = direction2;
             buffer.Draw(PrimitiveType.TriangleList, graphicsDevice, effect);
-        }
-
-        public void Add(int index, Vector3 v, Color color)
-        {
-        }
-
-        public void Update(int index, Vector3 v, Color color)
-        {
-            RecalculateEverything();
         }
     }
 }
