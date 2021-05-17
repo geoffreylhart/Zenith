@@ -78,6 +78,7 @@ namespace ZEditor.ZTemplates
                 foreach (var s in selector.selected) selectedSum += s.position;
                 dragMouseTracker.worldOrigin = selectedSum / selector.selected.Count;
                 dragMouseTracker.mouseOrigin = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
+                dragMouseTracker.oldOffset = null;
             });
             switcher.AddKeyState(Keys.H, extrudeMouseTracker, () =>
             {
@@ -85,6 +86,7 @@ namespace ZEditor.ZTemplates
                 foreach (var s in selector.selected) selectedSum += s.position;
                 extrudeMouseTracker.worldOrigin = selectedSum / selector.selected.Count;
                 extrudeMouseTracker.mouseOrigin = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
+                extrudeMouseTracker.oldOffset = null;
                 var selectedPolys = GetSelectedPolys(selector);
                 var clonedPolys = ClonePolys(selectedPolys);
                 foreach (var p in clonedPolys) polyData.Add(p);
