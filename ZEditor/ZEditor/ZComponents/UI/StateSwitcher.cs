@@ -10,8 +10,7 @@ namespace ZEditor.ZComponents.UI
     public class StateSwitcher : ZComponent
     {
         private ZComponent defaultState;
-        private Dictionary<Keys, ZComponent> keyStates = new Dictionary<Keys, ZComponent>();
-        private Dictionary<Keys, Action> keyActions = new Dictionary<Keys, Action>();
+        private List<State> states = new List<State>();
         private ZComponent currentState;
 
         public StateSwitcher(ZComponent defaultState)
@@ -21,27 +20,52 @@ namespace ZEditor.ZComponents.UI
         }
 
         // TODO: maybe use endless interfaces so we can request something that is actually a ui thing, eh?
-        internal void AddKeyState(Keys key, ZComponent state, Action onSwitchAction)
+        public void AddKeyState(Keys key, ZComponent state, Action onSwitchAction)
         {
-            keyStates.Add(key, state);
-            keyActions.Add(key, onSwitchAction);
+            states.Add(new State(x => x.IsKeyPressed(key), state, onSwitchAction));
+        }
+
+        public void AddShiftKeyState(Keys key, ZComponent state, Action onSwitchAction)
+        {
+            states.Add(new State(x => x.IsKeyShiftPressed(key), state, onSwitchAction));
         }
 
         public override void Update(UIContext uiContext)
         {
-            foreach (var key in keyStates.Keys)
+            foreach (var state in states)
             {
-                if (uiContext.IsKeyPressed(key))
+                if (state.triggered(uiContext))
                 {
-                    currentState = keyStates[key];
-                    keyActions[key]();
+                    if (currentState == state.state)
+                    {
+                        currentState = defaultState;
+                    }
+                    else
+                    {
+                        currentState = state.state;
+                        state.onSwitchAction();
+                    }
                 }
             }
-            if (uiContext.IsKeyPressed(Keys.Escape))
+            if (uiContext.IsKeyPressed(Keys.Escape) || uiContext.IsLeftMouseButtonPressed())
             {
                 currentState = defaultState;
             }
             currentState.Update(uiContext);
+        }
+
+        private class State
+        {
+            public Func<UIContext, bool> triggered;
+            public ZComponent state;
+            public Action onSwitchAction;
+
+            public State(Func<UIContext, bool> triggered, ZComponent state, Action onSwitchAction)
+            {
+                this.triggered = triggered;
+                this.state = state;
+                this.onSwitchAction = onSwitchAction;
+            }
         }
     }
 }

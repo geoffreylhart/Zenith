@@ -68,26 +68,26 @@ namespace ZEditor.ZTemplates
             // TODO: these all need to be in reversible actions
             var selector = new Selector<VertexData>(new CameraSelectionProvider<VertexData>(tracker), x => { x.color = Color.Orange; RecalculateEverything(); }, x => { x.color = Color.Black; RecalculateEverything(); });
             CameraMouseTracker dragMouseTracker = new CameraMouseTracker() { stepSize = 0.25f };
-            CameraMouseTracker extrudeMouseTracker = new CameraMouseTracker() { stepSize = 0.25f };
             // TODO: maybe make event handlers so you can do += stuff...
             dragMouseTracker.OnStepDiff = x => { foreach (var s in selector.selected) s.position += x; RecalculateEverything(); };
-            extrudeMouseTracker.OnStepDiff = x => { foreach (var s in selector.selected) s.position += x; RecalculateEverything(); };
             StateSwitcher switcher = new StateSwitcher(selector);
             switcher.AddKeyState(Keys.G, dragMouseTracker, () =>
             {
+                // translate vertices
                 Vector3 selectedSum = Vector3.Zero;
                 foreach (var s in selector.selected) selectedSum += s.position;
                 dragMouseTracker.worldOrigin = selectedSum / selector.selected.Count;
                 dragMouseTracker.mouseOrigin = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
                 dragMouseTracker.oldOffset = null;
             });
-            switcher.AddKeyState(Keys.H, extrudeMouseTracker, () =>
+            switcher.AddKeyState(Keys.H, dragMouseTracker, () =>
             {
+                // extrude
                 Vector3 selectedSum = Vector3.Zero;
                 foreach (var s in selector.selected) selectedSum += s.position;
-                extrudeMouseTracker.worldOrigin = selectedSum / selector.selected.Count;
-                extrudeMouseTracker.mouseOrigin = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
-                extrudeMouseTracker.oldOffset = null;
+                dragMouseTracker.worldOrigin = selectedSum / selector.selected.Count;
+                dragMouseTracker.mouseOrigin = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
+                dragMouseTracker.oldOffset = null;
                 var selectedPolys = GetSelectedPolys(selector);
                 var clonedPolys = ClonePolys(selectedPolys);
                 foreach (var p in clonedPolys) polyData.Add(p);
@@ -100,7 +100,61 @@ namespace ZEditor.ZTemplates
                 }
                 foreach (var p in selectedPolys) polyData.Remove(p);
             });
+            switcher.AddShiftKeyState(Keys.A, dragMouseTracker, () =>
+            {
+                // add a new unit plane and drag
+                var v1 = new VertexData(new Vector3(0, 0, 0), Color.Black);
+                var v2 = new VertexData(new Vector3(1, 0, 0), Color.Black);
+                var v3 = new VertexData(new Vector3(1, 0, 1), Color.Black);
+                var v4 = new VertexData(new Vector3(0, 0, 1), Color.Black);
+                vertexData.vertexData.AddRange(new[] { v1, v2, v3, v4 });
+                var newPoly = new VertexData[] { v1, v2, v3, v4 };
+                polyData.Add(newPoly);
+                SetSelected(selector, new List<VertexData[]>() { newPoly });
+                dragMouseTracker.worldOrigin = new Vector3(0.5f, 0, 0.5f);
+                dragMouseTracker.mouseOrigin = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
+                dragMouseTracker.oldOffset = null;
+                var selectedPolys = GetSelectedPolys(selector);
+            });
             Register(switcher);
+            ActionTriggerer actionTriggerer = new ActionTriggerer();
+            actionTriggerer.AddKeyTrigger(Keys.Delete, () =>
+            {
+                var selectedPolys = GetSelectedPolys(selector);
+                foreach (var p in selectedPolys) polyData.Remove(p);
+            });
+            actionTriggerer.AddKeyTrigger(Keys.F, () =>
+            {
+                var selectedLines = GetSelectedLines(selector);
+                VertexData[] newPoly = new VertexData[selector.selected.Count];
+                newPoly[0] = selectedLines[0][1];
+                newPoly[1] = selectedLines[0][0];
+                List<VertexData> remaining = selector.selected.ToList();
+                remaining.Remove(newPoly[0]);
+                remaining.Remove(newPoly[1]);
+                for (int i = 2; i < newPoly.Length; i++)
+                {
+                    VertexData best = null;
+                    double bestValue = -100;
+                    foreach (var r in remaining)
+                    {
+                        Vector3 v1 = newPoly[i - 1].position - newPoly[i - 2].position;
+                        Vector3 v2 = r.position - newPoly[i - 1].position;
+                        v1.Normalize();
+                        v2.Normalize();
+                        double thisValue = Vector3.Dot(v1, v2);
+                        if (thisValue > bestValue)
+                        {
+                            bestValue = thisValue;
+                            best = r;
+                        }
+                    }
+                    remaining.Remove(best);
+                    newPoly[i] = best;
+                }
+                polyData.Add(newPoly);
+            });
+            Register(actionTriggerer);
             Register(new PlaneGrid());
         }
 
@@ -139,6 +193,32 @@ namespace ZEditor.ZTemplates
                     selector.Add(v);
                 }
             }
+        }
+
+        private List<VertexData[]> GetLines(VertexData[] poly)
+        {
+            List<VertexData[]> lines = new List<VertexData[]>();
+            for (int i = 0; i < poly.Length; i++)
+            {
+                lines.Add(new VertexData[] { poly[i], poly[(i + 1) % poly.Length] });
+            }
+            return lines;
+        }
+
+        private List<VertexData[]> GetSelectedLines(Selector<VertexData> selector)
+        {
+            var selected = new List<VertexData[]>();
+            foreach (var poly in polyData.lists)
+            {
+                foreach (var line in GetLines(poly))
+                {
+                    if (line.All(x => selector.selected.Contains(x)))
+                    {
+                        selected.Add(line);
+                    }
+                }
+            }
+            return selected;
         }
 
         private List<VertexData[]> GetSelectedPolys(Selector<VertexData> selector)
