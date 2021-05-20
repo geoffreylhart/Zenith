@@ -1,4 +1,46 @@
 "Spaceship1" {
+  CompositionTemplate {
+    "Floor" 0,0,0
+    "Window" 0,0,0
+    "Hull" 0,0,0
+    "Engine" 0.58646,4,1.3214
+    "Engine" -0.60235,4,1.3214
+    "Engine" 1.09917,4,0.43210
+    "Engine" 0,4,0.43210
+    "Engine" -1.14421,4,0.43210
+  }
+}
+"Floor" {
+  MeshTemplate {
+    Vertices {
+    }
+    Quads {
+	}
+    Tris {
+	}
+  }
+}
+"Engine" {
+  MeshTemplate {
+    Vertices {
+    }
+    Quads {
+	}
+    Tris {
+	}
+  }
+}
+"Window" {
+  MeshTemplate {
+    Vertices {
+    }
+    Quads {
+	}
+    Tris {
+	}
+  }
+}
+"Hull" {
   MeshTemplate {
     Vertices {
       1,2,4

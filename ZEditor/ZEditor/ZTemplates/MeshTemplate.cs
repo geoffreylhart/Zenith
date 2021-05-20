@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using ZEditor.DataStructures;
 using ZEditor.ZComponents.Data;
+using ZEditor.ZComponents.Drawables;
 using ZEditor.ZComponents.UI;
 using ZEditor.ZControl;
 using ZEditor.ZGraphics;
@@ -100,6 +101,7 @@ namespace ZEditor.ZTemplates
                 foreach (var p in selectedPolys) polyData.Remove(p);
             });
             Register(switcher);
+            Register(new PlaneGrid());
         }
 
         // return the lines (in order) of unshared edges
