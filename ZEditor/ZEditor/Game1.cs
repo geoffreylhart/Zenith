@@ -33,7 +33,7 @@ namespace ZEditor
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
-            renderSubject = TemplateManager.Load("zdata.txt", "Hull", GraphicsDevice);
+            renderSubject = TemplateManager.Load("zdata.txt", "Spaceship1", GraphicsDevice);
             // view from slightly above and to the right, but far away TODO: for some reason we aren't looking at 0, 0, 0??
             camera = new FPSCamera(new Vector3(-2, 2, -10), new Vector3(0, 0, 0));
             uiContext.Camera = camera;
@@ -76,7 +76,7 @@ namespace ZEditor
             }
             if (uiContext.IsKeyCtrlPressed(Keys.S))
             {
-                TemplateManager.Save(renderSubject, "zdata.txt", "Spaceship1");
+                TemplateManager.Save("zdata.txt");
             }
             if (uiContext.IsKeyCtrlPressed(Keys.E))
             {
@@ -94,7 +94,7 @@ namespace ZEditor
 
             // TODO: Add your update logic here
             camera.Update(uiContext);
-            ((MeshTemplate)renderSubject).Update(uiContext);
+            renderSubject.Update(uiContext);
 
             uiContext.UpdateKeys();
             base.Update(gameTime);

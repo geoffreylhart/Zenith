@@ -12,7 +12,8 @@ namespace ZEditor.ZManage
 {
     public class TemplateManager
     {
-        static Type[] TEMPLATE_TYPES = new Type[] { typeof(MeshTemplate) };
+        private static Type[] TEMPLATE_TYPES = new Type[] { typeof(MeshTemplate), typeof(CompositionTemplate) };
+        public static Dictionary<string, ZGameObject> LOADED_TEMPLATES = new Dictionary<string, ZGameObject>();
 
         public static ZGameObject Load(string fileName, string templateName, GraphicsDevice graphicsDevice)
         {
@@ -26,31 +27,31 @@ namespace ZEditor.ZManage
                     if (match.Success)
                     {
                         string name = match.Groups[1].Value;
-                        if (name == templateName)
-                        {
-                            return ReadTemplate(reader, graphicsDevice);
-                        }
+                        LOADED_TEMPLATES[name] = ReadTemplate(reader, graphicsDevice);
                     }
                 }
             }
-            throw new NotImplementedException();
+            return LOADED_TEMPLATES[templateName];
         }
 
-        internal static void Save(ZGameObject template, string fileName, string templateName)
+        internal static void Save(string fileName)
         {
             string rootDirectory = Directory.GetCurrentDirectory();
             string fullPath = Path.Combine(rootDirectory.Substring(0, rootDirectory.IndexOf("ZEditor")), "ZEditor\\ZEditor", fileName);
             using (var writer = new IndentableStreamWriter(fullPath))
             {
-                writer.WriteLine("\"" + templateName + "\" {");
-                writer.Indent();
-                writer.WriteLine(template.GetType().Name + " {");
-                writer.Indent();
-                template.Save(writer);
-                writer.UnIndent();
-                writer.WriteLine("}");
-                writer.UnIndent();
-                writer.WriteLine("}");
+                foreach (var templatePair in LOADED_TEMPLATES)
+                {
+                    writer.WriteLine("\"" + templatePair.Key + "\" {");
+                    writer.Indent();
+                    writer.WriteLine(templatePair.Value.GetType().Name + " {");
+                    writer.Indent();
+                    templatePair.Value.Save(writer);
+                    writer.UnIndent();
+                    writer.WriteLine("}");
+                    writer.UnIndent();
+                    writer.WriteLine("}");
+                }
             }
         }
 
