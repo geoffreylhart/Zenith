@@ -47,6 +47,11 @@ namespace ZEditor.ZTemplates
         public override void Draw(GraphicsDevice graphics, Matrix world, Matrix view, Matrix projection)
         {
             base.Draw(graphics, world, view, projection);
+            foreach(var reference in references)
+            {
+                var obj = TemplateManager.LOADED_TEMPLATES[reference.name];
+                obj.Draw(graphics, world, view, projection);
+            }
         }
 
         private class Reference

@@ -72,19 +72,22 @@ namespace ZEditor.ZGraphics
                 newIndexBuffer.SetData(newIndexData);
                 indexBuffer = newIndexBuffer;
             }
-            graphicsDevice.SetVertexBuffer(vertexBuffer);
-            graphicsDevice.Indices = indexBuffer;
-            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+            if (indexCount > 0)
             {
-                pass.Apply();
-                switch (primitiveType)
+                graphicsDevice.SetVertexBuffer(vertexBuffer);
+                graphicsDevice.Indices = indexBuffer;
+                foreach (EffectPass pass in effect.CurrentTechnique.Passes)
                 {
-                    case PrimitiveType.TriangleList:
-                        graphicsDevice.DrawIndexedPrimitives(primitiveType, 0, 0, indexCount / 3);
-                        break;
-                    case PrimitiveType.LineList:
-                        graphicsDevice.DrawIndexedPrimitives(primitiveType, 0, 0, indexCount / 2);
-                        break;
+                    pass.Apply();
+                    switch (primitiveType)
+                    {
+                        case PrimitiveType.TriangleList:
+                            graphicsDevice.DrawIndexedPrimitives(primitiveType, 0, 0, indexCount / 3);
+                            break;
+                        case PrimitiveType.LineList:
+                            graphicsDevice.DrawIndexedPrimitives(primitiveType, 0, 0, indexCount / 2);
+                            break;
+                    }
                 }
             }
         }
