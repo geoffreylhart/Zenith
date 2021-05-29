@@ -7,6 +7,6 @@ namespace ZEditor.ZComponents.UI
 {
     public interface IIndexSelectionProvider<T>
     {
-        public T GetSelectedIndex(UIContext uiContext); 
+        public T GetSelectedIndex(IUIContext uiContext); 
     }
 }

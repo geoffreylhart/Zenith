@@ -34,7 +34,7 @@ namespace ZEditor.ZManage
         {
             foreach (var child in children) child.Save(writer);
         }
-        public override void Update(UIContext uiContext)
+        public override void Update(IUIContext uiContext)
         {
             foreach (var child in children) child.Update(uiContext);
         }

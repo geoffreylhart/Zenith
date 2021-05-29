@@ -15,7 +15,7 @@ namespace ZEditor.ZComponents.UI
             this.lookup = lookup;
         }
 
-        public T GetSelectedIndex(UIContext uiContext)
+        public T GetSelectedIndex(IUIContext uiContext)
         {
             return lookup.Get(uiContext.Camera.GetPosition(), uiContext.Camera.GetLookUnitVector(uiContext));
         }

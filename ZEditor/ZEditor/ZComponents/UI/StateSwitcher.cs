@@ -30,7 +30,7 @@ namespace ZEditor.ZComponents.UI
             states.Add(new State(x => x.IsKeyShiftPressed(key), state, onSwitchAction));
         }
 
-        public override void Update(UIContext uiContext)
+        public override void Update(IUIContext uiContext)
         {
             foreach (var state in states)
             {
@@ -56,11 +56,11 @@ namespace ZEditor.ZComponents.UI
 
         private class State
         {
-            public Func<UIContext, bool> triggered;
+            public Func<IUIContext, bool> triggered;
             public ZComponent state;
             public Action onSwitchAction;
 
-            public State(Func<UIContext, bool> triggered, ZComponent state, Action onSwitchAction)
+            public State(Func<IUIContext, bool> triggered, ZComponent state, Action onSwitchAction)
             {
                 this.triggered = triggered;
                 this.state = state;

@@ -23,7 +23,7 @@ namespace ZEditor.ZComponents.UI
             this.OnDeselect = OnDeselect;
         }
 
-        public override void Update(UIContext uiContext)
+        public override void Update(IUIContext uiContext)
         {
             if (uiContext.IsLeftMouseButtonPressed())
             {

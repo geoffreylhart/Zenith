@@ -15,7 +15,7 @@ namespace ZEditor
     {
         private ZGameObject renderSubject;
         private AbstractCamera camera;
-        private UIContext uiContext;
+        private IUIContext uiContext;
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
         private Texture2D cursorTexture;

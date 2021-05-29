@@ -22,7 +22,7 @@ namespace ZEditor.ZComponents.UI
             triggers.Add(new Trigger(x => x.IsKeyShiftPressed(key), onSwitchAction));
         }
 
-        public override void Update(UIContext uiContext)
+        public override void Update(IUIContext uiContext)
         {
             foreach (var state in triggers)
             {
@@ -35,10 +35,10 @@ namespace ZEditor.ZComponents.UI
 
         private class Trigger
         {
-            public Func<UIContext, bool> triggered;
+            public Func<IUIContext, bool> triggered;
             public Action onSwitchAction;
 
-            public Trigger(Func<UIContext, bool> triggered, Action onSwitchAction)
+            public Trigger(Func<IUIContext, bool> triggered, Action onSwitchAction)
             {
                 this.triggered = triggered;
                 this.onSwitchAction = onSwitchAction;

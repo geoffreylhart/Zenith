@@ -13,7 +13,7 @@ namespace ZEditor.ZControl
         {
         }
 
-        public override void Update(UIContext uiContext)
+        public override void Update(IUIContext uiContext)
         {
             cameraPosition *= (float)Math.Pow(0.999, uiContext.ScrollWheelDiff);
             bool dragMode = Mouse.GetState().MiddleButton == ButtonState.Pressed;
