@@ -14,7 +14,6 @@ namespace ZEditor
     public class Game1 : Game
     {
         private UIContext uiContext;
-        private AbstractCamera camera;
         private ZGameObject mainGameObject;
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
@@ -33,11 +32,10 @@ namespace ZEditor
             // TODO: Add your initialization logic here
             uiContext = new UIContext(new InputManager(), this);
             // view from slightly above and to the right, but far away TODO: for some reason we aren't looking at 0, 0, 0??
-            camera = new FPSCamera(new Vector3(-2, 2, -10), new Vector3(0, 0, 0));
-            uiContext.Camera = camera;
-            var renderSubject = TemplateManager.Load("zdata.txt", "Spaceship1", GraphicsDevice);
-            renderSubject.Focus();
+            uiContext.Camera = new FPSCamera(new Vector3(-2, 2, -10), new Vector3(0, 0, 0));
+            var renderSubject = TemplateManager.Load("zdata.txt", "Hull", GraphicsDevice);
             mainGameObject = new MainGameObject(uiContext, renderSubject);
+            mainGameObject.Focus();
             int radii = 5;
             cursorTexture = new Texture2D(GraphicsDevice, radii * 2 + 1, radii * 2 + 1);
             Color[] data = new Color[(radii * 2 + 1) * (radii * 2 + 1)];
@@ -74,7 +72,8 @@ namespace ZEditor
             uiContext.UpdateGameTime(gameTime);
 
             // TODO: Add your update logic here
-            camera.Update(uiContext);
+            uiContext.Camera.Update(uiContext);
+            mainGameObject.Update(uiContext);
 
             uiContext.UpdateKeys();
             base.Update(gameTime);
@@ -83,7 +82,7 @@ namespace ZEditor
         protected override void Draw(GameTime gameTime)
         {
             Matrix world = Matrix.Identity;
-            Matrix view = camera.GetView();
+            Matrix view = uiContext.Camera.GetView();
             Matrix projection = Matrix.CreatePerspectiveFieldOfView((float)(Math.PI / 4), GraphicsDevice.Viewport.AspectRatio, 0.01f, 100f);
             mainGameObject.Draw(GraphicsDevice, world, view, projection);
             // draw cursor

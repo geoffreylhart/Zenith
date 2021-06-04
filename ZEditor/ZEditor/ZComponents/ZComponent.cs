@@ -3,8 +3,10 @@ using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using ZEditor.ZComponents.Data;
+using ZEditor.ZComponents.UI;
 using ZEditor.ZControl;
 
 namespace ZEditor.ZManage
@@ -37,9 +39,9 @@ namespace ZEditor.ZManage
 
         private static void NotifyListenersAndChildren(UIContext uiContext, ZComponent obj)
         {
-            if (focusedObject != null)
+            if (obj != null)
             {
-                foreach (var listener in focusedObject.listeners)
+                foreach (var listener in obj.listeners.ToList())
                 {
                     uiContext.CheckListener(listener);
                 }
@@ -56,6 +58,10 @@ namespace ZEditor.ZManage
         public void Focus()
         {
             focusedObject = this;
+        }
+        public ZComponent GetFocus()
+        {
+            return focusedObject;
         }
         public virtual void Draw(GraphicsDevice graphics, Matrix world, Matrix view, Matrix projection) { }
         public virtual void DrawDebug(GraphicsDevice graphics, Matrix world, Matrix view, Matrix projection) { }

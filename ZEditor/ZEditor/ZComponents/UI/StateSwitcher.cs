@@ -7,7 +7,9 @@ using ZEditor.ZManage;
 
 namespace ZEditor.ZComponents.UI
 {
-    public class StateSwitcher : ZComponent
+    // TODO: ugh... our current setup of only one focused item doesnt work
+    // I think we'll need arbitrary listen/stoplistening functions
+    public class StateSwitcher : ZGameObject
     {
         private ZComponent defaultState;
         private List<State> states = new List<State>();
@@ -17,6 +19,7 @@ namespace ZEditor.ZComponents.UI
         {
             this.defaultState = defaultState;
             this.currentState = defaultState;
+            Register(currentState);
         }
 
         // TODO: maybe use endless interfaces so we can request something that is actually a ui thing, eh?
@@ -25,6 +28,7 @@ namespace ZEditor.ZComponents.UI
             states.Add(new State(key, state, onSwitchAction));
             RegisterListener(new InputListener(key, x =>
             {
+                var oldFocus = state.GetFocus();
                 onSwitchAction();
                 currentState = state;
                 state.Focus();
@@ -33,13 +37,19 @@ namespace ZEditor.ZComponents.UI
                 {
                     var listener = new InputListener(trigger, y =>
                     {
-                        this.Focus();
+                        oldFocus.Focus();
                         currentState = defaultState;
-                        foreach (var l in escapeListeners) currentState.UnregisterListener(l);
+                        foreach (var l in escapeListeners) state.UnregisterListener(l);
                     });
+                    state.RegisterListener(listener);
                     escapeListeners.Add(listener);
                 }
             }));
+        }
+
+        public override void Update(UIContext uiContext)
+        {
+            currentState.Update(uiContext);
         }
 
         private class State
