@@ -24,7 +24,7 @@ namespace ZEditor.ZComponents.Data
             currLine = reader.ReadLine();
             while (!currLine.Contains("}"))
             {
-                Add(currLine.Trim().Split(',').Select(x => vertexData.vertexData[int.Parse(x)]).ToArray());
+                Add(currLine.Trim().Split(',').Select(x => vertexData[int.Parse(x)]).ToArray());
                 currLine = reader.ReadLine();
             }
             currLine = reader.ReadLine();
@@ -32,7 +32,7 @@ namespace ZEditor.ZComponents.Data
             currLine = reader.ReadLine();
             while (!currLine.Contains("}"))
             {
-                Add(currLine.Trim().Split(',').Select(x => vertexData.vertexData[int.Parse(x)]).ToArray());
+                Add(currLine.Trim().Split(',').Select(x => vertexData[int.Parse(x)]).ToArray());
                 currLine = reader.ReadLine();
             }
         }
@@ -45,7 +45,7 @@ namespace ZEditor.ZComponents.Data
             {
                 if (intList.Length == 4)
                 {
-                    writer.WriteLine(string.Join(",", intList.Select(x => vertexData.vertexData.IndexOf(x))));
+                    writer.WriteLine(string.Join(",", intList.Select(x => vertexData.IndexOf(x))));
                 }
             }
             writer.UnIndent();
@@ -56,7 +56,7 @@ namespace ZEditor.ZComponents.Data
             {
                 if (intList.Length == 3)
                 {
-                    writer.WriteLine(string.Join(",", intList.Select(x => vertexData.vertexData.IndexOf(x))));
+                    writer.WriteLine(string.Join(",", intList.Select(x => vertexData.IndexOf(x))));
                 }
             }
             writer.UnIndent();

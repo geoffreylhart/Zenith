@@ -45,14 +45,14 @@ namespace ZEditor.ZTemplates
     // ctrl l to select all connected
     public class MeshTemplate : ZGameObject, IVertexListHashObserver
     {
-        FaceMesh faceMesh;
-        LineMesh lineMesh;
-        PointMesh pointMesh;
-        VertexDataComponent vertexData;
-        VertexListHashDataComponent polyData;
-        PointCollectionTracker tracker;
-        Dictionary<VertexData[], int> lineParentCounts = new Dictionary<VertexData[], int>(new ReversibleArrayEqualityComparer<VertexData>());
-        Dictionary<VertexData, int> pointParentCounts = new Dictionary<VertexData, int>();
+        private BoundingBox boundingBox = new BoundingBox();
+        private FaceMesh faceMesh;
+        private LineMesh lineMesh;
+        private PointMesh pointMesh;
+        private VertexDataComponent vertexData;
+        private VertexListHashDataComponent polyData;
+        private Dictionary<VertexData[], int> lineParentCounts = new Dictionary<VertexData[], int>(new ReversibleArrayEqualityComparer<VertexData>());
+        private Dictionary<VertexData, int> pointParentCounts = new Dictionary<VertexData, int>();
 
         public MeshTemplate()
         {
@@ -62,11 +62,14 @@ namespace ZEditor.ZTemplates
             faceMesh = new FaceMesh() { vertexData = vertexData };
             lineMesh = new LineMesh() { vertexData = vertexData };
             pointMesh = new PointMesh() { vertexData = vertexData };
-            tracker = new PointCollectionTracker() { vertexData = vertexData };
+            var tracker = new PointCollectionTracker<VertexData>(vertexData, x => x.position);
             Register(vertexData, polyData, faceMesh, lineMesh, pointMesh);
             // setup ui
             // TODO: these all need to be in reversible actions
-            var selector = new Selector<VertexData>(new CameraSelectionProvider<VertexData>(tracker), x => { x.color = Color.Orange; RecalculateEverything(); }, x => { x.color = Color.Black; RecalculateEverything(); });
+            var selector = new Selector<VertexData>(new CameraSelectionProvider<VertexData>(tracker),
+                x => { x.color = Color.Orange; RecalculateEverything(); },
+                x => { x.color = Color.Black; RecalculateEverything(); }
+            );
             CameraMouseTracker dragMouseTracker = new CameraMouseTracker() { stepSize = 0.25f };
             // TODO: maybe make event handlers so you can do += stuff...
             dragMouseTracker.OnStepDiff = x => { foreach (var s in selector.selected) s.position += x; RecalculateEverything(); };
@@ -107,7 +110,7 @@ namespace ZEditor.ZTemplates
                 var v2 = new VertexData(new Vector3(1, 0, 0), Color.Black);
                 var v3 = new VertexData(new Vector3(1, 0, 1), Color.Black);
                 var v4 = new VertexData(new Vector3(0, 0, 1), Color.Black);
-                vertexData.vertexData.AddRange(new[] { v1, v2, v3, v4 });
+                vertexData.AddRange(new[] { v1, v2, v3, v4 });
                 var newPoly = new VertexData[] { v1, v2, v3, v4 };
                 polyData.Add(newPoly);
                 SetSelected(selector, new List<VertexData[]>() { newPoly });
@@ -236,7 +239,7 @@ namespace ZEditor.ZTemplates
                     if (!replacedVertices.ContainsKey(poly[i]))
                     {
                         replacedVertices[poly[i]] = new VertexData(poly[i].position, Color.Black);
-                        vertexData.vertexData.Add(replacedVertices[poly[i]]);
+                        vertexData.Add(replacedVertices[poly[i]]);
                     }
                     clonedPoly[i] = replacedVertices[poly[i]];
                 }
@@ -289,6 +292,14 @@ namespace ZEditor.ZTemplates
             faceMesh.RecalculateEverything();
             lineMesh.RecalculateEverything();
             pointMesh.RecalculateEverything();
+            var min = new Vector3(vertexData.Min(x => x.position.X), vertexData.Min(x => x.position.Y), vertexData.Min(x => x.position.Z));
+            var max = new Vector3(vertexData.Max(x => x.position.X), vertexData.Max(x => x.position.Y), vertexData.Max(x => x.position.Z));
+            boundingBox = new BoundingBox(min, max);
+        }
+
+        public override BoundingBox GetBoundingBox()
+        {
+            return boundingBox;
         }
     }
 }

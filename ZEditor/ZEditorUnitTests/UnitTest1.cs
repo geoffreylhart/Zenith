@@ -11,7 +11,7 @@ namespace ZEditorUnitTests
         [TestMethod]
         public void PointCollectionTests()
         {
-            AssertAreApproximatelyEqual(1, PointCollectionTracker.Distance(new Vector3(17, 1, 0), new Vector3(0, 0, 0), new Vector3(1, 0, 0)));
+            AssertAreApproximatelyEqual(1, PointCollectionTracker<object>.Distance(new Vector3(17, 1, 0), new Vector3(0, 0, 0), new Vector3(1, 0, 0)));
         }
 
         [TestMethod]

@@ -68,5 +68,6 @@ namespace ZEditor.ZManage
         public virtual void Load(StreamReader reader, GraphicsDevice graphics) { }
         public virtual void Save(IndentableStreamWriter writer) { }
         public virtual void Update(UIContext uiContext) { }
+        public virtual BoundingBox GetBoundingBox() { return new BoundingBox(); }
     }
 }

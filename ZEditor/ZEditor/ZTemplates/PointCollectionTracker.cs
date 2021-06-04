@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using ZEditor.ZComponents.Data;
 using ZEditor.ZComponents.UI;
@@ -8,21 +9,28 @@ using static ZEditor.ZComponents.Data.VertexDataComponent;
 
 namespace ZEditor.ZTemplates
 {
-    public class PointCollectionTracker : IRayLookup<VertexData>
+    public class PointCollectionTracker<T> : IRayLookup<T>
     {
-        public VertexDataComponent vertexData = new VertexDataComponent();
+        private IEnumerable<T> items;
+        private Func<T, Vector3> positionFunction;
 
-        public VertexData Get(Vector3 start, Vector3 look)
+        public PointCollectionTracker(IEnumerable<T> items, Func<T, Vector3> positionFunction)
+        {
+            this.items = items;
+            this.positionFunction = positionFunction;
+        }
+
+        public T Get(Vector3 start, Vector3 look)
         {
             double distance = double.MaxValue;
-            VertexData best = null;
-            foreach (var v in vertexData.vertexData)
+            T best = items.First();
+            foreach (var item in items)
             {
-                double thisdistance = Distance(v.position, start, look);
+                double thisdistance = Distance(positionFunction(item), start, look);
                 if (thisdistance < distance)
                 {
                     distance = thisdistance;
-                    best = v;
+                    best = item;
                 }
             }
             return best;

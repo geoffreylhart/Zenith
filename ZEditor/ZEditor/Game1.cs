@@ -33,7 +33,7 @@ namespace ZEditor
             uiContext = new UIContext(new InputManager(), this);
             // view from slightly above and to the right, but far away TODO: for some reason we aren't looking at 0, 0, 0??
             uiContext.Camera = new FPSCamera(new Vector3(-2, 2, -10), new Vector3(0, 0, 0));
-            var renderSubject = TemplateManager.Load("zdata.txt", "Hull", GraphicsDevice);
+            var renderSubject = TemplateManager.Load("zdata.txt", "Spaceship1", GraphicsDevice);
             mainGameObject = new MainGameObject(uiContext, renderSubject);
             mainGameObject.Focus();
             int radii = 5;
