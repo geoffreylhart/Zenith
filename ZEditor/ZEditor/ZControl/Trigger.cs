@@ -12,6 +12,7 @@ namespace ZEditor.ZControl
         public static Trigger F = new Trigger(Keys.F, false, false, false, false, false, false);
         public static Trigger G = new Trigger(Keys.G, false, false, false, false, false, false);
         public static Trigger H = new Trigger(Keys.H, false, false, false, false, false, false);
+        public static Trigger P = new Trigger(Keys.P, false, false, false, false, false, false);
         public static Trigger Delete = new Trigger(Keys.Delete, false, false, false, false, false, false);
         public static Trigger Escape = new Trigger(Keys.Escape, false, false, false, false, false, false);
         public static Trigger CtrlS = new Trigger(Keys.S, false, true, false, false, false, false);

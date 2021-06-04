@@ -79,7 +79,7 @@ namespace ZEditor.ZTemplates
                 dragMouseTracker.worldOrigin = selectedSum / selector.selected.Count;
                 dragMouseTracker.mouseOrigin = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
                 dragMouseTracker.oldOffset = null;
-            });
+            }, true);
             switcher.AddKeyState(Trigger.H, dragMouseTracker, () =>
             {
                 // extrude
@@ -99,7 +99,7 @@ namespace ZEditor.ZTemplates
                     polyData.Add(new VertexData[] { perim1[i][1], perim2[i][1], perim2[i][0], perim1[i][0] });
                 }
                 foreach (var p in selectedPolys) polyData.Remove(p);
-            });
+            }, true);
             switcher.AddKeyState(Trigger.ShiftA, dragMouseTracker, () =>
             {
                 // add a new unit plane and drag
@@ -115,7 +115,7 @@ namespace ZEditor.ZTemplates
                 dragMouseTracker.mouseOrigin = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
                 dragMouseTracker.oldOffset = null;
                 var selectedPolys = GetSelectedPolys(selector);
-            });
+            }, true);
             Register(switcher);
             RegisterListener(new InputListener(Trigger.Delete, x =>
             {

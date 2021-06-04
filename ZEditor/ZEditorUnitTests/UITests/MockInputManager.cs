@@ -8,14 +8,28 @@ namespace ZEditorUnitTests.UITests
 {
     public class MockInputManager : IInputManager
     {
+        Keys? keysPressed = null;
+
         public KeyboardState GetKeyboardState()
         {
-            throw new NotImplementedException();
+            if (keysPressed.HasValue)
+            {
+                return new KeyboardState(keysPressed.Value);
+            }
+            else
+            {
+                return new KeyboardState();
+            }
         }
 
         public MouseState GetMouseState()
         {
-            throw new NotImplementedException();
+            return new MouseState();
+        }
+
+        internal void SetKeysDown(Keys? keys)
+        {
+            keysPressed = keys;
         }
     }
 }

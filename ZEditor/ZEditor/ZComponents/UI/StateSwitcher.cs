@@ -12,7 +12,6 @@ namespace ZEditor.ZComponents.UI
     public class StateSwitcher : ZGameObject
     {
         private ZComponent defaultState;
-        private List<State> states = new List<State>();
         private ZComponent currentState;
 
         public StateSwitcher(ZComponent defaultState)
@@ -23,9 +22,8 @@ namespace ZEditor.ZComponents.UI
         }
 
         // TODO: maybe use endless interfaces so we can request something that is actually a ui thing, eh?
-        public void AddKeyState(Trigger key, ZComponent state, Action onSwitchAction)
+        public void AddKeyState(Trigger key, ZComponent state, Action onSwitchAction, bool pressAgainToRevert)
         {
-            states.Add(new State(key, state, onSwitchAction));
             RegisterListener(new InputListener(key, x =>
             {
                 var oldFocus = state.GetFocus();
@@ -33,7 +31,9 @@ namespace ZEditor.ZComponents.UI
                 currentState = state;
                 state.Focus();
                 var escapeListeners = new List<InputListener>();
-                foreach(var trigger in new[] { Trigger.Escape, Trigger.LeftMouseClick, key })
+                var escapeTriggers = new List<Trigger>() { Trigger.Escape, Trigger.LeftMouseClick };
+                if (pressAgainToRevert) escapeTriggers.Add(key);
+                foreach (var trigger in escapeTriggers)
                 {
                     var listener = new InputListener(trigger, y =>
                     {
@@ -50,20 +50,6 @@ namespace ZEditor.ZComponents.UI
         public override void Update(UIContext uiContext)
         {
             currentState.Update(uiContext);
-        }
-
-        private class State
-        {
-            public Trigger keyMouseCombo;
-            public ZComponent state;
-            public Action onSwitchAction;
-
-            public State(Trigger keyCombo, ZComponent state, Action onSwitchAction)
-            {
-                this.keyMouseCombo = keyCombo;
-                this.state = state;
-                this.onSwitchAction = onSwitchAction;
-            }
         }
     }
 }

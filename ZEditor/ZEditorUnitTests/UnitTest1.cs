@@ -11,7 +11,7 @@ namespace ZEditorUnitTests
         [TestMethod]
         public void PointCollectionTests()
         {
-            AssertAreApproximatelyEqual(PointCollectionTracker.Distance(new Vector3(17, 1, 0), new Vector3(0, 0, 0), new Vector3(1, 0, 0)), 1);
+            AssertAreApproximatelyEqual(1, PointCollectionTracker.Distance(new Vector3(17, 1, 0), new Vector3(0, 0, 0), new Vector3(1, 0, 0)));
         }
 
         [TestMethod]
@@ -21,9 +21,9 @@ namespace ZEditorUnitTests
                 game.Run();
         }
 
-        private void AssertAreApproximatelyEqual(double v1, double v2)
+        private void AssertAreApproximatelyEqual(double expected, double actual)
         {
-            Assert.IsTrue(Math.Abs(v1 - v2) < 0.01);
+            Assert.IsTrue(Math.Abs(expected - actual) < 0.01);
         }
     }
 }

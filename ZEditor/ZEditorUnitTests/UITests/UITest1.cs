@@ -18,23 +18,30 @@ namespace ZEditorUnitTests.UITests
             // check that you can enter edit modes repeatedly and escape out of each one (like popups within popups)
             var logs = new List<string>();
             StateSwitcher ss1 = new StateSwitcher(new DummyComponent(logs, "1"));
+            ss1.Focus();
             StateSwitcher ss2 = new StateSwitcher(new DummyComponent(logs, "2"));
             StateSwitcher ss3 = new StateSwitcher(new DummyComponent(logs, "3"));
-            ss1.AddKeyState(Keys.E, ss2, () => { return; });
-            ss2.AddKeyState(Keys.E, ss3, () => { return; });
-            var mockUIContext = new MockUIContext();
-            mockUIContext.SetKeyPressed(Keys.P);
-            ss1.Update(mockUIContext);
+            ss1.AddKeyState(Trigger.E, ss2, () => { return; }, false);
+            ss2.AddKeyState(Trigger.E, ss3, () => { return; }, false);
+            var mockInputManager = new MockInputManager();
+            var uiContext = new UIContext(mockInputManager, null);
+            SimulateKeyPress(mockInputManager, uiContext, Keys.P);
             foreach (var key in new[] { Keys.E, Keys.E, Keys.E, Keys.Escape, Keys.Escape, Keys.Escape })
             {
-                mockUIContext.SetKeyPressed(key);
-                ss1.Update(mockUIContext);
-                mockUIContext.SetKeyPressed(Keys.P);
-                ss1.Update(mockUIContext);
+                SimulateKeyPress(mockInputManager, uiContext, key);
+                SimulateKeyPress(mockInputManager, uiContext, Keys.P);
             }
-            string actualResult = string.Join(",", logs);
             string expectedResult = "1,2,3,3,2,1,1";
-            Assert.AreEqual(actualResult, expectedResult);
+            string actualResult = string.Join(",", logs);
+            Assert.AreEqual(expectedResult, actualResult);
+        }
+
+        private void SimulateKeyPress(MockInputManager mockInputManager, UIContext uiContext, Keys key)
+        {
+            mockInputManager.SetKeysDown(key);
+            ZComponent.NotifyListeners(uiContext);
+            mockInputManager.SetKeysDown(null);
+            ZComponent.NotifyListeners(uiContext);
         }
 
         private class DummyComponent : ZComponent
@@ -46,14 +53,10 @@ namespace ZEditorUnitTests.UITests
             {
                 this.logsRef = logsRef;
                 this.msg = msg;
-            }
-
-            public override void Update(UIContext uiContext)
-            {
-                if (uiContext.IsKeyPressed(Keys.P))
+                RegisterListener(new InputListener(Trigger.P, x =>
                 {
                     logsRef.Add(msg);
-                }
+                }));
             }
         }
     }
