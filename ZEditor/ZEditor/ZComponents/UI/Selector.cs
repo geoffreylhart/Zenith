@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using ZEditor.ZControl;
 using ZEditor.ZManage;
@@ -13,43 +14,36 @@ namespace ZEditor.ZComponents.UI
     {
         public HashSet<T> selected = new HashSet<T>(); // TODO: make this readonly?
         private IIndexSelectionProvider<T> indexSelectionProvider;
-        private Action<T> OnSelect;
-        private Action<T> OnDeselect;
+        private Action<T> AfterSelect;
+        private Action<T> AfterDeselect;
 
-        public Selector(IIndexSelectionProvider<T> indexSelectionProvider, Action<T> OnSelect, Action<T> OnDeselect)
+        public Selector(IIndexSelectionProvider<T> indexSelectionProvider, Action<T> AfterSelect, Action<T> AfterDeselect)
         {
             this.indexSelectionProvider = indexSelectionProvider;
-            this.OnSelect = OnSelect;
-            this.OnDeselect = OnDeselect;
+            this.AfterSelect = AfterSelect;
+            this.AfterDeselect = AfterDeselect;
             RegisterListener(new InputListener(Trigger.PlainLeftMouseClick, x =>
             {
                 T selectedItem = indexSelectionProvider.GetSelectedIndex();
-                foreach (var v in this.selected)
-                {
-                    if (!v.Equals(selectedItem))
-                    {
-                        OnDeselect(v);
-                    }
-                }
-                if (!this.selected.Contains(selectedItem))
-                {
-                    OnSelect(selectedItem);
-                }
+                var removed = selected.Where(x => !x.Equals(selectedItem)).ToList();
+                var alreadyContains = this.selected.Contains(selectedItem);
                 this.selected.Clear();
                 this.selected.Add(selectedItem);
+                foreach (var v in removed) AfterDeselect(v);
+                if (!alreadyContains) AfterSelect(selectedItem);
             }));
             RegisterListener(new InputListener(Trigger.ShiftLeftMouseClick, x =>
             {
                 T selectedItem = indexSelectionProvider.GetSelectedIndex();
                 if (this.selected.Contains(selectedItem))
                 {
-                    OnDeselect(selectedItem);
                     this.selected.Remove(selectedItem);
+                    AfterDeselect(selectedItem);
                 }
                 else
                 {
-                    OnSelect(selectedItem);
                     this.selected.Add(selectedItem);
+                    AfterSelect(selectedItem);
                 }
             }));
         }
@@ -61,11 +55,9 @@ namespace ZEditor.ZComponents.UI
 
         internal void Clear()
         {
-            foreach (var v in selected)
-            {
-                OnDeselect(v);
-            }
+            var removed = selected.ToList();
             selected.Clear();
+            foreach (var v in removed) AfterDeselect(v);
         }
 
         internal void Add(T v)
@@ -73,7 +65,7 @@ namespace ZEditor.ZComponents.UI
             if (!selected.Contains(v))
             {
                 selected.Add(v);
-                OnSelect(v);
+                AfterSelect(v);
             }
         }
     }

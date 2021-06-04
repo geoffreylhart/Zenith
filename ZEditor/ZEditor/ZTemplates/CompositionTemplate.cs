@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using ZEditor.ZComponents.Data;
 using ZEditor.ZComponents.Drawables;
@@ -17,19 +18,45 @@ namespace ZEditor.ZTemplates
     {
         private ReferenceDataComponent references;
         private Dictionary<Reference, BoxOutline> referenceOutlines = new Dictionary<Reference, BoxOutline>();
+        private Selector<Reference> selector;
 
         public CompositionTemplate()
         {
             references = new ReferenceDataComponent();
+            var nameText = new BasicText();
+            nameText.position = new Vector2(5, 5);
             Register(references);
             var tracker = new PointCollectionTracker<Reference>(references, x =>
             {
                 return (TemplateManager.LOADED_TEMPLATES[x.name].GetBoundingBox().Min + TemplateManager.LOADED_TEMPLATES[x.name].GetBoundingBox().Max) / 2;
             });
-            var selector = new Selector<Reference>(new CameraSelectionProvider<Reference>(tracker),
-                x => { referenceOutlines[x].boxColor = Color.Orange; },
-                x => { referenceOutlines[x].boxColor = Color.White; });
-            Register(selector);
+            selector = new Selector<Reference>(new CameraSelectionProvider<Reference>(tracker), x =>
+            {
+                referenceOutlines[x].boxColor = Color.Orange;
+                nameText.text = GetSelectedText(selector.selected);
+            }, x =>
+            {
+                referenceOutlines[x].boxColor = Color.White;
+                nameText.text = GetSelectedText(selector.selected);
+            });
+            Register(selector, nameText);
+        }
+
+        private string GetSelectedText(HashSet<Reference> selected)
+        {
+            Dictionary<string, int> counts = new Dictionary<string, int>();
+            foreach (var s in selected)
+            {
+                if (!counts.ContainsKey(s.name)) counts[s.name] = 0;
+                counts[s.name]++;
+            }
+            return string.Join(", ", counts.ToList().OrderBy(x => x.Key).Select(x => (x.Value > 1 ? x.Value + " " + Pluralize(x.Key) : x.Key)));
+        }
+
+        private string Pluralize(string name)
+        {
+            if (name.EndsWith("ey")) return name.Substring(0, name.Length - 1) + "ies";
+            return name + "s";
         }
 
         public override void Draw(GraphicsDevice graphics, Matrix world, Matrix view, Matrix projection)
@@ -44,7 +71,12 @@ namespace ZEditor.ZTemplates
 
         public override void DrawDebug(GraphicsDevice graphics, Matrix world, Matrix view, Matrix projection)
         {
-            Draw(graphics, world, view, projection);
+            base.DrawDebug(graphics, world, view, projection);
+            foreach (var reference in references)
+            {
+                var obj = TemplateManager.LOADED_TEMPLATES[reference.name];
+                obj.Draw(graphics, world, view, projection);
+            }
             foreach (var reference in references)
             {
                 if (!referenceOutlines.ContainsKey(reference))
