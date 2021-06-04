@@ -20,49 +20,37 @@ namespace ZEditor.ZComponents.UI
         }
 
         // TODO: maybe use endless interfaces so we can request something that is actually a ui thing, eh?
-        public void AddKeyState(Keys key, ZComponent state, Action onSwitchAction)
+        public void AddKeyState(Trigger key, ZComponent state, Action onSwitchAction)
         {
-            states.Add(new State(x => x.IsKeyPressed(key), state, onSwitchAction));
-        }
-
-        public void AddShiftKeyState(Keys key, ZComponent state, Action onSwitchAction)
-        {
-            states.Add(new State(x => x.IsKeyShiftPressed(key), state, onSwitchAction));
-        }
-
-        public override void Update(IUIContext uiContext)
-        {
-            foreach (var state in states)
+            states.Add(new State(key, state, onSwitchAction));
+            RegisterListener(new InputListener(key, x =>
             {
-                if (state.triggered(uiContext))
+                onSwitchAction();
+                currentState = state;
+                state.Focus();
+                var escapeListeners = new List<InputListener>();
+                foreach(var trigger in new[] { Trigger.Escape, Trigger.LeftMouseClick, key })
                 {
-                    if (currentState == state.state)
+                    var listener = new InputListener(trigger, y =>
                     {
+                        this.Focus();
                         currentState = defaultState;
-                    }
-                    else
-                    {
-                        currentState = state.state;
-                        state.onSwitchAction();
-                    }
+                        foreach (var l in escapeListeners) currentState.UnregisterListener(l);
+                    });
+                    escapeListeners.Add(listener);
                 }
-            }
-            if (uiContext.IsKeyPressed(Keys.Escape) || uiContext.IsLeftMouseButtonPressed())
-            {
-                currentState = defaultState;
-            }
-            currentState.Update(uiContext);
+            }));
         }
 
         private class State
         {
-            public Func<IUIContext, bool> triggered;
+            public Trigger keyMouseCombo;
             public ZComponent state;
             public Action onSwitchAction;
 
-            public State(Func<IUIContext, bool> triggered, ZComponent state, Action onSwitchAction)
+            public State(Trigger keyCombo, ZComponent state, Action onSwitchAction)
             {
-                this.triggered = triggered;
+                this.keyMouseCombo = keyCombo;
                 this.state = state;
                 this.onSwitchAction = onSwitchAction;
             }

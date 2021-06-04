@@ -18,7 +18,7 @@ namespace ZEditor.ZComponents.UI
         public Vector2 mouseOrigin;
         public Vector3? oldOffset;
 
-        public override void Update(IUIContext uiContext)
+        public override void Update(UIContext uiContext)
         {
             Vector3 offset = uiContext.Camera.GetPerspectiveOffset(uiContext, worldOrigin, uiContext.MouseVector2 - mouseOrigin);
             if (oldOffset.HasValue)

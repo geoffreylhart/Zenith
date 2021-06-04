@@ -13,7 +13,7 @@ namespace ZEditor.ZControl
         {
         }
 
-        public override void Update(IUIContext uiContext)
+        public override void Update(UIContext uiContext)
         {
             // update mouse look vector, for now, let's assume that we'll want to track the mouse perfectly
             Vector2 relative = uiContext.ScreenCenter;

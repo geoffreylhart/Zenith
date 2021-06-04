@@ -11,7 +11,7 @@ namespace ZEditor.ZManage
 {
     public class ZGameObject : ZComponent
     {
-        private List<ZComponent> children = new List<ZComponent>();
+        public List<ZComponent> children = new List<ZComponent>();
         public void Register(params ZComponent[] children)
         {
             this.children.AddRange(children);
@@ -34,7 +34,7 @@ namespace ZEditor.ZManage
         {
             foreach (var child in children) child.Save(writer);
         }
-        public override void Update(IUIContext uiContext)
+        public override void Update(UIContext uiContext)
         {
             foreach (var child in children) child.Update(uiContext);
         }

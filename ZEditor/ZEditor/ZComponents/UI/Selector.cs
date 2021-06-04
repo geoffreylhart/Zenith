@@ -21,47 +21,42 @@ namespace ZEditor.ZComponents.UI
             this.indexSelectionProvider = indexSelectionProvider;
             this.OnSelect = OnSelect;
             this.OnDeselect = OnDeselect;
-        }
-
-        public override void Update(IUIContext uiContext)
-        {
-            if (uiContext.IsLeftMouseButtonPressed())
+            RegisterListener(new InputListener(Trigger.PlainLeftMouseClick, x =>
             {
-                T selected = indexSelectionProvider.GetSelectedIndex(uiContext);
-                if (uiContext.IsCtrlPressed())
+                T selectedItem = indexSelectionProvider.GetSelectedIndex();
+                foreach (var v in this.selected)
                 {
-
+                    if (!v.Equals(selectedItem))
+                    {
+                        OnDeselect(v);
+                    }
                 }
-                else if (Keyboard.GetState().IsKeyDown(Keys.LeftShift) || Keyboard.GetState().IsKeyDown(Keys.RightShift))
+                if (!this.selected.Contains(selectedItem))
                 {
-                    if (this.selected.Contains(selected))
-                    {
-                        OnDeselect(selected);
-                        this.selected.Remove(selected);
-                    }
-                    else
-                    {
-                        OnSelect(selected);
-                        this.selected.Add(selected);
-                    }
+                    OnSelect(selectedItem);
+                }
+                this.selected.Clear();
+                this.selected.Add(selectedItem);
+            }));
+            RegisterListener(new InputListener(Trigger.ShiftLeftMouseClick, x =>
+            {
+                T selectedItem = indexSelectionProvider.GetSelectedIndex();
+                if (this.selected.Contains(selectedItem))
+                {
+                    OnDeselect(selectedItem);
+                    this.selected.Remove(selectedItem);
                 }
                 else
                 {
-                    foreach (var v in this.selected)
-                    {
-                        if (!v.Equals(selected))
-                        {
-                            OnDeselect(v);
-                        }
-                    }
-                    if (!this.selected.Contains(selected))
-                    {
-                        OnSelect(selected);
-                    }
-                    this.selected.Clear();
-                    this.selected.Add(selected);
+                    OnSelect(selectedItem);
+                    this.selected.Add(selectedItem);
                 }
-            }
+            }));
+        }
+
+        public override void Update(UIContext uiContext)
+        {
+            indexSelectionProvider.Update(uiContext);
         }
 
         internal void Clear()

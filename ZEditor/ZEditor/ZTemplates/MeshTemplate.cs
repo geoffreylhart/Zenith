@@ -71,7 +71,7 @@ namespace ZEditor.ZTemplates
             // TODO: maybe make event handlers so you can do += stuff...
             dragMouseTracker.OnStepDiff = x => { foreach (var s in selector.selected) s.position += x; RecalculateEverything(); };
             StateSwitcher switcher = new StateSwitcher(selector);
-            switcher.AddKeyState(Keys.G, dragMouseTracker, () =>
+            switcher.AddKeyState(Trigger.G, dragMouseTracker, () =>
             {
                 // translate vertices
                 Vector3 selectedSum = Vector3.Zero;
@@ -80,7 +80,7 @@ namespace ZEditor.ZTemplates
                 dragMouseTracker.mouseOrigin = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
                 dragMouseTracker.oldOffset = null;
             });
-            switcher.AddKeyState(Keys.H, dragMouseTracker, () =>
+            switcher.AddKeyState(Trigger.H, dragMouseTracker, () =>
             {
                 // extrude
                 Vector3 selectedSum = Vector3.Zero;
@@ -100,7 +100,7 @@ namespace ZEditor.ZTemplates
                 }
                 foreach (var p in selectedPolys) polyData.Remove(p);
             });
-            switcher.AddShiftKeyState(Keys.A, dragMouseTracker, () =>
+            switcher.AddKeyState(Trigger.ShiftA, dragMouseTracker, () =>
             {
                 // add a new unit plane and drag
                 var v1 = new VertexData(new Vector3(0, 0, 0), Color.Black);
@@ -117,13 +117,12 @@ namespace ZEditor.ZTemplates
                 var selectedPolys = GetSelectedPolys(selector);
             });
             Register(switcher);
-            ActionTriggerer actionTriggerer = new ActionTriggerer();
-            actionTriggerer.AddKeyTrigger(Keys.Delete, () =>
+            RegisterListener(new InputListener(Trigger.Delete, x =>
             {
                 var selectedPolys = GetSelectedPolys(selector);
                 foreach (var p in selectedPolys) polyData.Remove(p);
-            });
-            actionTriggerer.AddKeyTrigger(Keys.F, () =>
+            }));
+            RegisterListener(new InputListener(Trigger.F, x =>
             {
                 var selectedLines = GetSelectedLines(selector);
                 VertexData[] newPoly = new VertexData[selector.selected.Count];
@@ -153,8 +152,7 @@ namespace ZEditor.ZTemplates
                     newPoly[i] = best;
                 }
                 polyData.Add(newPoly);
-            });
-            Register(actionTriggerer);
+            }));
             Register(new PlaneGrid());
         }
 

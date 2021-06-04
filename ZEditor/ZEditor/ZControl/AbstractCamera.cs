@@ -31,9 +31,9 @@ namespace ZEditor.ZControl
             return Matrix.CreateLookAt(cameraPosition, cameraPosition + cameraLookUnitVector, cameraUpVector);
         }
 
-        public abstract void Update(IUIContext uiContext);
+        public abstract void Update(UIContext uiContext);
 
-        public Vector3 GetLookUnitVector(IUIContext uiContext)
+        public Vector3 GetLookUnitVector(UIContext uiContext)
         {
             Matrix world = Matrix.Identity;
             Matrix view = GetView();
@@ -59,7 +59,7 @@ namespace ZEditor.ZControl
         }
 
         // translate camera offset to real-world offset
-        internal Vector3 GetPerspectiveOffset(IUIContext uiContext, Vector3 position, Vector2 cameraOffset)
+        internal Vector3 GetPerspectiveOffset(UIContext uiContext, Vector3 position, Vector2 cameraOffset)
         {
             Matrix world = Matrix.Identity;
             Matrix view = GetView();

@@ -48,7 +48,7 @@ namespace ZEditorUnitTests.UITests
                 this.msg = msg;
             }
 
-            public override void Update(IUIContext uiContext)
+            public override void Update(UIContext uiContext)
             {
                 if (uiContext.IsKeyPressed(Keys.P))
                 {

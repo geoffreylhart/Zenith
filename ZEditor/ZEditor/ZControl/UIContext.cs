@@ -7,77 +7,56 @@ using System.Text;
 
 namespace ZEditor.ZControl
 {
-    public class UIContext : IUIContext
+    public class UIContext
     {
+        private IInputManager inputManager;
         private KeyboardState prevKeyboardState;
         private MouseState prevMouseState;
         private double elapsedSeconds = 0;
         private Game game;
 
+        public UIContext(IInputManager inputManager, Game game)
+        {
+            this.inputManager = inputManager;
+            this.game = game;
+        }
+
         public AbstractCamera Camera { get; set; }
 
         public float AspectRatio { get { return game.GraphicsDevice.Viewport.AspectRatio; } }
 
-        public double ScrollWheelDiff { get { return prevMouseState == null ? 0 : Mouse.GetState().ScrollWheelValue - prevMouseState.ScrollWheelValue; } }
+        public double ScrollWheelDiff { get { return prevMouseState == null ? 0 : inputManager.GetMouseState().ScrollWheelValue - prevMouseState.ScrollWheelValue; } }
 
         public void CenterMouse()
         {
             Mouse.SetPosition(game.GraphicsDevice.Viewport.Width / 2, game.GraphicsDevice.Viewport.Height / 2);
         }
+        public void CheckListener(InputListener listener)
+        {
+            bool prevDown = listener.CheckMainDown(prevMouseState, prevKeyboardState);
+            bool currDown = listener.CheckAllDown(inputManager.GetMouseState(), inputManager.GetKeyboardState());
+            if(currDown && !prevDown)
+            {
+                listener.Trigger();
+            }
+        }
 
-        public Vector2 MouseVector2 { get { return new Vector2(Mouse.GetState().X, Mouse.GetState().Y); } }
+        public Vector2 MouseVector2 { get { return new Vector2(inputManager.GetMouseState().X, inputManager.GetMouseState().Y); } }
 
         public double ElapsedSeconds { get { return elapsedSeconds; } }
 
-        public Vector2 MouseDiffVector2 { get { return prevMouseState == null ? new Vector2() : new Vector2(Mouse.GetState().X - prevMouseState.X, Mouse.GetState().Y - prevMouseState.Y); } }
+        public Vector2 MouseDiffVector2 { get { return prevMouseState == null ? new Vector2() : new Vector2(inputManager.GetMouseState().X - prevMouseState.X, inputManager.GetMouseState().Y - prevMouseState.Y); } }
 
         public Vector2 ScreenCenter { get { return new Vector2(game.GraphicsDevice.Viewport.Width / 2f, game.GraphicsDevice.Viewport.Height / 2f); } }
-
-        public UIContext(Game game)
-        {
-            this.game = game;
-        }
-
-        public bool IsKeyPressed(Keys key)
-        {
-            if (prevKeyboardState == null) return false;
-            return !prevKeyboardState.IsKeyDown(key) && Keyboard.GetState().IsKeyDown(key);
-        }
-
-        public bool IsShiftPressed()
-        {
-            return Keyboard.GetState().IsKeyDown(Keys.LeftShift) || Keyboard.GetState().IsKeyDown(Keys.RightShift);
-        }
-
-        public bool IsCtrlPressed()
-        {
-            return Keyboard.GetState().IsKeyDown(Keys.LeftControl) || Keyboard.GetState().IsKeyDown(Keys.RightControl);
-        }
-
-        public bool IsKeyShiftPressed(Keys key)
-        {
-            if (prevKeyboardState == null) return false;
-            bool prevDown = prevKeyboardState.IsKeyDown(key) && (prevKeyboardState.IsKeyDown(Keys.LeftShift) || prevKeyboardState.IsKeyDown(Keys.RightShift));
-            bool isDown = Keyboard.GetState().IsKeyDown(key) && (Keyboard.GetState().IsKeyDown(Keys.LeftShift) || Keyboard.GetState().IsKeyDown(Keys.RightShift));
-            return !prevDown && isDown;
-        }
-
-        public bool IsKeyCtrlPressed(Keys key)
-        {
-            if (prevKeyboardState == null) return false;
-            bool prevDown = prevKeyboardState.IsKeyDown(key) && (prevKeyboardState.IsKeyDown(Keys.LeftControl) || prevKeyboardState.IsKeyDown(Keys.RightControl));
-            bool isDown = Keyboard.GetState().IsKeyDown(key) && (Keyboard.GetState().IsKeyDown(Keys.LeftControl) || Keyboard.GetState().IsKeyDown(Keys.RightControl));
-            return !prevDown && isDown;
-        }
 
         public void WrapAroundMouse()
         {
             float w = game.GraphicsDevice.Viewport.Width;
             float h = game.GraphicsDevice.Viewport.Height;
-            if (Mouse.GetState().X < 0 || Mouse.GetState().Y < 0 || Mouse.GetState().X > w || Mouse.GetState().Y > h)
+            if (inputManager.GetMouseState().X < 0 || inputManager.GetMouseState().Y < 0 || inputManager.GetMouseState().X > w || inputManager.GetMouseState().Y > h)
             {
-                Vector2 offsetAmount = new Vector2((Mouse.GetState().X + w) % w - Mouse.GetState().X, (Mouse.GetState().Y + h) % h - Mouse.GetState().Y);
-                Mouse.SetPosition(Mouse.GetState().X + (int)offsetAmount.X, Mouse.GetState().Y + (int)offsetAmount.Y);
+                Vector2 offsetAmount = new Vector2((inputManager.GetMouseState().X + w) % w - inputManager.GetMouseState().X, (inputManager.GetMouseState().Y + h) % h - inputManager.GetMouseState().Y);
+                Mouse.SetPosition(inputManager.GetMouseState().X + (int)offsetAmount.X, inputManager.GetMouseState().Y + (int)offsetAmount.Y);
             }
         }
 
@@ -93,8 +72,8 @@ namespace ZEditor.ZControl
 
         public void UpdateKeys()
         {
-            prevKeyboardState = Keyboard.GetState();
-            prevMouseState = Mouse.GetState();
+            prevKeyboardState = inputManager.GetKeyboardState();
+            prevMouseState = inputManager.GetMouseState();
         }
 
         public void UpdateGameTime(GameTime gameTime)
@@ -102,14 +81,9 @@ namespace ZEditor.ZControl
             elapsedSeconds = gameTime.ElapsedGameTime.TotalSeconds;
         }
 
-        public bool IsLeftMouseButtonPressed()
+        public void Exit()
         {
-            return Mouse.GetState().LeftButton == ButtonState.Pressed && (prevMouseState == null || prevMouseState.LeftButton == ButtonState.Released);
-        }
-
-        public bool IsRightMouseButtonPressed()
-        {
-            return Mouse.GetState().RightButton == ButtonState.Pressed && (prevMouseState == null || prevMouseState.RightButton == ButtonState.Released);
+            game.Exit();
         }
     }
 }
