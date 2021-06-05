@@ -69,6 +69,11 @@ namespace ZEditor.ZComponents.Data
             vertexData.Add(item);
         }
 
+        public void Remove(VertexData item)
+        {
+            vertexData.Remove(item);
+        }
+
         public void AddRange(IEnumerable<VertexData> collection)
         {
             vertexData.AddRange(collection);

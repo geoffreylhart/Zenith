@@ -69,6 +69,11 @@ namespace ZEditor.ZComponents.Data
             references.Add(item);
         }
 
+        public void Remove(Reference item)
+        {
+            references.Remove(item);
+        }
+
         public void AddRange(IEnumerable<Reference> collection)
         {
             references.AddRange(collection);

@@ -284,9 +284,21 @@ namespace ZEditor.ZTemplates
                 {
                     pointParentCounts.Remove(intList[i]);
                     pointMesh.RemoveItem(intList[i]);
+                    vertexData.Remove(intList[i]);
                 }
             }
             RecalculateEverything();
+        }
+
+        public override void Load(StreamReader reader, GraphicsDevice graphicsDevice)
+        {
+            base.Load(reader, graphicsDevice);
+            // cleanup unused vertices (bug)
+            var unused = vertexData.Where(x => !polyData.lists.Any(y => y.Contains(x))).ToList();
+            foreach (var u in unused)
+            {
+                vertexData.Remove(u);
+            }
         }
 
         private void RecalculateEverything()

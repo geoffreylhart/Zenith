@@ -53,6 +53,8 @@ namespace ZEditor.ZTemplates
                 {
                     editingItem.UnregisterListener(y);
                     this.Focus();
+                    // recalculate bounding box of edited item
+                    referenceOutlines[selector.selected.Single()] = new BoxOutline(editingItem.GetBoundingBox()) { boxColor = Color.Orange };
                     editingItem = null;
                     editMode = false;
                 });
