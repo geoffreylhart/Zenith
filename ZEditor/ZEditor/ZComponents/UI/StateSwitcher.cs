@@ -54,6 +54,8 @@ namespace ZEditor.ZComponents.UI
         public override void Update(UIContext uiContext)
         {
             // TODO: make this feel more natural...
+            // maybe register all?
+            // TODO: didn't we want to maybe add listeners only once? though that would be an issues for our single-instanced things
             if (currentFocus != defaultFocus)
             {
                 currentFocus.Update(uiContext);

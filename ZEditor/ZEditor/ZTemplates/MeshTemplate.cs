@@ -54,6 +54,7 @@ namespace ZEditor.ZTemplates
         private Dictionary<VertexData[], int> lineParentCounts = new Dictionary<VertexData[], int>(new ReversibleArrayEqualityComparer<VertexData>());
         private Dictionary<VertexData, int> pointParentCounts = new Dictionary<VertexData, int>();
 
+        // TODO: somehow we have orphan vertices
         public MeshTemplate()
         {
             vertexData = new VertexDataComponent() { saveColor = false };
@@ -84,7 +85,7 @@ namespace ZEditor.ZTemplates
                 dragMouseTracker.mouseOrigin = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
                 dragMouseTracker.oldOffset = null;
             }, true);
-            switcher.AddKeyFocus(Trigger.H, dragMouseTracker, () =>
+            switcher.AddKeyFocus(Trigger.E, dragMouseTracker, () =>
             {
                 // extrude
                 Vector3 selectedSum = Vector3.Zero;
