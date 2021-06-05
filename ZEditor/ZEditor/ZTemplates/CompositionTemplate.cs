@@ -8,6 +8,7 @@ using System.Text;
 using ZEditor.ZComponents.Data;
 using ZEditor.ZComponents.Drawables;
 using ZEditor.ZComponents.UI;
+using ZEditor.ZControl;
 using ZEditor.ZManage;
 using static ZEditor.ZComponents.Data.ReferenceDataComponent;
 
@@ -19,6 +20,8 @@ namespace ZEditor.ZTemplates
         private ReferenceDataComponent references;
         private Dictionary<Reference, BoxOutline> referenceOutlines = new Dictionary<Reference, BoxOutline>();
         private Selector<Reference> selector;
+        private ZComponent editingItem = null;
+        private bool editMode = false;
 
         public CompositionTemplate()
         {
@@ -40,6 +43,21 @@ namespace ZEditor.ZTemplates
                 nameText.text = GetSelectedText(selector.selected);
             });
             Register(selector, nameText);
+            RegisterListener(new InputListener(Trigger.E, x =>
+            {
+                if (selector.selected.Count != 1) return;
+                editMode = true;
+                editingItem = TemplateManager.LOADED_TEMPLATES[selector.selected.Single().name];
+                editingItem.Focus();
+                var listener = new InputListener(Trigger.Escape, y =>
+                {
+                    editingItem.UnregisterListener(y);
+                    this.Focus();
+                    editingItem = null;
+                    editMode = false;
+                });
+                editingItem.RegisterListener(listener);
+            }));
         }
 
         private string GetSelectedText(HashSet<Reference> selected)
@@ -71,20 +89,36 @@ namespace ZEditor.ZTemplates
 
         public override void DrawDebug(GraphicsDevice graphics, Matrix world, Matrix view, Matrix projection)
         {
-            base.DrawDebug(graphics, world, view, projection);
-            foreach (var reference in references)
+            if (editMode)
             {
-                var obj = TemplateManager.LOADED_TEMPLATES[reference.name];
-                obj.Draw(graphics, world, view, projection);
+                editingItem.DrawDebug(graphics, world, view, projection);
             }
-            foreach (var reference in references)
+            else
             {
-                if (!referenceOutlines.ContainsKey(reference))
+                base.DrawDebug(graphics, world, view, projection);
+                foreach (var reference in references)
                 {
                     var obj = TemplateManager.LOADED_TEMPLATES[reference.name];
-                    referenceOutlines[reference] = new BoxOutline(obj.GetBoundingBox());
+                    obj.Draw(graphics, world, view, projection);
                 }
-                referenceOutlines[reference].DrawDebug(graphics, world, view, projection);
+                foreach (var reference in references)
+                {
+                    if (!referenceOutlines.ContainsKey(reference))
+                    {
+                        var obj = TemplateManager.LOADED_TEMPLATES[reference.name];
+                        referenceOutlines[reference] = new BoxOutline(obj.GetBoundingBox());
+                    }
+                    referenceOutlines[reference].DrawDebug(graphics, world, view, projection);
+                }
+            }
+        }
+
+        public override void Update(UIContext uiContext)
+        {
+            base.Update(uiContext);
+            if (editMode)
+            {
+                editingItem.Update(uiContext);
             }
         }
     }

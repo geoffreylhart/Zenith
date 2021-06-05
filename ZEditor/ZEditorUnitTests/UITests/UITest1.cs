@@ -17,12 +17,15 @@ namespace ZEditorUnitTests.UITests
         {
             // check that you can enter edit modes repeatedly and escape out of each one (like popups within popups)
             var logs = new List<string>();
-            StateSwitcher ss1 = new StateSwitcher(new DummyComponent(logs, "1"));
+            StateSwitcher ss1 = new StateSwitcher();
             ss1.Focus();
-            StateSwitcher ss2 = new StateSwitcher(new DummyComponent(logs, "2"));
-            StateSwitcher ss3 = new StateSwitcher(new DummyComponent(logs, "3"));
-            ss1.AddKeyState(Trigger.E, ss2, () => { return; }, false);
-            ss2.AddKeyState(Trigger.E, ss3, () => { return; }, false);
+            ss1.Register(new DummyComponent(logs, "1"));
+            StateSwitcher ss2 = new StateSwitcher();
+            ss2.Register(new DummyComponent(logs, "2"));
+            StateSwitcher ss3 = new StateSwitcher();
+            ss3.Register(new DummyComponent(logs, "3"));
+            ss1.AddKeyFocus(Trigger.E, ss2, () => { return; }, false);
+            ss2.AddKeyFocus(Trigger.E, ss3, () => { return; }, false);
             var mockInputManager = new MockInputManager();
             var uiContext = new UIContext(mockInputManager, null);
             SimulateKeyPress(mockInputManager, uiContext, Keys.P);

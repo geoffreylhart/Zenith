@@ -59,10 +59,7 @@ namespace ZEditor.ZManage
         {
             focusedObject = this;
         }
-        public ZComponent GetFocus()
-        {
-            return focusedObject;
-        }
+
         public virtual void Draw(GraphicsDevice graphics, Matrix world, Matrix view, Matrix projection) { }
         public virtual void DrawDebug(GraphicsDevice graphics, Matrix world, Matrix view, Matrix projection) { }
         public virtual void Load(StreamReader reader, GraphicsDevice graphics) { }

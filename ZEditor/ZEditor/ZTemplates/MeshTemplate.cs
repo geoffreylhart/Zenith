@@ -70,11 +70,12 @@ namespace ZEditor.ZTemplates
                 x => { x.color = Color.Orange; RecalculateEverything(); },
                 x => { x.color = Color.Black; RecalculateEverything(); }
             );
+            Register(selector);
             CameraMouseTracker dragMouseTracker = new CameraMouseTracker() { stepSize = 0.25f };
             // TODO: maybe make event handlers so you can do += stuff...
             dragMouseTracker.OnStepDiff = x => { foreach (var s in selector.selected) s.position += x; RecalculateEverything(); };
-            StateSwitcher switcher = new StateSwitcher(selector);
-            switcher.AddKeyState(Trigger.G, dragMouseTracker, () =>
+            StateSwitcher switcher = new StateSwitcher(this);
+            switcher.AddKeyFocus(Trigger.G, dragMouseTracker, () =>
             {
                 // translate vertices
                 Vector3 selectedSum = Vector3.Zero;
@@ -83,7 +84,7 @@ namespace ZEditor.ZTemplates
                 dragMouseTracker.mouseOrigin = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
                 dragMouseTracker.oldOffset = null;
             }, true);
-            switcher.AddKeyState(Trigger.H, dragMouseTracker, () =>
+            switcher.AddKeyFocus(Trigger.H, dragMouseTracker, () =>
             {
                 // extrude
                 Vector3 selectedSum = Vector3.Zero;
@@ -103,7 +104,7 @@ namespace ZEditor.ZTemplates
                 }
                 foreach (var p in selectedPolys) polyData.Remove(p);
             }, true);
-            switcher.AddKeyState(Trigger.ShiftA, dragMouseTracker, () =>
+            switcher.AddKeyFocus(Trigger.ShiftA, dragMouseTracker, () =>
             {
                 // add a new unit plane and drag
                 var v1 = new VertexData(new Vector3(0, 0, 0), Color.Black);
