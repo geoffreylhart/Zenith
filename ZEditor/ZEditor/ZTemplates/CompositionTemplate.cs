@@ -31,7 +31,7 @@ namespace ZEditor.ZTemplates
             Register(references);
             var tracker = new PointCollectionTracker<Reference>(references, x =>
             {
-                return (TemplateManager.LOADED_TEMPLATES[x.name].GetBoundingBox().Min + TemplateManager.LOADED_TEMPLATES[x.name].GetBoundingBox().Max) / 2;
+                return (TemplateManager.LOADED_TEMPLATES[x.name].GetBoundingBox().Min + TemplateManager.LOADED_TEMPLATES[x.name].GetBoundingBox().Max) / 2 + x.position;
             });
             selector = new Selector<Reference>(new CameraSelectionProvider<Reference>(tracker), x =>
             {
@@ -54,7 +54,11 @@ namespace ZEditor.ZTemplates
                     editingItem.UnregisterListener(y);
                     this.Focus();
                     // recalculate bounding box of edited item
-                    referenceOutlines[selector.selected.Single()] = new BoxOutline(editingItem.GetBoundingBox()) { boxColor = Color.Orange };
+                    // TODO: bounding boxes of references from elsewherer can also get updated, even from editing completed other spaceships, etc.
+                    var refBox = editingItem.GetBoundingBox();
+                    refBox.Min += selector.selected.Single().position;
+                    refBox.Max += selector.selected.Single().position;
+                    referenceOutlines[selector.selected.Single()] = new BoxOutline(refBox) { boxColor = Color.Orange };
                     editingItem = null;
                     editMode = false;
                 });
@@ -101,14 +105,14 @@ namespace ZEditor.ZTemplates
                 foreach (var reference in references)
                 {
                     var obj = TemplateManager.LOADED_TEMPLATES[reference.name];
-                    obj.Draw(graphics, world, view, projection);
-                }
-                foreach (var reference in references)
-                {
+                    var refWorld = Matrix.CreateTranslation(reference.position) * world;
+                    var refBox = obj.GetBoundingBox();
+                    refBox.Min += reference.position;
+                    refBox.Max += reference.position;
+                    obj.Draw(graphics, refWorld, view, projection);
                     if (!referenceOutlines.ContainsKey(reference))
                     {
-                        var obj = TemplateManager.LOADED_TEMPLATES[reference.name];
-                        referenceOutlines[reference] = new BoxOutline(obj.GetBoundingBox());
+                        referenceOutlines[reference] = new BoxOutline(refBox);
                     }
                     referenceOutlines[reference].DrawDebug(graphics, world, view, projection);
                 }
