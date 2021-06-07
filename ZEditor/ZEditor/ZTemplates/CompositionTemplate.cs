@@ -53,17 +53,40 @@ namespace ZEditor.ZTemplates
                 {
                     editingItem.UnregisterListener(y);
                     this.Focus();
-                    // recalculate bounding box of edited item
-                    // TODO: bounding boxes of references from elsewherer can also get updated, even from editing completed other spaceships, etc.
-                    var refBox = editingItem.GetBoundingBox();
-                    refBox.Min += selector.selected.Single().position;
-                    refBox.Max += selector.selected.Single().position;
-                    referenceOutlines[selector.selected.Single()] = new BoxOutline(refBox) { boxColor = Color.Orange };
+                    RecalculateBoundingBoxes();
                     editingItem = null;
                     editMode = false;
                 });
                 editingItem.RegisterListener(listener);
             }));
+        }
+
+        public override void Load(StreamReader reader, GraphicsDevice graphicsDevice)
+        {
+            base.Load(reader, graphicsDevice);
+            RecalculateBoundingBoxes();
+        }
+
+        private void RecalculateBoundingBoxes()
+        {
+            foreach (var reference in references)
+            {
+                if (TemplateManager.LOADED_TEMPLATES.ContainsKey(reference.name))
+                {
+                    var obj = TemplateManager.LOADED_TEMPLATES[reference.name];
+                    var refBox = obj.GetBoundingBox();
+                    refBox.Min += reference.position;
+                    refBox.Max += reference.position;
+                    if (referenceOutlines.ContainsKey(reference))
+                    {
+                        referenceOutlines[reference].boundingBox = refBox;
+                    }
+                    else
+                    {
+                        referenceOutlines[reference] = new BoxOutline(refBox);
+                    }
+                }
+            }
         }
 
         private string GetSelectedText(HashSet<Reference> selected)
@@ -102,18 +125,12 @@ namespace ZEditor.ZTemplates
             else
             {
                 base.DrawDebug(graphics, world, view, projection);
+                RecalculateBoundingBoxes();
                 foreach (var reference in references)
                 {
                     var obj = TemplateManager.LOADED_TEMPLATES[reference.name];
                     var refWorld = Matrix.CreateTranslation(reference.position) * world;
-                    var refBox = obj.GetBoundingBox();
-                    refBox.Min += reference.position;
-                    refBox.Max += reference.position;
                     obj.Draw(graphics, refWorld, view, projection);
-                    if (!referenceOutlines.ContainsKey(reference))
-                    {
-                        referenceOutlines[reference] = new BoxOutline(refBox);
-                    }
                     referenceOutlines[reference].DrawDebug(graphics, world, view, projection);
                 }
             }

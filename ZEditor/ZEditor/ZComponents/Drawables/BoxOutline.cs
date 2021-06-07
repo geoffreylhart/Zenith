@@ -13,7 +13,7 @@ namespace ZEditor.ZComponents.Drawables
     {
         private static DynamicVertexIndexBuffer<VertexPositionColor> boxBuffer;
         private static DynamicVertexIndexBuffer<VertexPositionColor> emptyBuffer;
-        private BoundingBox boundingBox;
+        public BoundingBox boundingBox;
         public Color boxColor = Color.White;
 
         public BoxOutline(BoundingBox boundingBox)
