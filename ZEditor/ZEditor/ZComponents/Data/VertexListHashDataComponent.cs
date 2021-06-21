@@ -20,15 +20,7 @@ namespace ZEditor.ZComponents.Data
         public override void Load(StreamReader reader, GraphicsDevice graphicsDevice)
         {
             var currLine = reader.ReadLine();
-            if (!currLine.Contains("Quads")) throw new NotImplementedException();
-            currLine = reader.ReadLine();
-            while (!currLine.Contains("}"))
-            {
-                Add(currLine.Trim().Split(',').Select(x => vertexData[int.Parse(x)]).ToArray());
-                currLine = reader.ReadLine();
-            }
-            currLine = reader.ReadLine();
-            if (!currLine.Contains("Tris")) throw new NotImplementedException();
+            if (!currLine.Contains("Polys")) throw new NotImplementedException();
             currLine = reader.ReadLine();
             while (!currLine.Contains("}"))
             {
@@ -39,25 +31,11 @@ namespace ZEditor.ZComponents.Data
 
         public override void Save(IndentableStreamWriter writer)
         {
-            writer.WriteLine("Quads {");
+            writer.WriteLine("Polys {");
             writer.Indent();
-            foreach (var intList in lists)
+            foreach (var intList in lists.OrderBy(x => -x.Length))
             {
-                if (intList.Length == 4)
-                {
-                    writer.WriteLine(string.Join(",", intList.Select(x => vertexData.IndexOf(x))));
-                }
-            }
-            writer.UnIndent();
-            writer.WriteLine("}");
-            writer.WriteLine("Tris {");
-            writer.Indent();
-            foreach (var intList in lists)
-            {
-                if (intList.Length == 3)
-                {
-                    writer.WriteLine(string.Join(",", intList.Select(x => vertexData.IndexOf(x))));
-                }
+                writer.WriteLine(string.Join(",", intList.Select(x => vertexData.IndexOf(x))));
             }
             writer.UnIndent();
             writer.WriteLine("}");

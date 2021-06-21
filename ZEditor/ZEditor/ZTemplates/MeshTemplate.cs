@@ -14,6 +14,7 @@ using ZEditor.ZControl;
 using ZEditor.ZGraphics;
 using ZEditor.ZManage;
 using ZEditor.ZTemplates.Mesh;
+using static ZEditor.ZComponents.Data.LineDataComponent;
 using static ZEditor.ZComponents.Data.VertexDataComponent;
 
 namespace ZEditor.ZTemplates
@@ -50,6 +51,7 @@ namespace ZEditor.ZTemplates
         private LineMesh lineMesh;
         private PointMesh pointMesh;
         private VertexDataComponent vertexData;
+        private LineDataComponent lineData;
         private VertexListHashDataComponent polyData;
         private Dictionary<VertexData[], int> lineParentCounts = new Dictionary<VertexData[], int>(new ReversibleArrayEqualityComparer<VertexData>());
         private Dictionary<VertexData, int> pointParentCounts = new Dictionary<VertexData, int>();
@@ -58,13 +60,14 @@ namespace ZEditor.ZTemplates
         public MeshTemplate()
         {
             vertexData = new VertexDataComponent() { saveColor = false };
+            lineData = new LineDataComponent() { vertexData = vertexData };
             polyData = new VertexListHashDataComponent() { vertexData = vertexData };
             polyData.AddObserver(this);
             faceMesh = new FaceMesh() { vertexData = vertexData };
             lineMesh = new LineMesh() { vertexData = vertexData };
             pointMesh = new PointMesh() { vertexData = vertexData };
             var tracker = new PointCollectionTracker<VertexData>(vertexData, x => x.position);
-            Register(vertexData, polyData, faceMesh, lineMesh, pointMesh);
+            Register(vertexData, lineData, polyData, faceMesh, lineMesh, pointMesh);
             // setup ui
             // TODO: these all need to be in reversible actions
             var selector = new Selector<VertexData>(new CameraSelectionProvider<VertexData>(tracker),
@@ -256,6 +259,7 @@ namespace ZEditor.ZTemplates
             for (int i = 0; i < intList.Length; i++)
             {
                 var line = new VertexData[] { intList[i], intList[(i + 1) % intList.Length] };
+                lineData.Add(new LineData(line[0], line[1]));
                 if (!lineParentCounts.ContainsKey(line)) lineParentCounts.Add(line, 0);
                 lineParentCounts[line]++;
                 lineMesh.AddItem(line);
@@ -273,6 +277,7 @@ namespace ZEditor.ZTemplates
             for (int i = 0; i < intList.Length; i++)
             {
                 var line = new VertexData[] { intList[i], intList[(i + 1) % intList.Length] };
+                lineData.Remove(new LineData(line[0], line[1]));
                 lineParentCounts[line]--;
                 if (lineParentCounts[line] == 0)
                 {
